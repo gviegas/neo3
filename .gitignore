@@ -1,0 +1,12 @@
+local/
+tmp/
+*.backup
+*.exe
+*.local
+*.log
+*.o
+*.out
+*.swp
+*.test
+*.tmp
+go.work
