@@ -13,9 +13,13 @@ type Node struct {
 	sub  *Node
 }
 
-func NewNode() *Node {
-	panic("not implemented")
-}
+// NewNode creates an initialized node.
+func NewNode() *Node { return new(Node).Init() }
+
+// Init initializes node n.
+// TODO: This is expected to be necessary when
+// more fields are added to Node.
+func (n *Node) Init() *Node { return n }
 
 func (n *Node) Insert(sub *Node) {
 	panic("not implemented")
