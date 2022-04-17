@@ -21,8 +21,16 @@ func NewNode() *Node { return new(Node).Init() }
 // more fields are added to Node.
 func (n *Node) Init() *Node { return n }
 
+// Insert inserts node sub as immediate descendant
+// of node n.
 func (n *Node) Insert(sub *Node) {
-	panic("not implemented")
+	sub.Remove()
+	sub.next = n.sub
+	sub.prev = n
+	if n.sub != nil {
+		n.sub.prev = sub
+	}
+	n.sub = sub
 }
 
 func (n *Node) Remove() {
