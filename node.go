@@ -33,8 +33,22 @@ func (n *Node) Insert(sub *Node) {
 	n.sub = sub
 }
 
+// Remove removes node n from its immediate ancestor.
 func (n *Node) Remove() {
-	panic("not implemented")
+	// Note that Node.prev is only nil when the node
+	// has no ancestors, since the prev field of the
+	// first immediate descendant is set to refer to
+	// its immediate ancestor.
+	if n.prev != nil {
+		if n.prev.sub == n {
+			n.prev.sub = n.next
+		}
+		if n.next != nil {
+			n.next = n.prev
+		}
+		n.prev = nil
+		n.next = nil
+	}
 }
 
 func (n *Node) ForEach(f func(*Node) bool) {
