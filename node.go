@@ -2,8 +2,6 @@
 
 package scene
 
-import ()
-
 // Node represents a single node in a scene graph.
 // Nodes have at most one immediate ancestor and
 // an arbitrary number of immediate descendants.
@@ -11,6 +9,10 @@ type Node struct {
 	next *Node
 	prev *Node
 	sub  *Node
+
+	// Name for the node.
+	// It is not used by node code.
+	Name string
 }
 
 // NewNode creates an initialized node.
