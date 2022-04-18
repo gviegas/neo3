@@ -25,6 +25,9 @@ func (n *Node) Init() *Node { return n }
 
 // Insert inserts node sub as immediate descendant
 // of node n.
+// sub must be either a descendant of n or part of
+// an unrelated graph - it must not be an ancestor
+// of node n.
 func (n *Node) Insert(sub *Node) {
 	sub.Remove()
 	sub.next = n.sub
@@ -44,9 +47,11 @@ func (n *Node) Remove() {
 	if n.prev != nil {
 		if n.prev.sub == n {
 			n.prev.sub = n.next
+		} else {
+			n.prev.next = n.next
 		}
 		if n.next != nil {
-			n.next = n.prev
+			n.next.prev = n.prev
 		}
 		n.prev = nil
 		n.next = nil
