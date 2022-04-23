@@ -52,6 +52,21 @@ func TestV(t *testing.T) {
 	if u.Cross(&w, &v); u != (V3{-1, 0, 0}) {
 		t.Fatalf("V3.Cross\nhave %v\nwant [-1 0 0]", u)
 	}
+
+	m := M3{
+		{2, 0, 1},
+		{1, 3, 2},
+		{4, 2, 3},
+	}
+	v = V3{-1, 0, 1}
+
+	if u.Mul(&m, &v); u != (V3{2, 2, 2}) {
+		t.Fatalf("V3.Mul\nhave %v\nwant [2 2 2]", u)
+	}
+	m.I()
+	if u.Mul(&m, &v); u != v {
+		t.Fatalf("V3.Mul\nhave %v\nwant %v", u, v)
+	}
 }
 
 func TestM(t *testing.T) {

@@ -53,6 +53,16 @@ func (v *V3) Cross(l, r *V3) {
 	return
 }
 
+// Mul sets v to contain m ⋅ w.
+func (v *V3) Mul(m *M3, w *V3) {
+	*v = V3{}
+	for i := range v {
+		for j := range v {
+			v[i] += m[j][i] * w[j]
+		}
+	}
+}
+
 // V4 is a 4-component vector of float32.
 type V4 [4]float32
 
@@ -90,3 +100,13 @@ func (v *V4) Len() float32 { return float32(math.Sqrt(float64(v.Dot(v)))) }
 
 // Norm sets v to contain w normalized.
 func (v *V4) Norm(w *V4) { v.Scale(1/w.Len(), w) }
+
+// Mul sets v to contain m ⋅ w.
+func (v *V4) Mul(m *M4, w *V4) {
+	*v = V4{}
+	for i := range v {
+		for j := range v {
+			v[i] += m[j][i] * w[j]
+		}
+	}
+}
