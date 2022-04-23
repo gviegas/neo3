@@ -92,3 +92,40 @@ func (m *M3) bMulNoAlias(l, r *M3) {
 		}
 	}
 }
+
+func BenchmarkInvert(b *testing.B) {
+	h := M3{
+		{0, 1, 1},
+		{3, 0, -1},
+		{-1, 1, 0},
+	}
+	var m, n M3
+	b.Run("M3.Invert", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			m.Invert(&h)
+		}
+	})
+	b.Run("M3.bInvertNoAlias", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			n.bInvertNoAlias(&h)
+		}
+	})
+	b.Log("\n", m, "\n", n)
+}
+
+// m updated in-place.
+func (m *M3) bInvertNoAlias(n *M3) {
+	s0 := n[1][1]*n[2][2] - n[1][2]*n[2][1]
+	s1 := n[1][0]*n[2][2] - n[1][2]*n[2][0]
+	s2 := n[1][0]*n[2][1] - n[1][1]*n[2][0]
+	idet := 1 / (n[0][0]*s0 - n[0][1]*s1 + n[0][2]*s2)
+	m[0][0] = s0 * idet
+	m[0][1] = -(n[0][1]*n[2][2] - n[0][2]*n[2][1]) * idet
+	m[0][2] = (n[0][1]*n[1][2] - n[0][2]*n[1][1]) * idet
+	m[1][0] = -s1 * idet
+	m[1][1] = (n[0][0]*n[2][2] - n[0][2]*n[2][0]) * idet
+	m[1][2] = -(n[0][0]*n[1][2] - n[0][2]*n[1][0]) * idet
+	m[2][0] = s2 * idet
+	m[2][1] = -(n[0][0]*n[2][1] - n[0][1]*n[2][0]) * idet
+	m[2][2] = (n[0][0]*n[1][1] - n[0][1]*n[1][0]) * idet
+}
