@@ -34,7 +34,7 @@ func (v V3) bDotValue(w V3) (d float32) {
 func BenchmarkCross(b *testing.B) {
 	l := V3{1, 0, 0}
 	r := V3{0, 1, 0}
-	var v, u V3
+	var v, u, w V3
 	b.Run("V3.Cross", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			v.Cross(&l, &r)
@@ -45,7 +45,12 @@ func BenchmarkCross(b *testing.B) {
 			u = bCrossValue(l, r)
 		}
 	})
-	b.Log(v, u)
+	b.Run("V3.bCrossNoAlias", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			w.bCrossNoAlias(&l, &r)
+		}
+	})
+	b.Log(v, u, w)
 }
 
 // l, r and v passed on the stack.
@@ -54,6 +59,13 @@ func bCrossValue(l, r V3) (v V3) {
 	v[1] = l[2]*r[0] - l[0]*r[2]
 	v[2] = l[0]*r[1] - l[1]*r[0]
 	return
+}
+
+// v updated in-place.
+func (v *V3) bCrossNoAlias(l, r *V3) {
+	v[0] = l[1]*r[2] - l[2]*r[1]
+	v[1] = l[2]*r[0] - l[0]*r[2]
+	v[2] = l[0]*r[1] - l[1]*r[0]
 }
 
 func BenchmarkMulV(b *testing.B) {

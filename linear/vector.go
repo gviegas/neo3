@@ -47,10 +47,11 @@ func (v *V3) Norm(w *V3) { v.Scale(1/w.Len(), w) }
 
 // Cross sets v to contain l × r.
 func (v *V3) Cross(l, r *V3) {
-	v[0] = l[1]*r[2] - l[2]*r[1]
-	v[1] = l[2]*r[0] - l[0]*r[2]
-	v[2] = l[0]*r[1] - l[1]*r[0]
-	return
+	*v = V3{
+		l[1]*r[2] - l[2]*r[1],
+		l[2]*r[0] - l[0]*r[2],
+		l[0]*r[1] - l[1]*r[0],
+	}
 }
 
 // Mul sets v to contain m ⋅ w.
