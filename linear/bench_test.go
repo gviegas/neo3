@@ -56,6 +56,37 @@ func bCrossValue(l, r V3) (v V3) {
 	return
 }
 
+func BenchmarkMulV(b *testing.B) {
+	m := M3{
+		{-1, 4, -7},
+		{2, -5, 8},
+		{-3, 6, -9},
+	}
+	w := V3{3, 2, -1}
+	var v, u V3
+	b.Run("V3.Mul", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			v.Mul(&m, &w)
+		}
+	})
+	b.Run("V3.bMulNoAlias", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			u.bMulNoAlias(&m, &w)
+		}
+	})
+	b.Log(v, u)
+}
+
+// v updated in place.
+func (v *V3) bMulNoAlias(m *M3, w *V3) {
+	*v = V3{}
+	for i := range v {
+		for j := range v {
+			v[i] += m[j][i] * w[j]
+		}
+	}
+}
+
 func BenchmarkMulM(b *testing.B) {
 	l := M3{
 		{1, 4, 7},
