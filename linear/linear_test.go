@@ -53,3 +53,33 @@ func TestV(t *testing.T) {
 		t.Fatalf("V3.Cross\nhave %v\nwant [-1 0 0]", u)
 	}
 }
+
+func TestM(t *testing.T) {
+	var l M3
+	m := M3{
+		{1, 4, 7},
+		{2, 5, 8},
+		{3, 6, 9},
+	}
+	n := M3{
+		{0, 1, 0},
+		{0, 0, 1},
+		{1, 0, 0},
+	}
+
+	if l.I(); l != (M3{{1}, {0, 1}, {0, 0, 1}}) {
+		t.Fatalf("M3.I\nhave %v\nwant [%v %v %v]", l, V3{1}, V3{0, 1}, V3{0, 0, 1})
+	}
+	if l.Mul(&m, &n); l != (M3{m[1], m[2], m[0]}) {
+		t.Fatalf("M3.Mul\nhave %v\nwant [%v %v %v]", l, m[1], m[2], m[0])
+	}
+	if l.Mul(&n, &m); l != (M3{{7, 1, 4}, {8, 2, 5}, {9, 3, 6}}) {
+		t.Fatalf("M3.Mul\nhave %v\nwant %v", l, M3{{7, 1, 4}, {8, 2, 5}, {9, 3, 6}})
+	}
+	if l.Transpose(&m); l != (M3{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}) {
+		t.Fatalf("M3.Transpose\nhave %v\nwant %v", l, M3{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})
+	}
+	if l.Invert(&n); l != (M3{n[1], n[2], n[0]}) {
+		t.Fatalf("M3.Invert\nhave %v\nwant %v", l, M3{n[1], n[2], n[0]})
+	}
+}
