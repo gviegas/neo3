@@ -10,14 +10,15 @@ func (m *M3) I() { *m = M3{{1}, {0, 1}, {0, 0, 1}} }
 
 // Mul sets m to contain l ⋅ r.
 func (m *M3) Mul(l, r *M3) {
-	*m = M3{}
+	var n M3
 	for i := range m {
 		for j := range m {
 			for k := range m {
-				m[i][j] += l[k][j] * r[i][k]
+				n[i][j] += l[k][j] * r[i][k]
 			}
 		}
 	}
+	*m = n
 }
 
 // Transpose sets m to contain the transpose of n.
@@ -55,14 +56,15 @@ func (m *M4) I() { *m = M4{{1}, {0, 1}, {0, 0, 1}, {0, 0, 0, 1}} }
 
 // Mul sets m to contain l ⋅ r.
 func (m *M4) Mul(l, r *M4) {
-	*m = M4{}
+	var n M4
 	for i := range m {
 		for j := range m {
 			for k := range m {
-				m[i][j] += l[k][j] * r[i][k]
+				n[i][j] += l[k][j] * r[i][k]
 			}
 		}
 	}
+	*m = n
 }
 
 // Transpose sets m to contain the transpose of n.
