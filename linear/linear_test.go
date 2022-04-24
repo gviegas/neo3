@@ -98,3 +98,19 @@ func TestM(t *testing.T) {
 		t.Fatalf("M3.Invert\nhave %v\nwant %v", l, M3{n[1], n[2], n[0]})
 	}
 }
+
+func TestQ(t *testing.T) {
+	var r Q
+	q := Q{V: V3{1, 0, 0}, R: 3}
+	p := Q{V: V3{0, 1, 0}, R: 3}
+
+	if r.Mul(&q, &p); r.V != (V3{3, 3, 1}) || r.R != 9 {
+		t.Fatalf("Q.Mul\nhave %v\nwant {[3 3 1] 9}", r)
+	}
+	if r.Mul(&p, &q); r.V != (V3{3, 3, -1}) || r.R != 9 {
+		t.Fatalf("Q.Mul\nhave %v\nwant {[3 3 -1] 9}", r)
+	}
+	if q.Mul(&q, &q); q.V != (V3{6}) || q.R != 8 {
+		t.Fatalf("Q.Mul\nhave %v\nwant {[6 0 0] 8}", q)
+	}
+}
