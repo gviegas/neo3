@@ -220,3 +220,51 @@ func (m *M4) RotateQ(q *Q) {
 func (m *M4) Translate(x, y, z float32) {
 	*m = M4{{1}, {1: 1}, {2: 1}, {x, y, z, 1}}
 }
+
+// LooAt sets m to contain a view transform.
+func (m *M4) LookAt(center, eye, up *V3) {
+	var f, s, u V3
+	f.Sub(center, eye)
+	f.Norm(&f)
+	s.Cross(&f, up)
+	s.Norm(&s)
+	u.Cross(&f, &s)
+	*m = M4{
+		{s[0], u[0], -f[0]},
+		{s[1], u[1], -f[1]},
+		{s[2], u[2], -f[2]},
+		{-s.Dot(eye), -u.Dot(eye), f.Dot(eye), 1},
+	}
+}
+
+// Perspective sets m to contain a perspective projection.
+func (m *M4) Perspective(yfov, aspectRatio, znear, zfar float32) {
+	ct := 1 / float32(math.Tan(float64(yfov/2)))
+	*m = M4{
+		{0: ct / aspectRatio},
+		{1: ct},
+		{2: (zfar + znear) / (znear - zfar), 3: -1},
+		{2: (zfar * znear * 2) / (znear - zfar)},
+	}
+}
+
+// InfPerspective sets m to contain an infinite perspective projection.
+func (m *M4) InfPerspective(yfov, aspectRatio, znear float32) {
+	ct := 1 / float32(math.Tan(float64(yfov/2)))
+	*m = M4{
+		{0: ct / aspectRatio},
+		{1: ct},
+		{2: -1, 3: -1},
+		{2: znear * -2},
+	}
+}
+
+// Ortho sets m to contain a nonperspective projection.
+func (m *M4) Ortho(xmag, ymag, znear, zfar float32) {
+	*m = M4{
+		{0: 1 / xmag},
+		{1: 1 / ymag},
+		{2: 2 / (znear - zfar)},
+		{2: (zfar + znear) / (znear - zfar), 3: 1},
+	}
+}
