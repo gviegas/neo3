@@ -172,3 +172,37 @@ func (m *M3) bInvertNoAlias(n *M3) {
 	m[2][1] = -(n[0][0]*n[2][1] - n[0][1]*n[2][0]) * idet
 	m[2][2] = (n[0][0]*n[1][1] - n[0][1]*n[1][0]) * idet
 }
+
+func BenchmarkRotate(b *testing.B) {
+	var m, o M3
+	var n, p M4
+	var q Q
+	angle := float32(3.14159 / 6)
+	axis := V3{0, 10, 0} // will be normalized
+	b.Run("M3.Rotate", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			m.Rotate(angle, &axis)
+		}
+	})
+	b.Run("M4.Rotate", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			n.Rotate(angle, &axis)
+		}
+	})
+	b.Run("Q.Rotate", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			q.Rotate(angle, &axis)
+		}
+	})
+	b.Run("M3.RotateQ", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			o.RotateQ(&q)
+		}
+	})
+	b.Run("M4.RotateQ", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			p.RotateQ(&q)
+		}
+	})
+	b.Log("\n", m, "\n", n, "\n", q, "\n", o, "\n", p)
+}

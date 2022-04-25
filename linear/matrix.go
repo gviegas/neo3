@@ -2,11 +2,15 @@
 
 package linear
 
+import (
+	"math"
+)
+
 // M3 is a column-major 3x3 matrix of float32.
 type M3 [3]V3
 
 // I makes m an identity matrix.
-func (m *M3) I() { *m = M3{{1}, {0, 1}, {0, 0, 1}} }
+func (m *M3) I() { *m = M3{{1}, {1: 1}, {2: 1}} }
 
 // Mul sets m to contain l ⋅ r.
 func (m *M3) Mul(l, r *M3) {
@@ -50,11 +54,56 @@ func (m *M3) Invert(n *M3) {
 	*m = h
 }
 
+// Scale sets m to contain a scale in the x, y and z axe.
+func (m *M3) Scale(x, y, z float32) { *m = M3{{x}, {1: y}, {2: z}} }
+
+// Rotate sets m to contain a rotation of angle radians
+// around axis.
+func (m *M3) Rotate(angle float32, axis *V3) {
+	var v V3
+	v.Norm(axis)
+	x, y, z := v[0], v[1], v[2]
+	xx, yy, zz := x*x, y*y, z*z
+	c := float32(math.Cos(float64(angle)))
+	s := float32(math.Sin(float64(angle)))
+	ic := 1 - c
+	icxy, icxz, icyz := ic*x*y, ic*x*z, ic*y*z
+	sx, sy, sz := s*x, s*y, s*z
+	m[0][0] = c + ic*xx
+	m[0][1] = icxy + sz
+	m[0][2] = icxz - sy
+	m[1][0] = icxy - sz
+	m[1][1] = c + ic*yy
+	m[1][2] = icyz + sx
+	m[2][0] = icxz + sy
+	m[2][1] = icyz - sx
+	m[2][2] = c + ic*zz
+}
+
+// RotateQ sets m to contain the rotation that q describes.
+func (m *M3) RotateQ(q *Q) {
+	v := V4{q.V[0], q.V[1], q.V[2], q.R}
+	v.Norm(&v)
+	x, y, z, w := v[0], v[1], v[2], v[3]
+	xx2, xy2, xz2, xw2 := 2*x*x, 2*x*y, 2*x*z, 2*x*w
+	yy2, yz2, yw2 := 2*y*y, 2*y*z, 2*y*w
+	zz2, zw2 := 2*z*z, 2*z*w
+	m[0][0] = 1 - yy2 - zz2
+	m[0][1] = xy2 + zw2
+	m[0][2] = xz2 - yw2
+	m[1][0] = xy2 - zw2
+	m[1][1] = 1 - xx2 - zz2
+	m[1][2] = yz2 + xw2
+	m[2][0] = xz2 + yw2
+	m[2][1] = yz2 - xw2
+	m[2][2] = 1 - xx2 - yy2
+}
+
 // M4 is a column-major 4x4 matrix of float32.
 type M4 [4]V4
 
 // I makes m an identity matrix.
-func (m *M4) I() { *m = M4{{1}, {0, 1}, {0, 0, 1}, {0, 0, 0, 1}} }
+func (m *M4) I() { *m = M4{{1}, {1: 1}, {2: 1}, {3: 1}} }
 
 // Mul sets m to contain l ⋅ r.
 func (m *M4) Mul(l, r *M4) {
@@ -112,4 +161,62 @@ func (m *M4) Invert(n *M4) {
 	h[3][2] = (-s3*n[3][0] + s1*n[3][1] - s0*n[3][2]) * idet
 	h[3][3] = (s3*n[2][0] - s1*n[2][1] + s0*n[2][2]) * idet
 	*m = h
+}
+
+// Scale sets m to contain a scale in the x, y and z axe.
+func (m *M4) Scale(x, y, z float32) { *m = M4{{x}, {1: y}, {2: z}, {3: 1}} }
+
+// Rotate sets m to contain a rotation of angle radians
+// around axis.
+func (m *M4) Rotate(angle float32, axis *V3) {
+	var v V3
+	v.Norm(axis)
+	x, y, z := v[0], v[1], v[2]
+	xx, yy, zz := x*x, y*y, z*z
+	c := float32(math.Cos(float64(angle)))
+	s := float32(math.Sin(float64(angle)))
+	ic := 1 - c
+	icxy, icxz, icyz := ic*x*y, ic*x*z, ic*y*z
+	sx, sy, sz := s*x, s*y, s*z
+	m[0][0] = c + ic*xx
+	m[0][1] = icxy + sz
+	m[0][2] = icxz - sy
+	m[0][3] = 0
+	m[1][0] = icxy - sz
+	m[1][1] = c + ic*yy
+	m[1][2] = icyz + sx
+	m[1][3] = 0
+	m[2][0] = icxz + sy
+	m[2][1] = icyz - sx
+	m[2][2] = c + ic*zz
+	m[2][3] = 0
+	m[3] = V4{0, 0, 0, 1}
+}
+
+// RotateQ sets m to contain the rotation that q describes.
+func (m *M4) RotateQ(q *Q) {
+	v := V4{q.V[0], q.V[1], q.V[2], q.R}
+	v.Norm(&v)
+	x, y, z, w := v[0], v[1], v[2], v[3]
+	xx2, xy2, xz2, xw2 := 2*x*x, 2*x*y, 2*x*z, 2*x*w
+	yy2, yz2, yw2 := 2*y*y, 2*y*z, 2*y*w
+	zz2, zw2 := 2*z*z, 2*z*w
+	m[0][0] = 1 - yy2 - zz2
+	m[0][1] = xy2 + zw2
+	m[0][2] = xz2 - yw2
+	m[0][3] = 0
+	m[1][0] = xy2 - zw2
+	m[1][1] = 1 - xx2 - zz2
+	m[1][2] = yz2 + xw2
+	m[1][3] = 0
+	m[2][0] = xz2 + yw2
+	m[2][1] = yz2 - xw2
+	m[2][2] = 1 - xx2 - yy2
+	m[2][3] = 0
+	m[3] = V4{0, 0, 0, 1}
+}
+
+// Translate sets m to contain a translation in the x, y and z axe.
+func (m *M4) Translate(x, y, z float32) {
+	*m = M4{{1}, {1: 1}, {2: 1}, {x, y, z, 1}}
 }
