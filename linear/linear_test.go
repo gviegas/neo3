@@ -114,3 +114,23 @@ func TestQ(t *testing.T) {
 		t.Fatalf("Q.Mul\nhave %v\nwant {[6 0 0] 8}", q)
 	}
 }
+
+func TestTRS(t *testing.T) {
+	var x, r, s M4
+	var q Q
+
+	x.Translate(-1, -2, -3)
+	q.Rotate(0, &V3{1})
+	r.RotateQ(&q)
+	s.Scale(5, 5, 5)
+	x.Mul(&x, &r)
+	x.Mul(&x, &s)
+	if x != (M4{{5}, {1: 5}, {2: 5}, {-1, -2, -3, 1}}) {
+		t.Fatalf("T*R*S\nhave %v\nwant %v", x, M4{{5}, {1: 5}, {2: 5}, {-1, -2, -3, 1}})
+	}
+	v := V4{1, 1, 1, 1}
+	v.Mul(&x, &v)
+	if v != (V4{4, 3, 2, 1}) {
+		t.Fatalf("TRS*v\nhave %v\nwant %v", v, V4{4, 3, 2, 1})
+	}
+}
