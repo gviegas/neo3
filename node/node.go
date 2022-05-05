@@ -1,6 +1,7 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
-package scene
+// Package node provides the elements of the scene graph.
+package node
 
 // Node represents a single node in a scene graph.
 // Nodes have at most one immediate ancestor and

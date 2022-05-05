@@ -1,6 +1,6 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
-package scene
+package node
 
 import (
 	"fmt"
