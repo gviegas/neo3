@@ -72,11 +72,11 @@ func (n *Node) testRemove(t *testing.T) {
 }
 
 func TestNode(t *testing.T) {
-	n1 := NewNode()
-	n2 := NewNode()
-	n3 := NewNode()
-	n4 := NewNode()
-	n5 := NewNode()
+	n1 := New()
+	n2 := New()
+	n3 := New()
+	n4 := New()
+	n5 := New()
 	n1.Name = "n1"
 	n2.Name = "n2"
 	n3.Name = "n3"

@@ -16,8 +16,8 @@ type Node struct {
 	Name string
 }
 
-// NewNode creates an initialized node.
-func NewNode() *Node { return new(Node).Init() }
+// New creates an initialized node.
+func New() *Node { return new(Node).Init() }
 
 // Init initializes node n.
 // TODO: This is expected to be necessary when
