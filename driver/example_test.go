@@ -1,0 +1,464 @@
+// Copyright 2022 Gustavo C. Viegas. All rights reserved.
+
+package driver_test
+
+import (
+	"bytes"
+	"image"
+	"image/png"
+	"log"
+	"os"
+	"unsafe"
+
+	"github.com/gviegas/scene/driver"
+	_ "github.com/gviegas/scene/driver/vk"
+)
+
+// driver.Driver implementation, set by GPU func.
+var drv driver.Driver
+
+// Vertex and fragment shaders, set by GPU func.
+// Shaders are platform-specific.
+var shd [2]struct {
+	fileName, funcName string
+}
+
+// GPU initializes a driver.Driver to obtain a driver.GPU.
+func GPU() driver.GPU {
+	drivers := driver.Drivers()
+drvLoop:
+	for i := range drivers {
+		switch drivers[i].Name() {
+		case "vulkan1.2":
+			drv = drivers[i]
+			shd[0].fileName = "triangle_vs.spv"
+			shd[0].funcName = "main"
+			shd[1].fileName = "triangle_fs.spv"
+			shd[1].funcName = "main"
+			break drvLoop
+		}
+	}
+	if drv == nil {
+		log.Fatal("driver.Drivers(): driver not found")
+	}
+	gpu, err := drv.Open()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return gpu
+}
+
+// Vertex positions for the triangle (CCW).
+var trianglePos = [9]float32{
+	-1.0, +1.0, +0.5,
+	+1.0, +1.0, +0.5,
+	-0.0, -1.0, +0.5,
+}
+
+// Vertex colors for the triangle.
+var triangleCol = [12]float32{
+	0.0, 0.0, 0.1, 1.0,
+	0.0, 0.0, 0.7, 1.0,
+	0.0, 0.0, 0.4, 1.0,
+}
+
+// Transform for the triangle (column-major).
+var triangleM = [16]float32{
+	0.8, 0.0, 0.0, 0.0,
+	0.0, 0.8, 0.0, 0.0,
+	0.0, 0.0, 0.8, 0.0,
+	0.0, 0.0, 0.0, 1.0,
+}
+
+// Example_draw renders a triangle and outputs the
+// result to a file.
+func Example_draw() {
+	// Obtain a driver.GPU.
+	gpu := GPU()
+	defer drv.Close()
+
+	// Create a buffer to store vertex data and constant data for
+	// shaders, then copy trianglePos, triangleCol and triangleM
+	// to its memory.
+	buf, err := gpu.NewBuffer(2<<10, true, driver.UShaderConst|driver.UVertexData)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer buf.Destroy()
+	p := buf.Bytes()
+	npos := unsafe.Sizeof(trianglePos)
+	pos := unsafe.Slice((*byte)(unsafe.Pointer(&trianglePos[0])), npos)
+	copy(p, pos)
+	ncol := unsafe.Sizeof(triangleCol)
+	col := unsafe.Slice((*byte)(unsafe.Pointer(&triangleCol[0])), ncol)
+	copy(p[npos:], col)
+	offm := 1024
+	nm := unsafe.Sizeof(triangleM)
+	m := unsafe.Slice((*byte)(unsafe.Pointer(&triangleM[0])), nm)
+	copy(p[offm:], m)
+
+	// Create an image resource and a 2D image view to use as
+	// render target.
+	pf := driver.RGBA8un
+	psz := 4
+	dim := driver.Dim3D{
+		Width:  512,
+		Height: 512,
+		Depth:  1,
+	}
+	img, err := gpu.NewImage(pf, dim, 1, 1, 1, driver.URenderTarget)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer img.Destroy()
+	view, err := img.NewView(driver.IView2D, 0, 1, 0, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer view.Destroy()
+
+	// Create a render pass and framebuffer for drawing.
+	// To draw the triangle, a single color attachment and
+	// subpass suffices.
+	// The contents are stored at the end of the subpass so
+	// we can copy it to CPU memory later.
+	att := driver.Attachment{
+		Format:  pf,
+		Samples: 1,
+		Load:    [2]driver.LoadOp{driver.LClear},
+		Store:   [2]driver.StoreOp{driver.SStore},
+	}
+	subp := driver.Subpass{
+		Color: []int{0},
+		DS:    -1,
+		MSR:   nil,
+		Wait:  false,
+	}
+	pass, err := gpu.NewRenderPass([]driver.Attachment{att}, []driver.Subpass{subp})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer pass.Destroy()
+	fb, err := pass.NewFB([]driver.ImageView{view}, dim.Width, dim.Height, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer fb.Destroy()
+
+	// Create vertex and fragment shader binaries.
+	// These are simple pass-through shaders.
+	bb := bytes.Buffer{}
+	scode := [2]driver.ShaderCode{}
+	for i := range scode {
+		file, err := os.Open("testdata/" + shd[i].fileName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+		_, err = bb.ReadFrom(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+		scode[i], err = gpu.NewShaderCode(bb.Bytes())
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer scode[i].Destroy()
+		bb.Reset()
+	}
+
+	// Define descriptors, create a descriptor heap and
+	// a descriptor table.
+	dconst := driver.Descriptor{
+		Type:   driver.DConstant,
+		Stages: driver.SVertex,
+		Nr:     0,
+		Len:    1,
+	}
+	dheap, err := gpu.NewDescHeap([]driver.Descriptor{dconst})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dheap.Destroy()
+	dtab, err := gpu.NewDescTable([]driver.DescHeap{dheap})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer dtab.Destroy()
+	// Since we are rendering a single instance of the triangle,
+	// one copy of the descriptor heap is enough.
+	err = dheap.New(1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	dheap.SetBuffer(0, 0, 0, []driver.Buffer{buf}, []int64{int64(offm)}, []int64{int64(nm)})
+
+	// Define states and create a graphics pipeline.
+	// The bulk of the configuration is done here.
+	gs := driver.GraphState{
+		VertFunc: driver.ShaderFunc{
+			Code: scode[0],
+			Name: shd[0].funcName,
+		},
+		FragFunc: driver.ShaderFunc{
+			Code: scode[1],
+			Name: shd[1].funcName,
+		},
+		Desc: dtab,
+		Input: []driver.VertexIn{
+			{
+				Format: driver.Float32x3,
+				Stride: 4 * 3,
+				Nr:     0,
+				Name:   "POSITION",
+			},
+			{
+				Format: driver.Float32x4,
+				Stride: 4 * 4,
+				Nr:     1,
+				Name:   "COLOR",
+			},
+		},
+		Topology: driver.TTriangle,
+		Raster: driver.RasterState{
+			Clockwise: false,
+			Cull:      driver.CBack,
+			Fill:      driver.FFill,
+			DepthBias: false,
+		},
+		Samples: 1,
+		DS: driver.DSState{
+			DepthTest:   false,
+			DepthWrite:  false,
+			StencilTest: false,
+		},
+		Blend: driver.BlendState{
+			IndependentBlend: false,
+			Color: []driver.ColorBlend{
+				{
+					Blend:     true,
+					WriteMask: driver.CAll,
+					Op:        [2]driver.BlendOp{driver.BSubtract, driver.BAdd},
+					SrcFac:    [2]driver.BlendFac{driver.BBlendColor, driver.BOne},
+					DstFac:    [2]driver.BlendFac{driver.BDstColor, driver.BOne},
+				},
+			},
+		},
+		Pass:    pass,
+		Subpass: 0,
+	}
+	pl, err := gpu.NewPipeline(&gs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer pl.Destroy()
+
+	// Create a second buffer to copy image data into.
+	// Image memory is GPU-private, so a staging buffer is required
+	// if we are going to access image data from the CPU side.
+	cpy, err := gpu.NewBuffer(int64(dim.Width*dim.Height*dim.Depth*psz), true, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cpy.Destroy()
+
+	// Create a command buffer and record commands.
+	//
+	// We record two top-level commands:
+	// 	1. a render pass command that draws the triangle and
+	// 	2. a blit command that copies the results to a buffer
+	// 		accessible from the CPU side.
+	//
+	// The blit command is set to wait for the render pass
+	// to complete before it starts the copy.
+	cb, err := gpu.NewCmdBuffer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	cache := driver.CmdCache{}
+	cache.Pass = []driver.PassCmd{
+		{
+			Pass: pass,
+			FB:   fb,
+			Clear: []driver.ClearValue{
+				{
+					Color: [4]float32{1.0, 1.0, 0.0, 1.0},
+				},
+			},
+			SubCmd: []int{0},
+		},
+	}
+	cache.Subpass = []driver.SubpassCmd{
+		{
+			[]driver.Command{
+				{
+					Type:  driver.CPipeline,
+					Index: 0,
+				},
+				{
+					Type:  driver.CViewport,
+					Index: 0,
+				},
+				{
+					Type:  driver.CScissor,
+					Index: 0,
+				},
+				{
+					Type:  driver.CBlendColor,
+					Index: 0,
+				},
+				{
+					Type:  driver.CVertexBuf,
+					Index: 0,
+				},
+				{
+					Type:  driver.CDescTable,
+					Index: 0,
+				},
+				{
+					Type:  driver.CDraw,
+					Index: 0,
+				},
+			},
+		},
+	}
+	cache.Pipeline = []driver.PipelineCmd{
+		{
+			PL: pl,
+		},
+	}
+	cache.Viewport = []driver.ViewportCmd{
+		{
+			VP: []driver.Viewport{
+				{
+					X:      0,
+					Y:      0,
+					Width:  float32(dim.Width),
+					Height: float32(dim.Height),
+					Znear:  0,
+					Zfar:   1,
+				},
+			},
+		},
+	}
+	cache.Scissor = []driver.ScissorCmd{
+		{
+			S: []driver.Scissor{
+				{
+					X:      0,
+					Y:      0,
+					Width:  dim.Width,
+					Height: dim.Height,
+				},
+			},
+		},
+	}
+	cache.BlendColor = []driver.BlendColorCmd{
+		{
+			R: 0,
+			G: 0,
+			B: 0.75,
+			A: 0,
+		},
+	}
+	cache.VertexBuf = []driver.VertexBufCmd{
+		{
+			Start: 0,
+			Buf:   []driver.Buffer{buf, buf},
+			Off:   []int64{0, int64(npos)},
+		},
+	}
+	cache.DescTable = []driver.DescTableCmd{
+		{
+			Desc:  dtab,
+			Start: 0,
+			Copy:  []int{0},
+		},
+	}
+	cache.Draw = []driver.DrawCmd{
+		{
+			VertCount: 3,
+			InstCount: 1,
+			BaseVert:  0,
+			BaseInst:  0,
+		},
+	}
+	cache.Blit = []driver.BlitCmd{
+		{
+			Wait: true,
+			Cmd: []driver.Command{
+				{
+					Type:  driver.CImgBufCopy,
+					Index: 0,
+				},
+			},
+		},
+	}
+	cache.ImgBufCopy = []driver.ImgBufCopyCmd{
+		{
+			Buf:    cpy,
+			BufOff: 0,
+			// Stride is given in pixels, not bytes.
+			Stride: [2]int64{int64(dim.Width), int64(dim.Height)},
+			Img:    img,
+			ImgOff: driver.Off3D{},
+			Layer:  0,
+			Level:  0,
+			Size:   dim,
+		},
+	}
+	// Note that this order is only meaningful because the
+	// blit command explicitly waits that previous commands
+	// finish before starting to execute.
+	cmd := []driver.Command{
+		{
+			Type:  driver.CPass,
+			Index: 0,
+		},
+		{
+			Type:  driver.CBlit,
+			Index: 0,
+		},
+	}
+	err = cb.Record(cmd, &cache)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// End must be called before commiting the command buffer
+	// to the GPU.
+	// Recording into a command buffer that was ended and not
+	// commited/reset is an error.
+	err = cb.End()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Commit the command buffer.
+	// When Commit completes execution of the commands, it sends
+	// the result to the provided channel. Only then the command
+	// buffers can receive new recordings.
+	ch := make(chan error)
+	go gpu.Commit([]driver.CmdBuffer{cb}, ch)
+	err = <-ch
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Write the results to file.
+	// Since the image uses a 8-bpc RGBA format and the data in the
+	// staging buffer is tightly packed, we can just copy the buffer
+	// contents directly.
+	nrgba := image.NewNRGBA(image.Rect(0, 0, dim.Width, dim.Height))
+	copy(nrgba.Pix, cpy.Bytes())
+	file, err := os.Create("testdata/triangle.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = png.Encode(file, nrgba)
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Close()
+
+	// Output:
+}

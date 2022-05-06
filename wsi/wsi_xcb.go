@@ -1,0 +1,560 @@
+// Copyright 2022 Gustavo C. Viegas. All rights reserved.
+
+//go:build !android && !darwin && !windows
+
+package wsi
+
+// #cgo linux LDFLAGS: -ldl
+// #include <dlfcn.h>
+// #include <stdlib.h>
+// #include <string.h>
+// #include <wsi_xcb.h>
+import "C"
+
+import (
+	"errors"
+	"unsafe"
+)
+
+// Handle for the shared object.
+var hXCB unsafe.Pointer
+
+// Common XCB variables.
+var (
+	connXCB      *C.xcb_connection_t
+	visualXCB    C.xcb_visualid_t
+	rootXCB      C.xcb_window_t
+	whitePixXCB  C.uint32_t
+	blackPixXCB  C.uint32_t
+	protoAtomXCB C.xcb_atom_t
+	delAtomXCB   C.xcb_atom_t
+	titleAtomXCB C.xcb_atom_t
+	utf8AtomXCB  C.xcb_atom_t
+	classAtomXCB C.xcb_atom_t
+)
+
+// openXCB opens the shared library and gets function pointers.
+// It is not safe to call any of the C wrappers unless this
+// function succeeds.
+func openXCB() error {
+	if hXCB == nil {
+		lib := C.CString("libxcb.so")
+		defer C.free(unsafe.Pointer(lib))
+		hXCB := C.dlopen(lib, C.RTLD_LAZY|C.RTLD_GLOBAL)
+		if hXCB == nil {
+			return errors.New("failed to open libxcb")
+		}
+		for i := range C.nameXCB {
+			C.ptrXCB[i] = C.dlsym(hXCB, C.nameXCB[i])
+			if C.ptrXCB[i] == nil {
+				C.dlclose(hXCB)
+				hXCB = nil
+				return errors.New("failed to fetch XCB symbol")
+			}
+		}
+	}
+	return nil
+}
+
+// closeXCB closes the shared library.
+// It is not safe to call any of the C wrappers after
+// calling this function.
+func closeXCB() {
+	if hXCB != nil {
+		C.dlclose(hXCB)
+		hXCB = nil
+	}
+}
+
+// initXCB calls openXCB to open the shared library,
+// initializes a connection and sets variables.
+func initXCB() error {
+	if connXCB != nil {
+		return nil
+	}
+	if err := openXCB(); err != nil {
+		return err
+	}
+
+	connXCB = C.connectXCB(nil, nil)
+	if res := C.connectionHasErrorXCB(connXCB); res != 0 {
+		if connXCB != nil {
+			C.disconnectXCB(connXCB)
+			connXCB = nil
+		}
+		return errors.New("connectXCB failed")
+	}
+	setup := C.getSetupXCB(connXCB)
+	if setup == nil {
+		C.disconnectXCB(connXCB)
+		connXCB = nil
+		return errors.New("getSetupXCB failed")
+	}
+	screenIt := C.setupRootsIteratorXCB(setup)
+	visualXCB = screenIt.data.root_visual
+	rootXCB = screenIt.data.root
+	whitePixXCB = screenIt.data.white_pixel
+	blackPixXCB = screenIt.data.black_pixel
+
+	var genErr *C.xcb_generic_error_t
+
+	atoms := [...]struct {
+		name *C.char
+		dst  *C.xcb_atom_t
+	}{
+		{C.CString("WM_PROTOCOLS"), &protoAtomXCB},
+		{C.CString("WM_DELETE_WINDOW"), &delAtomXCB},
+		{C.CString("WM_NAME"), &titleAtomXCB},
+		{C.CString("UTF8_STRING"), &utf8AtomXCB},
+		{C.CString("WM_CLASS"), &classAtomXCB},
+	}
+	for i := range atoms {
+		defer C.free(unsafe.Pointer(atoms[i].name))
+		nameLen := C.uint16_t(C.strlen(atoms[i].name))
+		cookie := C.internAtomXCB(connXCB, 0, nameLen, atoms[i].name)
+		reply := C.internAtomReplyXCB(connXCB, cookie, &genErr)
+		defer C.free(unsafe.Pointer(reply))
+		if genErr != nil || reply == nil {
+			C.free(unsafe.Pointer(genErr))
+			C.disconnectXCB(connXCB)
+			connXCB = nil
+			return errors.New("internAtomXCB failed")
+		}
+		*atoms[i].dst = reply.atom
+	}
+
+	valMask := C.uint32_t(C.XCB_KB_AUTO_REPEAT_MODE)
+	valList := C.uint32_t(C.XCB_AUTO_REPEAT_MODE_OFF)
+	cookie := C.changeKeyboardControlCheckedXCB(connXCB, valMask, unsafe.Pointer(&valList))
+	genErr = C.requestCheckXCB(connXCB, cookie)
+	if genErr != nil {
+		C.free(unsafe.Pointer(genErr))
+		C.disconnectXCB(connXCB)
+		connXCB = nil
+		return errors.New("changeKeyboardControlCheckedXCB failed")
+	}
+
+	if C.flushXCB(connXCB) <= 0 {
+		C.disconnectXCB(connXCB)
+		connXCB = nil
+		return errors.New("flushXCB failed")
+	}
+
+	newWindow = newWindowXCB
+	dispatch = dispatchXCB
+	setAppName = setAppNameXCB
+	platform = XCB
+	return nil
+}
+
+// deinitXCB terminates the connection and calls closeXCB
+// to close the shared library.
+func deinitXCB() {
+	if windowCount > 0 {
+		for _, w := range createdWindows {
+			if w != nil {
+				w.Close()
+			}
+		}
+	}
+	if connXCB != nil {
+		C.disconnectXCB(connXCB)
+		connXCB = nil
+	}
+	closeXCB()
+	initDummy()
+}
+
+// windowXCB implements Window.
+type windowXCB struct {
+	id     C.xcb_window_t
+	width  int
+	height int
+	title  string
+	mapped bool
+}
+
+// newWindowXCB creates a new window.
+func newWindowXCB(width, height int, title string) (Window, error) {
+	id := C.generateIdXCB(connXCB)
+	wdt := C.uint16_t(width)
+	hgt := C.uint16_t(height)
+	wclass := C.uint16_t(C.XCB_WINDOW_CLASS_INPUT_OUTPUT)
+	valMask := C.uint32_t(C.XCB_CW_BACK_PIXEL | C.XCB_CW_EVENT_MASK)
+	valList := [2]C.uint32_t{
+		0: whitePixXCB,
+		1: C.XCB_EVENT_MASK_KEY_PRESS | C.XCB_EVENT_MASK_KEY_RELEASE | C.XCB_EVENT_MASK_BUTTON_PRESS | C.XCB_EVENT_MASK_BUTTON_RELEASE |
+			C.XCB_EVENT_MASK_ENTER_WINDOW | C.XCB_EVENT_MASK_LEAVE_WINDOW | C.XCB_EVENT_MASK_POINTER_MOTION | C.XCB_EVENT_MASK_BUTTON_MOTION |
+			C.XCB_EVENT_MASK_EXPOSURE | C.XCB_EVENT_MASK_STRUCTURE_NOTIFY | C.XCB_EVENT_MASK_FOCUS_CHANGE,
+	}
+	cookie := C.createWindowCheckedXCB(connXCB, 0, id, rootXCB, 0, 0, wdt, hgt, 0, wclass, visualXCB, valMask, unsafe.Pointer(&valList[0]))
+	genErr := C.requestCheckXCB(connXCB, cookie)
+	if genErr != nil {
+		C.free(unsafe.Pointer(genErr))
+		if id != 0 {
+			C.destroyWindowXCB(connXCB, id)
+		}
+		return nil, errors.New("createWindowCheckedXCB failed")
+	}
+
+	if err := setTitleXCB(title, id); err != nil {
+		C.destroyWindowXCB(connXCB, id)
+		return nil, err
+	}
+	class := [2]string{"", ""}
+	if err := setClassXCB(class, id); err != nil {
+		C.destroyWindowXCB(connXCB, id)
+		return nil, err
+	}
+	if err := setDeleteXCB(true, id); err != nil {
+		C.destroyWindowXCB(connXCB, id)
+		return nil, err
+	}
+
+	return &windowXCB{
+		id:     id,
+		width:  width,
+		height: height,
+		title:  title,
+		mapped: false,
+	}, nil
+}
+
+// Map makes the window visible.
+func (w *windowXCB) Map() error {
+	if w.mapped {
+		return nil
+	}
+	cookie := C.mapWindowCheckedXCB(connXCB, w.id)
+	genErr := C.requestCheckXCB(connXCB, cookie)
+	if genErr != nil {
+		C.free(unsafe.Pointer(genErr))
+		return errors.New("mapWindowCheckedXCB failed")
+	}
+	w.mapped = true
+	return nil
+}
+
+// Unmap hides the window.
+func (w *windowXCB) Unmap() error {
+	if !w.mapped {
+		return nil
+	}
+	cookie := C.unmapWindowCheckedXCB(connXCB, w.id)
+	genErr := C.requestCheckXCB(connXCB, cookie)
+	if genErr != nil {
+		C.free(unsafe.Pointer(genErr))
+		return errors.New("unmapWindowCheckedXCB failed")
+	}
+	w.mapped = false
+	return nil
+}
+
+// Resize resizes the window.
+func (w *windowXCB) Resize(width, height int) error {
+	if width <= 0 || height <= 0 {
+		return errors.New("width/height less than or equal 0")
+	}
+	if width == w.width && height == w.height {
+		return nil
+	}
+	valMask := C.uint32_t(C.XCB_CONFIG_WINDOW_WIDTH | C.XCB_CONFIG_WINDOW_HEIGHT)
+	valList := [2]C.uint32_t{C.uint32_t(width), C.uint32_t(height)}
+	cookie := C.configureWindowCheckedXCB(connXCB, w.id, valMask, unsafe.Pointer(&valList[0]))
+	genErr := C.requestCheckXCB(connXCB, cookie)
+	if genErr != nil {
+		C.free(unsafe.Pointer(genErr))
+		return errors.New("configureWindowCheckedXCB failed")
+	}
+	w.width = width
+	w.height = height
+	return nil
+}
+
+// SetTitle sets the title.
+func (w *windowXCB) SetTitle(title string) error {
+	if title != w.title {
+		return setTitleXCB(title, w.id)
+	}
+	return nil
+}
+
+// Close closes the window.
+func (w *windowXCB) Close() {
+	if w != nil {
+		closeWindow(w)
+		if connXCB != nil {
+			C.destroyWindowXCB(connXCB, w.id)
+		}
+		*w = windowXCB{}
+	}
+}
+
+// Width returns the window's width.
+func (w *windowXCB) Width() int { return w.width }
+
+// Height returns the windows's height.
+func (w *windowXCB) Height() int { return w.height }
+
+// Title returns the window's title.
+func (w *windowXCB) Title() string { return w.title }
+
+// setTitleXCB sets the title of the given window.
+func setTitleXCB(title string, id C.xcb_window_t) error {
+	s := C.CString(title)
+	defer C.free(unsafe.Pointer(s))
+	slen := C.uint32_t(C.strlen(s))
+	cookie := C.changePropertyCheckedXCB(connXCB, C.XCB_PROP_MODE_REPLACE, id, titleAtomXCB, utf8AtomXCB, 8, slen, unsafe.Pointer(s))
+	genErr := C.requestCheckXCB(connXCB, cookie)
+	if genErr != nil {
+		C.free(unsafe.Pointer(genErr))
+		return errors.New("changePropertyCheckedXCB failed")
+	}
+	return nil
+}
+
+// setClassXCB sets the class of the given window.
+func setClassXCB(class [2]string, id C.xcb_window_t) error {
+	var s []byte
+	if len(class[0]) > 0 {
+		s = append(s, class[0]...)
+	}
+	s = append(s, 0)
+	s = append(s, class[1]...)
+	s = append(s, 0)
+	slen := C.uint32_t(len(s))
+	cookie := C.changePropertyCheckedXCB(connXCB, C.XCB_PROP_MODE_REPLACE, id, classAtomXCB, C.XCB_ATOM_STRING, 8, slen, unsafe.Pointer(&s[0]))
+	genErr := C.requestCheckXCB(connXCB, cookie)
+	if genErr != nil {
+		C.free(unsafe.Pointer(genErr))
+		return errors.New("changePropertyCheckedXCB failed")
+	}
+	return nil
+}
+
+// setDeleteXCB sets the delete property of the given window.
+func setDeleteXCB(t bool, id C.xcb_window_t) error {
+	var atom C.xcb_atom_t
+	if t {
+		atom = delAtomXCB
+	} else {
+		atom = C.XCB_ATOM_NONE
+	}
+	cookie := C.changePropertyCheckedXCB(connXCB, C.XCB_PROP_MODE_REPLACE, id, protoAtomXCB, C.XCB_ATOM_ATOM, 32, 1, unsafe.Pointer(&atom))
+	genErr := C.requestCheckXCB(connXCB, cookie)
+	if genErr != nil {
+		C.free(unsafe.Pointer(genErr))
+		return errors.New("changePropertyCheckedXCB failed")
+	}
+	return nil
+}
+
+// pollXCB process the next event.
+// It returns false if no events are available.
+func pollXCB() bool {
+	event := C.pollForEventXCB(connXCB)
+	if event != nil {
+		defer C.free(unsafe.Pointer(event))
+		typ := event.response_type & 127
+		switch typ {
+		case C.XCB_KEY_PRESS, C.XCB_KEY_RELEASE:
+			keyEventXCB(event)
+		case C.XCB_BUTTON_PRESS, C.XCB_BUTTON_RELEASE:
+			buttonEventXCB(event)
+		case C.XCB_MOTION_NOTIFY:
+			motionEventXCB(event)
+		case C.XCB_ENTER_NOTIFY:
+			enterEventXCB(event)
+		case C.XCB_LEAVE_NOTIFY:
+			leaveEventXCB(event)
+		case C.XCB_FOCUS_IN:
+			focusInEventXCB(event)
+		case C.XCB_FOCUS_OUT:
+			focusOutXCB(event)
+		case C.XCB_EXPOSE:
+			// TODO
+		case C.XCB_CONFIGURE_NOTIFY:
+			configureEventXCB(event)
+		case C.XCB_CLIENT_MESSAGE:
+			clientEventXCB(event)
+		}
+		return true
+	}
+	return false
+}
+
+// windowFromXCB returns the window in createdWindows
+// whose id field matches id, or nil if none does.
+func windowFromXCB(id C.xcb_window_t) Window {
+	for _, w := range createdWindows {
+		if w != nil && w.(*windowXCB).id == id {
+			return w
+		}
+	}
+	return nil
+}
+
+var (
+	evtStateXCB C.uint16_t
+	modMaskXCB  Modifier
+)
+
+// keyEventXCB handles key press/release events.
+func keyEventXCB(event *C.xcb_generic_event_t) {
+	evt := (*C.xcb_key_press_event_t)(unsafe.Pointer(event))
+	if evt.state != evtStateXCB {
+		modMaskXCB = 0
+		if evt.state&C.XCB_MOD_MASK_LOCK != 0 {
+			modMaskXCB |= ModCapsLock
+		}
+		if evt.state&C.XCB_MOD_MASK_SHIFT != 0 {
+			modMaskXCB |= ModShift
+		}
+		if evt.state&C.XCB_MOD_MASK_CONTROL != 0 {
+			modMaskXCB |= ModCtrl
+		}
+		if evt.state&C.XCB_MOD_MASK_1 != 0 {
+			modMaskXCB |= ModAlt
+		}
+		evtStateXCB = evt.state
+	}
+	if keyboardHandler != nil {
+		key := keyFrom(int(evt.detail - 8))
+		pressed := evt.response_type&127 == C.XCB_KEY_PRESS
+		keyboardHandler.KeyboardKey(key, pressed, modMaskXCB)
+	}
+}
+
+// buttonEventXCB handles button press/release events.
+func buttonEventXCB(event *C.xcb_generic_event_t) {
+	if pointerHandler != nil {
+		evt := (*C.xcb_button_press_event_t)(unsafe.Pointer(event))
+		btn := BtnUnknown
+		switch evt.detail {
+		case C.XCB_BUTTON_INDEX_1:
+			btn = BtnLeft
+		case C.XCB_BUTTON_INDEX_2:
+			btn = BtnMiddle
+		case C.XCB_BUTTON_INDEX_3:
+			btn = BtnRight
+		case C.XCB_BUTTON_INDEX_4, C.XCB_BUTTON_INDEX_5:
+			// TODO: Scroll.
+		}
+		pressed := evt.response_type&127 == C.XCB_BUTTON_PRESS
+		x := int(evt.event_x)
+		y := int(evt.event_y)
+		pointerHandler.PointerButton(btn, pressed, x, y)
+	}
+}
+
+// motionEventXCB handles motion notify events.
+func motionEventXCB(event *C.xcb_generic_event_t) {
+	if pointerHandler != nil {
+		evt := (*C.xcb_motion_notify_event_t)(unsafe.Pointer(event))
+		newX := int(evt.event_x)
+		newY := int(evt.event_y)
+		pointerHandler.PointerMotion(newX, newY)
+	}
+}
+
+// enterEventXCB handles enter notify events.
+func enterEventXCB(event *C.xcb_generic_event_t) {
+	if pointerHandler != nil {
+		evt := (*C.xcb_enter_notify_event_t)(unsafe.Pointer(event))
+		win := windowFromXCB(evt.event)
+		x := int(evt.event_x)
+		y := int(evt.event_y)
+		pointerHandler.PointerIn(win, x, y)
+	}
+}
+
+// leaveEventXCB handles leave notify events.
+func leaveEventXCB(event *C.xcb_generic_event_t) {
+	if pointerHandler != nil {
+		evt := (*C.xcb_leave_notify_event_t)(unsafe.Pointer(event))
+		win := windowFromXCB(evt.event)
+		pointerHandler.PointerOut(win)
+	}
+}
+
+// focusInXCB handles focus in events.
+func focusInEventXCB(event *C.xcb_generic_event_t) {
+	if keyboardHandler != nil {
+		evt := (*C.xcb_focus_in_event_t)(unsafe.Pointer(event))
+		win := windowFromXCB(evt.event)
+		keyboardHandler.KeyboardIn(win)
+	}
+}
+
+// focusOutXCB handles focus out events.
+func focusOutXCB(event *C.xcb_generic_event_t) {
+	if keyboardHandler != nil {
+		evt := (*C.xcb_focus_out_event_t)(unsafe.Pointer(event))
+		win := windowFromXCB(evt.event)
+		keyboardHandler.KeyboardOut(win)
+	}
+}
+
+// configureEventXCB handles configure notify events.
+func configureEventXCB(event *C.xcb_generic_event_t) {
+	evt := (*C.xcb_configure_notify_event_t)(unsafe.Pointer(event))
+	win := windowFromXCB(evt.event)
+	newWidth := int(evt.width)
+	newHeight := int(evt.height)
+	if win != nil {
+		win := win.(*windowXCB)
+		win.width = newWidth
+		win.height = newHeight
+	}
+	if windowHandler != nil {
+		windowHandler.WindowResize(win, newWidth, newHeight)
+	}
+}
+
+// clientEventXCB handles client message events.
+func clientEventXCB(event *C.xcb_generic_event_t) {
+	if windowHandler != nil {
+		evt := (*C.xcb_client_message_event_t)(unsafe.Pointer(event))
+		data := *(*C.uint32_t)(unsafe.Pointer(&evt.data))
+		if evt._type == protoAtomXCB && data == delAtomXCB {
+			win := windowFromXCB(evt.window)
+			windowHandler.WindowClose(win)
+		}
+	}
+}
+
+// dispatchXCB dispatches queued events.
+func dispatchXCB() {
+	for pollXCB() {
+	}
+}
+
+// setAppNameXCB updates the string used to identify the
+// application.
+func setAppNameXCB(s string) {
+	class := [2]string{s, s}
+	for _, w := range createdWindows {
+		if w != nil {
+			setClassXCB(class, w.(*windowXCB).id)
+		}
+	}
+}
+
+// ConnXCB returns the XCB connection.
+// It must not be called if XCB is not the platform is use.
+func ConnXCB() unsafe.Pointer { return unsafe.Pointer(connXCB) }
+
+// VisualXCB returns the XCB visual ID.
+// It must not be called if XCB is not the platform is use.
+func VisualXCB() uint32 { return uint32(visualXCB) }
+
+// WindowXCB returns the XCB window ID of the given window.
+// win must refer to a valid window created by NewWindow
+// (note that Close invalidates the window).
+// It must not be called if XCB is not the platform is use.
+func WindowXCB(win Window) uint32 {
+	if win != nil {
+		return uint32(win.(*windowXCB).id)
+	}
+	return 0
+}

@@ -1,0 +1,523 @@
+// Copyright 2022 Gustavo C. Viegas. All rights reserved.
+
+// Package vk implements driver interfaces using the Vulkan API.
+package vk
+
+// #include <stdlib.h>
+// #include <proc.h>
+import "C"
+
+import (
+	"errors"
+	"runtime"
+	"unsafe"
+
+	"github.com/gviegas/scene/driver"
+)
+
+const driverName = "vulkan1.2"
+
+// Driver implements driver.Driver and driver.GPU.
+type Driver struct {
+	proc
+
+	inst  C.VkInstance
+	ivers C.uint32_t
+	pdev  C.VkPhysicalDevice
+	dname string
+	dvers C.uint32_t
+	dev   C.VkDevice
+	ques  []C.VkQueue
+	qfam  C.uint32_t
+
+	// Channel for ques[qfam] synchronization.
+	// Queue submission requires that the queue handle
+	// be externally synchronized, thus this is needed
+	// to allow Commit calls to run concurrently.
+	qchan chan int
+
+	// Commit data created in advance.
+	// The capacity of the channel limits the number
+	// of concurrent Commit calls.
+	cdata chan *commitData
+
+	// Enabled extensions, indexed by ext* constants.
+	exts [extN]bool
+
+	// Used device memory, indexed by heap indices.
+	mused []int64
+	mprop C.VkPhysicalDeviceMemoryProperties
+
+	// Limits of pdev.
+	lim driver.Limits
+}
+
+func init() {
+	driver.Register(&Driver{})
+}
+
+// initInstance initializes the Vulkan instance.
+func (d *Driver) initInstance() error {
+	C.getGlobalProcs()
+	info := C.VkInstanceCreateInfo{
+		sType: C.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+	}
+	// info.pApplicationInfo need not be set for v1.0.
+	if C.enumerateInstanceVersion != nil && C.vkEnumerateInstanceVersion(&d.ivers) == C.VK_SUCCESS {
+		appInfo := (*C.VkApplicationInfo)(C.malloc(C.sizeof_VkApplicationInfo))
+		defer C.free(unsafe.Pointer(appInfo))
+		*appInfo = C.VkApplicationInfo{
+			sType:      C.VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			apiVersion: C.VK_API_VERSION_1_2,
+		}
+		info.pApplicationInfo = appInfo
+	} else {
+		d.ivers = C.VK_API_VERSION_1_0
+	}
+	defer d.setInstanceExts(&info)()
+	if err := checkResult(C.vkCreateInstance(&info, nil, &d.inst)); err != nil {
+		return err
+	}
+	C.getInstanceProcs(d.inst)
+	return nil
+}
+
+// errNoDevice means that no suitable device could be found.
+// It is returned by initDevice when there are no devices available or
+// when none of the exposed devices support graphics/compute operations.
+// TODO: Consider moving it to the driver package.
+var errNoDevice = errors.New("no suitable device found")
+
+// initDevice initializes the Vulkan device.
+func (d *Driver) initDevice() error {
+	var n C.uint32_t
+	if err := checkResult(C.vkEnumeratePhysicalDevices(d.inst, &n, nil)); err != nil {
+		return err
+	}
+	// The wording in the spec seems to indicate that vkEnumeratePhysicalDevices
+	// need not expose any devices at all. We assume that n could be zero here,
+	// in which case no suitable device can be found.
+	if n == 0 {
+		return errNoDevice
+	}
+	p := (*C.VkPhysicalDevice)(C.malloc(C.sizeof_VkPhysicalDevice * C.size_t(n)))
+	defer C.free(unsafe.Pointer(p))
+	if err := checkResult(C.vkEnumeratePhysicalDevices(d.inst, &n, p)); err != nil {
+		return err
+	}
+
+	devs := unsafe.Slice(p, n)
+	devProps := make([]C.VkPhysicalDeviceProperties, n)
+	queProps := make([][]C.VkQueueFamilyProperties, n)
+	for i, dev := range devs {
+		C.vkGetPhysicalDeviceProperties(dev, &devProps[i])
+		C.vkGetPhysicalDeviceQueueFamilyProperties(dev, &n, nil)
+		p := (*C.VkQueueFamilyProperties)(C.malloc(C.sizeof_VkQueueFamilyProperties * C.size_t(n)))
+		defer C.free(unsafe.Pointer(p))
+		C.vkGetPhysicalDeviceQueueFamilyProperties(dev, &n, p)
+		queProps[i] = unsafe.Slice(p, n)
+	}
+
+	// Select a suitable physical device to use. The bare minimum is a
+	// device with a queue supporting graphics and compute operations.
+	// Ideally, the device will be capable of creating swapchains and
+	// be hardware-accelerated.
+	weight := 0
+	for i, dev := range devs {
+		fam := len(queProps[i])
+		flg := C.VkFlags(C.VK_QUEUE_GRAPHICS_BIT | C.VK_QUEUE_COMPUTE_BIT)
+		for j, qp := range queProps[i] {
+			if qp.queueFlags&flg == flg {
+				fam = j
+				break
+			}
+		}
+		if fam == len(queProps[i]) {
+			// Device does not support graphics/compute operations.
+			continue
+		}
+		wgt := 1
+		if devProps[i].deviceType&(C.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU|C.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) != 0 {
+			wgt++
+		}
+		if exts, err := deviceExts(dev); err == nil {
+			for _, e := range exts {
+				if e == extSwapchainS {
+					wgt += 2
+					break
+				}
+			}
+		}
+		if wgt > weight {
+			d.pdev = dev
+			devProps[i].deviceName[len(devProps[i].deviceName)-1] = 0
+			d.dname = C.GoString(&devProps[i].deviceName[0])
+			d.dvers = devProps[i].apiVersion
+			d.ques = make([]C.VkQueue, len(queProps[i]))
+			d.qfam = C.uint32_t(fam)
+			d.setLimits(&devProps[i].limits)
+			weight = wgt
+		}
+	}
+	if weight == 0 {
+		// None of the exposed devices will suffice.
+		return errNoDevice
+	}
+	C.vkGetPhysicalDeviceMemoryProperties(d.pdev, &d.mprop)
+	d.mused = make([]int64, d.mprop.memoryHeapCount)
+
+	// Create one queue of every family exposed by the device. For graphics
+	// and compute commands, the queue identified by d.qfam will be used.
+	// The remaining queues only exist to increase the likelihood of finding
+	// one that supports presentation.
+	quePrio := (*C.float)(C.malloc(C.sizeof_float))
+	defer C.free(unsafe.Pointer(quePrio))
+	*quePrio = 1.0
+	queInfos := (*C.VkDeviceQueueCreateInfo)(C.malloc(C.sizeof_VkDeviceQueueCreateInfo * C.size_t(len(d.ques))))
+	defer C.free(unsafe.Pointer(queInfos))
+	qis := unsafe.Slice(queInfos, len(d.ques))
+	for i := range qis {
+		qis[i] = C.VkDeviceQueueCreateInfo{
+			sType:            C.VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+			queueFamilyIndex: C.uint32_t(i),
+			queueCount:       1,
+			pQueuePriorities: quePrio,
+		}
+	}
+	info := C.VkDeviceCreateInfo{
+		sType:                C.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+		queueCreateInfoCount: C.uint32_t(len(d.ques)),
+		pQueueCreateInfos:    queInfos,
+	}
+	defer d.setDeviceExts(&info)()
+	defer d.setFeatures(&info)()
+	if err := checkResult(C.vkCreateDevice(d.pdev, &info, nil, &d.dev)); err != nil {
+		return err
+	}
+	C.getDeviceProcs(d.dev)
+	for i := range d.ques {
+		C.vkGetDeviceQueue(d.dev, C.uint32_t(i), 0, &d.ques[i])
+	}
+	return nil
+}
+
+// setLimits sets d.lim.
+func (d *Driver) setLimits(lim *C.VkPhysicalDeviceLimits) {
+	d.lim = driver.Limits{
+		MaxImage1D:   int(lim.maxImageDimension1D),
+		MaxImage2D:   int(lim.maxImageDimension2D),
+		MaxImageCube: int(lim.maxImageDimensionCube),
+		MaxImage3D:   int(lim.maxImageDimension3D),
+		MaxLayers:    int(lim.maxImageArrayLayers),
+
+		MaxDescHeaps:      int(lim.maxBoundDescriptorSets),
+		MaxDBuffer:        int(lim.maxPerStageDescriptorStorageBuffers),
+		MaxDImage:         int(lim.maxPerStageDescriptorStorageImages),
+		MaxDConstant:      int(lim.maxPerStageDescriptorUniformBuffers),
+		MaxDTexture:       int(lim.maxPerStageDescriptorSampledImages),
+		MaxDSampler:       int(lim.maxPerStageDescriptorSamplers),
+		MaxDBufferRange:   int64(lim.maxStorageBufferRange),
+		MaxDConstantRange: int64(lim.maxUniformBufferRange),
+
+		MaxColorTargets: int(lim.maxColorAttachments),
+		MaxFBSize:       [2]int{int(lim.maxFramebufferWidth), int(lim.maxFramebufferHeight)},
+		MaxFBLayers:     int(lim.maxFramebufferLayers),
+		MaxPointSize:    float32(lim.pointSizeRange[1]),
+		MaxViewports:    int(lim.maxViewports),
+
+		MaxVertexIn:   int(lim.maxVertexInputBindings),
+		MaxFragmentIn: int(lim.maxFragmentInputComponents / 4),
+
+		MaxDispatch: [3]int{
+			int(lim.maxComputeWorkGroupCount[0]),
+			int(lim.maxComputeWorkGroupCount[1]),
+			int(lim.maxComputeWorkGroupCount[2]),
+		},
+	}
+}
+
+// setFeatures chooses which features to enable.
+// BUG: Either provide a way in the driver package to check what is
+// enabled or just let device creation fail.
+func (d *Driver) setFeatures(info *C.VkDeviceCreateInfo) (free func()) {
+	var fq C.VkPhysicalDeviceFeatures
+	C.vkGetPhysicalDeviceFeatures(d.pdev, &fq)
+	feat := (*C.VkPhysicalDeviceFeatures)(C.malloc(C.size_t(unsafe.Sizeof(fq))))
+	*feat = C.VkPhysicalDeviceFeatures{
+		fullDrawIndexUint32:                     fq.fullDrawIndexUint32,
+		imageCubeArray:                          fq.imageCubeArray,
+		independentBlend:                        fq.independentBlend,
+		depthBiasClamp:                          fq.depthBiasClamp,
+		fillModeNonSolid:                        fq.fillModeNonSolid,
+		largePoints:                             fq.largePoints,
+		multiViewport:                           fq.multiViewport,
+		samplerAnisotropy:                       fq.samplerAnisotropy,
+		fragmentStoresAndAtomics:                fq.fragmentStoresAndAtomics,
+		shaderUniformBufferArrayDynamicIndexing: fq.shaderUniformBufferArrayDynamicIndexing,
+		shaderSampledImageArrayDynamicIndexing:  fq.shaderSampledImageArrayDynamicIndexing,
+		shaderStorageBufferArrayDynamicIndexing: fq.shaderStorageBufferArrayDynamicIndexing,
+		shaderStorageImageArrayDynamicIndexing:  fq.shaderStorageImageArrayDynamicIndexing,
+		shaderClipDistance:                      fq.shaderClipDistance,
+		shaderCullDistance:                      fq.shaderCullDistance,
+	}
+	info.pEnabledFeatures = feat
+	return func() { C.free(unsafe.Pointer(feat)) }
+}
+
+// Open initializes the driver.
+func (d *Driver) Open() (gpu driver.GPU, err error) {
+	if d.dev != nil {
+		return d, nil
+	}
+	if err = d.open(); err != nil {
+		goto fail
+	}
+	if err = d.initInstance(); err != nil {
+		goto fail
+	}
+	if err = d.initDevice(); err != nil {
+		goto fail
+	}
+	d.qchan = make(chan int, 1)
+	d.cdata = make(chan *commitData, runtime.NumCPU())
+	for i := 0; i < runtime.NumCPU(); i++ {
+		var cd *commitData
+		if cd, err = d.newCommitData(); err != nil {
+			goto fail
+		}
+		d.cdata <- cd
+	}
+	return d, nil
+fail:
+	d.Close()
+	return nil, err
+}
+
+// Name returns the driver name.
+func (d *Driver) Name() string { return driverName }
+
+// Close deinitializes the driver.
+func (d *Driver) Close() {
+	if d == nil {
+		return
+	}
+	if d.dev != nil {
+		C.vkDeviceWaitIdle(d.dev)
+		for len(d.cdata) > 0 {
+			d.destroyCommitData(<-d.cdata)
+		}
+		// TODO: Ensure that all objects created
+		// from d.dev were destroyed.
+		C.vkDestroyDevice(d.dev, nil)
+	}
+	C.vkDestroyInstance(d.inst, nil)
+	d.close()
+	*d = Driver{}
+}
+
+// memory represents a device memory allocation.
+type memory struct {
+	d     *Driver
+	size  int64
+	vis   bool
+	bound bool
+	p     []byte
+	mem   C.VkDeviceMemory
+	typ   int
+	heap  int
+}
+
+// selectMemory selects a suitable memory type from the device.
+// It returns the index of the selected memory, or -1 if none suffices.
+func (d *Driver) selectMemory(typeBits uint, prop C.VkMemoryPropertyFlags) int {
+	for i := 0; i < int(d.mprop.memoryTypeCount); i++ {
+		if 1<<i&typeBits != 0 {
+			flags := d.mprop.memoryTypes[i].propertyFlags
+			if flags&prop == prop {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// newMemory creates a new memory allocation.
+func (d *Driver) newMemory(req C.VkMemoryRequirements, visible bool) (*memory, error) {
+	var prop C.VkMemoryPropertyFlags = C.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	if visible {
+		prop |= C.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | C.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	}
+
+	typ := d.selectMemory(uint(req.memoryTypeBits), prop)
+	if typ == -1 {
+		// Device-local memory is desired but not required.
+		prop &^= C.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	}
+	typ = d.selectMemory(uint(req.memoryTypeBits), prop)
+	if typ == -1 {
+		return nil, errors.New("no suitable memory type found")
+	}
+
+	info := C.VkMemoryAllocateInfo{
+		sType:           C.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		allocationSize:  req.size,
+		memoryTypeIndex: C.uint32_t(typ),
+	}
+	var mem C.VkDeviceMemory
+	if err := checkResult(C.vkAllocateMemory(d.dev, &info, nil, &mem)); err != nil {
+		return nil, err
+	}
+	heap := int(d.mprop.memoryTypes[typ].heapIndex)
+	d.mused[heap] += int64(req.size)
+
+	return &memory{
+		d:    d,
+		size: int64(req.size),
+		vis:  visible,
+		mem:  mem,
+		typ:  typ,
+		heap: heap,
+	}, nil
+}
+
+// mmap maps the memory for host access.
+// The memory must be host visible (m.vis) and must have been bound to a
+// resource (m.bound).
+func (m *memory) mmap() error {
+	if !m.vis {
+		panic("cannot map memory that is not host visible")
+	}
+	if !m.bound {
+		panic("cannot map memory that is not bound to a resource")
+	}
+	if len(m.p) == 0 {
+		var p unsafe.Pointer
+		if err := checkResult(C.vkMapMemory(m.d.dev, m.mem, 0, C.VK_WHOLE_SIZE, 0, &p)); err != nil {
+			return err
+		}
+		m.p = unsafe.Slice((*byte)(p), m.size)
+	}
+	return nil
+}
+
+// unmap unmaps the memory.
+func (m *memory) unmap() {
+	if len(m.p) != 0 {
+		C.vkUnmapMemory(m.d.dev, m.mem)
+		m.p = nil
+	}
+}
+
+// free deallocates and invalidates the memory.
+func (m *memory) free() {
+	if m == nil {
+		return
+	}
+	if m.d != nil {
+		C.vkFreeMemory(m.d.dev, m.mem, nil)
+		m.d.mused[m.heap] -= m.size
+	}
+	*m = memory{}
+}
+
+// Driver returns the receiver (for driver.GPU conformance).
+func (d *Driver) Driver() driver.Driver { return d }
+
+// Limits returns the implementation limits.
+func (d *Driver) Limits() driver.Limits { return d.lim }
+
+// checkResult returns an error derived from a VkResult value.
+// If such value does not indicate an error, it returns nil instead.
+func checkResult(res C.VkResult) error {
+	if res >= 0 {
+		// Not an error: VK_ERROR_* values are all negative.
+		return nil
+	}
+	switch res {
+	case C.VK_ERROR_OUT_OF_HOST_MEMORY:
+		return errNoHostMemory
+	case C.VK_ERROR_OUT_OF_DEVICE_MEMORY:
+		return errNoDeviceMemory
+	case C.VK_ERROR_INITIALIZATION_FAILED:
+		return errInitFailed
+	case C.VK_ERROR_DEVICE_LOST:
+		return errDeviceLost
+	case C.VK_ERROR_MEMORY_MAP_FAILED:
+		return errMMapFailed
+	case C.VK_ERROR_LAYER_NOT_PRESENT:
+		return errNoLayer
+	case C.VK_ERROR_EXTENSION_NOT_PRESENT:
+		return errNoExtension
+	case C.VK_ERROR_FEATURE_NOT_PRESENT:
+		return errNoFeature
+	case C.VK_ERROR_INCOMPATIBLE_DRIVER:
+		return errDriverCompat
+	case C.VK_ERROR_TOO_MANY_OBJECTS:
+		return errTooManyObjects
+	case C.VK_ERROR_FORMAT_NOT_SUPPORTED:
+		return errUnsupportedFormat
+	case C.VK_ERROR_FRAGMENTED_POOL:
+		return errFragmentedPool
+	case C.VK_ERROR_OUT_OF_POOL_MEMORY:
+		return errNoPoolMemory
+	case C.VK_ERROR_INVALID_EXTERNAL_HANDLE:
+		return errExternalHandle
+	case C.VK_ERROR_FRAGMENTATION:
+		return errFragmentation
+	case C.VK_ERROR_SURFACE_LOST_KHR:
+		return errSurfaceLost
+	case C.VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
+		return errWindowInUse
+	case C.VK_ERROR_OUT_OF_DATE_KHR:
+		return errOutOfDate
+	case C.VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
+		return errDisplayCompat
+	}
+	return errUnknown
+}
+
+// Common Vulkan errors (VK_ERROR_*).
+var (
+	errNoHostMemory      = driver.ErrNoHostMemory
+	errNoDeviceMemory    = driver.ErrNoDeviceMemory
+	errInitFailed        = errors.New("initialization failed")
+	errDeviceLost        = driver.ErrFatal
+	errMMapFailed        = errors.New("memory map failed")
+	errNoLayer           = errors.New("layer not present")
+	errNoExtension       = errors.New("extension not present")
+	errNoFeature         = errors.New("feature not present")
+	errDriverCompat      = errors.New("incompatible driver")
+	errTooManyObjects    = errors.New("too many objects")
+	errUnsupportedFormat = errors.New("format not supported")
+	errFragmentedPool    = errors.New("fragmented pool")
+	errUnknown           = errors.New("unknown error")
+	errNoPoolMemory      = errors.New("out of pool memory")
+	errExternalHandle    = errors.New("invalid external handle")
+	errFragmentation     = errors.New("fragmetation")
+	errSurfaceLost       = errors.New("surface lost")
+	errWindowInUse       = errors.New("native window in use")
+	errOutOfDate         = driver.ErrSwapchain
+	errDisplayCompat     = errors.New("incompatible display")
+)
+
+// DeviceName returns the name of the VkDevice that the driver
+// is using.
+func (d *Driver) DeviceName() string { return d.dname }
+
+// InstanceVersion returns the version of the VkInstance that
+// the driver is using.
+func (d *Driver) InstanceVersion() (major, minor, patch int) {
+	major = int(d.ivers >> 22 & 0x7f)
+	minor = int(d.ivers >> 12 & 0x3ff)
+	patch = int(d.ivers & 0xfff)
+	return
+}
+
+// DeviceVersion returns the version of the VkDevice that
+// the driver is using.
+func (d *Driver) DeviceVersion() (major, minor, patch int) {
+	major = int(d.dvers >> 22 & 0x7f)
+	minor = int(d.dvers >> 12 & 0x3ff)
+	patch = int(d.dvers & 0xfff)
+	return
+}
