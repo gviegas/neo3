@@ -15,7 +15,7 @@ import (
 	"github.com/gviegas/scene/driver"
 )
 
-const driverName = "vulkan1.2"
+const driverName = "vulkan1.3"
 
 // Driver implements driver.Driver and driver.GPU.
 type Driver struct {
@@ -68,7 +68,7 @@ func (d *Driver) initInstance() error {
 		defer C.free(unsafe.Pointer(appInfo))
 		*appInfo = C.VkApplicationInfo{
 			sType:      C.VK_STRUCTURE_TYPE_APPLICATION_INFO,
-			apiVersion: C.VK_API_VERSION_1_2,
+			apiVersion: C.VK_API_VERSION_1_3,
 		}
 		info.pApplicationInfo = appInfo
 	} else {

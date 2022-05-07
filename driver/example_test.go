@@ -29,7 +29,7 @@ func GPU() driver.GPU {
 drvLoop:
 	for i := range drivers {
 		switch drivers[i].Name() {
-		case "vulkan1.2":
+		case "vulkan1.3":
 			drv = drivers[i]
 			shd[0].fileName = "triangle_vs.spv"
 			shd[0].funcName = "main"
