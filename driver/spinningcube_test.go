@@ -559,11 +559,10 @@ func (t *T) renderLoop() {
 			next, err = t.sc.Next(t.cb)
 			switch err {
 			case nil:
-				// Got a back buffer to use as render target.
+				// Got a backbuffer to use as render target.
 				break nextLoop
-			case driver.ErrNotReady, driver.ErrNoBackBuffer:
-				// No back buffer available, try again.
-				// We could also sleep here for a while.
+			case driver.ErrNoBackbuffer:
+				// No backbuffer available, try again.
 				continue
 			case driver.ErrSwapchain:
 				// The swapchain is broken, we need to

@@ -813,8 +813,10 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 		pres[0].sc = nil
 		pres[1].sc = nil
 		defer func() {
+			sc.mu.Lock()
 			sc.curImg--
 			sc.syncUsed[sync] = false
+			sc.mu.Unlock()
 		}()
 	default:
 		panic("corrupted command buffer presentation")

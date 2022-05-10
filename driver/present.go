@@ -30,14 +30,10 @@ var ErrCompositor = errors.New("compositor-related error")
 // compositor made the swapchain unusable.
 var ErrSwapchain = errors.New("swapchain-related error")
 
-// ErrNotReady means that a resource is in use and cannot
-// be acquired.
-var ErrNotReady = errors.New("not ready")
-
-// ErrNoBackBuffer means that all available back buffers
+// ErrNoBackbuffer means that all available backbuffers
 // were acquired.
-// Back buffers are released during presentation.
-var ErrNoBackBuffer = errors.New("all back buffers in use")
+// Backbuffers are released during presentation.
+var ErrNoBackbuffer = errors.New("all backbuffers in use")
 
 // Presenter is the interface that a GPU may implement
 // to enable presentation to a display.

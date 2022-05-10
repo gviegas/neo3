@@ -122,7 +122,7 @@ func (s *swapchain) initSwapchain(imageCount int) error {
 		return err
 	}
 
-	// Number of back buffers.
+	// Number of backbuffers.
 	nimg := C.uint32_t(imageCount)
 	if capab.minImageCount > nimg {
 		nimg = capab.minImageCount
@@ -202,12 +202,12 @@ fmtLoop:
 		return err
 	}
 	mode := C.VkPresentModeKHR(C.VK_PRESENT_MODE_FIFO_KHR)
-	for _, m := range modes {
-		if m == C.VK_PRESENT_MODE_MAILBOX_KHR {
-			mode = m
-			break
-		}
-	}
+	//for _, m := range modes {
+	//	if m == C.VK_PRESENT_MODE_MAILBOX_KHR {
+	//		mode = m
+	//		break
+	//	}
+	//}
 
 	// Swapchain.
 	defer C.vkDestroySwapchainKHR(s.d.dev, s.sc, nil)
@@ -380,7 +380,7 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 		return -1, driver.ErrSwapchain
 	}
 	if s.curImg > len(s.views)-s.minImg {
-		return -1, driver.ErrNoBackBuffer
+		return -1, driver.ErrNoBackbuffer
 	}
 	sync := -1
 	for i := range s.syncUsed {
@@ -399,7 +399,7 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 	}
 	var idx C.uint32_t
 	var null C.VkFence
-	res := C.vkAcquireNextImageKHR(s.d.dev, s.sc, 0, s.sems[sync], null, &idx)
+	res := C.vkAcquireNextImageKHR(s.d.dev, s.sc, C.UINT64_MAX, s.sems[sync], null, &idx)
 	switch res {
 	case C.VK_SUCCESS:
 		s.curImg++
@@ -421,8 +421,6 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 		)
 		c.scBarrier(lay1, lay2, 0, 0, stg1, stg2, 0, acc2)
 		return int(idx), nil
-	case C.VK_NOT_READY:
-		return -1, driver.ErrNotReady
 	case C.VK_SUBOPTIMAL_KHR:
 		s.curImg++
 		fallthrough
@@ -433,9 +431,10 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 		if err := checkResult(res); err != nil {
 			return -1, err
 		}
+		// Should never happen.
+		println(res)
+		panic("unexpected result from swapchain's acquisition")
 	}
-	// Should never happen.
-	return -1, errUnknown
 }
 
 // Present presents the image view identified by index.
