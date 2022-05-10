@@ -538,6 +538,7 @@ var cache = driver.CmdCache{
 	},
 }
 
+const FPS = 60
 const FrameTime = time.Second / FPS
 
 // renderLoop renders the cube once per frame.
