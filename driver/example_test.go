@@ -8,75 +8,43 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"strings"
 	"unsafe"
 
 	"github.com/gviegas/scene/driver"
 	_ "github.com/gviegas/scene/driver/vk"
 )
 
-// driver.Driver implementation, set by GPU func.
-var drv driver.Driver
+var (
+	drv driver.Driver
+	gpu driver.GPU
+)
 
-// Vertex and fragment shaders, set by GPU func.
-// Shaders are platform-specific.
-var shd [2]struct {
-	fileName, funcName string
-}
-
-// GPU initializes a driver.Driver to obtain a driver.GPU.
-func GPU() driver.GPU {
+func init() {
+	// Select a driver to use.
 	drivers := driver.Drivers()
 drvLoop:
 	for i := range drivers {
 		switch drivers[i].Name() {
 		case "vulkan1.3":
 			drv = drivers[i]
-			shd[0].fileName = "triangle_vs.spv"
-			shd[0].funcName = "main"
-			shd[1].fileName = "triangle_fs.spv"
-			shd[1].funcName = "main"
 			break drvLoop
 		}
 	}
 	if drv == nil {
 		log.Fatal("driver.Drivers(): driver not found")
 	}
-	gpu, err := drv.Open()
+	var err error
+	gpu, err = drv.Open()
 	if err != nil {
 		log.Fatal(err)
 	}
-	return gpu
-}
-
-// Vertex positions for the triangle (CCW).
-var trianglePos = [9]float32{
-	-1.0, +1.0, +0.5,
-	+1.0, +1.0, +0.5,
-	-0.0, -1.0, +0.5,
-}
-
-// Vertex colors for the triangle.
-var triangleCol = [12]float32{
-	0.0, 0.0, 0.1, 1.0,
-	0.0, 0.0, 0.7, 1.0,
-	0.0, 0.0, 0.4, 1.0,
-}
-
-// Transform for the triangle (column-major).
-var triangleM = [16]float32{
-	0.8, 0.0, 0.0, 0.0,
-	0.0, 0.8, 0.0, 0.0,
-	0.0, 0.0, 0.8, 0.0,
-	0.0, 0.0, 0.0, 1.0,
+	// Ideally, we should call drv.Close somewhere.
 }
 
 // Example_draw renders a triangle and outputs the
 // result to a file.
 func Example_draw() {
-	// Obtain a driver.GPU.
-	gpu := GPU()
-	defer drv.Close()
-
 	// Create a buffer to store vertex data and constant data for
 	// shaders, then copy trianglePos, triangleCol and triangleM
 	// to its memory.
@@ -146,7 +114,19 @@ func Example_draw() {
 	defer fb.Destroy()
 
 	// Create vertex and fragment shader binaries.
-	// These are simple pass-through shaders.
+	// Shaders are platform-specific.
+	var shd [2]struct {
+		fileName, funcName string
+	}
+	switch name := drv.Name(); {
+	case strings.Contains(strings.ToLower(name), "vulkan"):
+		shd[0].fileName = "triangle_vs.spv"
+		shd[0].funcName = "main"
+		shd[1].fileName = "triangle_fs.spv"
+		shd[1].funcName = "main"
+	default:
+		log.Fatalf("no shaders for %s driver", name)
+	}
 	bb := bytes.Buffer{}
 	scode := [2]driver.ShaderCode{}
 	for i := range scode {
@@ -461,4 +441,26 @@ func Example_draw() {
 	file.Close()
 
 	// Output:
+}
+
+// Vertex positions for the triangle (CCW).
+var trianglePos = [9]float32{
+	-1.0, +1.0, +0.5,
+	+1.0, +1.0, +0.5,
+	-0.0, -1.0, +0.5,
+}
+
+// Vertex colors for the triangle.
+var triangleCol = [12]float32{
+	0.0, 0.0, 0.1, 1.0,
+	0.0, 0.0, 0.7, 1.0,
+	0.0, 0.0, 0.4, 1.0,
+}
+
+// Transform for the triangle (column-major).
+var triangleM = [16]float32{
+	0.8, 0.0, 0.0, 0.0,
+	0.0, 0.8, 0.0, 0.0,
+	0.0, 0.0, 0.8, 0.0,
+	0.0, 0.0, 0.0, 1.0,
 }

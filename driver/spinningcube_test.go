@@ -17,7 +17,7 @@ import (
 	"github.com/gviegas/scene/wsi"
 )
 
-var gpu driver.GPU
+const NFrame = 2
 
 var dim = driver.Dim3D{
 	Width:  640,
@@ -26,7 +26,7 @@ var dim = driver.Dim3D{
 }
 
 type T struct {
-	cb       driver.CmdBuffer
+	cb       [NFrame]driver.CmdBuffer
 	win      wsi.Window
 	sc       driver.Swapchain
 	pass     driver.RenderPass
@@ -51,15 +51,13 @@ type T struct {
 // Example_spinningCube renders a spinning cube and presents
 // the result in a window.
 func Example_spinningCube() {
-	// Obtain a driver.GPU.
-	gpu = GPU()
-	defer drv.Close()
-
 	var t T
 	var err error
-	t.cb, err = gpu.NewCmdBuffer()
-	if err != nil {
-		log.Fatal(err)
+	for i := range t.cb {
+		t.cb[i], err = gpu.NewCmdBuffer()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	t.swapchainSetup()
 	t.passSetup()
@@ -91,7 +89,7 @@ func (t *T) swapchainSetup() {
 	if !ok {
 		log.Fatal("GPU cannot present")
 	}
-	sc, err := gpu.NewSwapchain(win, 2)
+	sc, err := gpu.NewSwapchain(win, 3)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,7 +159,7 @@ func (t *T) shaderSetup() {
 	var shd [2]struct {
 		fileName, funcName string
 	}
-	switch name := gpu.Driver().Name(); {
+	switch name := drv.Name(); {
 	case strings.Contains(strings.ToLower(name), "vulkan"):
 		shd[0].fileName = "cube_vs.spv"
 		shd[0].funcName = "main"
@@ -279,14 +277,14 @@ func (t *T) samplingSetup() {
 			Index: 0,
 		},
 	}
-	if err := t.cb.Record(cmd, &cache); err != nil {
+	if err := t.cb[0].Record(cmd, &cache); err != nil {
 		log.Fatal(err)
 	}
-	if err := t.cb.End(); err != nil {
+	if err := t.cb[0].End(); err != nil {
 		log.Fatal(err)
 	}
 	ch := make(chan error)
-	go gpu.Commit([]driver.CmdBuffer{t.cb}, ch)
+	go gpu.Commit([]driver.CmdBuffer{t.cb[0]}, ch)
 	if err := <-ch; err != nil {
 		log.Fatal(err)
 	}
@@ -411,7 +409,7 @@ func (t *T) pipelineSetup() {
 }
 
 // Command cache.
-// Most of these data never changes, so it is a good
+// Most of these data never change, so it is a good
 // opportunity for reuse. We don't want to keep the
 // GC busy, specially during the rendering loop.
 var cache = driver.CmdCache{
@@ -538,31 +536,37 @@ var cache = driver.CmdCache{
 	},
 }
 
-const FPS = 60
-const FrameTime = time.Second / FPS
-
-// renderLoop renders the cube once per frame.
+// renderLoop renders the cube in a loop.
 func (t *T) renderLoop() {
+	var frame int
 	var err error
-	ch := make(chan error)
-	t1 := time.Now()
+	ch := make(chan error, NFrame)
+	for i := 0; i < cap(ch); i++ {
+		ch <- nil
+	}
 	for !t.quit {
-		t0 := time.Now()
+		if err = <-ch; err != nil {
+			log.Fatal(err)
+		}
+
+		wsi.Dispatch()
+
 		// Note that, as long as we use the same buffer range,
 		// we need not set the descriptor heap again.
-		t.updateTransform(t0.Sub(t1))
+		t.updateTransform(time.Second / 60)
 		copy(t.constBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
 
 		next := -1
 	nextLoop:
 		for {
-			next, err = t.sc.Next(t.cb)
+			next, err = t.sc.Next(t.cb[frame])
 			switch err {
 			case nil:
 				// Got a backbuffer to use as render target.
 				break nextLoop
 			case driver.ErrNoBackbuffer:
 				// No backbuffer available, try again.
+				time.Sleep(time.Millisecond * 10)
 				continue
 			case driver.ErrSwapchain:
 				// The swapchain is broken, we need to
@@ -583,43 +587,33 @@ func (t *T) renderLoop() {
 				Index: 0,
 			},
 		}
-		if err = t.cb.Record(cmd, &cache); err != nil {
+		if err = t.cb[frame].Record(cmd, &cache); err != nil {
 			log.Fatal(err)
 		}
 
 		// We call Present only after the last render pass
 		// that will use the swapchain's image is recorded.
-		if err = t.sc.Present(next, t.cb); err != nil {
+		if err = t.sc.Present(next, t.cb[frame]); err != nil {
 			log.Fatal(err)
 		}
 
 		// End must come after Next, Record and Present.
-		if err := t.cb.End(); err != nil {
+		if err := t.cb[frame].End(); err != nil {
 			log.Fatal(err)
 		}
 
-		// We must wait for Commit to complete before
-		// recording into the command buffer again.
-		// To record commands in parallel, we could
-		// have used multiple command buffers.
-		go gpu.Commit([]driver.CmdBuffer{t.cb}, ch)
-		if err = <-ch; err != nil {
-			log.Fatal(err)
-		}
-
-		wsi.Dispatch()
-
-		t1 = time.Now()
-		dt := t1.Sub(t0)
-		if dt < FrameTime {
-			time.Sleep(FrameTime - dt)
-		}
+		// We are done with this frame, so commit it and
+		// start working on the next one.
+		go gpu.Commit([]driver.CmdBuffer{t.cb[frame]}, ch)
+		frame = (frame + 1) % NFrame
 	}
 }
 
 // destroy frees all data.
 func (t *T) destroy() {
-	t.cb.Destroy()
+	for _, cb := range t.cb {
+		cb.Destroy()
+	}
 	t.pipeln.Destroy()
 	t.dtab.Destroy()
 	t.dheap.Destroy()
@@ -894,7 +888,7 @@ func (t *T) recreateSwapchain() {
 	if pf != t.sc.Format() || len(clrView) != len(t.fb) {
 		// The solution would be to recreate both the
 		// render pass and the pipeline, which is expensive.
-		log.Fatal("Recreate swapchain mismatch")
+		log.Fatal("recreate swapchain mismatch")
 	}
 	width := t.win.Width()
 	height := t.win.Height()
