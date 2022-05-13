@@ -288,8 +288,13 @@ func (v *imageView) Destroy() {
 
 // convPixelFmt converts a driver.PixelFmt to a VkFormat.
 func convPixelFmt(pf driver.PixelFmt) C.VkFormat {
+	if pf.IsInternal() {
+		// The driver.FInternal bit is not set in any
+		// of the Vulkan formats, so this hack works.
+		return C.VkFormat(^driver.FInternal & pf)
+	}
+
 	switch pf {
-	default:
 	case driver.RGBA8un:
 		return C.VK_FORMAT_R8G8B8A8_UNORM
 	case driver.RGBA8n:
@@ -338,6 +343,9 @@ func convPixelFmt(pf driver.PixelFmt) C.VkFormat {
 	// Expected to be unreachable.
 	return C.VK_FORMAT_UNDEFINED
 }
+
+// internalFmt returns vf as an internal driver.PixelFmt.
+func internalFmt(vf C.VkFormat) driver.PixelFmt { return driver.PixelFmt(vf) | driver.FInternal }
 
 // convSamples converts a samples value to a VkSampleCountFlagBits.
 func convSamples(ns int) C.VkSampleCountFlagBits {
