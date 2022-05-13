@@ -738,6 +738,7 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 			}
 		}
 	}
+	release := func() {}
 	switch {
 	case pres[0] == nil && pres[1] == nil:
 		// There is nothing to present.
@@ -812,12 +813,12 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 		<-d.qchan
 		pres[0].sc = nil
 		pres[1].sc = nil
-		defer func() {
+		release = func() {
 			sc.mu.Lock()
 			sc.curImg--
 			sc.syncUsed[sync] = false
 			sc.mu.Unlock()
-		}()
+		}
 	default:
 		panic("corrupted command buffer presentation")
 	}
@@ -825,16 +826,18 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 	// Wait until queue submission has completed execution.
 	// Note that queue presentation is not waited for, and as such
 	// may not have completed when we send to ch.
-	for {
-		res := C.vkWaitForFences(d.dev, 1, &cd.fence, C.VK_TRUE, C.UINT64_MAX)
-		switch res {
-		case C.VK_SUCCESS:
-			ch <- nil
-			return
-		case C.VK_TIMEOUT:
+	res := C.vkWaitForFences(d.dev, 1, &cd.fence, C.VK_TRUE, C.UINT64_MAX)
+	release()
+	switch res {
+	case C.VK_SUCCESS:
+		ch <- nil
+	default:
+		switch err := checkResult(res); err {
+		case nil:
+			// Should never happen.
+			panic("unexpected result from fence wait")
 		default:
-			ch <- checkResult(res)
-			return
+			ch <- err
 		}
 	}
 }
