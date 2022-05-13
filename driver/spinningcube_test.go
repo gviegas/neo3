@@ -27,6 +27,7 @@ var dim = driver.Dim3D{
 
 type T struct {
 	cb       [NFrame]driver.CmdBuffer
+	ch       chan error
 	win      wsi.Window
 	sc       driver.Swapchain
 	pass     driver.RenderPass
@@ -59,6 +60,7 @@ func Example_spinningCube() {
 			log.Fatal(err)
 		}
 	}
+	t.ch = make(chan error, NFrame)
 	t.swapchainSetup()
 	t.passSetup()
 	t.shaderSetup()
@@ -540,12 +542,11 @@ var cache = driver.CmdCache{
 func (t *T) renderLoop() {
 	var frame int
 	var err error
-	ch := make(chan error, NFrame)
-	for i := 0; i < cap(ch); i++ {
-		ch <- nil
+	for i := 0; i < cap(t.ch); i++ {
+		t.ch <- nil
 	}
 	for !t.quit {
-		if err = <-ch; err != nil {
+		if err = <-t.ch; err != nil {
 			log.Fatal(err)
 		}
 
@@ -604,7 +605,7 @@ func (t *T) renderLoop() {
 
 		// We are done with this frame, so commit it and
 		// start working on the next one.
-		go gpu.Commit([]driver.CmdBuffer{t.cb[frame]}, ch)
+		go gpu.Commit([]driver.CmdBuffer{t.cb[frame]}, t.ch)
 		frame = (frame + 1) % NFrame
 	}
 }
@@ -867,7 +868,7 @@ func (t *T) WindowClose(win wsi.Window) {
 		t.quit = true
 	}
 }
-func (t *T) WindowResize(wsi.Window, int, int) {}
+func (t *T) WindowResize(wsi.Window, int, int) { t.recreateSwapchain() }
 func (t *T) KeyboardIn(wsi.Window)             {}
 func (t *T) KeyboardOut(wsi.Window)            {}
 func (t *T) KeyboardKey(key wsi.Key, pressed bool, modMask wsi.Modifier) {
@@ -879,6 +880,9 @@ func (t *T) KeyboardKey(key wsi.Key, pressed bool, modMask wsi.Modifier) {
 // recreateSwapchain recreates the swapchain and all
 // framebuffers.
 func (t *T) recreateSwapchain() {
+	// Ensure that any calls to Commit have completed.
+	for len(t.ch) < NFrame-1 {
+	}
 	var err error
 	pf := t.sc.Format()
 	if err = t.sc.Recreate(); err != nil {
