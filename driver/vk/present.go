@@ -510,6 +510,7 @@ func (s *swapchain) present(index int, waitSem *C.VkSemaphore) error {
 
 // Recreate recreates the swapchain.
 func (s *swapchain) Recreate() error {
+	C.vkQueueWaitIdle(s.d.ques[s.qfam])
 	if err := s.initSwapchain(len(s.views)); err != nil {
 		return err
 	}
