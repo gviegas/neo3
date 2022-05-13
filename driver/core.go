@@ -856,6 +856,14 @@ type Buffer interface {
 // PixelFmt describes the format of a pixel.
 type PixelFmt int
 
+// Internal format bit.
+// All internal formats have this bit set. Client code
+// must not create images using internal formats.
+const FInternal PixelFmt = 1 << 31
+
+// IsInternal returns whether f is an internal format.
+func (f PixelFmt) IsInternal() bool { return f&FInternal == FInternal }
+
 // Pixel formats.
 const (
 	// Color, 8-bit channels.
