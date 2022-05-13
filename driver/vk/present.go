@@ -173,6 +173,8 @@ func (s *swapchain) initSwapchain(imageCount int) error {
 	}{
 		{driver.RGBA8sRGB, C.VK_FORMAT_R8G8B8A8_SRGB},
 		{driver.BGRA8sRGB, C.VK_FORMAT_B8G8R8A8_SRGB},
+		{driver.RGBA8un, C.VK_FORMAT_R8G8B8A8_UNORM},
+		{driver.BGRA8un, C.VK_FORMAT_B8G8R8A8_UNORM},
 		{driver.RGBA16f, C.VK_FORMAT_R16G16B16A16_SFLOAT},
 	}
 	ifmt := -1
@@ -187,6 +189,21 @@ fmtLoop:
 		}
 	}
 	if ifmt == -1 {
+		if len(fmts) == 1 && fmts[0].format == C.VK_FORMAT_UNDEFINED {
+			// This is a thing apparently, and it means that we can
+			// pick whatever format we want. However, accordingly to
+			// v1.3 of the spec, advertising undefined format is not
+			// allowed, but here it is just in case.
+			fmts[0].format = prefFmts[0].fmt
+			fmts[0].colorSpace = C.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+			s.pf = prefFmts[0].pf
+			ifmt = 0
+		} else if len(fmts) > 0 {
+			// TODO: Check if this format is one of the predefined
+			// driver.PixelFmt values.
+			s.pf = internalFmt(fmts[0].format)
+			ifmt = 0
+		}
 		return driver.ErrCannotPresent
 	}
 
