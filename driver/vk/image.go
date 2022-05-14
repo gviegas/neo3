@@ -19,10 +19,10 @@ type image struct {
 }
 
 // NewImage creates a new image.
-// NOTE: If usage has no image bits set, image views cannot be created.
 func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels, samples int, usg driver.Usage) (driver.Image, error) {
 	format := convPixelFmt(pf)
 	scount := convSamples(samples)
+	aspect := aspectOf(pf)
 
 	var typ C.VkImageType
 	var flags C.VkImageCreateFlags
@@ -43,30 +43,30 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 		typ = C.VK_IMAGE_TYPE_1D
 	}
 
-	subres := C.VkImageSubresourceRange{
-		aspectMask: aspectOf(pf),
-		levelCount: C.uint32_t(levels),
-		layerCount: C.uint32_t(layers),
-	}
-	layout := C.VkImageLayout(C.VK_IMAGE_LAYOUT_UNDEFINED)
-
 	var usage C.VkImageUsageFlags
-	usage |= C.VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-	usage |= C.VK_IMAGE_USAGE_TRANSFER_DST_BIT
 	if usg&(driver.UShaderRead|driver.UShaderWrite) != 0 {
-		// BUG: Certain features must be enabled to support shader writes.
 		usage |= C.VK_IMAGE_USAGE_STORAGE_BIT
 	}
 	if usg&driver.UShaderSample != 0 {
 		usage |= C.VK_IMAGE_USAGE_SAMPLED_BIT
 	}
 	if usg&driver.URenderTarget != 0 {
-		if subres.aspectMask == C.VK_IMAGE_ASPECT_COLOR_BIT {
+		if aspect == C.VK_IMAGE_ASPECT_COLOR_BIT {
 			usage |= C.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
 		} else {
 			usage |= C.VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
 		}
 	}
+	// At least one valid usage must have been set.
+	if usage == 0 {
+		// We panic here because this is certainly a
+		// client error (i.e., this image is useless)
+		// and also because the spec forbids creating
+		// a view in this case.
+		panic("cannot create image without a valid usage")
+	}
+	usage |= C.VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+	usage |= C.VK_IMAGE_USAGE_TRANSFER_DST_BIT
 
 	var prop C.VkImageFormatProperties
 	res := C.vkGetPhysicalDeviceImageFormatProperties(d.pdev, format, typ, C.VK_IMAGE_TILING_OPTIMAL, usage, flags, &prop)
@@ -101,7 +101,7 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 		tiling:        C.VK_IMAGE_TILING_OPTIMAL,
 		usage:         usage,
 		sharingMode:   C.VK_SHARING_MODE_EXCLUSIVE,
-		initialLayout: layout,
+		initialLayout: C.VK_IMAGE_LAYOUT_UNDEFINED,
 	}
 	var img C.VkImage
 	err := checkResult(C.vkCreateImage(d.dev, &info, nil, &img))
@@ -125,11 +125,15 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 	m.bound = true
 
 	im := &image{
-		m:      m,
-		img:    img,
-		fmt:    format,
-		subres: subres,
-		layout: layout,
+		m:   m,
+		img: img,
+		fmt: format,
+		subres: C.VkImageSubresourceRange{
+			aspectMask: aspect,
+			levelCount: C.uint32_t(levels),
+			layerCount: C.uint32_t(layers),
+		},
+		layout: info.initialLayout,
 	}
 	if err = im.transition(); err != nil {
 		im.Destroy()

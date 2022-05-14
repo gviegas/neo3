@@ -44,7 +44,7 @@ func TestImage(t *testing.T) {
 		{driver.RGBA8sRGB, driver.Dim3D{Width: 64, Height: 64, Depth: 1}, 16, 1, 1, driver.UShaderSample},
 		{driver.BGRA8sRGB, driver.Dim3D{Width: 720, Height: 480, Depth: 1}, 10, 1, 1, driver.UShaderSample},
 		{driver.RGBA8sRGB, driver.Dim3D{Width: 1024, Height: 1024, Depth: 1}, 1, 1, 1, driver.UShaderSample},
-		{driver.RGBA16f, driver.Dim3D{Width: 128, Height: 128, Depth: 128}, 1, 8, 1, 0},
+		{driver.RGBA16f, driver.Dim3D{Width: 128, Height: 128, Depth: 128}, 1, 8, 1, driver.UGeneric},
 	}
 	zi := image{}
 	zm := memory{}
