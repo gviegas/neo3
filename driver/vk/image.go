@@ -15,7 +15,6 @@ type image struct {
 	img    C.VkImage
 	fmt    C.VkFormat
 	subres C.VkImageSubresourceRange
-	linear bool
 	layout C.VkImageLayout
 }
 
@@ -49,6 +48,7 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 		levelCount: C.uint32_t(levels),
 		layerCount: C.uint32_t(layers),
 	}
+	layout := C.VkImageLayout(C.VK_IMAGE_LAYOUT_UNDEFINED)
 
 	var usage C.VkImageUsageFlags
 	usage |= C.VK_IMAGE_USAGE_TRANSFER_SRC_BIT
@@ -68,47 +68,21 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 		}
 	}
 
-	// Choose linear tiling if possible.
-	// Since the decision to support linear tiling is left to the
-	// implementation, we assume that if it does so then it may be worth it.
-	var tiling []C.VkImageTiling
 	var prop C.VkImageFormatProperties
-	if false /*samples == 1*/ {
-		// TODO: This will likely be removed in the future since the driver package
-		// treats image memory as private.
-		tiling = []C.VkImageTiling{C.VK_IMAGE_TILING_LINEAR, C.VK_IMAGE_TILING_OPTIMAL}
+	res := C.vkGetPhysicalDeviceImageFormatProperties(d.pdev, format, typ, C.VK_IMAGE_TILING_OPTIMAL, usage, flags, &prop)
+	if err := checkResult(res); err != nil {
+		return nil, err
 	} else {
-		tiling = []C.VkImageTiling{C.VK_IMAGE_TILING_OPTIMAL}
-	}
-	for {
-		err := checkResult(C.vkGetPhysicalDeviceImageFormatProperties(d.pdev, format, typ, tiling[0], usage, flags, &prop))
-		if err == nil {
-			w := int(prop.maxExtent.width)
-			h := int(prop.maxExtent.height)
-			d := int(prop.maxExtent.depth)
-			ly := int(prop.maxArrayLayers)
-			lv := int(prop.maxMipLevels)
-			sc := C.VkSampleCountFlagBits(prop.sampleCounts)
-			if size.Width > w || size.Height > h || size.Depth > d || layers > ly || levels > lv || scount&sc == 0 {
-				// TODO: This error is a bit misleading.
-				err = errUnsupportedFormat
-			} else {
-				break
-			}
+		w := int(prop.maxExtent.width)
+		h := int(prop.maxExtent.height)
+		d := int(prop.maxExtent.depth)
+		ly := int(prop.maxArrayLayers)
+		lv := int(prop.maxMipLevels)
+		sc := C.VkSampleCountFlagBits(prop.sampleCounts)
+		if size.Width > w || size.Height > h || size.Depth > d || layers > ly || levels > lv || scount&sc == 0 {
+			// TODO: This error is a bit misleading.
+			return nil, errUnsupportedFormat
 		}
-		if len(tiling) == 1 {
-			return nil, err
-		}
-		tiling = tiling[1:]
-	}
-
-	var linear bool
-	var layout C.VkImageLayout
-	if tiling[0] == C.VK_IMAGE_TILING_LINEAR {
-		linear = true
-		layout = C.VK_IMAGE_LAYOUT_PREINITIALIZED
-	} else {
-		layout = C.VK_IMAGE_LAYOUT_UNDEFINED
 	}
 
 	info := C.VkImageCreateInfo{
@@ -124,7 +98,7 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 		mipLevels:     C.uint32_t(levels),
 		arrayLayers:   C.uint32_t(layers),
 		samples:       scount,
-		tiling:        tiling[0],
+		tiling:        C.VK_IMAGE_TILING_OPTIMAL,
 		usage:         usage,
 		sharingMode:   C.VK_SHARING_MODE_EXCLUSIVE,
 		initialLayout: layout,
@@ -137,7 +111,7 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 
 	var req C.VkMemoryRequirements
 	C.vkGetImageMemoryRequirements(d.dev, img, &req)
-	m, err := d.newMemory(req, linear)
+	m, err := d.newMemory(req, false)
 	if err != nil {
 		C.vkDestroyImage(d.dev, img, nil)
 		return nil, err
@@ -149,23 +123,12 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 		return nil, err
 	}
 	m.bound = true
-	// There is no need to map the memory of an image that uses optimal tiling,
-	// since all read/write operations will be done through command buffers.
-	if linear {
-		err = m.mmap()
-		if err != nil {
-			m.free()
-			C.vkDestroyImage(d.dev, img, nil)
-			return nil, err
-		}
-	}
 
 	im := &image{
 		m:      m,
 		img:    img,
 		fmt:    format,
 		subres: subres,
-		linear: linear,
 		layout: layout,
 	}
 	if err = im.transition(); err != nil {

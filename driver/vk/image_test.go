@@ -67,9 +67,6 @@ func TestImage(t *testing.T) {
 				if img.m.size < size {
 					t.Errorf("%s: img.m.size\nhave %d\nwant at least %d", call, img.m.size, size)
 				}
-				if img.linear && !img.m.vis {
-					t.Errorf("%s: img.linear, img.m.vis\nhave true, false\nwant true, true or false, false", call)
-				}
 				if img.m.vis && int64(len(img.m.p)) != img.m.size {
 					t.Errorf("%s: len(img.m.p)\nhave %d\nwant %d", call, len(img.m.p), img.m.size)
 				}
