@@ -38,7 +38,7 @@ var (
 // function succeeds.
 func openXCB() error {
 	if hXCB == nil {
-		lib := C.CString("libxcb.so")
+		lib := C.CString("libxcb.so.1")
 		defer C.free(unsafe.Pointer(lib))
 		hXCB := C.dlopen(lib, C.RTLD_LAZY|C.RTLD_GLOBAL)
 		if hXCB == nil {
