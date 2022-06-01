@@ -62,183 +62,131 @@ type Destroyer interface {
 	Destroy()
 }
 
-// CmdType is the type of a command.
-type CmdType int
+// CmdBuffer is the interface that defines a command buffer.
+type CmdBuffer interface {
+	Destroyer
 
-// Command types.
-const (
-	CPass CmdType = iota
-	CWork
-	CBlit
-	CSubpass
-	CPipeline
-	CViewport
-	CScissor
-	CBlendColor
-	CStencilRef
-	CVertexBuf
-	CIndexBuf
-	CDescTable
-	CDraw
-	CIndexDraw
-	CDispatch
-	CBufferCopy
-	CImageCopy
-	CBufImgCopy
-	CImgBufCopy
-	CFill
-)
+	// BeginPass begins the first subpass of a given
+	// render pass.
+	// Draw commands within a subpass may run in
+	// parallel. The behavior of draw commands across
+	// different subpasses is defined on render pass
+	// creation.
+	BeginPass(pass RenderPass, fb Framebuf, clear []ClearValue)
 
-// Command identifies a command by its type and index
-// in a command cache.
-type Command struct {
-	Type  CmdType
-	Index int
+	// NextSubpass ends the current subpass and begins
+	// the next one.
+	NextSubpass()
+
+	// EndPass ends the current render pass.
+	EndPass()
+
+	// BeginWork begins compute work.
+	// If wait is set, compute work only starts when
+	// all previous commands recorded in the same
+	// command buffer are done executing.
+	// Dispatch commands may run in parallel.
+	BeginWork(wait bool)
+
+	// EndWork ends the current compute work.
+	EndWork()
+
+	// BeginBlit begins data transfer.
+	// If wait is set, data transfer only starts when
+	// all previous commands recorded in the same
+	// command buffer are done executing.
+	// Copy/fill commands may run in parallel.
+	BeginBlit(wait bool)
+
+	// EndBlit ends data transfer.
+	EndBlit()
+
+	// SetPipeline sets the pipeline.
+	// There is a separate binding point for each
+	// type of pipeline.
+	SetPipeline(pl Pipeline)
+
+	// SetViewport sets the viewport bounds.
+	SetViewport(vp []Viewport)
+
+	// SetScissor sets the scissor rectangle.
+	SetScissor(sciss []Scissor)
+
+	// SetBlendColor sets the blend constant.
+	SetBlendColor(r, g, b, a float32)
+
+	// SetStencilRef sets the stencil value.
+	SetStencilRef(value uint32)
+
+	// SetVertexBuf sets the vertex buffers.
+	// off must be aligned to the size of the data
+	// format as specified in the vertex input of
+	// the bound graphics pipeline.
+	SetVertexBuf(start int, buf []Buffer, off []int64)
+
+	// SetIndexBuffer sets the index buffer.
+	// off must be aligned to 4 bytes.
+	SetIndexBuf(format IndexFmt, buf Buffer, off int64)
+
+	// SetDescTableGraph sets the descriptor table
+	// range for graphics pipelines.
+	SetDescTableGraph(table DescTable, start int, heapCopy []int)
+
+	// SetDescTableComp sets the descriptor table
+	// range for compute pipelines.
+	SetDescTableComp(table DescTable, start int, heapCopy []int)
+
+	// Draw draws primitives.
+	// It must only be called during a render pass.
+	Draw(vertCount, instCount, baseVert, baseInst int)
+
+	// DrawIndexed draws indexed primitives.
+	// It must only be called during a render pass.
+	DrawIndexed(idxCount, instCount, baseIdx, vertOff, baseInst int)
+
+	// Dispatch dispatches compute thread groups.
+	// It must only be called during compute work.
+	Dispatch(grpCountX, grpCountY, grpCountZ int)
+
+	// CopyBuffer copies data between buffers.
+	// It must only be called during data transfer.
+	CopyBuffer(param *BufferCopy)
+
+	// CopyImage copies data between images.
+	// It must only be called during data transfer.
+	CopyImage(param *ImageCopy)
+
+	// CopyBufToImg copies data from a buffer to
+	// an image.
+	// It must only be called during data transfer.
+	CopyBufToImg(param *BufImgCopy)
+
+	// CopyImgToBuf copies data from an image to
+	// a buffer.
+	// It must only be called during data transfer.
+	CopyImgToBuf(param *BufImgCopy)
+
+	// Fill fills a buffer range with copies of
+	// a byte value.
+	// It must only be called during data transfer.
+	// off and size must be aligned to 4 bytes.
+	Fill(buf Buffer, off int64, value byte, size int64)
+
+	// End ends command recording and prepares the
+	// command buffer for execution.
+	// New recordings are not allowed until the
+	// command buffer is executed or reset.
+	// Upon failure, the command buffer is reset.
+	End() error
+
+	// Reset discards all recorded commands from the
+	// command buffer.
+	Reset() error
 }
 
-// PassCmd describes the execution of a render pass.
-type PassCmd struct {
-	Pass   RenderPass
-	FB     Framebuf
-	Clear  []ClearValue
-	SubCmd []int
-}
-
-// WorkCmd describes the execution of compute work.
-//
-// The commands allowed in Cmd are:
-// 	PipelineCmd  (type CPipeline)
-// 	DescTableCmd (type CDescTable)
-// 	DispatchCmd  (type CDispatch)
-//
-// If Wait is set, compute work only starts when all
-// previous commands in the same command buffer are
-// done executing.
-// Commands in Cmd run in parallel.
-type WorkCmd struct {
-	Wait bool
-	Cmd  []Command
-}
-
-// BlitCmd describes the execution of data transfer.
-//
-// The commands allowed in Cmd are:
-// 	BufferCopyCmd (CBufferCopy)
-// 	ImageCopyCmd  (CImageCopy)
-// 	BufImgCopyCmd (CBufImgCopy)
-// 	ImgBufCopyCmd (CImgBufCopy)
-// 	FillCmd       (CFill)
-//
-// If Wait is set, data transfer only starts when all
-// previous commands in the same command buffer are
-// done executing.
-// Commands in Cmd run in parallel.
-type BlitCmd struct {
-	Wait bool
-	Cmd  []Command
-}
-
-// SubpassCmd describes a sequence of state setting commands
-// followed by drawing commands that use this state.
-//
-// The commands allowed in Cmd are:
-// 	PipelineCmd   (type CPipeline)
-// 	ViewportCmd   (type CViewport)
-// 	ScissorCmd    (type CScissor)
-// 	BlendColorCmd (type CBlendColor)
-// 	StencilRefCmd (type CStencilRef)
-// 	VertexBufCmd  (type CVertexBuf)
-// 	IndexBufCmd   (type CIndexBuf)
-// 	DescTableCmd  (type CDescTable)
-// 	DrawCmd       (type CDraw)
-// 	IndexDrawCmd  (type CIndexDraw)
-//
-// The sequence of commands in Cmd defines the whole subpass.
-type SubpassCmd struct {
-	Cmd []Command
-}
-
-// PipelineCmd describes a pipeline to set as state
-// in a command buffer.
-// PassCmd uses pipelines created from GraphState.
-// WorkCmd uses pipelines created from CompState.
-type PipelineCmd struct {
-	PL Pipeline
-}
-
-// ViewportCmd describes viewport bounds to set as
-// state in a command buffer.
-type ViewportCmd struct {
-	VP []Viewport
-}
-
-// ScissorCmd describes scissor rectangles to set
-// as state in a command buffer.
-type ScissorCmd struct {
-	S []Scissor
-}
-
-// BlendColorCmd describes the constant blend color to set
-// as state in a command buffer.
-type BlendColorCmd struct {
-	R, G, B, A float32
-}
-
-// StencilRefCmd describes the stencil reference value to
-// set as state in a command buffer.
-type StencilRefCmd struct {
-	Value uint32
-}
-
-// VertexBufCmd describes vertex buffers to set as state
-// in a command buffer.
-// Off must be aligned to the data format as specified in
-// the vertex input of the graphics pipeline.
-type VertexBufCmd struct {
-	Start int
-	Buf   []Buffer
-	Off   []int64
-}
-
-// IndexBufCmd describes the index buffer to set as state
-// in a command buffer.
-// Off must be aligned to 4 bytes.
-type IndexBufCmd struct {
-	Format IndexFmt
-	Buf    Buffer
-	Off    int64
-}
-
-// DescTableCmd describes the descriptor table range to
-// set as state in a command buffer.
-type DescTableCmd struct {
-	Desc  DescTable
-	Start int
-	Copy  []int
-}
-
-// DrawCmd describes a draw command that uses the current
-// state in a command buffer to render primitives.
-type DrawCmd struct {
-	VertCount, InstCount, BaseVert, BaseInst int
-}
-
-// IndexDraw describes an indexed draw command that uses the
-// current state in a command buffer to render primitives.
-type IndexDrawCmd struct {
-	IdxCount, InstCount, BaseIdx, VertOff, BaseInst int
-}
-
-// DispatchCmd describes a dispatch command that uses the
-// current state in a command buffer to perform parallel
-// computations.
-type DispatchCmd struct {
-	Count [3]int
-}
-
-// BufferCopyCmd describes a copy command that copies
-// data from one buffer to another.
-type BufferCopyCmd struct {
+// BufferCopy describes the parameters of a copy command
+// that copies data from one buffer to another.
+type BufferCopy struct {
 	From    Buffer
 	FromOff int64
 	To      Buffer
@@ -246,9 +194,9 @@ type BufferCopyCmd struct {
 	Size    int64
 }
 
-// ImageCopyCmd describes a copy command that copies
-// data from one image to another.
-type ImageCopyCmd struct {
+// ImageCopy describes the parameters of a copy command
+// that copies data from one image to another.
+type ImageCopy struct {
 	From      Image
 	FromOff   Off3D
 	FromLayer int
@@ -261,11 +209,11 @@ type ImageCopyCmd struct {
 	Layers    int
 }
 
-// BufImgCopyCmd describes a copy command that copies data
-// from a buffer to an image.
+// BufImgCopy describes the parameters of a copy command
+// that copies data between a buffer and an image.
 // BufOff must be aligned to 512 bytes.
 // Stride[0] must be aligned to 256 bytes.
-type BufImgCopyCmd struct {
+type BufImgCopy struct {
 	Buf    Buffer
 	BufOff int64
 	// Stride specifies the addressing of image data
@@ -282,78 +230,6 @@ type BufImgCopyCmd struct {
 	// aspects to copy. It is only used if Img has a
 	// combined depth/stencil format.
 	DepthCopy bool
-}
-
-// ImgBufCopyCmd describes a copy command that copies
-// data from an image to a buffer.
-// It has the same alignment requirements as BufImgCopyCmd.
-type ImgBufCopyCmd BufImgCopyCmd
-
-// FillCmd describes a copy command that fills a
-// buffer range with copies of a byte value.
-// Off must be aligned to 4 bytes.
-// Size must be greater than 0 and aligned to 4 bytes.
-type FillCmd struct {
-	Buf  Buffer
-	Off  int64
-	Byte byte
-	Size int64
-}
-
-// CmdCache defines a command cache shared with the
-// driver implementation.
-// Command descriptions are cached and passed as
-// parameter to the command buffer for processing.
-// Commands that refer to other commands do so through
-// indices in the cache.
-// The driver is not allowed to write to the cache.
-type CmdCache struct {
-	Pass       []PassCmd
-	Work       []WorkCmd
-	Blit       []BlitCmd
-	Subpass    []SubpassCmd
-	Pipeline   []PipelineCmd
-	Viewport   []ViewportCmd
-	Scissor    []ScissorCmd
-	BlendColor []BlendColorCmd
-	StencilRef []StencilRefCmd
-	VertexBuf  []VertexBufCmd
-	IndexBuf   []IndexBufCmd
-	DescTable  []DescTableCmd
-	Draw       []DrawCmd
-	IndexDraw  []IndexDrawCmd
-	Dispatch   []DispatchCmd
-	BufferCopy []BufferCopyCmd
-	ImageCopy  []ImageCopyCmd
-	BufImgCopy []BufImgCopyCmd
-	ImgBufCopy []ImgBufCopyCmd
-	Fill       []FillCmd
-}
-
-// CmdBuffer is the interface that defines a command buffer.
-type CmdBuffer interface {
-	Destroyer
-
-	// Record records commands in the command buffer.
-	//
-	// The commands allowed in cmd are:
-	// 	PassCmd (type CPass)
-	// 	WorkCmd (type CWork)
-	// 	BlitCmd (type CBlit)
-	//
-	// Multiple recordings are applied sequentially.
-	Record(cmd []Command, cache *CmdCache) error
-
-	// End ends command recording and prepares the
-	// command buffer for execution.
-	// New recordings are not allowed until the
-	// command buffer is executed or reset.
-	// Upon failure, the command buffer is reset.
-	End() error
-
-	// Reset discards all recorded commands from the
-	// command buffer.
-	Reset() error
 }
 
 // LoadOp is the type of an attachment's load operation.
