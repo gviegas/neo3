@@ -106,33 +106,35 @@ type CmdBuffer interface {
 	// type of pipeline.
 	SetPipeline(pl Pipeline)
 
-	// SetViewport sets the viewport bounds.
+	// SetViewport sets the bounds of one or more
+	// viewports.
 	SetViewport(vp []Viewport)
 
-	// SetScissor sets the scissor rectangle.
+	// SetScissor sets the rectangles of one or more
+	// viewport scissors.
 	SetScissor(sciss []Scissor)
 
-	// SetBlendColor sets the blend constant.
+	// SetBlendColor sets the constant blend color.
 	SetBlendColor(r, g, b, a float32)
 
-	// SetStencilRef sets the stencil value.
+	// SetStencilRef sets the stencil reference value.
 	SetStencilRef(value uint32)
 
-	// SetVertexBuf sets the vertex buffers.
+	// SetVertexBuf sets one or more vertex buffers.
 	// off must be aligned to the size of the data
 	// format as specified in the vertex input of
 	// the bound graphics pipeline.
 	SetVertexBuf(start int, buf []Buffer, off []int64)
 
-	// SetIndexBuffer sets the index buffer.
+	// SetIndexBuf sets the index buffer.
 	// off must be aligned to 4 bytes.
 	SetIndexBuf(format IndexFmt, buf Buffer, off int64)
 
-	// SetDescTableGraph sets the descriptor table
+	// SetDescTableGraph sets a descriptor table
 	// range for graphics pipelines.
 	SetDescTableGraph(table DescTable, start int, heapCopy []int)
 
-	// SetDescTableComp sets the descriptor table
+	// SetDescTableComp sets a descriptor table
 	// range for compute pipelines.
 	SetDescTableComp(table DescTable, start int, heapCopy []int)
 
