@@ -373,25 +373,16 @@ func (cb *cmdBuffer) SetIndexBuf(format driver.IndexFmt, buf driver.Buffer, off 
 
 // SetDescTableGraph sets a descriptor table range for graphics pipelines.
 func (cb *cmdBuffer) SetDescTableGraph(table driver.DescTable, start int, heapCopy []int) {
-	const bindPoint = C.VkPipelineBindPoint(C.VK_PIPELINE_BIND_POINT_GRAPHICS)
-	desc := table.(*descTable)
-	ncpy := len(heapCopy)
-	switch {
-	case ncpy == 1:
-		set := desc.h[start].sets[heapCopy[0]]
-		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), 1, &set, 0, nil)
-	case ncpy > 1:
-		set := make([]C.VkDescriptorSet, ncpy)
-		for i := range set {
-			set[i] = desc.h[start+i].sets[heapCopy[i]]
-		}
-		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), &set[0], 0, nil)
-	}
+	cb.setDescTable(table, start, heapCopy, C.VK_PIPELINE_BIND_POINT_GRAPHICS)
 }
 
 // SetDescTableComp sets a descriptor table range for compute pipelines.
 func (cb *cmdBuffer) SetDescTableComp(table driver.DescTable, start int, heapCopy []int) {
-	const bindPoint = C.VkPipelineBindPoint(C.VK_PIPELINE_BIND_POINT_COMPUTE)
+	cb.setDescTable(table, start, heapCopy, C.VK_PIPELINE_BIND_POINT_COMPUTE)
+}
+
+// setDescTable sets a descriptor table range for a given bind point.
+func (cb *cmdBuffer) setDescTable(table driver.DescTable, start int, heapCopy []int, bindPoint C.VkPipelineBindPoint) {
 	desc := table.(*descTable)
 	ncpy := len(heapCopy)
 	switch {
