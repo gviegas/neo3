@@ -243,139 +243,34 @@ func Example_draw() {
 	defer cpy.Destroy()
 
 	// Create a command buffer and record commands.
-	//
-	// We record two top-level commands:
-	// 	1. a render pass command that draws the triangle and
-	// 	2. a blit command that copies the results to a buffer
-	// 		accessible from the CPU side.
-	//
+	// We record a render pass that draws the triangle and
+	// a data transfer that copies the results to a buffer
+	// accessible from the CPU side.
 	// The blit command is set to wait for the render pass
 	// to complete before it starts the copy.
 	cb, err := gpu.NewCmdBuffer()
 	if err != nil {
 		log.Fatal(err)
 	}
-	cache := driver.CmdCache{}
-	cache.Pass = []driver.PassCmd{
-		{
-			Pass: pass,
-			FB:   fb,
-			Clear: []driver.ClearValue{
-				{
-					Color: [4]float32{1.0, 1.0, 0.0, 1.0},
-				},
-			},
-			SubCmd: []int{0},
-		},
-	}
-	cache.Subpass = []driver.SubpassCmd{
-		{
-			[]driver.Command{
-				{
-					Type:  driver.CPipeline,
-					Index: 0,
-				},
-				{
-					Type:  driver.CViewport,
-					Index: 0,
-				},
-				{
-					Type:  driver.CScissor,
-					Index: 0,
-				},
-				{
-					Type:  driver.CBlendColor,
-					Index: 0,
-				},
-				{
-					Type:  driver.CVertexBuf,
-					Index: 0,
-				},
-				{
-					Type:  driver.CDescTable,
-					Index: 0,
-				},
-				{
-					Type:  driver.CDraw,
-					Index: 0,
-				},
-			},
-		},
-	}
-	cache.Pipeline = []driver.PipelineCmd{
-		{
-			PL: pl,
-		},
-	}
-	cache.Viewport = []driver.ViewportCmd{
-		{
-			VP: []driver.Viewport{
-				{
-					X:      0,
-					Y:      0,
-					Width:  float32(dim.Width),
-					Height: float32(dim.Height),
-					Znear:  0,
-					Zfar:   1,
-				},
-			},
-		},
-	}
-	cache.Scissor = []driver.ScissorCmd{
-		{
-			S: []driver.Scissor{
-				{
-					X:      0,
-					Y:      0,
-					Width:  dim.Width,
-					Height: dim.Height,
-				},
-			},
-		},
-	}
-	cache.BlendColor = []driver.BlendColorCmd{
-		{
-			R: 0,
-			G: 0,
-			B: 0.75,
-			A: 0,
-		},
-	}
-	cache.VertexBuf = []driver.VertexBufCmd{
-		{
-			Start: 0,
-			Buf:   []driver.Buffer{buf, buf},
-			Off:   []int64{0, int64(npos)},
-		},
-	}
-	cache.DescTable = []driver.DescTableCmd{
-		{
-			Desc:  dtab,
-			Start: 0,
-			Copy:  []int{0},
-		},
-	}
-	cache.Draw = []driver.DrawCmd{
-		{
-			VertCount: 3,
-			InstCount: 1,
-			BaseVert:  0,
-			BaseInst:  0,
-		},
-	}
-	cache.Blit = []driver.BlitCmd{
-		{
-			Wait: true,
-			Cmd: []driver.Command{
-				{
-					Type:  driver.CImgBufCopy,
-					Index: 0,
-				},
-			},
-		},
-	}
-	cache.ImgBufCopy = []driver.ImgBufCopyCmd{
-		{
+	var (
+		clear = driver.ClearValue{
+			Color: [4]float32{1, 1, 0, 1},
+		}
+		vport = driver.Viewport{
+			X:      0,
+			Y:      0,
+			Width:  float32(dim.Width),
+			Height: float32(dim.Height),
+			Znear:  0,
+			Zfar:   1,
+		}
+		sciss = driver.Scissor{
+			X:      0,
+			Y:      0,
+			Width:  dim.Width,
+			Height: dim.Height,
+		}
+		blit = driver.BufImgCopy{
 			Buf:    cpy,
 			BufOff: 0,
 			// Stride is given in pixels, not bytes.
@@ -385,25 +280,21 @@ func Example_draw() {
 			Layer:  0,
 			Level:  0,
 			Size:   dim,
-		},
-	}
-	// Note that this order is only meaningful because the
-	// blit command explicitly waits that previous commands
-	// finish before starting to execute.
-	cmd := []driver.Command{
-		{
-			Type:  driver.CPass,
-			Index: 0,
-		},
-		{
-			Type:  driver.CBlit,
-			Index: 0,
-		},
-	}
-	err = cb.Record(cmd, &cache)
-	if err != nil {
-		log.Fatal(err)
-	}
+		}
+	)
+	cb.BeginPass(pass, fb, []driver.ClearValue{clear})
+	cb.SetPipeline(pl)
+	cb.SetViewport([]driver.Viewport{vport})
+	cb.SetScissor([]driver.Scissor{sciss})
+	cb.SetBlendColor(0, 0, 0.75, 0)
+	cb.SetVertexBuf(0, []driver.Buffer{buf, buf}, []int64{0, int64(npos)})
+	cb.SetDescTableGraph(dtab, 0, []int{0})
+	cb.Draw(3, 1, 0, 0)
+	cb.EndPass()
+	cb.BeginBlit(true)
+	cb.CopyImgToBuf(&blit)
+	cb.EndBlit()
+
 	// End must be called before commiting the command buffer
 	// to the GPU.
 	// Recording into a command buffer that was ended and not

@@ -44,6 +44,9 @@ type T struct {
 	dheap    driver.DescHeap
 	dtab     driver.DescTable
 	pipeln   driver.Pipeline
+	clear    [2]driver.ClearValue
+	vport    driver.Viewport
+	sciss    driver.Scissor
 	xform    M
 	angle    float32
 	quit     bool
@@ -68,6 +71,28 @@ func Example_spinningCube() {
 	t.samplingSetup()
 	t.descriptorSetup()
 	t.pipelineSetup()
+	t.clear = [2]driver.ClearValue{
+		{
+			Color: [4]float32{0.9, 0.9, 0.9, 1},
+		},
+		{
+			Depth: 1,
+		},
+	}
+	t.vport = driver.Viewport{
+		X:      0,
+		Y:      0,
+		Width:  float32(dim.Width),
+		Height: float32(dim.Height),
+		Znear:  0,
+		Zfar:   1,
+	}
+	t.sciss = driver.Scissor{
+		X:      0,
+		Y:      0,
+		Width:  dim.Width,
+		Height: dim.Height,
+	}
 	wsi.SetWindowHandler(&t)
 	wsi.SetKeyboardHandler(&t)
 	t.renderLoop()
@@ -153,7 +178,6 @@ func (t *T) passSetup() {
 	t.fb = fb
 	t.dsImg = dsImg
 	t.dsView = dsView
-	cache.Pass[0].Pass = pass
 }
 
 // shaderSetup creates the vertex and fragment shaders.
@@ -224,9 +248,6 @@ func (t *T) bufferSetup() {
 
 	t.vertBuf = vertBuf
 	t.constBuf = constBuf
-	cache.VertexBuf[0].Buf[0] = vertBuf
-	cache.VertexBuf[0].Buf[1] = vertBuf
-	cache.VertexBuf[0].Off[1] = 512
 }
 
 // samplingSetup creates the sampler and the texture to
@@ -268,20 +289,14 @@ func (t *T) samplingSetup() {
 
 	// Images are always GPU private. We need to use a
 	// staging buffer to copy data to an image.
-	cache.BufImgCopy[0].Buf = buf
-	cache.BufImgCopy[0].Stride[0] = int64(size.Width)
-	cache.BufImgCopy[0].Img = img
-	cache.BufImgCopy[0].Size = size
-
-	cmd := []driver.Command{
-		{
-			Type:  driver.CBlit,
-			Index: 0,
-		},
-	}
-	if err := t.cb[0].Record(cmd, &cache); err != nil {
-		log.Fatal(err)
-	}
+	t.cb[0].BeginBlit(false)
+	t.cb[0].CopyBufToImg(&driver.BufImgCopy{
+		Buf:    buf,
+		Stride: [2]int64{int64(size.Width)},
+		Img:    img,
+		Size:   size,
+	})
+	t.cb[0].EndBlit()
 	if err := t.cb[0].End(); err != nil {
 		log.Fatal(err)
 	}
@@ -352,7 +367,6 @@ func (t *T) descriptorSetup() {
 
 	t.dtab = dtab
 	t.dheap = dheap
-	cache.DescTable[0].Desc = dtab
 }
 
 // pipelineSetup creates the graphics pipeline.
@@ -407,135 +421,6 @@ func (t *T) pipelineSetup() {
 	}
 
 	t.pipeln = pipeln
-	cache.Pipeline[0].PL = pipeln
-}
-
-// Command cache.
-// Most of these data never change, so it is a good
-// opportunity for reuse. We don't want to keep the
-// GC busy, specially during the rendering loop.
-var cache = driver.CmdCache{
-	Blit: []driver.BlitCmd{
-		{
-			Wait: false,
-			Cmd: []driver.Command{
-				{
-					Type:  driver.CBufImgCopy,
-					Index: 0,
-				},
-			},
-		},
-	},
-	BufImgCopy: []driver.BufImgCopyCmd{
-		{
-			Buf:    nil,
-			BufOff: 0,
-			Stride: [2]int64{0, 0},
-			Img:    nil,
-			ImgOff: driver.Off3D{},
-			Layer:  0,
-			Level:  0,
-			Size:   driver.Dim3D{},
-		},
-	},
-	Pass: []driver.PassCmd{
-		{
-			Pass: nil,
-			FB:   nil,
-			Clear: []driver.ClearValue{
-				{
-					Color: [4]float32{0.9, 0.9, 0.9, 1.0},
-				},
-				{
-					Depth: 1.0,
-				},
-			},
-			SubCmd: []int{0},
-		},
-	},
-	Subpass: []driver.SubpassCmd{
-		{
-			Cmd: []driver.Command{
-				{
-					Type:  driver.CPipeline,
-					Index: 0,
-				},
-				{
-					Type:  driver.CViewport,
-					Index: 0,
-				},
-				{
-					Type:  driver.CScissor,
-					Index: 0,
-				},
-				{
-					Type:  driver.CVertexBuf,
-					Index: 0,
-				},
-				{
-					Type:  driver.CDescTable,
-					Index: 0,
-				},
-				{
-					Type:  driver.CDraw,
-					Index: 0,
-				},
-			},
-		},
-	},
-	Pipeline: []driver.PipelineCmd{
-		{
-			PL: nil,
-		},
-	},
-	Viewport: []driver.ViewportCmd{
-		{
-			[]driver.Viewport{
-				{
-					X:      0.0,
-					Y:      0.0,
-					Width:  float32(dim.Width),
-					Height: float32(dim.Height),
-					Znear:  0.0,
-					Zfar:   1.0,
-				},
-			},
-		},
-	},
-	Scissor: []driver.ScissorCmd{
-		{
-			[]driver.Scissor{
-				{
-					X:      0,
-					Y:      0,
-					Width:  dim.Width,
-					Height: dim.Height,
-				},
-			},
-		},
-	},
-	VertexBuf: []driver.VertexBufCmd{
-		{
-			Start: 0,
-			Buf:   []driver.Buffer{nil, nil},
-			Off:   []int64{0, 0},
-		},
-	},
-	DescTable: []driver.DescTableCmd{
-		{
-			Desc:  nil,
-			Start: 0,
-			Copy:  []int{0},
-		},
-	},
-	Draw: []driver.DrawCmd{
-		{
-			VertCount: 36,
-			InstCount: 1,
-			BaseVert:  0,
-			BaseInst:  0,
-		},
-	},
 }
 
 // renderLoop renders the cube in a loop.
@@ -578,19 +463,17 @@ func (t *T) renderLoop() {
 				log.Fatal(err)
 			}
 		}
-		cache.Pass[0].FB = t.fb[next]
 
 		// We record the first render pass that will use
 		// the swapchain's image only after Next succeeds.
-		cmd := []driver.Command{
-			{
-				Type:  driver.CPass,
-				Index: 0,
-			},
-		}
-		if err = t.cb[frame].Record(cmd, &cache); err != nil {
-			log.Fatal(err)
-		}
+		t.cb[frame].BeginPass(t.pass, t.fb[next], t.clear[:])
+		t.cb[frame].SetPipeline(t.pipeln)
+		t.cb[frame].SetViewport([]driver.Viewport{t.vport})
+		t.cb[frame].SetScissor([]driver.Scissor{t.sciss})
+		t.cb[frame].SetVertexBuf(0, []driver.Buffer{t.vertBuf, t.vertBuf}, []int64{0, 512})
+		t.cb[frame].SetDescTableGraph(t.dtab, 0, []int{0})
+		t.cb[frame].Draw(36, 1, 0, 0)
+		t.cb[frame].EndPass()
 
 		// We call Present only after the last render pass
 		// that will use the swapchain's image is recorded.
@@ -598,7 +481,7 @@ func (t *T) renderLoop() {
 			log.Fatal(err)
 		}
 
-		// End must come after Next, Record and Present.
+		// End must come after Next, EndPass and Present.
 		if err := t.cb[frame].End(); err != nil {
 			log.Fatal(err)
 		}
@@ -909,10 +792,10 @@ func (t *T) recreateSwapchain() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		cache.Viewport[0].VP[0].Width = float32(width)
-		cache.Viewport[0].VP[0].Height = float32(height)
-		cache.Scissor[0].S[0].Width = width
-		cache.Scissor[0].S[0].Height = height
+		t.vport.Width = float32(width)
+		t.vport.Height = float32(height)
+		t.sciss.Width = width
+		t.sciss.Height = height
 	}
 	for i := range t.fb {
 		t.fb[i].Destroy()
