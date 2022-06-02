@@ -298,7 +298,7 @@ func Example_draw() {
 	// End must be called before commiting the command buffer
 	// to the GPU.
 	// Recording into a command buffer that was ended and not
-	// commited/reset is an error.
+	// committed/reset is an error.
 	err = cb.End()
 	if err != nil {
 		log.Fatal(err)

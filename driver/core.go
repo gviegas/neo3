@@ -63,6 +63,36 @@ type Destroyer interface {
 }
 
 // CmdBuffer is the interface that defines a command buffer.
+// Commands are recorded into command buffers and later
+// committed to the GPU for execution. Recording is separate
+// into logical blocks containing either rendering, compute
+// or copy commands. Multiple logical blocks can be recorded
+// into a single command buffer.
+//
+// To record commands for a render pass:
+// 	1. call BeginPass
+// 	2. call Set* methods to configure rendering state
+// 	3. call Draw* commands
+// 	4. call NextSubpass (if using multiple subpasses)
+// 	5. repeat 2-4 as needed
+// 	6. call EndPass
+//
+// To record compute commands:
+//	1. call BeginWork
+//	2. call Set* methods to configure compute state
+//	3. call Dispatch commands
+//	4. repeat 2-3 as needed
+//	5. call EndWork
+//
+// To record copy commands:
+//	1. call BeginBlit
+//	2. call Copy*/Fill commands
+//	3. call EndBlit
+//
+// Finally, call End and, if it succeeds, GPU.Commit.
+// Note that Begin* commands must not be nested, and
+// must always be ended before another call to Begin*
+// and prior to the final End call.
 type CmdBuffer interface {
 	Destroyer
 
@@ -76,6 +106,7 @@ type CmdBuffer interface {
 
 	// NextSubpass ends the current subpass and begins
 	// the next one.
+	// It must not be called in the last subpass.
 	NextSubpass()
 
 	// EndPass ends the current render pass.
@@ -98,7 +129,7 @@ type CmdBuffer interface {
 	// Copy/fill commands may run in parallel.
 	BeginBlit(wait bool)
 
-	// EndBlit ends data transfer.
+	// EndBlit ends the current data transfer.
 	EndBlit()
 
 	// SetPipeline sets the pipeline.
