@@ -56,54 +56,18 @@ func TestCmdRecording(t *testing.T) {
 		return
 	}
 	defer dst.Destroy()
-	cache := driver.CmdCache{
-		Blit: []driver.BlitCmd{
-			{
-				Wait: false,
-				Cmd: []driver.Command{
-					{
-						Type:  driver.CFill,
-						Index: 0,
-					},
-				},
-			},
-			{
-				Wait: true,
-				Cmd: []driver.Command{
-					{
-						Type:  driver.CBufferCopy,
-						Index: 0,
-					},
-				},
-			},
-		},
-		Fill: []driver.FillCmd{
-			{
-				Buf:  src,
-				Byte: 0x2a,
-				Off:  16,
-				Size: 256,
-			},
-		},
-		BufferCopy: []driver.BufferCopyCmd{
-			{
-				From:    src,
-				FromOff: 0,
-				To:      dst,
-				ToOff:   512,
-				Size:    256,
-			},
-		},
-	}
-	cmd := []driver.Command{
-		{Type: driver.CBlit, Index: 0},
-		{Type: driver.CBlit, Index: 1},
-	}
-	err = cb.Record(cmd, &cache)
-	if err != nil {
-		t.Errorf("(error) cb.Record(): %v", err)
-		return
-	}
+	cb.BeginBlit(false)
+	cb.Fill(src, 16, 0x2a, 256)
+	cb.EndBlit()
+	cb.BeginBlit(true)
+	cb.CopyBuffer(&driver.BufferCopy{
+		From:    src,
+		FromOff: 0,
+		To:      dst,
+		ToOff:   512,
+		Size:    256,
+	})
+	cb.EndBlit()
 	err = cb.End()
 	if err != nil {
 		t.Errorf("(error) cb.End(): %v", err)
