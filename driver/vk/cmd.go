@@ -71,24 +71,6 @@ func (d *Driver) newCmdBuffer(qfam C.uint32_t) (driver.CmdBuffer, error) {
 	}, nil
 }
 
-// Record records commands in the command buffer.
-func (cb *cmdBuffer) Record(cmd []driver.Command, cache *driver.CmdCache) error {
-	if err := cb.begin(); err != nil {
-		return err
-	}
-	for i := range cmd {
-		switch cmd[i].Type {
-		case driver.CPass:
-			cb.passCmd(cmd[i].Index, cache)
-		case driver.CWork:
-			cb.workCmd(cmd[i].Index, cache)
-		case driver.CBlit:
-			cb.blitCmd(cmd[i].Index, cache)
-		}
-	}
-	return nil
-}
-
 // begin puts the command buffer in the recording state.
 func (cb *cmdBuffer) begin() error {
 	if !cb.begun {
@@ -174,31 +156,34 @@ func (cb *cmdBuffer) scBarrier(lay1, lay2 C.VkImageLayout, que1, que2 C.uint32_t
 	C.vkCmdPipelineBarrier(cb.cb, stg1, stg2, 0, 0, nil, 0, nil, 1, &imb)
 }
 
-// passCmd records a driver.PassCmd in the command buffer.
-func (cb *cmdBuffer) passCmd(index int, cache *driver.CmdCache) {
-	cmd := &cache.Pass[index]
-	pass := cmd.Pass.(*renderPass)
-	fb := cmd.FB.(*framebuf)
+// BeginPass begins the first subpass of a given render pass.
+func (cb *cmdBuffer) BeginPass(pass driver.RenderPass, fb driver.Framebuf, clear []driver.ClearValue) {
+	if err := cb.begin(); err != nil {
+		// XXX
+		return
+	}
+	rpass := pass.(*renderPass)
+	fbuf := fb.(*framebuf)
 	var pclr *C.VkClearValue
-	nclr := len(cmd.Clear)
+	nclr := len(clear)
 	if nclr > 0 {
 		pclr = (*C.VkClearValue)(C.malloc(C.size_t(nclr) * C.sizeof_VkClearValue))
 		defer C.free(unsafe.Pointer(pclr))
 		sclr := unsafe.Slice(pclr, nclr)
 		for i := range sclr {
-			if pass.aspect[i] == C.VK_IMAGE_ASPECT_COLOR_BIT {
+			if rpass.aspect[i] == C.VK_IMAGE_ASPECT_COLOR_BIT {
 				color := [4]C.float{
-					C.float(cmd.Clear[i].Color[0]),
-					C.float(cmd.Clear[i].Color[1]),
-					C.float(cmd.Clear[i].Color[2]),
-					C.float(cmd.Clear[i].Color[3]),
+					C.float(clear[i].Color[0]),
+					C.float(clear[i].Color[1]),
+					C.float(clear[i].Color[2]),
+					C.float(clear[i].Color[3]),
 				}
 				raw := (*byte)(unsafe.Pointer(&color[0]))
 				copy(sclr[i][:], unsafe.Slice(raw, unsafe.Sizeof(color)))
 			} else {
 				ds := C.VkClearDepthStencilValue{
-					depth:   C.float(cmd.Clear[i].Depth),
-					stencil: C.uint32_t(cmd.Clear[i].Stencil),
+					depth:   C.float(clear[i].Depth),
+					stencil: C.uint32_t(clear[i].Stencil),
 				}
 				raw := (*byte)(unsafe.Pointer(&ds))
 				copy(sclr[i][:], unsafe.Slice(raw, unsafe.Sizeof(ds)))
@@ -207,29 +192,37 @@ func (cb *cmdBuffer) passCmd(index int, cache *driver.CmdCache) {
 	}
 	info := C.VkRenderPassBeginInfo{
 		sType:       C.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		renderPass:  pass.pass,
-		framebuffer: fb.fb,
+		renderPass:  rpass.pass,
+		framebuffer: fbuf.fb,
 		renderArea: C.VkRect2D{
 			extent: C.VkExtent2D{
-				width:  C.uint32_t(fb.width),
-				height: C.uint32_t(fb.height),
+				width:  C.uint32_t(fbuf.width),
+				height: C.uint32_t(fbuf.height),
 			},
 		},
 		clearValueCount: C.uint32_t(nclr),
 		pClearValues:    pclr,
 	}
 	C.vkCmdBeginRenderPass(cb.cb, &info, C.VK_SUBPASS_CONTENTS_INLINE)
-	cb.subpassCmd(cmd.SubCmd[0], cache)
-	for i := 1; i < len(cmd.SubCmd); i++ {
-		C.vkCmdNextSubpass(cb.cb, C.VK_SUBPASS_CONTENTS_INLINE)
-		cb.subpassCmd(cmd.SubCmd[i], cache)
-	}
+}
+
+// NextSubpass ends the current subpass and begins the next one.
+func (cb *cmdBuffer) NextSubpass() {
+	C.vkCmdNextSubpass(cb.cb, C.VK_SUBPASS_CONTENTS_INLINE)
+}
+
+// EndPass ends the current render pass.
+func (cb *cmdBuffer) EndPass() {
 	C.vkCmdEndRenderPass(cb.cb)
 }
 
-// workCmd records a driver.WorkCmd in the command buffer.
-func (cb *cmdBuffer) workCmd(index int, cache *driver.CmdCache) {
-	if cache.Work[index].Wait {
+// BeginWork begins compute work.
+func (cb *cmdBuffer) BeginWork(wait bool) {
+	if err := cb.begin(); err != nil {
+		// XXX
+		return
+	}
+	if wait {
 		// TODO: Improve this.
 		stg1 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
 		stg2 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
@@ -237,21 +230,18 @@ func (cb *cmdBuffer) workCmd(index int, cache *driver.CmdCache) {
 		acc2 := C.VkAccessFlags(C.VK_ACCESS_SHADER_WRITE_BIT | C.VK_ACCESS_SHADER_READ_BIT)
 		cb.barrier(stg1, stg2, acc1, acc2)
 	}
-	for _, c := range cache.Work[index].Cmd {
-		switch c.Type {
-		case driver.CPipeline:
-			cb.pipelineCmd(cache.Pipeline[c.Index], C.VK_PIPELINE_BIND_POINT_COMPUTE)
-		case driver.CDescTable:
-			cb.descTableCmd(cache.DescTable[c.Index], C.VK_PIPELINE_BIND_POINT_COMPUTE)
-		case driver.CDispatch:
-			cb.dispatchCmd(cache.Dispatch[c.Index])
-		}
-	}
 }
 
-// blitCmd records a driver.BlitCmd in the command buffer.
-func (cb *cmdBuffer) blitCmd(index int, cache *driver.CmdCache) {
-	if cache.Blit[index].Wait {
+// EndWork ends the current compute work.
+func (cb *cmdBuffer) EndWork() {}
+
+// BeginBlit begins data transfer.
+func (cb *cmdBuffer) BeginBlit(wait bool) {
+	if err := cb.begin(); err != nil {
+		// XXX
+		return
+	}
+	if wait {
 		// TODO: Improve this.
 		stg1 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
 		stg2 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_TRANSFER_BIT)
@@ -259,252 +249,232 @@ func (cb *cmdBuffer) blitCmd(index int, cache *driver.CmdCache) {
 		acc2 := C.VkAccessFlags(C.VK_ACCESS_TRANSFER_WRITE_BIT | C.VK_ACCESS_TRANSFER_READ_BIT)
 		cb.barrier(stg1, stg2, acc1, acc2)
 	}
-	for _, c := range cache.Blit[index].Cmd {
-		switch c.Type {
-		case driver.CBufferCopy:
-			cb.bufferCopyCmd(cache.BufferCopy[c.Index])
-		case driver.CImageCopy:
-			cb.imageCopyCmd(&cache.ImageCopy[c.Index])
-		case driver.CBufImgCopy:
-			cb.bufImgCopyCmd(&cache.BufImgCopy[c.Index])
-		case driver.CImgBufCopy:
-			cb.imgBufCopyCmd(&cache.ImgBufCopy[c.Index])
-		case driver.CFill:
-			cb.fillCmd(cache.Fill[c.Index])
-		}
-	}
 }
 
-// subpassCmd records a driver.SubpassCmd in the command buffer.
-func (cb *cmdBuffer) subpassCmd(index int, cache *driver.CmdCache) {
-	for _, c := range cache.Subpass[index].Cmd {
-		switch c.Type {
-		case driver.CPipeline:
-			cb.pipelineCmd(cache.Pipeline[c.Index], C.VK_PIPELINE_BIND_POINT_GRAPHICS)
-		case driver.CViewport:
-			cb.viewportCmd(cache.Viewport[c.Index])
-		case driver.CScissor:
-			cb.scissorCmd(cache.Scissor[c.Index])
-		case driver.CBlendColor:
-			cb.blendColorCmd(cache.BlendColor[c.Index])
-		case driver.CStencilRef:
-			cb.stencilRefCmd(cache.StencilRef[c.Index])
-		case driver.CVertexBuf:
-			cb.vertexBufCmd(cache.VertexBuf[c.Index])
-		case driver.CIndexBuf:
-			cb.indexBufCmd(cache.IndexBuf[c.Index])
-		case driver.CDescTable:
-			cb.descTableCmd(cache.DescTable[c.Index], C.VK_PIPELINE_BIND_POINT_GRAPHICS)
-		case driver.CDraw:
-			cb.drawCmd(cache.Draw[c.Index])
-		case driver.CIndexDraw:
-			cb.indexDrawCmd(cache.IndexDraw[c.Index])
-		}
-	}
+// EndBlit ends data transfer.
+func (cb *cmdBuffer) EndBlit() {}
+
+// SetPipeline sets the pipeline.
+func (cb *cmdBuffer) SetPipeline(pl driver.Pipeline) {
+	pipeln := pl.(*pipeline)
+	C.vkCmdBindPipeline(cb.cb, pipeln.bindp, pipeln.pl)
 }
 
-// pipelineCmd records a driver.PipelineCmd in the command buffer.
-func (cb *cmdBuffer) pipelineCmd(cmd driver.PipelineCmd, bp C.VkPipelineBindPoint) {
-	pl := cmd.PL.(*pipeline)
-	C.vkCmdBindPipeline(cb.cb, bp, pl.pl)
-}
-
-// viewportCmd records a driver.ViewportCmd in the command buffer.
-func (cb *cmdBuffer) viewportCmd(cmd driver.ViewportCmd) {
-	nvp := len(cmd.VP)
+// SetViewport sets the bounds of one or more viewports.
+func (cb *cmdBuffer) SetViewport(vp []driver.Viewport) {
+	nvp := len(vp)
 	switch {
 	case nvp == 1:
-		vp := C.VkViewport{
-			x:        C.float(cmd.VP[0].X),
-			y:        C.float(cmd.VP[0].Y),
-			width:    C.float(cmd.VP[0].Width),
-			height:   C.float(cmd.VP[0].Height),
-			minDepth: C.float(cmd.VP[0].Znear),
-			maxDepth: C.float(cmd.VP[0].Zfar),
+		vport := C.VkViewport{
+			x:        C.float(vp[0].X),
+			y:        C.float(vp[0].Y),
+			width:    C.float(vp[0].Width),
+			height:   C.float(vp[0].Height),
+			minDepth: C.float(vp[0].Znear),
+			maxDepth: C.float(vp[0].Zfar),
 		}
-		C.vkCmdSetViewport(cb.cb, 0, 1, &vp)
+		C.vkCmdSetViewport(cb.cb, 0, 1, &vport)
 	case nvp > 1:
-		vp := make([]C.VkViewport, nvp)
+		vport := make([]C.VkViewport, nvp)
 		for i := range vp {
-			vp[i] = C.VkViewport{
-				x:        C.float(cmd.VP[i].X),
-				y:        C.float(cmd.VP[i].Y),
-				width:    C.float(cmd.VP[i].Width),
-				height:   C.float(cmd.VP[i].Height),
-				minDepth: C.float(cmd.VP[i].Znear),
-				maxDepth: C.float(cmd.VP[i].Zfar),
+			vport[i] = C.VkViewport{
+				x:        C.float(vp[i].X),
+				y:        C.float(vp[i].Y),
+				width:    C.float(vp[i].Width),
+				height:   C.float(vp[i].Height),
+				minDepth: C.float(vp[i].Znear),
+				maxDepth: C.float(vp[i].Zfar),
 			}
 		}
-		C.vkCmdSetViewport(cb.cb, 0, C.uint32_t(nvp), &vp[0])
+		C.vkCmdSetViewport(cb.cb, 0, C.uint32_t(nvp), &vport[0])
 	}
 }
 
-// scissorCmd records a driver.ScissorCmd in the command buffer.
-func (cb *cmdBuffer) scissorCmd(cmd driver.ScissorCmd) {
-	ns := len(cmd.S)
+// SetScissor sets the rectangles of one or more viewport scissors.
+func (cb *cmdBuffer) SetScissor(sciss []driver.Scissor) {
+	nsciss := len(sciss)
 	switch {
-	case ns == 1:
-		s := C.VkRect2D{
+	case nsciss == 1:
+		rect := C.VkRect2D{
 			offset: C.VkOffset2D{
-				x: C.int32_t(cmd.S[0].X),
-				y: C.int32_t(cmd.S[0].Y),
+				x: C.int32_t(sciss[0].X),
+				y: C.int32_t(sciss[0].Y),
 			},
 			extent: C.VkExtent2D{
-				width:  C.uint32_t(cmd.S[0].Width),
-				height: C.uint32_t(cmd.S[0].Height),
+				width:  C.uint32_t(sciss[0].Width),
+				height: C.uint32_t(sciss[0].Height),
 			},
 		}
-		C.vkCmdSetScissor(cb.cb, 0, 1, &s)
-	case ns > 1:
-		s := make([]C.VkRect2D, ns)
-		for i := range s {
-			s[i] = C.VkRect2D{
+		C.vkCmdSetScissor(cb.cb, 0, 1, &rect)
+	case nsciss > 1:
+		rect := make([]C.VkRect2D, nsciss)
+		for i := range rect {
+			rect[i] = C.VkRect2D{
 				offset: C.VkOffset2D{
-					x: C.int32_t(cmd.S[i].X),
-					y: C.int32_t(cmd.S[i].Y),
+					x: C.int32_t(sciss[i].X),
+					y: C.int32_t(sciss[i].Y),
 				},
 				extent: C.VkExtent2D{
-					width:  C.uint32_t(cmd.S[i].Width),
-					height: C.uint32_t(cmd.S[i].Height),
+					width:  C.uint32_t(sciss[i].Width),
+					height: C.uint32_t(sciss[i].Height),
 				},
 			}
 		}
-		C.vkCmdSetScissor(cb.cb, 0, C.uint32_t(ns), &s[0])
+		C.vkCmdSetScissor(cb.cb, 0, C.uint32_t(nsciss), &rect[0])
 	}
 }
 
-// blendColorCmd records a driver.BlendColorCmd in the command buffer.
-func (cb *cmdBuffer) blendColorCmd(cmd driver.BlendColorCmd) {
+// SetBlendColor sets the constant blend color.
+func (cb *cmdBuffer) SetBlendColor(r, g, b, a float32) {
 	color := [4]C.float{
-		C.float(cmd.R),
-		C.float(cmd.G),
-		C.float(cmd.B),
-		C.float(cmd.A),
+		C.float(r),
+		C.float(g),
+		C.float(b),
+		C.float(a),
 	}
 	C.vkCmdSetBlendConstants(cb.cb, &color[0])
 }
 
-// stencilRefCmd records a driver.StencilRefCmd in the command buffer.
-func (cb *cmdBuffer) stencilRefCmd(cmd driver.StencilRefCmd) {
-	C.vkCmdSetStencilReference(cb.cb, C.VK_STENCIL_FACE_FRONT_AND_BACK, C.uint32_t(cmd.Value))
+// SetStencilRef sets the stencil reference value.
+func (cb *cmdBuffer) SetStencilRef(value uint32) {
+	C.vkCmdSetStencilReference(cb.cb, C.VK_STENCIL_FACE_FRONT_AND_BACK, C.uint32_t(value))
 }
 
-// vertexBufCmd records a driver.VertexBufCmd in the command buffer.
-func (cb *cmdBuffer) vertexBufCmd(cmd driver.VertexBufCmd) {
-	nbuf := len(cmd.Buf)
+// SetVertexBuf sets one or more vertex buffers.
+func (cb *cmdBuffer) SetVertexBuf(start int, buf []driver.Buffer, off []int64) {
+	nbuf := len(buf)
 	switch {
 	case nbuf == 1:
-		buf := cmd.Buf[0].(*buffer).buf
-		off := C.VkDeviceSize(cmd.Off[0])
-		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(cmd.Start), C.uint32_t(nbuf), &buf, &off)
+		buf := buf[0].(*buffer).buf
+		off := C.VkDeviceSize(off[0])
+		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(start), C.uint32_t(nbuf), &buf, &off)
 	case nbuf > 1:
-		buf := make([]C.VkBuffer, nbuf)
+		sbuf := make([]C.VkBuffer, nbuf)
 		off := make([]C.VkDeviceSize, nbuf)
 		for i := range buf {
-			buf[i] = cmd.Buf[i].(*buffer).buf
-			off[i] = C.VkDeviceSize(cmd.Off[i])
+			sbuf[i] = buf[i].(*buffer).buf
+			off[i] = C.VkDeviceSize(off[i])
 		}
-		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(cmd.Start), C.uint32_t(nbuf), &buf[0], &off[0])
+		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(start), C.uint32_t(nbuf), &sbuf[0], &off[0])
 	}
 }
 
-// indexBufCmd records a driver.IndexBufCmd in the command buffer.
-func (cb *cmdBuffer) indexBufCmd(cmd driver.IndexBufCmd) {
+// SetIndexBuf sets the index buffer.
+func (cb *cmdBuffer) SetIndexBuf(format driver.IndexFmt, buf driver.Buffer, off int64) {
 	var typ C.VkIndexType
-	switch cmd.Format {
+	switch format {
 	case driver.Index16:
 		typ = C.VK_INDEX_TYPE_UINT16
 	case driver.Index32:
 		typ = C.VK_INDEX_TYPE_UINT32
 	}
-	C.vkCmdBindIndexBuffer(cb.cb, cmd.Buf.(*buffer).buf, C.VkDeviceSize(cmd.Off), typ)
+	C.vkCmdBindIndexBuffer(cb.cb, buf.(*buffer).buf, C.VkDeviceSize(off), typ)
 }
 
-// descTableCmd records a driver.DescTableCmd in the command buffer.
-func (cb *cmdBuffer) descTableCmd(cmd driver.DescTableCmd, bp C.VkPipelineBindPoint) {
-	desc := cmd.Desc.(*descTable)
-	ncpy := len(cmd.Copy)
+// SetDescTableGraph sets a descriptor table range for graphics pipelines.
+func (cb *cmdBuffer) SetDescTableGraph(table driver.DescTable, start int, heapCopy []int) {
+	const bindPoint = C.VkPipelineBindPoint(C.VK_PIPELINE_BIND_POINT_GRAPHICS)
+	desc := table.(*descTable)
+	ncpy := len(heapCopy)
 	switch {
 	case ncpy == 1:
-		set := desc.h[cmd.Start].sets[cmd.Copy[0]]
-		C.vkCmdBindDescriptorSets(cb.cb, bp, desc.layout, C.uint32_t(cmd.Start), C.uint32_t(ncpy), &set, 0, nil)
+		set := desc.h[start].sets[heapCopy[0]]
+		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), &set, 0, nil)
 	case ncpy > 1:
 		set := make([]C.VkDescriptorSet, ncpy)
 		for i := range set {
-			set[i] = desc.h[cmd.Start+i].sets[cmd.Copy[i]]
+			set[i] = desc.h[start+i].sets[heapCopy[i]]
 		}
-		C.vkCmdBindDescriptorSets(cb.cb, bp, desc.layout, C.uint32_t(cmd.Start), C.uint32_t(ncpy), &set[0], 0, nil)
+		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), &set[0], 0, nil)
 	}
 }
 
-// drawCmd records a driver.DrawCmd in the command buffer.
-func (cb *cmdBuffer) drawCmd(cmd driver.DrawCmd) {
-	nvert := C.uint32_t(cmd.VertCount)
-	ninst := C.uint32_t(cmd.InstCount)
-	bvert := C.uint32_t(cmd.BaseVert)
-	binst := C.uint32_t(cmd.BaseInst)
+// SetDescTableComp sets a descriptor table range for compute pipelines.
+func (cb *cmdBuffer) SetDescTableComp(table driver.DescTable, start int, heapCopy []int) {
+	const bindPoint = C.VkPipelineBindPoint(C.VK_PIPELINE_BIND_POINT_COMPUTE)
+	desc := table.(*descTable)
+	ncpy := len(heapCopy)
+	switch {
+	case ncpy == 1:
+		set := desc.h[start].sets[heapCopy[0]]
+		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), &set, 0, nil)
+	case ncpy > 1:
+		set := make([]C.VkDescriptorSet, ncpy)
+		for i := range set {
+			set[i] = desc.h[start+i].sets[heapCopy[i]]
+		}
+		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), &set[0], 0, nil)
+	}
+}
+
+// Draw draws primitives.
+func (cb *cmdBuffer) Draw(vertCount, instCount, baseVert, baseInst int) {
+	nvert := C.uint32_t(vertCount)
+	ninst := C.uint32_t(instCount)
+	bvert := C.uint32_t(baseVert)
+	binst := C.uint32_t(baseInst)
 	C.vkCmdDraw(cb.cb, nvert, ninst, bvert, binst)
 }
 
-// indexDrawCmd records a driver.IndexDrawCmd in the command buffer.
-func (cb *cmdBuffer) indexDrawCmd(cmd driver.IndexDrawCmd) {
-	nidx := C.uint32_t(cmd.IdxCount)
-	ninst := C.uint32_t(cmd.InstCount)
-	bidx := C.uint32_t(cmd.BaseIdx)
-	voff := C.int32_t(cmd.VertOff)
-	binst := C.uint32_t(cmd.BaseInst)
+// DrawIndexed draws indexed primitives.
+func (cb *cmdBuffer) DrawIndexed(idxCount, instCount, baseIdx, vertOff, baseInst int) {
+	nidx := C.uint32_t(idxCount)
+	ninst := C.uint32_t(instCount)
+	bidx := C.uint32_t(baseIdx)
+	voff := C.int32_t(vertOff)
+	binst := C.uint32_t(baseInst)
 	C.vkCmdDrawIndexed(cb.cb, nidx, ninst, bidx, voff, binst)
 }
 
-// dispatchCmd records a driver.DispatchCmd in the command buffer.
-func (cb *cmdBuffer) dispatchCmd(cmd driver.DispatchCmd) {
-	nx := C.uint32_t(cmd.Count[0])
-	ny := C.uint32_t(cmd.Count[1])
-	nz := C.uint32_t(cmd.Count[2])
+// Dispatch dispatches compute thread groups.
+func (cb *cmdBuffer) Dispatch(grpCountX, grpCountY, grpCountZ int) {
+	nx := C.uint32_t(grpCountX)
+	ny := C.uint32_t(grpCountY)
+	nz := C.uint32_t(grpCountZ)
 	C.vkCmdDispatch(cb.cb, nx, ny, nz)
 }
 
-// bufferCopyCmd records a driver.BufferCopyCmd in the command buffer.
-func (cb *cmdBuffer) bufferCopyCmd(cmd driver.BufferCopyCmd) {
+// CopyBuffer copies data between buffers.
+func (cb *cmdBuffer) CopyBuffer(param *driver.BufferCopy) {
 	cpy := C.VkBufferCopy{
-		srcOffset: C.VkDeviceSize(cmd.FromOff),
-		dstOffset: C.VkDeviceSize(cmd.ToOff),
-		size:      C.VkDeviceSize(cmd.Size),
+		srcOffset: C.VkDeviceSize(param.FromOff),
+		dstOffset: C.VkDeviceSize(param.ToOff),
+		size:      C.VkDeviceSize(param.Size),
 	}
-	C.vkCmdCopyBuffer(cb.cb, cmd.From.(*buffer).buf, cmd.To.(*buffer).buf, 1, &cpy)
+	C.vkCmdCopyBuffer(cb.cb, param.From.(*buffer).buf, param.To.(*buffer).buf, 1, &cpy)
 }
 
-// imageCopyCmd records a driver.ImageCopyCmd in the command buffer.
-func (cb *cmdBuffer) imageCopyCmd(cmd *driver.ImageCopyCmd) {
-	from := cmd.From.(*image)
-	to := cmd.To.(*image)
+// CopyImage copies data between images.
+func (cb *cmdBuffer) CopyImage(param *driver.ImageCopy) {
+	from := param.From.(*image)
+	to := param.To.(*image)
 	cpy := C.VkImageCopy{
 		srcSubresource: C.VkImageSubresourceLayers{
 			aspectMask:     from.subres.aspectMask,
-			mipLevel:       C.uint32_t(cmd.FromLevel),
-			baseArrayLayer: C.uint32_t(cmd.FromLayer),
-			layerCount:     C.uint32_t(cmd.Layers),
+			mipLevel:       C.uint32_t(param.FromLevel),
+			baseArrayLayer: C.uint32_t(param.FromLayer),
+			layerCount:     C.uint32_t(param.Layers),
 		},
 		srcOffset: C.VkOffset3D{
-			x: C.int32_t(cmd.FromOff.X),
-			y: C.int32_t(cmd.FromOff.Y),
-			z: C.int32_t(cmd.FromOff.Z),
+			x: C.int32_t(param.FromOff.X),
+			y: C.int32_t(param.FromOff.Y),
+			z: C.int32_t(param.FromOff.Z),
 		},
 		dstSubresource: C.VkImageSubresourceLayers{
 			aspectMask:     to.subres.aspectMask,
-			mipLevel:       C.uint32_t(cmd.ToLevel),
-			baseArrayLayer: C.uint32_t(cmd.ToLayer),
-			layerCount:     C.uint32_t(cmd.Layers),
+			mipLevel:       C.uint32_t(param.ToLevel),
+			baseArrayLayer: C.uint32_t(param.ToLayer),
+			layerCount:     C.uint32_t(param.Layers),
 		},
 		dstOffset: C.VkOffset3D{
-			x: C.int32_t(cmd.ToOff.X),
-			y: C.int32_t(cmd.ToOff.Y),
-			z: C.int32_t(cmd.ToOff.Z),
+			x: C.int32_t(param.ToOff.X),
+			y: C.int32_t(param.ToOff.Y),
+			z: C.int32_t(param.ToOff.Z),
 		},
 		extent: C.VkExtent3D{
-			width:  C.uint32_t(cmd.Size.Width),
-			height: C.uint32_t(cmd.Size.Height),
-			depth:  C.uint32_t(cmd.Size.Depth),
+			width:  C.uint32_t(param.Size.Width),
+			height: C.uint32_t(param.Size.Height),
+			depth:  C.uint32_t(param.Size.Depth),
 		},
 	}
 	// TODO: Ensure images have transitioned to the correct layout.
@@ -512,13 +482,13 @@ func (cb *cmdBuffer) imageCopyCmd(cmd *driver.ImageCopyCmd) {
 	C.vkCmdCopyImage(cb.cb, from.img, layout, to.img, layout, 1, &cpy)
 }
 
-// bufImgCopyCmd records a driver.BufImgCopyCmd in the command buffer.
-func (cb *cmdBuffer) bufImgCopyCmd(cmd *driver.BufImgCopyCmd) {
-	buf := cmd.Buf.(*buffer)
-	img := cmd.Img.(*image)
+// CopyBufToImg copies data from a buffer to an image.
+func (cb *cmdBuffer) CopyBufToImg(param *driver.BufImgCopy) {
+	buf := param.Buf.(*buffer)
+	img := param.Img.(*image)
 	var aspect C.VkImageAspectFlags
 	if img.subres.aspectMask == C.VK_IMAGE_ASPECT_DEPTH_BIT|C.VK_IMAGE_ASPECT_STENCIL_BIT {
-		if cmd.DepthCopy {
+		if param.DepthCopy {
 			aspect = C.VK_IMAGE_ASPECT_DEPTH_BIT
 		} else {
 			aspect = C.VK_IMAGE_ASPECT_STENCIL_BIT
@@ -527,24 +497,24 @@ func (cb *cmdBuffer) bufImgCopyCmd(cmd *driver.BufImgCopyCmd) {
 		aspect = img.subres.aspectMask
 	}
 	cpy := C.VkBufferImageCopy{
-		bufferOffset:      C.VkDeviceSize(cmd.BufOff),
-		bufferRowLength:   C.uint32_t(cmd.Stride[0]),
-		bufferImageHeight: C.uint32_t(cmd.Stride[1]),
+		bufferOffset:      C.VkDeviceSize(param.BufOff),
+		bufferRowLength:   C.uint32_t(param.Stride[0]),
+		bufferImageHeight: C.uint32_t(param.Stride[1]),
 		imageSubresource: C.VkImageSubresourceLayers{
 			aspectMask:     aspect,
-			mipLevel:       C.uint32_t(cmd.Level),
-			baseArrayLayer: C.uint32_t(cmd.Layer),
+			mipLevel:       C.uint32_t(param.Level),
+			baseArrayLayer: C.uint32_t(param.Layer),
 			layerCount:     1,
 		},
 		imageOffset: C.VkOffset3D{
-			x: C.int32_t(cmd.ImgOff.X),
-			y: C.int32_t(cmd.ImgOff.Y),
-			z: C.int32_t(cmd.ImgOff.Z),
+			x: C.int32_t(param.ImgOff.X),
+			y: C.int32_t(param.ImgOff.Y),
+			z: C.int32_t(param.ImgOff.Z),
 		},
 		imageExtent: C.VkExtent3D{
-			width:  C.uint32_t(cmd.Size.Width),
-			height: C.uint32_t(cmd.Size.Height),
-			depth:  C.uint32_t(cmd.Size.Depth),
+			width:  C.uint32_t(param.Size.Width),
+			height: C.uint32_t(param.Size.Height),
+			depth:  C.uint32_t(param.Size.Depth),
 		},
 	}
 	// TODO: Ensure image has transitioned to the correct layout.
@@ -552,13 +522,13 @@ func (cb *cmdBuffer) bufImgCopyCmd(cmd *driver.BufImgCopyCmd) {
 	C.vkCmdCopyBufferToImage(cb.cb, buf.buf, img.img, layout, 1, &cpy)
 }
 
-// imgBufCopyCmd records a driver.ImgBufCopyCmd in the command buffer.
-func (cb *cmdBuffer) imgBufCopyCmd(cmd *driver.ImgBufCopyCmd) {
-	img := cmd.Img.(*image)
-	buf := cmd.Buf.(*buffer)
+// CopyImgToBuf copies data from an image to a buffer.
+func (cb *cmdBuffer) CopyImgToBuf(param *driver.BufImgCopy) {
+	img := param.Img.(*image)
+	buf := param.Buf.(*buffer)
 	var aspect C.VkImageAspectFlags
 	if img.subres.aspectMask == C.VK_IMAGE_ASPECT_DEPTH_BIT|C.VK_IMAGE_ASPECT_STENCIL_BIT {
-		if cmd.DepthCopy {
+		if param.DepthCopy {
 			aspect = C.VK_IMAGE_ASPECT_DEPTH_BIT
 		} else {
 			aspect = C.VK_IMAGE_ASPECT_STENCIL_BIT
@@ -567,24 +537,24 @@ func (cb *cmdBuffer) imgBufCopyCmd(cmd *driver.ImgBufCopyCmd) {
 		aspect = img.subres.aspectMask
 	}
 	cpy := C.VkBufferImageCopy{
-		bufferOffset:      C.VkDeviceSize(cmd.BufOff),
-		bufferRowLength:   C.uint32_t(cmd.Stride[0]),
-		bufferImageHeight: C.uint32_t(cmd.Stride[1]),
+		bufferOffset:      C.VkDeviceSize(param.BufOff),
+		bufferRowLength:   C.uint32_t(param.Stride[0]),
+		bufferImageHeight: C.uint32_t(param.Stride[1]),
 		imageSubresource: C.VkImageSubresourceLayers{
 			aspectMask:     aspect,
-			mipLevel:       C.uint32_t(cmd.Level),
-			baseArrayLayer: C.uint32_t(cmd.Layer),
+			mipLevel:       C.uint32_t(param.Level),
+			baseArrayLayer: C.uint32_t(param.Layer),
 			layerCount:     1,
 		},
 		imageOffset: C.VkOffset3D{
-			x: C.int32_t(cmd.ImgOff.X),
-			y: C.int32_t(cmd.ImgOff.Y),
-			z: C.int32_t(cmd.ImgOff.Z),
+			x: C.int32_t(param.ImgOff.X),
+			y: C.int32_t(param.ImgOff.Y),
+			z: C.int32_t(param.ImgOff.Z),
 		},
 		imageExtent: C.VkExtent3D{
-			width:  C.uint32_t(cmd.Size.Width),
-			height: C.uint32_t(cmd.Size.Height),
-			depth:  C.uint32_t(cmd.Size.Depth),
+			width:  C.uint32_t(param.Size.Width),
+			height: C.uint32_t(param.Size.Height),
+			depth:  C.uint32_t(param.Size.Depth),
 		},
 	}
 	// TODO: Ensure image has transitioned to the correct layout.
@@ -592,11 +562,11 @@ func (cb *cmdBuffer) imgBufCopyCmd(cmd *driver.ImgBufCopyCmd) {
 	C.vkCmdCopyImageToBuffer(cb.cb, img.img, layout, buf.buf, 1, &cpy)
 }
 
-// fillCmd records a driver.FillCmd in the command buffer.
-func (cb *cmdBuffer) fillCmd(cmd driver.FillCmd) {
-	val := C.uint32_t(cmd.Byte)
+// Fill fills a buffer range with copies of a byte value.
+func (cb *cmdBuffer) Fill(buf driver.Buffer, off int64, value byte, size int64) {
+	val := C.uint32_t(value)
 	val |= val<<24 | val<<16 | val<<8
-	C.vkCmdFillBuffer(cb.cb, cmd.Buf.(*buffer).buf, C.VkDeviceSize(cmd.Off), C.VkDeviceSize(cmd.Size), val)
+	C.vkCmdFillBuffer(cb.cb, buf.(*buffer).buf, C.VkDeviceSize(off), C.VkDeviceSize(size), val)
 }
 
 // End ends command recording and prepares the command buffer for execution.
