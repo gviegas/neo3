@@ -15,8 +15,9 @@ import (
 
 // pipeline implements driver.Pipeline.
 type pipeline struct {
-	d  *Driver
-	pl C.VkPipeline
+	d     *Driver
+	pl    C.VkPipeline
+	bindp C.VkPipelineBindPoint
 }
 
 // NewPipeline creates a new pipeline.
@@ -32,7 +33,10 @@ func (d *Driver) NewPipeline(state any) (driver.Pipeline, error) {
 
 // newGraphics creates a new graphics pipeline.
 func (d *Driver) newGraphics(gs *driver.GraphState) (driver.Pipeline, error) {
-	p := &pipeline{d: d}
+	p := &pipeline{
+		d:     d,
+		bindp: C.VK_PIPELINE_BIND_POINT_GRAPHICS,
+	}
 	var layout C.VkPipelineLayout
 	if gs.Desc == nil {
 		// We need a valid pipeline layout, so create a temporary
@@ -372,7 +376,10 @@ func setGraphDynamic(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo
 
 // newCompute creates a new compute pipeline.
 func (d *Driver) newCompute(cs *driver.CompState) (driver.Pipeline, error) {
-	p := &pipeline{d: d}
+	p := &pipeline{
+		d:     d,
+		bindp: C.VK_PIPELINE_BIND_POINT_COMPUTE,
+	}
 	var layout C.VkPipelineLayout
 	if cs.Desc == nil {
 		// Like newGraphics above.
