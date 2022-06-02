@@ -276,7 +276,7 @@ func (cb *cmdBuffer) SetViewport(vp []driver.Viewport) {
 		C.vkCmdSetViewport(cb.cb, 0, 1, &vport)
 	case nvp > 1:
 		vport := make([]C.VkViewport, nvp)
-		for i := range vp {
+		for i := range vport {
 			vport[i] = C.VkViewport{
 				x:        C.float(vp[i].X),
 				y:        C.float(vp[i].Y),
@@ -347,15 +347,15 @@ func (cb *cmdBuffer) SetVertexBuf(start int, buf []driver.Buffer, off []int64) {
 	case nbuf == 1:
 		buf := buf[0].(*buffer).buf
 		off := C.VkDeviceSize(off[0])
-		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(start), C.uint32_t(nbuf), &buf, &off)
+		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(start), 1, &buf, &off)
 	case nbuf > 1:
 		sbuf := make([]C.VkBuffer, nbuf)
-		off := make([]C.VkDeviceSize, nbuf)
-		for i := range buf {
+		soff := make([]C.VkDeviceSize, nbuf)
+		for i := range sbuf {
 			sbuf[i] = buf[i].(*buffer).buf
-			off[i] = C.VkDeviceSize(off[i])
+			soff[i] = C.VkDeviceSize(off[i])
 		}
-		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(start), C.uint32_t(nbuf), &sbuf[0], &off[0])
+		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(start), C.uint32_t(nbuf), &sbuf[0], &soff[0])
 	}
 }
 
@@ -379,7 +379,7 @@ func (cb *cmdBuffer) SetDescTableGraph(table driver.DescTable, start int, heapCo
 	switch {
 	case ncpy == 1:
 		set := desc.h[start].sets[heapCopy[0]]
-		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), &set, 0, nil)
+		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), 1, &set, 0, nil)
 	case ncpy > 1:
 		set := make([]C.VkDescriptorSet, ncpy)
 		for i := range set {
@@ -397,7 +397,7 @@ func (cb *cmdBuffer) SetDescTableComp(table driver.DescTable, start int, heapCop
 	switch {
 	case ncpy == 1:
 		set := desc.h[start].sets[heapCopy[0]]
-		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), &set, 0, nil)
+		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), 1, &set, 0, nil)
 	case ncpy > 1:
 		set := make([]C.VkDescriptorSet, ncpy)
 		for i := range set {
