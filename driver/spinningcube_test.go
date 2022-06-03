@@ -314,7 +314,18 @@ func (t *T) samplingSetup() {
 		log.Fatal(err)
 	}
 
-	splr, err := gpu.NewSampler(driver.FLinear, driver.FLinear, driver.FNoMipmap, 1, 0, 0, driver.AWrap, driver.AWrap, driver.AWrap, driver.CNever)
+	splr, err := gpu.NewSampler(&driver.Sampling{
+		Min:      driver.FLinear,
+		Mag:      driver.FLinear,
+		Mipmap:   driver.FNoMipmap,
+		AddrU:    driver.AWrap,
+		AddrV:    driver.AWrap,
+		AddrW:    driver.AWrap,
+		MaxAniso: 1,
+		Cmp:      driver.CNever,
+		MinLOD:   0,
+		MaxLOD:   0,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
