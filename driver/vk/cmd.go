@@ -87,8 +87,8 @@ func (cb *cmdBuffer) Begin() error {
 	return nil
 }
 
-// end puts the command buffer in the executable state.
-func (cb *cmdBuffer) end() error {
+// End ends command recording and prepares the command buffer for execution.
+func (cb *cmdBuffer) End() error {
 	if cb.begun {
 		cb.begun = false
 		return checkResult(C.vkEndCommandBuffer(cb.cb))
@@ -96,8 +96,8 @@ func (cb *cmdBuffer) end() error {
 	return nil
 }
 
-// reset puts the command buffer in the initial state.
-func (cb *cmdBuffer) reset() error {
+// Reset discards all recorded commands from the command buffer.
+func (cb *cmdBuffer) Reset() error {
 	err := checkResult(C.vkResetCommandBuffer(cb.cb, 0))
 	if err != nil {
 		return err
@@ -546,16 +546,6 @@ func (cb *cmdBuffer) Fill(buf driver.Buffer, off int64, value byte, size int64) 
 	val := C.uint32_t(value)
 	val |= val<<24 | val<<16 | val<<8
 	C.vkCmdFillBuffer(cb.cb, buf.(*buffer).buf, C.VkDeviceSize(off), C.VkDeviceSize(size), val)
-}
-
-// End ends command recording and prepares the command buffer for execution.
-func (cb *cmdBuffer) End() error {
-	return cb.end()
-}
-
-// Reset discards all recorded commands from the command buffer.
-func (cb *cmdBuffer) Reset() error {
-	return cb.reset()
 }
 
 // Destroy destroys the command buffer.

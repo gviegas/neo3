@@ -160,7 +160,7 @@ func (im *image) transition() error {
 		return err
 	}
 	cb.transition(im, C.VK_IMAGE_LAYOUT_GENERAL, 0, 0, 0, 0)
-	if err := cb.end(); err != nil {
+	if err := cb.End(); err != nil {
 		return err
 	}
 	ch := make(chan error)
