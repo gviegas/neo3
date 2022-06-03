@@ -411,7 +411,7 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 		panic("no swapchain sync data to use")
 	}
 	c := cb.(*cmdBuffer)
-	if err := c.begin(); err != nil {
+	if err := c.Begin(); err != nil {
 		return -1, err
 	}
 	var idx C.uint32_t
@@ -460,7 +460,7 @@ func (s *swapchain) Present(index int, cb driver.CmdBuffer) error {
 		return driver.ErrSwapchain
 	}
 	c := cb.(*cmdBuffer)
-	if err := c.begin(); err != nil {
+	if err := c.Begin(); err != nil {
 		return err
 	}
 	var (
@@ -477,7 +477,7 @@ func (s *swapchain) Present(index int, cb driver.CmdBuffer) error {
 	c.scBarrier(lay1, lay2, que1, que2, stg1, stg2, acc1, 0)
 	if s.qfam != c.qfam {
 		pcb := s.pcbs[c.scView].(*cmdBuffer)
-		if err := pcb.begin(); err != nil {
+		if err := pcb.Begin(); err != nil {
 			return err
 		}
 		stg1 = C.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT

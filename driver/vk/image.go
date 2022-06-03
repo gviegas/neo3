@@ -156,7 +156,7 @@ func (im *image) transition() error {
 	}
 	cb := ic.(*cmdBuffer)
 	defer cb.Destroy()
-	if err := cb.begin(); err != nil {
+	if err := cb.Begin(); err != nil {
 		return err
 	}
 	cb.transition(im, C.VK_IMAGE_LAYOUT_GENERAL, 0, 0, 0, 0)

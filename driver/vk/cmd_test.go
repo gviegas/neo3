@@ -56,6 +56,10 @@ func TestCmdRecording(t *testing.T) {
 		return
 	}
 	defer dst.Destroy()
+	if err = cb.Begin(); err != nil {
+		t.Errorf("(error) cb.Begin(): %v", err)
+		return
+	}
 	cb.BeginBlit(false)
 	cb.Fill(src, 16, 0x2a, 256)
 	cb.EndBlit()

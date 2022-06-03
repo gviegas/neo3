@@ -71,8 +71,8 @@ func (d *Driver) newCmdBuffer(qfam C.uint32_t) (driver.CmdBuffer, error) {
 	}, nil
 }
 
-// begin puts the command buffer in the recording state.
-func (cb *cmdBuffer) begin() error {
+// Begin prepares the command buffer for recording.
+func (cb *cmdBuffer) Begin() error {
 	if !cb.begun {
 		info := C.VkCommandBufferBeginInfo{
 			sType: C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -158,10 +158,6 @@ func (cb *cmdBuffer) scBarrier(lay1, lay2 C.VkImageLayout, que1, que2 C.uint32_t
 
 // BeginPass begins the first subpass of a given render pass.
 func (cb *cmdBuffer) BeginPass(pass driver.RenderPass, fb driver.Framebuf, clear []driver.ClearValue) {
-	if err := cb.begin(); err != nil {
-		// XXX
-		return
-	}
 	rpass := pass.(*renderPass)
 	fbuf := fb.(*framebuf)
 	var pclr *C.VkClearValue
@@ -218,10 +214,6 @@ func (cb *cmdBuffer) EndPass() {
 
 // BeginWork begins compute work.
 func (cb *cmdBuffer) BeginWork(wait bool) {
-	if err := cb.begin(); err != nil {
-		// XXX
-		return
-	}
 	if wait {
 		// TODO: Improve this.
 		stg1 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
@@ -237,10 +229,6 @@ func (cb *cmdBuffer) EndWork() {}
 
 // BeginBlit begins data transfer.
 func (cb *cmdBuffer) BeginBlit(wait bool) {
-	if err := cb.begin(); err != nil {
-		// XXX
-		return
-	}
 	if wait {
 		// TODO: Improve this.
 		stg1 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
