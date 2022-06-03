@@ -10,27 +10,109 @@ import (
 )
 
 func TestSampler(t *testing.T) {
-	cases := [...]struct {
-		min, mag, mip  driver.Filter
-		maxAniso       int
-		minLOD, maxLOD float32
-		u, v, w        driver.AddrMode
-		cmp            driver.CmpFunc
-	}{
-		{driver.FNearest, driver.FNearest, driver.FNoMipmap, 1, 0, 0.25, driver.AWrap, driver.AWrap, driver.AWrap, driver.CNever},
-		{driver.FLinear, driver.FLinear, driver.FNoMipmap, 1, 0, 0.25, driver.AWrap, driver.AMirror, driver.AClamp, driver.CLess},
-		{driver.FLinear, driver.FLinear, driver.FLinear, 1, 0, 10, driver.AMirror, driver.AWrap, driver.AWrap, driver.CEqual},
-		{driver.FLinear, driver.FNearest, driver.FNearest, 1, 0, 11, driver.AClamp, driver.AWrap, driver.AClamp, driver.CLessEqual},
-		{driver.FNearest, driver.FLinear, driver.FNearest, 1, 0, 12, driver.AMirror, driver.AMirror, driver.AMirror, driver.CGreater},
-		{driver.FNearest, driver.FNearest, driver.FNearest, 1, 0, 0, driver.AClamp, driver.AMirror, driver.AWrap, driver.CNotEqual},
-		{driver.FNearest, driver.FNearest, driver.FLinear, 4, 0, 1, driver.AWrap, driver.AWrap, driver.AWrap, driver.CGreaterEqual},
-		{driver.FLinear, driver.FLinear, driver.FLinear, 16, 0, 2, driver.AClamp, driver.AClamp, driver.AClamp, driver.CAlways},
+	cases := [...]driver.Sampling{
+		{
+			Min:      driver.FNearest,
+			Mag:      driver.FNearest,
+			Mipmap:   driver.FNoMipmap,
+			AddrU:    driver.AWrap,
+			AddrV:    driver.AWrap,
+			AddrW:    driver.AWrap,
+			MaxAniso: 1,
+			Cmp:      driver.CNever,
+			MinLOD:   0,
+			MaxLOD:   0.25,
+		},
+		{
+			Min:      driver.FLinear,
+			Mag:      driver.FLinear,
+			Mipmap:   driver.FNoMipmap,
+			AddrU:    driver.AWrap,
+			AddrV:    driver.AMirror,
+			AddrW:    driver.AClamp,
+			MaxAniso: 1,
+			Cmp:      driver.CLess,
+			MinLOD:   0,
+			MaxLOD:   0.25,
+		},
+		{
+			Min:      driver.FLinear,
+			Mag:      driver.FLinear,
+			Mipmap:   driver.FLinear,
+			AddrU:    driver.AMirror,
+			AddrV:    driver.AWrap,
+			AddrW:    driver.AWrap,
+			MaxAniso: 1,
+			Cmp:      driver.CEqual,
+			MinLOD:   0,
+			MaxLOD:   10,
+		},
+		{
+			Min:      driver.FLinear,
+			Mag:      driver.FNearest,
+			Mipmap:   driver.FNearest,
+			AddrU:    driver.AClamp,
+			AddrV:    driver.AWrap,
+			AddrW:    driver.AClamp,
+			MaxAniso: 1,
+			Cmp:      driver.CLessEqual,
+			MinLOD:   0,
+			MaxLOD:   11,
+		},
+		{
+			Min:      driver.FNearest,
+			Mag:      driver.FLinear,
+			Mipmap:   driver.FNearest,
+			AddrU:    driver.AMirror,
+			AddrV:    driver.AMirror,
+			AddrW:    driver.AMirror,
+			MaxAniso: 1,
+			Cmp:      driver.CGreater,
+			MinLOD:   0,
+			MaxLOD:   12,
+		},
+		{
+			Min:      driver.FNearest,
+			Mag:      driver.FNearest,
+			Mipmap:   driver.FNearest,
+			AddrU:    driver.AClamp,
+			AddrV:    driver.AMirror,
+			AddrW:    driver.AWrap,
+			MaxAniso: 1,
+			Cmp:      driver.CNotEqual,
+			MinLOD:   0,
+			MaxLOD:   0,
+		},
+		{
+			Min:      driver.FNearest,
+			Mag:      driver.FNearest,
+			Mipmap:   driver.FLinear,
+			AddrU:    driver.AWrap,
+			AddrV:    driver.AWrap,
+			AddrW:    driver.AWrap,
+			MaxAniso: 4,
+			Cmp:      driver.CGreaterEqual,
+			MinLOD:   0,
+			MaxLOD:   1,
+		},
+		{
+			Min:      driver.FLinear,
+			Mag:      driver.FLinear,
+			Mipmap:   driver.FLinear,
+			AddrU:    driver.AClamp,
+			AddrV:    driver.AClamp,
+			AddrW:    driver.AClamp,
+			MaxAniso: 16,
+			Cmp:      driver.CAlways,
+			MinLOD:   0,
+			MaxLOD:   2,
+		},
 	}
 	zs := sampler{}
-	for _, c := range cases {
-		call := fmt.Sprintf("tDrv.NewSampler(%v)", c)
+	for i := range cases {
+		call := fmt.Sprintf("tDrv.NewSampler(%v)", cases[i])
 		// NewSampler.
-		if s, err := tDrv.NewSampler(c.min, c.mag, c.mip, c.maxAniso, c.minLOD, c.maxLOD, c.u, c.v, c.w, c.cmp); err == nil {
+		if s, err := tDrv.NewSampler(&cases[i]); err == nil {
 			if s == nil {
 				t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
 			}

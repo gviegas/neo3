@@ -16,21 +16,21 @@ type sampler struct {
 }
 
 // NewSampler creates a new sampler.
-func (d *Driver) NewSampler(min, mag, mip driver.Filter, maxAniso int, minLOD, maxLOD float32, u, v, w driver.AddrMode, cmp driver.CmpFunc) (driver.Sampler, error) {
+func (d *Driver) NewSampler(spln *driver.Sampling) (driver.Sampler, error) {
 	info := C.VkSamplerCreateInfo{
 		sType:        C.VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		magFilter:    convFilter(mag),
-		minFilter:    convFilter(min),
-		mipmapMode:   convMipFilter(mip),
-		addressModeU: convAddrMode(u),
-		addressModeV: convAddrMode(v),
-		addressModeW: convAddrMode(w),
+		magFilter:    convFilter(spln.Mag),
+		minFilter:    convFilter(spln.Min),
+		mipmapMode:   convMipFilter(spln.Mipmap),
+		addressModeU: convAddrMode(spln.AddrU),
+		addressModeV: convAddrMode(spln.AddrV),
+		addressModeW: convAddrMode(spln.AddrW),
 		// TODO: Anisotropy is a feature - disable it for now.
 		//maxAnisotropy: C.float(maxAniso),
 		compareEnable: C.VK_TRUE,
-		compareOp:     convCmpFunc(cmp),
-		minLod:        C.float(minLOD),
-		maxLod:        C.float(maxLOD),
+		compareOp:     convCmpFunc(spln.Cmp),
+		minLod:        C.float(spln.MinLOD),
+		maxLod:        C.float(spln.MaxLOD),
 		borderColor:   C.VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
 	}
 	var splr C.VkSampler
