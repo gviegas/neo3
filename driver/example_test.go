@@ -282,6 +282,11 @@ func Example_draw() {
 			Size:   dim,
 		}
 	)
+	// Begin must be called before recording any commands in
+	// the command buffer.
+	if err = cb.Begin(); err != nil {
+		log.Fatal(err)
+	}
 	cb.BeginPass(pass, fb, []driver.ClearValue{clear})
 	cb.SetPipeline(pl)
 	cb.SetViewport([]driver.Viewport{vport})
@@ -295,12 +300,11 @@ func Example_draw() {
 	cb.CopyImgToBuf(&blit)
 	cb.EndBlit()
 
-	// End must be called before commiting the command buffer
+	// End must be called before committing the command buffer
 	// to the GPU.
 	// Recording into a command buffer that was ended and not
 	// committed/reset is an error.
-	err = cb.End()
-	if err != nil {
+	if err = cb.End(); err != nil {
 		log.Fatal(err)
 	}
 

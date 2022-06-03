@@ -289,6 +289,9 @@ func (t *T) samplingSetup() {
 
 	// Images are always GPU private. We need to use a
 	// staging buffer to copy data to an image.
+	if err = t.cb[0].Begin(); err != nil {
+		log.Fatal(err)
+	}
 	t.cb[0].BeginBlit(false)
 	t.cb[0].CopyBufToImg(&driver.BufImgCopy{
 		Buf:    buf,
@@ -441,6 +444,11 @@ func (t *T) renderLoop() {
 		// we need not set the descriptor heap again.
 		t.updateTransform(time.Second / 60)
 		copy(t.constBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
+
+		// Begin must come before anything else.
+		if err = t.cb[frame].Begin(); err != nil {
+			log.Fatal(err)
+		}
 
 		next := -1
 	nextLoop:
