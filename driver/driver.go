@@ -52,9 +52,9 @@ var ErrNoDeviceMemory = errors.New("out of device memory")
 var ErrFatal = errors.New("fatal error")
 
 // Drivers returns the registered Drivers.
-// The scene package imports specific driver packages, and
-// then call this function from init. As such, drivers that
-// do not register themselves on init will not be considered
+// Client code imports specific driver packages, and then
+// call this function from init. As such, drivers that do
+// not register themselves on init will not be considered
 // for selection.
 func Drivers() []Driver {
 	lock <- 1
@@ -65,8 +65,8 @@ func Drivers() []Driver {
 }
 
 // Register registers a Driver.
-// Driver implementations should call this function once,
-// preferable on init.
+// Driver implementations are expected to call this function
+// once, from init.
 func Register(drv Driver) {
 	lock <- 1
 	for i := range drivers {
