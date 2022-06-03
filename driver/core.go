@@ -67,7 +67,9 @@ type Destroyer interface {
 // committed to the GPU for execution. Recording is separate
 // into logical blocks containing either rendering, compute
 // or copy commands. Multiple logical blocks can be recorded
-// into a single command buffer.
+// into a single command buffer. The usage is as follows:
+// First, call Begin to prepare the command buffer for
+// recording. Then, if it succeeds:
 //
 // To record commands for a render pass:
 // 	1. call BeginPass
@@ -95,6 +97,13 @@ type Destroyer interface {
 // and prior to the final End call.
 type CmdBuffer interface {
 	Destroyer
+
+	// Begin prepares the command buffer for recording.
+	// This method must be called before any command
+	// is recorded in the command buffer. It needs to
+	// be called again if the command buffer is
+	// executed or reset.
+	Begin() error
 
 	// BeginPass begins the first subpass of a given
 	// render pass.
