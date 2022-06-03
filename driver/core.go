@@ -47,7 +47,7 @@ type GPU interface {
 	NewImage(pf PixelFmt, size Dim3D, layers, levels, samples int, usg Usage) (Image, error)
 
 	// NewSampler creates a new Sampler.
-	NewSampler(min, mag, mip Filter, maxAniso int, minLOD, maxLOD float32, u, v, w AddrMode, cmp CmpFunc) (Sampler, error)
+	NewSampler(spln *Sampling) (Sampler, error)
 
 	// Limits returns the implementation limits.
 	// They are immutable for the lifetime of the GPU.
@@ -887,6 +887,20 @@ const (
 // Sampler is the interface that defines an image sampler.
 type Sampler interface {
 	Destroyer
+}
+
+// Sampling describes image sampler state.
+type Sampling struct {
+	Min      Filter
+	Mag      Filter
+	Mipmap   Filter
+	AddrU    AddrMode
+	AddrV    AddrMode
+	AddrW    AddrMode
+	MaxAniso int
+	Cmp      CmpFunc
+	MinLOD   float32
+	MaxLOD   float32
 }
 
 // Limits describes implementation limits.
