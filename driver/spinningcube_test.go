@@ -510,6 +510,8 @@ func (t *T) renderLoop() {
 		go gpu.Commit([]driver.CmdBuffer{t.cb[frame]}, t.ch)
 		frame = (frame + 1) % NFrame
 	}
+	for len(t.ch) != cap(t.ch) {
+	}
 }
 
 // destroy frees all data.
