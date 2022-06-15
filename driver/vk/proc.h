@@ -249,13 +249,18 @@ extern PFN_vkCmdEndRendering cmdEndRendering;
 
 // Functions that obtain the function pointers.
 // The process of obtaining the procedures for use is as follows:
-// 	1. Fetch the vkGetInstanceProcAddr symbol and assign to getInstanceProcAddr.
-// 	2. Call getGlobalProcs to load global procedures.
-// 	3. Create a valid VkInstance and use it in a call to getInstanceProcs.
-// 	4. Create a valid VkDevice and use it in a call to getDeviceProcs.
+//
+// 1. Fetch the vkGetInstanceProcAddr symbol and assign to getInstanceProcAddr.
+// 2. Call getGlobalProcs to load global procedures.
+// 3. Create a valid VkInstance and use it in a call to getInstanceProcs.
+// 4. Create a valid VkDevice and use it in a call to getDeviceProcs.
+//
+// clearProcs can be used to set all function pointers other than
+// getInstanceProcAddr to NULL.
 void getGlobalProcs(void);
 void getInstanceProcs(VkInstance dh);
 void getDeviceProcs(VkDevice dh);
+void clearProcs(void);
 
 // Functions that wrap calls to function pointers, used by Go code.
 
