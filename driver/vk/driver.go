@@ -311,6 +311,7 @@ func (d *Driver) Close() {
 		C.vkDestroyDevice(d.dev, nil)
 	}
 	C.vkDestroyInstance(d.inst, nil)
+	C.clearProcs()
 	d.close()
 	*d = Driver{}
 }

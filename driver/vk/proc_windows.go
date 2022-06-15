@@ -45,5 +45,6 @@ func (p *proc) close() {
 	if p.h != nil {
 		C.FreeLibrary(p.h)
 	}
+	C.getInstanceProcAddr = nil
 	*p = proc{}
 }

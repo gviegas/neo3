@@ -79,3 +79,18 @@ func checkProcDevice() error {
 	}
 	return nil
 }
+
+// checkProcClear checks the values of certain function pointers that must
+// be invalid after deinitialization.
+func checkProcClear() error {
+	if C.getDeviceQueue != nil {
+		return errors.New("checkProcClear(): C.getDeviceQueue is not nil")
+	}
+	if C.queueSubmit != nil {
+		return errors.New("checkProcClear(): C.queueSubmit is not nil")
+	}
+	if C.cmdDraw != nil {
+		return errors.New("checkProcClear(): C.cmdDraw is not nil")
+	}
+	return nil
+}

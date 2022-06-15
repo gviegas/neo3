@@ -19,8 +19,8 @@ func init() {
 	if tProcErr = d.open(); tProcErr != nil {
 		return
 	}
-	defer d.Close()
 	if tProcErr = checkProcOpen(); tProcErr != nil {
+		d.Close()
 		return
 	}
 
@@ -28,13 +28,16 @@ func init() {
 	// be valid only after d.initInstance is called.
 	if tProcErr = checkProcInstance(); tProcErr == nil {
 		tProcErr = errors.New("checkProcInstance(): unexpected nil error")
+		d.Close()
 		return
 	}
 	if d.initInstance() != nil {
 		// Not a proc error.
+		d.Close()
 		return
 	}
 	if tProcErr = checkProcInstance(); tProcErr != nil {
+		d.Close()
 		return
 	}
 
@@ -42,17 +45,25 @@ func init() {
 	// after d.initDevice is called.
 	if tProcErr = checkProcDevice(); tProcErr == nil {
 		tProcErr = errors.New("checkProcDevice(): unexpected nil error")
+		d.Close()
 		return
 	}
 	if d.initDevice() != nil {
 		// Not a proc error.
+		d.Close()
 		return
 	}
-	tProcErr = checkProcDevice()
+	if tProcErr = checkProcDevice(); tProcErr != nil {
+		d.Close()
+		return
+	}
+
+	d.Close()
+	tProcErr = checkProcClear()
 }
 
-// NOTE: The bulk of this test is done on init because proc's function pointers
-// are defined as C global variables, which are never cleared.
+// NOTE: The bulk of this test is done on init to ensure that no other
+// calls to Driver's Open/Close happen before the testing.
 func TestProc(t *testing.T) {
 	if tProcErr != nil {
 		t.Fatal(tProcErr)

@@ -55,5 +55,6 @@ func (p *proc) close() {
 	if p.h != nil {
 		C.dlclose(p.h)
 	}
+	C.getInstanceProcAddr = nil
 	*p = proc{}
 }
