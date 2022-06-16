@@ -301,16 +301,20 @@ func (d *Driver) Close() {
 	if d == nil {
 		return
 	}
-	if d.dev != nil {
-		C.vkDeviceWaitIdle(d.dev)
-		for len(d.cdata) > 0 {
-			d.destroyCommitData(<-d.cdata)
+	// We check the instance and device handles here
+	// because the procs might not have been loaded.
+	if d.inst != nil {
+		if d.dev != nil {
+			C.vkDeviceWaitIdle(d.dev)
+			for len(d.cdata) > 0 {
+				d.destroyCommitData(<-d.cdata)
+			}
+			// TODO: Ensure that all objects created
+			// from d.dev were destroyed.
+			C.vkDestroyDevice(d.dev, nil)
 		}
-		// TODO: Ensure that all objects created
-		// from d.dev were destroyed.
-		C.vkDestroyDevice(d.dev, nil)
+		C.vkDestroyInstance(d.inst, nil)
 	}
-	C.vkDestroyInstance(d.inst, nil)
 	C.clearProcs()
 	d.close()
 	*d = Driver{}
