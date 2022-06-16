@@ -4,6 +4,9 @@
 #define PROC_H
 
 #define VK_NO_PROTOTYPES
+#ifndef __linux__
+# error run procgen.go to generate the correct C files for linux
+#endif
 #define VK_USE_PLATFORM_WAYLAND_KHR
 #define VK_USE_PLATFORM_XCB_KHR
 #include <vulkan/vulkan.h>
