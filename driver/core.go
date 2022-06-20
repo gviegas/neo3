@@ -274,6 +274,64 @@ type BufImgCopy struct {
 	DepthCopy bool
 }
 
+// Sync is the type of a synchronization scope.
+type Sync int
+
+// Synchronization scopes.
+const (
+	SVertexInput Sync = 1 << iota
+	SVertexShading
+	SFragmentShading
+	SComputeShading
+	SColorOutput
+	SDSOutput
+	SDraw
+	SResolve
+	SCopy
+	SAll
+	SNone Sync = 0
+)
+
+// Access is the type of a memory access scope.
+type Access int
+
+// Memory access scopes.
+const (
+	AVertexBufRead Access = 1 << iota
+	AIndexBufRead
+	AColorRead
+	AColorWrite
+	ADSRead
+	ADSWrite
+	AResolveRead
+	AResolveWrite
+	ACopyRead
+	ACopyWrite
+	AShaderRead
+	AShaderWrite
+	AAnyRead
+	AAnyWrite
+	ANone Access = 0
+)
+
+// Layout is the type of an image layout.
+type Layout int
+
+// Image layouts.
+const (
+	LUndefined Layout = iota
+	LCommon
+	LColorTarget
+	LDSTarget
+	LDSRead
+	LResolveSrc
+	LResolveDst
+	LCopySrc
+	LCopyDst
+	LShaderRead
+	LPresent
+)
+
 // LoadOp is the type of an attachment's load operation.
 type LoadOp int
 
