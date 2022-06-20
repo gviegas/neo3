@@ -214,6 +214,14 @@ type CmdBuffer interface {
 	// off and size must be aligned to 4 bytes.
 	Fill(buf Buffer, off int64, value byte, size int64)
 
+	// Barrier inserts a number of global barriers
+	// in the command buffer.
+	Barrier(b []Barrier)
+
+	// Transition inserts a number of image layout
+	// transitions in the command buffer.
+	Transition(t []Transition)
+
 	// End ends command recording and prepares the
 	// command buffer for execution.
 	// New recordings are not allowed until the
@@ -331,6 +339,24 @@ const (
 	LShaderRead
 	LPresent
 )
+
+// Barrier represents a synchronization barrier.
+type Barrier struct {
+	SyncBefore   Sync
+	SyncAfter    Sync
+	AccessBefore Access
+	AccessAfter  Access
+}
+
+// Transition represents a layout transition on a
+// specific image subresource.
+type Transition struct {
+	Barrier
+
+	LayoutBefore Layout
+	LayoutAfter  Layout
+	IView        ImageView
+}
 
 // LoadOp is the type of an attachment's load operation.
 type LoadOp int
