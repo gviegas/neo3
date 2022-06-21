@@ -64,10 +64,8 @@ type Destroyer interface {
 
 // CmdBuffer is the interface that defines a command buffer.
 // Commands are recorded into command buffers and later
-// committed to the GPU for execution. Recording is separate
-// into logical blocks containing either rendering, compute
-// or copy commands. Multiple logical blocks can be recorded
-// into a single command buffer. The usage is as follows:
+// committed to the GPU for execution.
+// The usage is as follows:
 // First, call Begin to prepare the command buffer for
 // recording. Then, if it succeeds:
 //
@@ -80,21 +78,16 @@ type Destroyer interface {
 // 	6. call EndPass
 //
 // To record compute commands:
-//	1. call BeginWork
-//	2. call Set* methods to configure compute state
-//	3. call Dispatch commands
-//	4. repeat 2-3 as needed
-//	5. call EndWork
+//	1. call Set* methods to configure compute state
+//	2. call Dispatch commands
+//	3. repeat 1-2 as needed
 //
 // To record copy commands:
-//	1. call BeginBlit
-//	2. call Copy*/Fill commands
-//	3. call EndBlit
+//	1. call Copy*/Fill commands
 //
 // Finally, call End and, if it succeeds, GPU.Commit.
-// Note that Begin* commands must not be nested, and
-// must always be ended before another call to Begin*
-// and prior to the final End call.
+// Note that BeginPass commands must not be nested,
+// and that they must always be paired with EndPass.
 type CmdBuffer interface {
 	Destroyer
 
@@ -120,26 +113,6 @@ type CmdBuffer interface {
 
 	// EndPass ends the current render pass.
 	EndPass()
-
-	// BeginWork begins compute work.
-	// If wait is set, compute work only starts when
-	// all previous commands recorded in the same
-	// command buffer are done executing.
-	// Dispatch commands may run in parallel.
-	BeginWork(wait bool)
-
-	// EndWork ends the current compute work.
-	EndWork()
-
-	// BeginBlit begins data transfer.
-	// If wait is set, data transfer only starts when
-	// all previous commands recorded in the same
-	// command buffer are done executing.
-	// Copy/fill commands may run in parallel.
-	BeginBlit(wait bool)
-
-	// EndBlit ends the current data transfer.
-	EndBlit()
 
 	// SetPipeline sets the pipeline.
 	// There is a separate binding point for each
@@ -187,31 +160,31 @@ type CmdBuffer interface {
 	DrawIndexed(idxCount, instCount, baseIdx, vertOff, baseInst int)
 
 	// Dispatch dispatches compute thread groups.
-	// It must only be called during compute work.
+	// It must not be called during a render pass.
 	Dispatch(grpCountX, grpCountY, grpCountZ int)
 
 	// CopyBuffer copies data between buffers.
-	// It must only be called during data transfer.
+	// It must not be called during a render pass.
 	CopyBuffer(param *BufferCopy)
 
 	// CopyImage copies data between images.
-	// It must only be called during data transfer.
+	// It must not be called during a render pass.
 	CopyImage(param *ImageCopy)
 
 	// CopyBufToImg copies data from a buffer to
 	// an image.
-	// It must only be called during data transfer.
+	// It must not be called during a render pass.
 	CopyBufToImg(param *BufImgCopy)
 
 	// CopyImgToBuf copies data from an image to
 	// a buffer.
-	// It must only be called during data transfer.
+	// It must not be called during a render pass.
 	CopyImgToBuf(param *BufImgCopy)
 
 	// Fill fills a buffer range with copies of
 	// a byte value.
-	// It must only be called during data transfer.
 	// off and size must be aligned to 4 bytes.
+	// It must not be called during a render pass.
 	Fill(buf Buffer, off int64, value byte, size int64)
 
 	// Barrier inserts a number of global barriers
