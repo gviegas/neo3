@@ -60,10 +60,15 @@ func TestCmdRecording(t *testing.T) {
 		t.Errorf("(error) cb.Begin(): %v", err)
 		return
 	}
-	cb.BeginBlit(false)
 	cb.Fill(src, 16, 0x2a, 256)
-	cb.EndBlit()
-	cb.BeginBlit(true)
+	cb.Barrier([]driver.Barrier{
+		{
+			SyncBefore:   driver.SCopy,
+			SyncAfter:    driver.SCopy,
+			AccessBefore: driver.ACopyWrite,
+			AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+		},
+	})
 	cb.CopyBuffer(&driver.BufferCopy{
 		From:    src,
 		FromOff: 0,
@@ -71,7 +76,6 @@ func TestCmdRecording(t *testing.T) {
 		ToOff:   512,
 		Size:    256,
 	})
-	cb.EndBlit()
 	err = cb.End()
 	if err != nil {
 		t.Errorf("(error) cb.End(): %v", err)

@@ -229,41 +229,6 @@ func (cb *cmdBuffer) EndPass() {
 	C.vkCmdEndRenderPass(cb.cb)
 }
 
-// BeginWork begins compute work.
-func (cb *cmdBuffer) BeginWork(wait bool) {
-	if wait {
-		// TODO: Improve this.
-		cb.Barrier([]driver.Barrier{
-			{
-				SyncBefore:   driver.SAll,
-				SyncAfter:    driver.SComputeShading,
-				AccessBefore: driver.AAnyWrite,
-				AccessAfter:  driver.AShaderRead | driver.AShaderWrite,
-			},
-		})
-	}
-}
-
-// EndWork ends the current compute work.
-func (cb *cmdBuffer) EndWork() {}
-
-// BeginBlit begins data transfer.
-func (cb *cmdBuffer) BeginBlit(wait bool) {
-	if wait {
-		cb.Barrier([]driver.Barrier{
-			{
-				SyncBefore:   driver.SAll,
-				SyncAfter:    driver.SCopy,
-				AccessBefore: driver.AAnyWrite,
-				AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
-			},
-		})
-	}
-}
-
-// EndBlit ends data transfer.
-func (cb *cmdBuffer) EndBlit() {}
-
 // SetPipeline sets the pipeline.
 func (cb *cmdBuffer) SetPipeline(pl driver.Pipeline) {
 	pipeln := pl.(*pipeline)
