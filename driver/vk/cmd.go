@@ -106,6 +106,19 @@ func (cb *cmdBuffer) Reset() error {
 	return nil
 }
 
+// Barrier inserts a number of global barriers in the command buffer.
+func (cb *cmdBuffer) Barrier(b []driver.Barrier) {
+	// TODO
+	panic("not implemented")
+}
+
+// Transition inserts a number of image layout transitions in the
+// command buffer.
+func (cb *cmdBuffer) Transition(t []driver.Transition) {
+	// TODO
+	panic("not implemented")
+}
+
 // barrier records a memory barrier in the command buffer.
 func (cb *cmdBuffer) barrier(stg1, stg2 C.VkPipelineStageFlags, acc1, acc2 C.VkAccessFlags) {
 	mb := C.VkMemoryBarrier{
@@ -779,4 +792,119 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 			ch <- err
 		}
 	}
+}
+
+// convSync converts a driver.Sync to a VkPipelineStageFlags.
+func convSync(sync driver.Sync) C.VkPipelineStageFlags {
+	if sync == driver.SNone {
+		return C.VK_PIPELINE_STAGE_NONE // 0
+	}
+	if sync&driver.SAll != 0 {
+		return C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+	}
+
+	var flags C.VkPipelineStageFlags
+	if sync&driver.SDraw != 0 {
+		flags |= C.VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT
+	} else {
+		if sync&driver.SVertexInput != 0 {
+			flags |= C.VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+		}
+		if sync&driver.SVertexShading != 0 {
+			// NOTE: This is the latest currently supported.
+			flags |= C.VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+		}
+		if sync&driver.SFragmentShading != 0 {
+			flags |= C.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+		}
+		if sync&driver.SColorOutput != 0 {
+			flags |= C.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+		}
+		if sync&driver.SDSOutput != 0 {
+			flags |= C.VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+		}
+	}
+	if sync&driver.SComputeShading != 0 {
+		flags |= C.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+	}
+	if sync&(driver.SResolve|driver.SCopy) != 0 {
+		flags |= C.VK_PIPELINE_STAGE_TRANSFER_BIT
+	}
+	return flags
+}
+
+// convAccess converts a driver.Access to a VkAccessFlags.
+func convAccess(acc driver.Access) C.VkAccessFlags {
+	if acc == driver.ANone {
+		return C.VK_ACCESS_NONE // 0
+	}
+
+	var flags C.VkAccessFlags
+	if acc&driver.AAnyRead != 0 {
+		flags |= C.VK_ACCESS_MEMORY_READ_BIT
+	} else {
+		if acc&driver.AVertexBufRead != 0 {
+			flags |= C.VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
+		}
+		if acc&driver.AIndexBufRead != 0 {
+			flags |= C.VK_ACCESS_INDEX_READ_BIT
+		}
+		if acc&driver.AColorRead != 0 {
+			flags |= C.VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+		}
+		if acc&driver.ADSRead != 0 {
+			flags |= C.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
+		}
+		if acc&(driver.AResolveRead|driver.ACopyRead) != 0 {
+			flags |= C.VK_ACCESS_TRANSFER_READ_BIT
+		}
+		if acc&driver.AShaderRead != 0 {
+			flags |= C.VK_ACCESS_SHADER_READ_BIT
+		}
+	}
+
+	if acc&driver.AAnyWrite != 0 {
+		flags |= C.VK_ACCESS_MEMORY_WRITE_BIT
+	} else {
+		if acc&driver.AColorWrite != 0 {
+			flags |= C.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+		}
+		if acc&driver.ADSWrite != 0 {
+			flags |= C.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+		}
+		if acc&(driver.AResolveWrite|driver.ACopyWrite) != 0 {
+			flags |= C.VK_ACCESS_TRANSFER_WRITE_BIT
+		}
+		if acc&driver.AShaderWrite != 0 {
+			flags |= C.VK_ACCESS_SHADER_WRITE_BIT
+		}
+	}
+	return flags
+}
+
+// convLayout converts a driver.Layout to a VkImageLayout.
+func convLayout(lay driver.Layout) C.VkImageLayout {
+	switch lay {
+	case driver.LUndefined:
+		return C.VK_IMAGE_LAYOUT_UNDEFINED
+	case driver.LCommon:
+		return C.VK_IMAGE_LAYOUT_GENERAL
+	case driver.LColorTarget:
+		return C.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	case driver.LDSTarget:
+		return C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+	case driver.LDSRead:
+		return C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+	case driver.LResolveSrc, driver.LCopySrc:
+		return C.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+	case driver.LResolveDst, driver.LCopyDst:
+		return C.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+	case driver.LShaderRead:
+		return C.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	case driver.LPresent:
+		return C.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+	}
+
+	// Expected to be unreachable.
+	return ^C.VkImageLayout(0)
 }
