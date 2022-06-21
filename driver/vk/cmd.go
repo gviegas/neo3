@@ -124,8 +124,31 @@ func (cb *cmdBuffer) Barrier(b []driver.Barrier) {
 // Transition inserts a number of image layout transitions in the
 // command buffer.
 func (cb *cmdBuffer) Transition(t []driver.Transition) {
-	// TODO
-	panic("not implemented")
+	// TODO: Use new synchronization barrier (1.3/synchronization2).
+	imb := C.VkImageMemoryBarrier{
+		sType: C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+	}
+	for i := range t {
+		sstg := convSync(t[i].SyncBefore)
+		dstg := convSync(t[i].SyncAfter)
+		imb.srcAccessMask = convAccess(t[i].AccessBefore)
+		imb.dstAccessMask = convAccess(t[i].AccessAfter)
+		imb.oldLayout = convLayout(t[i].LayoutBefore)
+		imb.newLayout = convLayout(t[i].LayoutAfter)
+		view := t[i].IView.(*imageView)
+		if view.i != nil {
+			imb.image = view.i.img
+		} else {
+			for i := range view.s.views {
+				if view.s.views[i] == view {
+					imb.image = view.s.imgs[i]
+					break
+				}
+			}
+		}
+		imb.subresourceRange = view.subres
+		C.vkCmdPipelineBarrier(cb.cb, sstg, dstg, 0, 0, nil, 0, nil, 1, &imb)
+	}
 }
 
 // barrier records a memory barrier in the command buffer.
