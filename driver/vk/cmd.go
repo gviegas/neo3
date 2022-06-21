@@ -151,34 +151,6 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 	}
 }
 
-// barrier records a memory barrier in the command buffer.
-func (cb *cmdBuffer) barrier(stg1, stg2 C.VkPipelineStageFlags, acc1, acc2 C.VkAccessFlags) {
-	mb := C.VkMemoryBarrier{
-		sType:         C.VK_STRUCTURE_TYPE_MEMORY_BARRIER,
-		srcAccessMask: acc1,
-		dstAccessMask: acc2,
-	}
-	C.vkCmdPipelineBarrier(cb.cb, stg1, stg2, 0, 1, &mb, 0, nil, 0, nil)
-}
-
-// transition records an image layout transitiion in the command buffer.
-func (cb *cmdBuffer) transition(img *image, to C.VkImageLayout, stg1, stg2 C.VkPipelineStageFlags, acc1, acc2 C.VkAccessFlags) {
-	if img.layout == to {
-		return
-	}
-	imb := C.VkImageMemoryBarrier{
-		sType:            C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-		srcAccessMask:    acc1,
-		dstAccessMask:    acc2,
-		oldLayout:        img.layout,
-		newLayout:        to,
-		image:            img.img,
-		subresourceRange: img.subres,
-	}
-	img.layout = to
-	C.vkCmdPipelineBarrier(cb.cb, stg1, stg2, 0, 0, nil, 0, nil, 1, &imb)
-}
-
 // scBarrier records an image memory barrier in the command buffer.
 // The image is taken from cb.sc.imgs[cb.scView].
 // It assumes that all images in the swapchain have a single layer.
@@ -261,11 +233,14 @@ func (cb *cmdBuffer) EndPass() {
 func (cb *cmdBuffer) BeginWork(wait bool) {
 	if wait {
 		// TODO: Improve this.
-		stg1 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
-		stg2 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-		acc1 := C.VkAccessFlags(C.VK_ACCESS_MEMORY_WRITE_BIT)
-		acc2 := C.VkAccessFlags(C.VK_ACCESS_SHADER_WRITE_BIT | C.VK_ACCESS_SHADER_READ_BIT)
-		cb.barrier(stg1, stg2, acc1, acc2)
+		cb.Barrier([]driver.Barrier{
+			{
+				SyncBefore:   driver.SAll,
+				SyncAfter:    driver.SComputeShading,
+				AccessBefore: driver.AAnyWrite,
+				AccessAfter:  driver.AShaderRead | driver.AShaderWrite,
+			},
+		})
 	}
 }
 
@@ -275,12 +250,14 @@ func (cb *cmdBuffer) EndWork() {}
 // BeginBlit begins data transfer.
 func (cb *cmdBuffer) BeginBlit(wait bool) {
 	if wait {
-		// TODO: Improve this.
-		stg1 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT)
-		stg2 := C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_TRANSFER_BIT)
-		acc1 := C.VkAccessFlags(C.VK_ACCESS_MEMORY_WRITE_BIT)
-		acc2 := C.VkAccessFlags(C.VK_ACCESS_TRANSFER_WRITE_BIT | C.VK_ACCESS_TRANSFER_READ_BIT)
-		cb.barrier(stg1, stg2, acc1, acc2)
+		cb.Barrier([]driver.Barrier{
+			{
+				SyncBefore:   driver.SAll,
+				SyncAfter:    driver.SCopy,
+				AccessBefore: driver.AAnyWrite,
+				AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+			},
+		})
 	}
 }
 
