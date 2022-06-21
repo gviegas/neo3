@@ -14,7 +14,7 @@ import (
 	"github.com/gviegas/scene/wsi"
 )
 
-// swpachain implements driver.Swapchain.
+// swapchain implements driver.Swapchain.
 type swapchain struct {
 	d     *Driver
 	win   wsi.Window
@@ -255,7 +255,7 @@ fmtLoop:
 	return nil
 }
 
-// newView creates new image views from s.sc.
+// newViews creates new image views from s.sc.
 // It sets the imgs and views fields of s.
 // If len(s.views) is not zero, it calls Destroy on each view.
 func (s *swapchain) newViews() error {
@@ -306,13 +306,15 @@ func (s *swapchain) newViews() error {
 		}
 		if s.views[i] == nil {
 			s.views[i] = &imageView{
-				s:    s,
-				view: view,
+				s:      s,
+				view:   view,
+				subres: info.subresourceRange,
 			}
 		} else {
 			*s.views[i].(*imageView) = imageView{
-				s:    s,
-				view: view,
+				s:      s,
+				view:   view,
+				subres: info.subresourceRange,
 			}
 		}
 	}

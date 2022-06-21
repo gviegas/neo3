@@ -186,9 +186,10 @@ func (im *image) Destroy() {
 
 // imageView implements driver.ImageView.
 type imageView struct {
-	i    *image     // Created from an image (s field is nil).
-	s    *swapchain // Created from a swapchain (i field is nil).
-	view C.VkImageView
+	i      *image     // Created from an image (s field is nil).
+	s      *swapchain // Created from a swapchain (i field is nil).
+	view   C.VkImageView
+	subres C.VkImageSubresourceRange
 }
 
 // NewView creates a new image view.
@@ -235,8 +236,9 @@ func (im *image) NewView(typ driver.ViewType, layer, layers, level, levels int) 
 		return nil, err
 	}
 	return &imageView{
-		i:    im,
-		view: view,
+		i:      im,
+		view:   view,
+		subres: info.subresourceRange,
 	}, nil
 }
 
