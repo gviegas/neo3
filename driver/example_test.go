@@ -281,12 +281,40 @@ func Example_draw() {
 			Level:  0,
 			Size:   dim,
 		}
+		tran1 = [1]driver.Transition{
+			// TODO: Improve this when supported by driver/vk.
+			{
+				Barrier: driver.Barrier{
+					SyncBefore:   driver.SNone,
+					SyncAfter:    driver.SAll,
+					AccessBefore: driver.ANone,
+					AccessAfter:  driver.AAnyWrite,
+				},
+				LayoutBefore: driver.LUndefined,
+				LayoutAfter:  driver.LCommon,
+				IView:        view,
+			},
+		}
+		tran2 = [1]driver.Transition{
+			{
+				Barrier: driver.Barrier{
+					SyncBefore:   driver.SDraw,
+					SyncAfter:    driver.SCopy,
+					AccessBefore: driver.AColorWrite,
+					AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+				},
+				LayoutBefore: driver.LColorTarget,
+				LayoutAfter:  driver.LCopySrc,
+				IView:        view,
+			},
+		}
 	)
 	// Begin must be called before recording any commands in
 	// the command buffer.
 	if err = cb.Begin(); err != nil {
 		log.Fatal(err)
 	}
+	cb.Transition(tran1[:])
 	cb.BeginPass(pass, fb, []driver.ClearValue{clear})
 	cb.SetPipeline(pl)
 	cb.SetViewport([]driver.Viewport{vport})
@@ -296,9 +324,8 @@ func Example_draw() {
 	cb.SetDescTableGraph(dtab, 0, []int{0})
 	cb.Draw(3, 1, 0, 0)
 	cb.EndPass()
-	cb.BeginBlit(true)
+	cb.Transition(tran2[:])
 	cb.CopyImgToBuf(&blit)
-	cb.EndBlit()
 
 	// End must be called before committing the command buffer
 	// to the GPU.

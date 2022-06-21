@@ -292,14 +292,12 @@ func (t *T) samplingSetup() {
 	if err = t.cb[0].Begin(); err != nil {
 		log.Fatal(err)
 	}
-	t.cb[0].BeginBlit(false)
 	t.cb[0].CopyBufToImg(&driver.BufImgCopy{
 		Buf:    buf,
 		Stride: [2]int64{int64(size.Width)},
 		Img:    img,
 		Size:   size,
 	})
-	t.cb[0].EndBlit()
 	if err := t.cb[0].End(); err != nil {
 		log.Fatal(err)
 	}
