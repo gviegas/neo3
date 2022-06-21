@@ -15,7 +15,6 @@ type image struct {
 	img    C.VkImage
 	fmt    C.VkFormat
 	subres C.VkImageSubresourceRange
-	layout C.VkImageLayout
 }
 
 // NewImage creates a new image.
@@ -133,43 +132,8 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 			levelCount: C.uint32_t(levels),
 			layerCount: C.uint32_t(layers),
 		},
-		layout: info.initialLayout,
-	}
-	if err = im.transition(); err != nil {
-		im.Destroy()
-		return nil, err
 	}
 	return im, nil
-}
-
-// transition transitions the image to the general layout.
-// TODO: Improve this.
-func (im *image) transition() error {
-	// TODO: Should put a lock here if this is ever going
-	// to be used outside of NewImage.
-	if im.layout == C.VK_IMAGE_LAYOUT_GENERAL {
-		return nil
-	}
-	ic, err := im.m.d.NewCmdBuffer()
-	if err != nil {
-		return err
-	}
-	cb := ic.(*cmdBuffer)
-	defer cb.Destroy()
-	if err := cb.Begin(); err != nil {
-		return err
-	}
-	cb.transition(im, C.VK_IMAGE_LAYOUT_GENERAL, 0, 0, 0, 0)
-	if err := cb.End(); err != nil {
-		return err
-	}
-	ch := make(chan error)
-	go im.m.d.Commit([]driver.CmdBuffer{cb}, ch)
-	err = <-ch
-	if err == nil {
-		im.layout = C.VK_IMAGE_LAYOUT_GENERAL
-	}
-	return err
 }
 
 // Destroy destroys the image.
