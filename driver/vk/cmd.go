@@ -108,8 +108,17 @@ func (cb *cmdBuffer) Reset() error {
 
 // Barrier inserts a number of global barriers in the command buffer.
 func (cb *cmdBuffer) Barrier(b []driver.Barrier) {
-	// TODO
-	panic("not implemented")
+	// TODO: Use new synchronization barrier (1.3/synchronization2).
+	mb := C.VkMemoryBarrier{
+		sType: C.VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+	}
+	for i := range b {
+		sstg := convSync(b[i].SyncBefore)
+		dstg := convSync(b[i].SyncAfter)
+		mb.srcAccessMask = convAccess(b[i].AccessBefore)
+		mb.dstAccessMask = convAccess(b[i].AccessAfter)
+		C.vkCmdPipelineBarrier(cb.cb, sstg, dstg, 0, 1, &mb, 0, nil, 0, nil)
+	}
 }
 
 // Transition inserts a number of image layout transitions in the
