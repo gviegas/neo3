@@ -59,24 +59,30 @@ func init() {
 // initInstance initializes the Vulkan instance.
 func (d *Driver) initInstance() error {
 	C.getGlobalProcs()
-	info := C.VkInstanceCreateInfo{
-		sType: C.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+	if C.enumerateInstanceVersion == nil {
+		// Version 1.0. We need 1.1 or newer.
+		return driver.ErrNoDevice
 	}
-	// info.pApplicationInfo need not be set for v1.0.
-	if C.enumerateInstanceVersion != nil && C.vkEnumerateInstanceVersion(&d.ivers) == C.VK_SUCCESS {
-		if isVariant(d.ivers) {
-			// Do not support variants.
-			return driver.ErrNoDevice
-		}
-		appInfo := (*C.VkApplicationInfo)(C.malloc(C.sizeof_VkApplicationInfo))
-		defer C.free(unsafe.Pointer(appInfo))
-		*appInfo = C.VkApplicationInfo{
-			sType:      C.VK_STRUCTURE_TYPE_APPLICATION_INFO,
-			apiVersion: C.VK_API_VERSION_1_3,
-		}
-		info.pApplicationInfo = appInfo
-	} else {
-		d.ivers = C.VK_API_VERSION_1_0
+	if err := checkResult(C.vkEnumerateInstanceVersion(&d.ivers)); err != nil {
+		return err
+	}
+	if d.ivers < C.VK_API_VERSION_1_1 {
+		// Should never happen since we have vkEnumerateInstanceVersion.
+		return driver.ErrNoDevice
+	}
+	if isVariant(d.ivers) {
+		// Do not support variants.
+		return driver.ErrNoDevice
+	}
+	appInfo := (*C.VkApplicationInfo)(C.malloc(C.sizeof_VkApplicationInfo))
+	defer C.free(unsafe.Pointer(appInfo))
+	*appInfo = C.VkApplicationInfo{
+		sType:      C.VK_STRUCTURE_TYPE_APPLICATION_INFO,
+		apiVersion: C.VK_API_VERSION_1_3,
+	}
+	info := C.VkInstanceCreateInfo{
+		sType:            C.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+		pApplicationInfo: appInfo,
 	}
 	defer d.setInstanceExts(&info)()
 	if err := checkResult(C.vkCreateInstance(&info, nil, &d.inst)); err != nil {
@@ -122,6 +128,10 @@ func (d *Driver) initDevice() error {
 	// be hardware-accelerated.
 	weight := 0
 	for i, dev := range devs {
+		if devProps[i].apiVersion < C.VK_API_VERSION_1_3 {
+			// Core version 1.3 is required.
+			continue
+		}
 		if isVariant(devProps[i].apiVersion) {
 			// Do not support variants.
 			continue
