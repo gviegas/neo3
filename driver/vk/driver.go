@@ -273,7 +273,30 @@ func (d *Driver) setFeatures(info *C.VkDeviceCreateInfo) (free func()) {
 		shaderCullDistance:                      fq.shaderCullDistance,
 	}
 	info.pEnabledFeatures = feat
-	return func() { C.free(unsafe.Pointer(feat)) }
+
+	// The following are mandatory for v1.3.
+	dynr := (*C.VkPhysicalDeviceDynamicRenderingFeatures)(C.malloc(C.sizeof_VkPhysicalDeviceDynamicRenderingFeatures))
+	sync2 := (*C.VkPhysicalDeviceSynchronization2Features)(C.malloc(C.sizeof_VkPhysicalDeviceSynchronization2Features))
+	*sync2 = C.VkPhysicalDeviceSynchronization2Features{
+		sType:            C.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+		synchronization2: C.VK_TRUE,
+	}
+	*dynr = C.VkPhysicalDeviceDynamicRenderingFeatures{
+		sType:            C.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+		pNext:            unsafe.Pointer(sync2),
+		dynamicRendering: C.VK_TRUE,
+	}
+	proxy := (*C.VkBaseOutStructure)(unsafe.Pointer(info))
+	for proxy.pNext != nil {
+		proxy = proxy.pNext
+	}
+	proxy.pNext = (*C.VkBaseOutStructure)(unsafe.Pointer(dynr))
+
+	return func() {
+		C.free(unsafe.Pointer(feat))
+		C.free(unsafe.Pointer(dynr))
+		C.free(unsafe.Pointer(sync2))
+	}
 }
 
 // Open initializes the driver.
