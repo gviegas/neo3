@@ -64,6 +64,10 @@ func (d *Driver) initInstance() error {
 	}
 	// info.pApplicationInfo need not be set for v1.0.
 	if C.enumerateInstanceVersion != nil && C.vkEnumerateInstanceVersion(&d.ivers) == C.VK_SUCCESS {
+		if isVariant(d.ivers) {
+			// Do not support variants.
+			return driver.ErrNoDevice
+		}
 		appInfo := (*C.VkApplicationInfo)(C.malloc(C.sizeof_VkApplicationInfo))
 		defer C.free(unsafe.Pointer(appInfo))
 		*appInfo = C.VkApplicationInfo{
@@ -118,6 +122,10 @@ func (d *Driver) initDevice() error {
 	// be hardware-accelerated.
 	weight := 0
 	for i, dev := range devs {
+		if isVariant(devProps[i].apiVersion) {
+			// Do not support variants.
+			continue
+		}
 		fam := len(queProps[i])
 		flg := C.VkFlags(C.VK_QUEUE_GRAPHICS_BIT | C.VK_QUEUE_COMPUTE_BIT)
 		for j, qp := range queProps[i] {
