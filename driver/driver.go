@@ -36,6 +36,10 @@ type Driver interface {
 // system.
 var ErrNotInstalled = errors.New("missing required library")
 
+// ErrNoDevice means that no suitable device could be
+// found.
+var ErrNoDevice = errors.New("no suitable device found")
+
 // ErrNoHostMemory means that host memory could not be
 // allocated.
 var ErrNoHostMemory = errors.New("out of host memory")

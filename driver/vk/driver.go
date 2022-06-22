@@ -82,12 +82,6 @@ func (d *Driver) initInstance() error {
 	return nil
 }
 
-// errNoDevice means that no suitable device could be found.
-// It is returned by initDevice when there are no devices available or
-// when none of the exposed devices support graphics/compute operations.
-// TODO: Consider moving it to the driver package.
-var errNoDevice = errors.New("no suitable device found")
-
 // initDevice initializes the Vulkan device.
 func (d *Driver) initDevice() error {
 	var n C.uint32_t
@@ -98,7 +92,7 @@ func (d *Driver) initDevice() error {
 	// need not expose any devices at all. We assume that n could be zero here,
 	// in which case no suitable device can be found.
 	if n == 0 {
-		return errNoDevice
+		return driver.ErrNoDevice
 	}
 	p := (*C.VkPhysicalDevice)(C.malloc(C.sizeof_VkPhysicalDevice * C.size_t(n)))
 	defer C.free(unsafe.Pointer(p))
@@ -161,7 +155,7 @@ func (d *Driver) initDevice() error {
 	}
 	if weight == 0 {
 		// None of the exposed devices will suffice.
-		return errNoDevice
+		return driver.ErrNoDevice
 	}
 	C.vkGetPhysicalDeviceMemoryProperties(d.pdev, &d.mprop)
 	d.mused = make([]int64, d.mprop.memoryHeapCount)
