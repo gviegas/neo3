@@ -106,7 +106,7 @@ type CmdBuffer interface {
 	Begin() error
 
 	// BeginPass begins a render pass.
-	BeginPass(width, height, layers int, color []ColorTarget, ds DSTarget)
+	BeginPass(width, height, layers int, color []ColorTarget, ds *DSTarget)
 
 	// EndPass ends the current render pass.
 	EndPass()
