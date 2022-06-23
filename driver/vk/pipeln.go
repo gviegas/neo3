@@ -53,8 +53,6 @@ func (d *Driver) newGraphics(gs *driver.GraphState) (driver.Pipeline, error) {
 	info := C.VkGraphicsPipelineCreateInfo{
 		sType:             C.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 		layout:            layout,
-		renderPass:        gs.Pass.(*renderPass).pass,
-		subpass:           C.uint32_t(gs.Subpass),
 		basePipelineIndex: -1,
 	}
 	free := [...]func(){
@@ -68,6 +66,7 @@ func (d *Driver) newGraphics(gs *driver.GraphState) (driver.Pipeline, error) {
 		setGraphDS(gs, &info),
 		setGraphBlend(gs, &info),
 		setGraphDynamic(gs, &info),
+		setGraphRendering(gs, &info),
 	}
 	// TODO: Pipeline cache.
 	var cache C.VkPipelineCache
@@ -283,7 +282,7 @@ func setGraphDS(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (fr
 
 // setGraphBlend sets the color blend state for graphics pipeline creation.
 func setGraphBlend(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (free func()) {
-	ncolor := gs.Pass.(*renderPass).ncolor[gs.Subpass]
+	ncolor := len(gs.ColorFmt)
 	if ncolor == 0 {
 		// No color attachments in the subpass.
 		info.pColorBlendState = nil
@@ -353,7 +352,7 @@ func setGraphDynamic(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo
 	sd[0] = C.VK_DYNAMIC_STATE_VIEWPORT
 	sd[1] = C.VK_DYNAMIC_STATE_SCISSOR
 	nd := 2
-	if gs.Pass.(*renderPass).ncolor[gs.Subpass] > 0 {
+	if len(gs.ColorFmt) > 0 {
 		sd[nd] = C.VK_DYNAMIC_STATE_BLEND_CONSTANTS
 		nd++
 	}
@@ -371,6 +370,49 @@ func setGraphDynamic(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo
 	return func() {
 		C.free(unsafe.Pointer(pd))
 		C.free(unsafe.Pointer(pdyn))
+	}
+}
+
+// setGraphRendering sets the rendering info for graphics pipeline creation.
+func setGraphRendering(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (free func()) {
+	ncolor := len(gs.ColorFmt)
+	var pcolor *C.VkFormat
+	if ncolor > 0 {
+		pcolor = (*C.VkFormat)(C.malloc(C.sizeof_VkFormat * C.size_t(ncolor)))
+		scolor := unsafe.Slice(pcolor, ncolor)
+		for i := range scolor {
+			scolor[i] = convPixelFmt(gs.ColorFmt[i])
+		}
+	}
+	depth := C.VkFormat(C.VK_FORMAT_UNDEFINED)
+	stencil := C.VkFormat(C.VK_FORMAT_UNDEFINED)
+	ds := convPixelFmt(gs.DSFmt)
+	aspect := aspectOf(gs.DSFmt)
+	if aspect&C.VK_IMAGE_ASPECT_DEPTH_BIT != 0 {
+		depth = ds
+	}
+	if aspect&C.VK_IMAGE_ASPECT_STENCIL_BIT != 0 {
+		stencil = ds
+	}
+	prend := (*C.VkPipelineRenderingCreateInfo)(C.malloc(C.sizeof_VkPipelineRenderingCreateInfo))
+	*prend = C.VkPipelineRenderingCreateInfo{
+		sType:                   C.VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+		viewMask:                0,
+		colorAttachmentCount:    C.uint32_t(ncolor),
+		pColorAttachmentFormats: pcolor,
+		depthAttachmentFormat:   depth,
+		stencilAttachmentFormat: stencil,
+	}
+	proxy := (*C.VkBaseOutStructure)(unsafe.Pointer(info))
+	for proxy.pNext != nil {
+		proxy = proxy.pNext
+	}
+	proxy.pNext = (*C.VkBaseOutStructure)(unsafe.Pointer(prend))
+	var null C.VkRenderPass
+	info.renderPass = null
+	return func() {
+		C.free(unsafe.Pointer(prend))
+		C.free(unsafe.Pointer(pcolor))
 	}
 }
 
