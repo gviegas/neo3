@@ -12,9 +12,9 @@ type GPU interface {
 
 	// Commit commits a batch of command buffers to the GPU
 	// for execution.
-	// Wait operations defined in a command buffer apply to
-	// the batch as a whole, so the order of command buffers
-	// in cb is meaningful.
+	// Synchronization operations defined in a command buffer
+	// apply to the batch as a whole, so the order of command
+	// buffers in cb is meaningful.
 	// This method sends the result to ch when all commands
 	// complete execution. Command buffers in cb cannot be
 	// used for recording until then.
@@ -22,9 +22,6 @@ type GPU interface {
 
 	// NewCmdBuffer creates a new command buffer.
 	NewCmdBuffer() (CmdBuffer, error)
-
-	// NewRenderPass creates a new render pass.
-	NewRenderPass(att []Attachment, sub []Subpass) (RenderPass, error)
 
 	// NewShaderCode creates a new shader code.
 	NewShaderCode(data []byte) (ShaderCode, error)
@@ -62,6 +59,16 @@ type Destroyer interface {
 	Destroy()
 }
 
+// Dim3D is a three-dimensional size.
+type Dim3D struct {
+	Width, Height, Depth int
+}
+
+// Off3D is a three-dimensional offset.
+type Off3D struct {
+	X, Y, Z int
+}
+
 // CmdBuffer is the interface that defines a command buffer.
 // Commands are recorded into command buffers and later
 // committed to the GPU for execution.
@@ -69,13 +76,13 @@ type Destroyer interface {
 // First, call Begin to prepare the command buffer for
 // recording. Then, if it succeeds:
 //
-// To record commands for a render pass:
+// To record rendering commands:
 // 	1. call BeginPass
 // 	2. call Set* methods to configure rendering state
 // 	3. call Draw* commands
-// 	4. call NextSubpass (if using multiple subpasses)
-// 	5. repeat 2-4 as needed
-// 	6. call EndPass
+// 	4. repeat 2-3 as needed
+// 	5. call EndPass
+// 	6. repeat 1-5 as needed
 //
 // To record compute commands:
 //	1. call Set* methods to configure compute state
@@ -98,18 +105,8 @@ type CmdBuffer interface {
 	// executed or reset.
 	Begin() error
 
-	// BeginPass begins the first subpass of a given
-	// render pass.
-	// Draw commands within a subpass may run in
-	// parallel. The behavior of draw commands across
-	// different subpasses is defined on render pass
-	// creation.
-	BeginPass(pass RenderPass, fb Framebuf, clear []ClearValue)
-
-	// NextSubpass ends the current subpass and begins
-	// the next one.
-	// It must not be called in the last subpass.
-	NextSubpass()
+	// BeginPass begins a render pass.
+	BeginPass(width, height, layers int, color []ColorTarget, ds DSTarget)
 
 	// EndPass ends the current render pass.
 	EndPass()
@@ -205,6 +202,48 @@ type CmdBuffer interface {
 	// Reset discards all recorded commands from the
 	// command buffer.
 	Reset() error
+}
+
+// LoadOp is the type of a render target's load operation.
+type LoadOp int
+
+// Load operations.
+const (
+	LDontCare LoadOp = iota
+	LClear
+	LLoad
+)
+
+// StoreOp is the type of a render target's store operation.
+type StoreOp int
+
+// Store operations.
+const (
+	SDontCare StoreOp = iota
+	SStore
+)
+
+// ColorTarget describes a single color attachment to use
+// as render target in a render pass.
+type ColorTarget struct {
+	Color   ImageView
+	Resolve ImageView
+	Load    LoadOp
+	Store   StoreOp
+	Clear   [4]float32
+}
+
+// DSTarget describes a depth/stencil attachment to use
+// as render target in a render pass.
+type DSTarget struct {
+	DS      ImageView
+	Resolve ImageView
+	LoadD   LoadOp
+	StoreD  StoreOp
+	LoadS   LoadOp
+	StoreS  StoreOp
+	ClearD  float32
+	ClearS  uint32
 }
 
 // BufferCopy describes the parameters of a copy command
@@ -329,79 +368,6 @@ type Transition struct {
 	LayoutBefore Layout
 	LayoutAfter  Layout
 	IView        ImageView
-}
-
-// LoadOp is the type of an attachment's load operation.
-type LoadOp int
-
-// Load operations.
-const (
-	LDontCare LoadOp = iota
-	LClear
-	LLoad
-)
-
-// StoreOp is the type of an attachment's store operation.
-type StoreOp int
-
-// Store operations.
-const (
-	SDontCare StoreOp = iota
-	SStore
-)
-
-// Attachment describes the configuration of a single
-// render target for use in a render pass.
-type Attachment struct {
-	Format  PixelFmt
-	Samples int
-	Load    [2]LoadOp
-	Store   [2]StoreOp
-}
-
-// Subpass defines a subpass of a render pass.
-// Render passes are split into a number of subpasses.
-// The Color, DS (depth/stencil) and MSR (multisample resolve)
-// fields contain indices in the render pass' attachment list
-// indicating a subset of the render targets that the subpass
-// will use. The Wait field controls whether or not the
-// subpass stalls waiting for previous work to finish.
-type Subpass struct {
-	Color []int
-	DS    int
-	MSR   []int
-	Wait  bool
-}
-
-// RenderPass is the interface that defines a render pass
-// into which draw commands operate.
-type RenderPass interface {
-	Destroyer
-
-	// NewFB creates a new framebuffer.
-	// Each image view in iv correspond to the render pass'
-	// attachment of same index. A view's pixel format and
-	// sample count must match the attachment's. Views whose
-	// image was not created with URenderTarget as a valid
-	// usage cannot be used in a framebuffer.
-	// All framebuffers created from a given render pass
-	// must be destroyed before the render pass itself
-	// is destroyed.
-	NewFB(iv []ImageView, width, height, layers int) (Framebuf, error)
-}
-
-// Framebuf is the interface that defines the render targets
-// of a render pass.
-type Framebuf interface {
-	Destroyer
-}
-
-// ClearValue defines clear values for color or depth/stencil
-// aspects of a render target.
-type ClearValue struct {
-	Color   [4]float32
-	Depth   float32
-	Stencil uint32
 }
 
 // ShaderCode is the interface that defines a shader binary
@@ -744,9 +710,9 @@ type BlendState struct {
 // GraphState defines the combination of programmable and
 // fixed stages of a graphics pipeline.
 // Graphics pipelines are created from graphics states.
-// The Pass and Subpass fields in the state define the
-// valid use of a graphics pipeline - it must not be used
-// outside this subpass.
+// The ColorFmt and DSFmt fields define the valid usage
+// for a graphics pipeline - it must only be used with
+// render passes whose views match these formats.
 type GraphState struct {
 	VertFunc ShaderFunc
 	FragFunc ShaderFunc
@@ -757,8 +723,8 @@ type GraphState struct {
 	Samples  int
 	DS       DSState
 	Blend    BlendState
-	Pass     RenderPass
-	Subpass  int
+	ColorFmt []PixelFmt
+	DSFmt    PixelFmt
 }
 
 // CompState defines the state of a compute pipeline.
@@ -866,16 +832,6 @@ const (
 	D24unS8ui
 	D32fS8ui
 )
-
-// Dim3D is a three-dimensional size.
-type Dim3D struct {
-	Width, Height, Depth int
-}
-
-// Off3D is a three-dimensional offset.
-type Off3D struct {
-	X, Y, Z int
-}
 
 // Image is the interface that defines a GPU image.
 // Direct access to image memory is not provided, so copying
