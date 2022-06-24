@@ -807,8 +807,9 @@ func (f PixelFmt) IsInternal() bool { return f&FInternal == FInternal }
 
 // Pixel formats.
 const (
+	FInvalid PixelFmt = iota
 	// Color, 8-bit channels.
-	RGBA8un PixelFmt = iota
+	RGBA8un
 	RGBA8n
 	RGBA8sRGB
 	BGRA8un

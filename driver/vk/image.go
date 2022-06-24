@@ -228,6 +228,9 @@ func convPixelFmt(pf driver.PixelFmt) C.VkFormat {
 	}
 
 	switch pf {
+	case driver.FInvalid:
+		return C.VK_FORMAT_UNDEFINED
+
 	case driver.RGBA8un:
 		return C.VK_FORMAT_R8G8B8A8_UNORM
 	case driver.RGBA8n:
@@ -274,7 +277,7 @@ func convPixelFmt(pf driver.PixelFmt) C.VkFormat {
 	}
 
 	// Expected to be unreachable.
-	return C.VK_FORMAT_UNDEFINED
+	return ^C.VkFormat(0)
 }
 
 // internalFmt returns vf as an internal driver.PixelFmt.
@@ -307,6 +310,8 @@ func convSamples(ns int) C.VkSampleCountFlagBits {
 // a given driver.PixelFmt.
 func aspectOf(pf driver.PixelFmt) C.VkImageAspectFlags {
 	switch pf {
+	case driver.FInvalid:
+		return 0
 	case driver.D24unS8ui, driver.D32fS8ui:
 		return C.VK_IMAGE_ASPECT_DEPTH_BIT | C.VK_IMAGE_ASPECT_STENCIL_BIT
 	case driver.D16un, driver.D32f:
