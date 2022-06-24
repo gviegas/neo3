@@ -173,60 +173,127 @@ func (cb *cmdBuffer) scBarrier(lay1, lay2 C.VkImageLayout, que1, que2 C.uint32_t
 	C.vkCmdPipelineBarrier(cb.cb, stg1, stg2, 0, 0, nil, 0, nil, 1, &imb)
 }
 
-// BeginPass begins the first subpass of a given render pass.
-func (cb *cmdBuffer) BeginPass(pass driver.RenderPass, fb driver.Framebuf, clear []driver.ClearValue) {
-	rpass := pass.(*renderPass)
-	fbuf := fb.(*framebuf)
-	var pclr *C.VkClearValue
-	nclr := len(clear)
-	if nclr > 0 {
-		pclr = (*C.VkClearValue)(C.malloc(C.size_t(nclr) * C.sizeof_VkClearValue))
-		defer C.free(unsafe.Pointer(pclr))
-		sclr := unsafe.Slice(pclr, nclr)
-		for i := range sclr {
-			if rpass.aspect[i] == C.VK_IMAGE_ASPECT_COLOR_BIT {
-				color := [4]C.float{
-					C.float(clear[i].Color[0]),
-					C.float(clear[i].Color[1]),
-					C.float(clear[i].Color[2]),
-					C.float(clear[i].Color[3]),
+// BeginPass begins a render pass.
+func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTarget, ds *driver.DSTarget) {
+	natt := len(color) + 2
+	patt := (*C.VkRenderingAttachmentInfo)(C.malloc(C.sizeof_VkRenderingAttachmentInfo * C.size_t(natt)))
+	satt := unsafe.Slice(patt, natt)
+	var (
+		pcolor   *C.VkRenderingAttachmentInfo
+		pdepth   *C.VkRenderingAttachmentInfo
+		pstencil *C.VkRenderingAttachmentInfo
+	)
+	if natt-2 > 0 {
+		// Has color attachment(s).
+		pcolor = patt
+		for i := range color {
+			var cview C.VkImageView
+			if color[i].Color == nil {
+				// Implementations must ignore attachments whose imageView
+				// field is VK_NULL_HANDLE.
+				satt[i] = C.VkRenderingAttachmentInfo{
+					sType:     C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+					imageView: cview,
 				}
-				raw := (*byte)(unsafe.Pointer(&color[0]))
-				copy(sclr[i][:], unsafe.Slice(raw, unsafe.Sizeof(color)))
-			} else {
-				ds := C.VkClearDepthStencilValue{
-					depth:   C.float(clear[i].Depth),
-					stencil: C.uint32_t(clear[i].Stencil),
-				}
-				raw := (*byte)(unsafe.Pointer(&ds))
-				copy(sclr[i][:], unsafe.Slice(raw, unsafe.Sizeof(ds)))
+				continue
+			}
+			cview = color[i].Color.(*imageView).view
+			var rview C.VkImageView
+			rmode := C.VkResolveModeFlagBits(C.VK_RESOLVE_MODE_NONE)
+			if color[i].Resolve != nil {
+				rview = color[i].Resolve.(*imageView).view
+				// NOTE: Color formats are all fp currently.
+				rmode = C.VK_RESOLVE_MODE_AVERAGE_BIT
+			}
+			var clear C.VkClearValue
+			fvalue := [4]C.float{
+				C.float(color[i].Clear[0]),
+				C.float(color[i].Clear[1]),
+				C.float(color[i].Clear[2]),
+				C.float(color[i].Clear[3]),
+			}
+			bclear := (*byte)(unsafe.Pointer(&fvalue[0]))
+			copy(clear[:], unsafe.Slice(bclear, unsafe.Sizeof(color[i].Clear)))
+			satt[i] = C.VkRenderingAttachmentInfo{
+				sType:              C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+				imageView:          cview,
+				imageLayout:        C.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+				resolveMode:        rmode,
+				resolveImageView:   rview,
+				resolveImageLayout: C.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+				loadOp:             convLoadOp(color[i].Load),
+				storeOp:            convStoreOp(color[i].Store),
+				clearValue:         clear,
 			}
 		}
 	}
-	info := C.VkRenderPassBeginInfo{
-		sType:       C.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		renderPass:  rpass.pass,
-		framebuffer: fbuf.fb,
+	if ds != nil {
+		// Has depth/stencil attachment.
+		pdepth = &satt[natt-2]
+		pstencil = &satt[natt-1]
+		var dsview C.VkImageView
+		*pdepth = C.VkRenderingAttachmentInfo{
+			sType:              C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+			imageView:          dsview, // VK_NULL_HANDLE
+			imageLayout:        C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			resolveImageLayout: C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		}
+		*pstencil = *pdepth
+		if ds.DS != nil {
+			dsview = ds.DS.(*imageView).view
+			var rview C.VkImageView
+			rmode := C.VkResolveModeFlagBits(C.VK_RESOLVE_MODE_NONE)
+			if ds.Resolve != nil {
+				rview = ds.Resolve.(*imageView).view
+				// Implementations must support this mode
+				// (assuming the format itself supports MS).
+				rmode = C.VK_RESOLVE_MODE_SAMPLE_ZERO_BIT
+			}
+			var clear C.VkClearDepthStencilValue
+			sclear := unsafe.Slice((*byte)(unsafe.Pointer(&clear)), unsafe.Sizeof(clear))
+			aspect := ds.DS.(*imageView).subres.aspectMask
+			if aspect&C.VK_IMAGE_ASPECT_DEPTH_BIT != 0 {
+				pdepth.imageView = dsview
+				pdepth.resolveMode = rmode
+				pdepth.resolveImageView = rview
+				pdepth.loadOp = convLoadOp(ds.LoadD)
+				pdepth.storeOp = convStoreOp(ds.StoreD)
+				clear.depth = C.float(ds.ClearD)
+				copy(pdepth.clearValue[:], sclear)
+			}
+			if aspect&C.VK_IMAGE_ASPECT_STENCIL_BIT != 0 {
+				pstencil.imageView = dsview
+				pstencil.resolveMode = rmode
+				pstencil.resolveImageView = rview
+				pstencil.loadOp = convLoadOp(ds.LoadS)
+				pstencil.storeOp = convStoreOp(ds.StoreS)
+				clear.stencil = C.uint32_t(ds.ClearS)
+				copy(pstencil.clearValue[:], sclear)
+			}
+		}
+	}
+	info := C.VkRenderingInfo{
+		sType: C.VK_STRUCTURE_TYPE_RENDERING_INFO,
 		renderArea: C.VkRect2D{
 			extent: C.VkExtent2D{
-				width:  C.uint32_t(fbuf.width),
-				height: C.uint32_t(fbuf.height),
+				width:  C.uint32_t(width),
+				height: C.uint32_t(height),
 			},
 		},
-		clearValueCount: C.uint32_t(nclr),
-		pClearValues:    pclr,
+		layerCount:           C.uint32_t(layers),
+		viewMask:             0,
+		colorAttachmentCount: C.uint32_t(natt - 2),
+		pColorAttachments:    pcolor,
+		pDepthAttachment:     pdepth,
+		pStencilAttachment:   pstencil,
 	}
-	C.vkCmdBeginRenderPass(cb.cb, &info, C.VK_SUBPASS_CONTENTS_INLINE)
-}
-
-// NextSubpass ends the current subpass and begins the next one.
-func (cb *cmdBuffer) NextSubpass() {
-	C.vkCmdNextSubpass(cb.cb, C.VK_SUBPASS_CONTENTS_INLINE)
+	C.vkCmdBeginRendering(cb.cb, &info)
+	C.free(unsafe.Pointer(patt))
 }
 
 // EndPass ends the current render pass.
 func (cb *cmdBuffer) EndPass() {
-	C.vkCmdEndRenderPass(cb.cb)
+	C.vkCmdEndRendering(cb.cb)
 }
 
 // SetPipeline sets the pipeline.
@@ -881,4 +948,32 @@ func convLayout(lay driver.Layout) C.VkImageLayout {
 
 	// Expected to be unreachable.
 	return ^C.VkImageLayout(0)
+}
+
+// convLoadOp converts a driver.LoadOp to a VkAttachmentLoadOp.
+func convLoadOp(op driver.LoadOp) C.VkAttachmentLoadOp {
+	switch op {
+	case driver.LDontCare:
+		return C.VK_ATTACHMENT_LOAD_OP_DONT_CARE
+	case driver.LClear:
+		return C.VK_ATTACHMENT_LOAD_OP_CLEAR
+	case driver.LLoad:
+		return C.VK_ATTACHMENT_LOAD_OP_LOAD
+	}
+
+	// Expected to be unreachable.
+	return ^C.VkAttachmentLoadOp(0)
+}
+
+// convStoreOp converts a driver.StoreOp to a VkAttachmentStoreOp.
+func convStoreOp(op driver.StoreOp) C.VkAttachmentStoreOp {
+	switch op {
+	case driver.SDontCare:
+		return C.VK_ATTACHMENT_STORE_OP_DONT_CARE
+	case driver.SStore:
+		return C.VK_ATTACHMENT_STORE_OP_STORE
+	}
+
+	// Expected to be unreachable.
+	return ^C.VkAttachmentStoreOp(0)
 }

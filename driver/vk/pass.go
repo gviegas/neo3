@@ -303,31 +303,3 @@ func (f *framebuf) Destroy() {
 	}
 	*f = framebuf{}
 }
-
-// convLoadOp converts a driver.LoadOp to a VkAttachmentLoadOp.
-func convLoadOp(op driver.LoadOp) C.VkAttachmentLoadOp {
-	switch op {
-	case driver.LDontCare:
-		return C.VK_ATTACHMENT_LOAD_OP_DONT_CARE
-	case driver.LClear:
-		return C.VK_ATTACHMENT_LOAD_OP_CLEAR
-	case driver.LLoad:
-		return C.VK_ATTACHMENT_LOAD_OP_LOAD
-	}
-
-	// Expected to be unreachable.
-	return ^C.VkAttachmentLoadOp(0)
-}
-
-// convStoreOp converts a driver.StoreOp to a VkAttachmentStoreOp.
-func convStoreOp(op driver.StoreOp) C.VkAttachmentStoreOp {
-	switch op {
-	case driver.SDontCare:
-		return C.VK_ATTACHMENT_STORE_OP_DONT_CARE
-	case driver.SStore:
-		return C.VK_ATTACHMENT_STORE_OP_STORE
-	}
-
-	// Expected to be unreachable.
-	return ^C.VkAttachmentStoreOp(0)
-}
