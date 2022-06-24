@@ -510,9 +510,11 @@ func (cb *cmdBuffer) CopyImage(param *driver.ImageCopy) {
 			depth:  C.uint32_t(param.Size.Depth),
 		},
 	}
-	// TODO: Ensure images have transitioned to the correct layout.
-	layout := C.VkImageLayout(C.VK_IMAGE_LAYOUT_GENERAL)
-	C.vkCmdCopyImage(cb.cb, from.img, layout, to.img, layout, 1, &cpy)
+	const (
+		slayout = C.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+		dlayout = C.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+	)
+	C.vkCmdCopyImage(cb.cb, from.img, slayout, to.img, dlayout, 1, &cpy)
 }
 
 // CopyBufToImg copies data from a buffer to an image.
@@ -550,8 +552,7 @@ func (cb *cmdBuffer) CopyBufToImg(param *driver.BufImgCopy) {
 			depth:  C.uint32_t(param.Size.Depth),
 		},
 	}
-	// TODO: Ensure image has transitioned to the correct layout.
-	layout := C.VkImageLayout(C.VK_IMAGE_LAYOUT_GENERAL)
+	const layout = C.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 	C.vkCmdCopyBufferToImage(cb.cb, buf.buf, img.img, layout, 1, &cpy)
 }
 
@@ -590,8 +591,7 @@ func (cb *cmdBuffer) CopyImgToBuf(param *driver.BufImgCopy) {
 			depth:  C.uint32_t(param.Size.Depth),
 		},
 	}
-	// TODO: Ensure image has transitioned to the correct layout.
-	layout := C.VkImageLayout(C.VK_IMAGE_LAYOUT_GENERAL)
+	const layout = C.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 	C.vkCmdCopyImageToBuffer(cb.cb, img.img, layout, buf.buf, 1, &cpy)
 }
 
