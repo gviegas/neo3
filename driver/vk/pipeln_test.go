@@ -10,8 +10,7 @@ import (
 )
 
 // plTestNew creates a graphics pipeline for testing.
-// The subpass must have color and depth/stencil attachments.
-func plTestNew(vert, frag driver.ShaderCode, desc driver.DescTable, rp driver.RenderPass, sub int) (driver.Pipeline, error) {
+func plTestNew(vert, frag driver.ShaderCode, desc driver.DescTable, color driver.PixelFmt, ds driver.PixelFmt) (driver.Pipeline, error) {
 	gs := driver.GraphState{
 		VertFunc: driver.ShaderFunc{
 			Code: vert,
@@ -76,15 +75,14 @@ func plTestNew(vert, frag driver.ShaderCode, desc driver.DescTable, rp driver.Re
 				},
 			},
 		},
-		Pass:    rp,
-		Subpass: sub,
+		ColorFmt: []driver.PixelFmt{color},
+		DSFmt:    ds,
 	}
 	return tDrv.NewPipeline(&gs)
 }
 
 // plTestNewColorOnly creates a graphics pipeline for testing.
-// The subpass must have color and resolve attachments.
-func plTestNewColorOnly(vert, frag driver.ShaderCode, desc driver.DescTable, rp driver.RenderPass, sub int) (driver.Pipeline, error) {
+func plTestNewColorOnly(vert, frag driver.ShaderCode, desc driver.DescTable, color driver.PixelFmt) (driver.Pipeline, error) {
 	gs := driver.GraphState{
 		VertFunc: driver.ShaderFunc{
 			Code: vert,
@@ -134,15 +132,14 @@ func plTestNewColorOnly(vert, frag driver.ShaderCode, desc driver.DescTable, rp 
 				},
 			},
 		},
-		Pass:    rp,
-		Subpass: sub,
+		ColorFmt: []driver.PixelFmt{color},
+		DSFmt:    driver.FInvalid,
 	}
 	return tDrv.NewPipeline(&gs)
 }
 
 // plTestNewDepthOnly creates a graphics pipeline for testing.
-// The subpass must have a depth/stencil attachment.
-func plTestNewDepthOnly(vert driver.ShaderCode, rp driver.RenderPass, sub int) (driver.Pipeline, error) {
+func plTestNewDepthOnly(vert driver.ShaderCode, ds driver.PixelFmt) (driver.Pipeline, error) {
 	gs := driver.GraphState{
 		VertFunc: driver.ShaderFunc{
 			Code: vert,
@@ -181,8 +178,8 @@ func plTestNewDepthOnly(vert driver.ShaderCode, rp driver.RenderPass, sub int) (
 			IndependentBlend: false,
 			Color:            nil,
 		},
-		Pass:    rp,
-		Subpass: sub,
+		ColorFmt: nil,
+		DSFmt:    ds,
 	}
 	return tDrv.NewPipeline(&gs)
 }
@@ -200,67 +197,6 @@ func plTestNewComp(comp driver.ShaderCode, desc driver.DescTable) (driver.Pipeli
 }
 
 func TestPipeline(t *testing.T) {
-	// Render pass.
-	att := [5]driver.Attachment{
-		{
-			Format:  driver.RGBA8un,
-			Samples: 1,
-			Load:    [2]driver.LoadOp{driver.LDontCare, driver.LDontCare},
-			Store:   [2]driver.StoreOp{driver.SStore, driver.SDontCare},
-		},
-		{
-			Format:  driver.D32fS8ui,
-			Samples: 1,
-			Load:    [2]driver.LoadOp{driver.LClear, driver.LClear},
-			Store:   [2]driver.StoreOp{driver.SStore, driver.SStore},
-		},
-		{
-			Format:  driver.RGBA8un,
-			Samples: 8,
-			Load:    [2]driver.LoadOp{driver.LClear, driver.LDontCare},
-			Store:   [2]driver.StoreOp{driver.SStore, driver.SDontCare},
-		},
-
-		{
-			Format:  driver.BGRA8sRGB,
-			Samples: 1,
-			Load:    [2]driver.LoadOp{driver.LDontCare, driver.LDontCare},
-			Store:   [2]driver.StoreOp{driver.SStore, driver.SDontCare},
-		},
-		{
-			Format:  driver.D16un,
-			Samples: 1,
-			Load:    [2]driver.LoadOp{driver.LClear, driver.LDontCare},
-			Store:   [2]driver.StoreOp{driver.SStore, driver.SDontCare},
-		},
-	}
-	sub := [3]driver.Subpass{
-		{
-			Color: []int{0},
-			DS:    1,
-			MSR:   nil,
-			Wait:  false,
-		},
-		{
-			Color: []int{2},
-			DS:    -1,
-			MSR:   []int{3},
-			Wait:  true,
-		},
-		{
-			Color: nil,
-			DS:    4,
-			MSR:   nil,
-			Wait:  false,
-		},
-	}
-	rp, err := tDrv.NewRenderPass(att[:], sub[:])
-	if err != nil {
-		t.Error("NewRenderPass failed, cannot test NewPipeline")
-		return
-	}
-	defer rp.Destroy()
-
 	// Descriptors.
 	dtex := driver.Descriptor{
 		Type:   driver.DTexture,
@@ -366,9 +302,9 @@ func TestPipeline(t *testing.T) {
 		pl  driver.Pipeline
 		err error
 	}{}
-	pl[0].pl, pl[0].err = plTestNew(vert, frag, desc, rp, 0)
-	pl[1].pl, pl[1].err = plTestNewColorOnly(vert2, frag2, desc2, rp, 1)
-	pl[2].pl, pl[2].err = plTestNewDepthOnly(vert3, rp, 2)
+	pl[0].pl, pl[0].err = plTestNew(vert, frag, desc, driver.RGBA8un, driver.D32fS8ui)
+	pl[1].pl, pl[1].err = plTestNewColorOnly(vert2, frag2, desc2, driver.BGRA8sRGB)
+	pl[2].pl, pl[2].err = plTestNewDepthOnly(vert3, driver.D16un)
 	pl[3].pl, pl[3].err = plTestNewComp(comp, desc3)
 	zp := pipeline{}
 	for i, p := range pl {
