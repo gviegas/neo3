@@ -936,31 +936,31 @@ type Limits struct {
 	MaxDescHeaps int
 	// Maximum number of buffer descriptors in a
 	// descriptor table.
-	MaxDBuffer int
+	MaxDescBuffer int
 	// Maximum number of image descriptors in a
 	// descriptor table.
-	MaxDImage int
+	MaxDescImage int
 	// Maximum number of constant descriptors in a
 	// descriptor table.
-	MaxDConstant int
+	MaxDescConstant int
 	// Maximum number of texture descriptors in a
 	// descriptor table.
-	MaxDTexture int
+	MaxDescTexture int
 	// Maximum number of sampler descriptors in a
 	// descriptor table.
-	MaxDSampler int
+	MaxDescSampler int
 	// Maximum range of buffer descriptors.
-	MaxDBufferRange int64
+	MaxDescBufferRange int64
 	// Maximum range of constant descriptors.
-	MaxDConstantRange int64
+	MaxDescConstantRange int64
 
 	// Maximum number of color render targets in a
 	// subpass of a render pass.
 	MaxColorTargets int
-	// Maximum width/height for a framebuffer.
-	MaxFBSize [2]int
-	// Maximum number of layers in a framebuffer.
-	MaxFBLayers int
+	// Maximum width/height in a render pass.
+	MaxRenderSize [2]int
+	// Maximum number of layers in a render pass.
+	MaxRenderLayers int
 	// Maximum size of a point primitive.
 	MaxPointSize float32
 	// Maximum number of viewports.
