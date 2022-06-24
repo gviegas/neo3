@@ -19,6 +19,8 @@ import (
 
 const NFrame = 2
 
+const DepthFmt = driver.D16un
+
 var dim = driver.Dim3D{
 	Width:  640,
 	Height: 480,
@@ -30,8 +32,8 @@ type T struct {
 	ch       chan error
 	win      wsi.Window
 	sc       driver.Swapchain
-	pass     driver.RenderPass
-	fb       []driver.Framebuf
+	rt       []driver.ColorTarget
+	ds       driver.DSTarget
 	dsImg    driver.Image
 	dsView   driver.ImageView
 	vertFunc driver.ShaderFunc
@@ -44,7 +46,6 @@ type T struct {
 	dheap    driver.DescHeap
 	dtab     driver.DescTable
 	pipeln   driver.Pipeline
-	clear    [2]driver.ClearValue
 	vport    driver.Viewport
 	sciss    driver.Scissor
 	xform    M
@@ -71,14 +72,6 @@ func Example_spinningCube() {
 	t.samplingSetup()
 	t.descriptorSetup()
 	t.pipelineSetup()
-	t.clear = [2]driver.ClearValue{
-		{
-			Color: [4]float32{0.9, 0.9, 0.9, 1},
-		},
-		{
-			Depth: 1,
-		},
-	}
 	t.vport = driver.Viewport{
 		X:      0,
 		Y:      0,
@@ -125,38 +118,21 @@ func (t *T) swapchainSetup() {
 	t.sc = sc
 }
 
-// passSetup creates the render pass and one framebuffer
-// for each image in the swapchain. It also creates the
-// depth image, which is the same for all framebuffers.
+// passSetup creates the depth image/view and sets the
+// render targets to be used during render passes.
 func (t *T) passSetup() {
-	att := []driver.Attachment{
-		{
-			Format:  t.sc.Format(),
-			Samples: 1,
-			Load:    [2]driver.LoadOp{driver.LClear},
-			Store:   [2]driver.StoreOp{driver.SStore},
-		},
-		{
-			Format:  driver.D16un,
-			Samples: 1,
-			Load:    [2]driver.LoadOp{driver.LClear},
-			Store:   [2]driver.StoreOp{driver.SDontCare},
-		},
-	}
-	sub := []driver.Subpass{
-		{
-			Color: []int{0},
-			DS:    1,
-			MSR:   nil,
-			Wait:  false,
-		},
-	}
-	pass, err := gpu.NewRenderPass(att, sub)
-	if err != nil {
-		log.Fatal(err)
+	scViews := t.sc.Images()
+	rt := make([]driver.ColorTarget, len(scViews))
+	for i := range rt {
+		rt[i] = driver.ColorTarget{
+			Color: scViews[i],
+			Load:  driver.LClear,
+			Store: driver.SStore,
+			Clear: [4]float32{0.1, 0.1, 0.1, 1},
+		}
 	}
 
-	dsImg, err := gpu.NewImage(att[1].Format, dim, 1, 1, 1, driver.URenderTarget)
+	dsImg, err := gpu.NewImage(DepthFmt, dim, 1, 1, 1, driver.URenderTarget)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -164,18 +140,15 @@ func (t *T) passSetup() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	clrView := t.sc.Images()
-
-	fb := make([]driver.Framebuf, len(clrView))
-	for i := range clrView {
-		fb[i], err = pass.NewFB([]driver.ImageView{clrView[i], dsView}, dim.Width, dim.Height, 1)
-		if err != nil {
-			log.Fatal(err)
-		}
+	ds := driver.DSTarget{
+		DS:     dsView,
+		LoadD:  driver.LClear,
+		StoreD: driver.SDontCare,
+		ClearD: 1,
 	}
 
-	t.pass = pass
-	t.fb = fb
+	t.rt = rt
+	t.ds = ds
 	t.dsImg = dsImg
 	t.dsView = dsView
 }
@@ -424,8 +397,8 @@ func (t *T) pipelineSetup() {
 				},
 			},
 		},
-		Pass:    t.pass,
-		Subpass: 0,
+		ColorFmt: []driver.PixelFmt{t.sc.Format()},
+		DSFmt:    DepthFmt,
 	}
 	pipeln, err := gpu.NewPipeline(&gs)
 	if err != nil {
@@ -483,7 +456,15 @@ func (t *T) renderLoop() {
 
 		// We record the first render pass that will use
 		// the swapchain's image only after Next succeeds.
-		t.cb[frame].BeginPass(t.pass, t.fb[next], t.clear[:])
+		t.cb[frame].Transition([]driver.Transition{
+			{
+				Barrier:      driver.Barrier{},
+				LayoutBefore: driver.LUndefined,
+				LayoutAfter:  driver.LColorTarget,
+				IView:        t.rt[next].Color,
+			},
+		})
+		t.cb[frame].BeginPass(dim.Width, dim.Height, 1, []driver.ColorTarget{t.rt[next]}, &t.ds)
 		t.cb[frame].SetPipeline(t.pipeln)
 		t.cb[frame].SetViewport([]driver.Viewport{t.vport})
 		t.cb[frame].SetScissor([]driver.Scissor{t.sciss})
@@ -494,6 +475,20 @@ func (t *T) renderLoop() {
 
 		// We call Present only after the last render pass
 		// that will use the swapchain's image is recorded.
+		t.cb[frame].Transition([]driver.Transition{
+			// TODO: Improve this when supported by driver/vk.
+			{
+				Barrier: driver.Barrier{
+					SyncBefore:   driver.SAll,
+					SyncAfter:    driver.SAll,
+					AccessBefore: driver.AAnyRead | driver.AAnyWrite,
+					AccessAfter:  driver.AAnyRead | driver.AAnyWrite,
+				},
+				LayoutBefore: driver.LColorTarget,
+				LayoutAfter:  driver.LCommon,
+				IView:        t.rt[next].Color,
+			},
+		})
 		if err = t.sc.Present(next, t.cb[frame]); err != nil {
 			log.Fatal(err)
 		}
@@ -529,10 +524,6 @@ func (t *T) destroy() {
 	t.fragFunc.Code.Destroy()
 	t.dsView.Destroy()
 	t.dsImg.Destroy()
-	for _, fb := range t.fb {
-		fb.Destroy()
-	}
-	t.pass.Destroy()
 	t.sc.Destroy()
 	t.win.Close()
 }
@@ -790,10 +781,10 @@ func (t *T) recreateSwapchain() {
 	if err = t.sc.Recreate(); err != nil {
 		log.Fatal(err)
 	}
-	clrView := t.sc.Images()
-	if pf != t.sc.Format() || len(clrView) != len(t.fb) {
-		// The solution would be to recreate both the
-		// render pass and the pipeline, which is expensive.
+	scViews := t.sc.Images()
+	if pf != t.sc.Format() || len(scViews) != len(t.rt) {
+		// The solution would be to recreate the pipeline,
+		// which is expensive.
 		log.Fatal("recreate swapchain mismatch")
 	}
 	width := t.win.Width()
@@ -803,7 +794,7 @@ func (t *T) recreateSwapchain() {
 		dim.Height = height
 		t.dsView.Destroy()
 		t.dsImg.Destroy()
-		t.dsImg, err = gpu.NewImage(driver.D16un, dim, 1, 1, 1, driver.URenderTarget)
+		t.dsImg, err = gpu.NewImage(DepthFmt, dim, 1, 1, 1, driver.URenderTarget)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -816,11 +807,7 @@ func (t *T) recreateSwapchain() {
 		t.sciss.Width = width
 		t.sciss.Height = height
 	}
-	for i := range t.fb {
-		t.fb[i].Destroy()
-		t.fb[i], err = t.pass.NewFB([]driver.ImageView{clrView[i], t.dsView}, width, height, 1)
-		if err != nil {
-			log.Fatal(err)
-		}
+	for i := range t.rt {
+		t.rt[i].Color = scViews[i]
 	}
 }

@@ -85,33 +85,17 @@ func Example_draw() {
 	}
 	defer view.Destroy()
 
-	// Create a render pass and framebuffer for drawing.
-	// To draw the triangle, a single color attachment and
-	// subpass suffices.
-	// The contents are stored at the end of the subpass so
-	// we can copy it to CPU memory later.
-	att := driver.Attachment{
-		Format:  pf,
-		Samples: 1,
-		Load:    [2]driver.LoadOp{driver.LClear},
-		Store:   [2]driver.StoreOp{driver.SStore},
+	// Define the render target for drawing in a render pass.
+	// To draw the triangle, a single color target suffices.
+	// The contents are stored at the end of the render pass,
+	// so we can copy it to CPU memory later.
+	rt := driver.ColorTarget{
+		Color:   view,
+		Resolve: nil,
+		Load:    driver.LClear,
+		Store:   driver.SStore,
+		Clear:   [4]float32{1, 1, 0, 1},
 	}
-	subp := driver.Subpass{
-		Color: []int{0},
-		DS:    -1,
-		MSR:   nil,
-		Wait:  false,
-	}
-	pass, err := gpu.NewRenderPass([]driver.Attachment{att}, []driver.Subpass{subp})
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer pass.Destroy()
-	fb, err := pass.NewFB([]driver.ImageView{view}, dim.Width, dim.Height, 1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer fb.Destroy()
 
 	// Create vertex and fragment shader binaries.
 	// Shaders are platform-specific.
@@ -224,8 +208,8 @@ func Example_draw() {
 				},
 			},
 		},
-		Pass:    pass,
-		Subpass: 0,
+		ColorFmt: []driver.PixelFmt{pf},
+		DSFmt:    driver.FInvalid,
 	}
 	pl, err := gpu.NewPipeline(&gs)
 	if err != nil {
@@ -246,16 +230,13 @@ func Example_draw() {
 	// We record a render pass that draws the triangle and
 	// a data transfer that copies the results to a buffer
 	// accessible from the CPU side.
-	// The blit command is set to wait for the render pass
+	// The copy command is set to wait for the render pass
 	// to complete before it starts the copy.
 	cb, err := gpu.NewCmdBuffer()
 	if err != nil {
 		log.Fatal(err)
 	}
 	var (
-		clear = driver.ClearValue{
-			Color: [4]float32{1, 1, 0, 1},
-		}
 		vport = driver.Viewport{
 			X:      0,
 			Y:      0,
@@ -281,7 +262,7 @@ func Example_draw() {
 			Level:  0,
 			Size:   dim,
 		}
-		tran1 = [1]driver.Transition{
+		tdraw = [1]driver.Transition{
 			// TODO: Improve this when supported by driver/vk.
 			{
 				Barrier: driver.Barrier{
@@ -295,7 +276,7 @@ func Example_draw() {
 				IView:        view,
 			},
 		}
-		tran2 = [1]driver.Transition{
+		tcopy = [1]driver.Transition{
 			{
 				Barrier: driver.Barrier{
 					SyncBefore:   driver.SDraw,
@@ -314,8 +295,8 @@ func Example_draw() {
 	if err = cb.Begin(); err != nil {
 		log.Fatal(err)
 	}
-	cb.Transition(tran1[:])
-	cb.BeginPass(pass, fb, []driver.ClearValue{clear})
+	cb.Transition(tdraw[:])
+	cb.BeginPass(dim.Width, dim.Height, 1, []driver.ColorTarget{rt}, nil)
 	cb.SetPipeline(pl)
 	cb.SetViewport([]driver.Viewport{vport})
 	cb.SetScissor([]driver.Scissor{sciss})
@@ -324,7 +305,7 @@ func Example_draw() {
 	cb.SetDescTableGraph(dtab, 0, []int{0})
 	cb.Draw(3, 1, 0, 0)
 	cb.EndPass()
-	cb.Transition(tran2[:])
+	cb.Transition(tcopy[:])
 	cb.CopyImgToBuf(&blit)
 
 	// End must be called before committing the command buffer
