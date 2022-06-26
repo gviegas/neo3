@@ -279,7 +279,7 @@ func Example_draw() {
 		tcopy = [1]driver.Transition{
 			{
 				Barrier: driver.Barrier{
-					SyncBefore:   driver.SDraw,
+					SyncBefore:   driver.SGraphics,
 					SyncAfter:    driver.SCopy,
 					AccessBefore: driver.AColorWrite,
 					AccessAfter:  driver.ACopyRead | driver.ACopyWrite,

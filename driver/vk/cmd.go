@@ -863,7 +863,7 @@ func convSync(sync driver.Sync) C.VkPipelineStageFlags2 {
 	}
 
 	var flags C.VkPipelineStageFlags2
-	if sync&driver.SDraw != 0 {
+	if sync&driver.SGraphics != 0 {
 		flags |= C.VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT
 	} else {
 		if sync&driver.SVertexInput != 0 {
@@ -875,11 +875,11 @@ func convSync(sync driver.Sync) C.VkPipelineStageFlags2 {
 		if sync&driver.SFragmentShading != 0 {
 			flags |= C.VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
 		}
-		if sync&(driver.SColorOutput|driver.SResolve) != 0 {
-			flags |= C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-		}
 		if sync&driver.SDSOutput != 0 {
 			flags |= C.VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT
+		}
+		if sync&driver.SColorOutput != 0 {
+			flags |= C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
 		}
 	}
 	if sync&driver.SComputeShading != 0 {
@@ -907,7 +907,10 @@ func convAccess(acc driver.Access) C.VkAccessFlags2 {
 		if acc&driver.AIndexBufRead != 0 {
 			flags |= C.VK_ACCESS_2_INDEX_READ_BIT
 		}
-		if acc&(driver.AColorRead|driver.AResolveRead) != 0 {
+		if acc&driver.AShaderRead != 0 {
+			flags |= C.VK_ACCESS_2_SHADER_READ_BIT
+		}
+		if acc&driver.AColorRead != 0 {
 			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT
 		}
 		if acc&driver.ADSRead != 0 {
@@ -916,15 +919,15 @@ func convAccess(acc driver.Access) C.VkAccessFlags2 {
 		if acc&driver.ACopyRead != 0 {
 			flags |= C.VK_ACCESS_2_TRANSFER_READ_BIT
 		}
-		if acc&driver.AShaderRead != 0 {
-			flags |= C.VK_ACCESS_2_SHADER_READ_BIT
-		}
 	}
 
 	if acc&driver.AAnyWrite != 0 {
 		flags |= C.VK_ACCESS_2_MEMORY_WRITE_BIT
 	} else {
-		if acc&(driver.AColorWrite|driver.AResolveWrite) != 0 {
+		if acc&driver.AShaderWrite != 0 {
+			flags |= C.VK_ACCESS_2_SHADER_WRITE_BIT
+		}
+		if acc&driver.AColorWrite != 0 {
 			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
 		}
 		if acc&driver.ADSWrite != 0 {
@@ -932,9 +935,6 @@ func convAccess(acc driver.Access) C.VkAccessFlags2 {
 		}
 		if acc&driver.ACopyWrite != 0 {
 			flags |= C.VK_ACCESS_2_TRANSFER_WRITE_BIT
-		}
-		if acc&driver.AShaderWrite != 0 {
-			flags |= C.VK_ACCESS_2_SHADER_WRITE_BIT
 		}
 	}
 	return flags
@@ -947,18 +947,18 @@ func convLayout(lay driver.Layout) C.VkImageLayout {
 		return C.VK_IMAGE_LAYOUT_UNDEFINED
 	case driver.LCommon:
 		return C.VK_IMAGE_LAYOUT_GENERAL
+	case driver.LShaderRead:
+		return C.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 	case driver.LColorTarget:
 		return C.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 	case driver.LDSTarget:
 		return C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 	case driver.LDSRead:
 		return C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-	case driver.LResolveSrc, driver.LCopySrc:
+	case driver.LCopySrc:
 		return C.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-	case driver.LResolveDst, driver.LCopyDst:
+	case driver.LCopyDst:
 		return C.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-	case driver.LShaderRead:
-		return C.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 	case driver.LPresent:
 		return C.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 	}

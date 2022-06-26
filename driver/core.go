@@ -92,6 +92,9 @@ type Off3D struct {
 // To record copy commands:
 //	1. call Copy*/Fill commands
 //
+// To record synchronization commands:
+//	1. call Barrier/Transition commands
+//
 // Finally, call End and, if it succeeds, GPU.Commit.
 // Note that BeginPass commands must not be nested,
 // and that they must always be paired with EndPass.
@@ -186,10 +189,12 @@ type CmdBuffer interface {
 
 	// Barrier inserts a number of global barriers
 	// in the command buffer.
+	// It must not be called during a render pass.
 	Barrier(b []Barrier)
 
 	// Transition inserts a number of image layout
 	// transitions in the command buffer.
+	// It must not be called during a render pass.
 	Transition(t []Transition)
 
 	// End ends command recording and prepares the
@@ -299,16 +304,22 @@ type Sync int
 
 // Synchronization scopes.
 const (
+	// Each graphics stage, in order.
 	SVertexInput Sync = 1 << iota
 	SVertexShading
 	SFragmentShading
-	SComputeShading
-	SColorOutput
 	SDSOutput
-	SDraw
-	SResolve
+	SColorOutput
+	// Any graphics stage.
+	SGraphics
+	// Compute stage.
+	SComputeShading
+	// Copy commands.
 	SCopy
+	// Everything.
 	SAll
+	// Nothing.
+	// Must be paired with Access' ANone.
 	SNone Sync = 0
 )
 
@@ -317,20 +328,32 @@ type Access int
 
 // Memory access scopes.
 const (
+	// Read from vertex buffer.
 	AVertexBufRead Access = 1 << iota
+	// Read from index buffer.
 	AIndexBufRead
-	AColorRead
-	AColorWrite
-	ADSRead
-	ADSWrite
-	AResolveRead
-	AResolveWrite
-	ACopyRead
-	ACopyWrite
+	// Read/sample in a shader.
 	AShaderRead
+	// Write in a shader.
 	AShaderWrite
+	// Read from color render target.
+	AColorRead
+	// Write to color render target.
+	AColorWrite
+	// Read from depth/stencil render target.
+	ADSRead
+	// Write to depth/stencil render target.
+	ADSWrite
+	// Read in a copy command.
+	ACopyRead
+	// Write in a copy command.
+	ACopyWrite
+	// Any kind of read.
 	AAnyRead
+	// Any kind of write.
 	AAnyWrite
+	// No access.
+	// Must be paired with Sync's SNone.
 	ANone Access = 0
 )
 
@@ -339,16 +362,28 @@ type Layout int
 
 // Image layouts.
 const (
+	// The initial layout of all image views.
+	// It can be used as the layout transitioned from
+	// when contents need not be preserved.
 	LUndefined Layout = iota
+	// A layout supporting all types of operations,
+	// but not presentation.
 	LCommon
-	LColorTarget
-	LDSTarget
-	LDSRead
-	LResolveSrc
-	LResolveDst
-	LCopySrc
-	LCopyDst
+	// Shader read/sample.
 	LShaderRead
+	// Color render target.
+	LColorTarget
+	// Depth/stencil render target.
+	LDSTarget
+	// Read-only depth/stencil.
+	LDSRead
+	// Source of a copy command.
+	LCopySrc
+	// Destination of a copy command.
+	LCopyDst
+	// Presentation.
+	// A swapchain's view must be transitioned to this
+	// layout prior to presentation.
 	LPresent
 )
 
