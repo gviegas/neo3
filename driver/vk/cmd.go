@@ -150,11 +150,11 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 		if view.i != nil {
 			sib[i].image = view.i.img
 		} else {
-			for i := range view.s.views {
-				if view.s.views[i] != view {
+			for j := range view.s.views {
+				if view.s.views[j] != view {
 					continue
 				}
-				sib[i].image = view.s.imgs[i]
+				sib[i].image = view.s.imgs[j]
 				break
 			}
 		}
