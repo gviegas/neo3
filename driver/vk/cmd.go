@@ -835,89 +835,88 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 	}
 }
 
-// convSync converts a driver.Sync to a VkPipelineStageFlags.
-func convSync(sync driver.Sync) C.VkPipelineStageFlags {
+// convSync converts a driver.Sync to a VkPipelineStageFlags2.
+func convSync(sync driver.Sync) C.VkPipelineStageFlags2 {
 	if sync == driver.SNone {
-		return C.VK_PIPELINE_STAGE_NONE // 0
+		return C.VK_PIPELINE_STAGE_2_NONE // 0
 	}
 	if sync&driver.SAll != 0 {
-		return C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+		return C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT
 	}
 
-	var flags C.VkPipelineStageFlags
+	var flags C.VkPipelineStageFlags2
 	if sync&driver.SDraw != 0 {
-		flags |= C.VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT
+		flags |= C.VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT
 	} else {
 		if sync&driver.SVertexInput != 0 {
-			flags |= C.VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT
 		}
 		if sync&driver.SVertexShading != 0 {
-			// NOTE: This is the latest currently supported.
-			flags |= C.VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT
 		}
 		if sync&driver.SFragmentShading != 0 {
-			flags |= C.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
 		}
-		if sync&driver.SColorOutput != 0 {
-			flags |= C.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+		if sync&(driver.SColorOutput|driver.SResolve) != 0 {
+			flags |= C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
 		}
 		if sync&driver.SDSOutput != 0 {
-			flags |= C.VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT
 		}
 	}
 	if sync&driver.SComputeShading != 0 {
-		flags |= C.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+		flags |= C.VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
 	}
-	if sync&(driver.SResolve|driver.SCopy) != 0 {
-		flags |= C.VK_PIPELINE_STAGE_TRANSFER_BIT
+	if sync&driver.SCopy != 0 {
+		flags |= C.VK_PIPELINE_STAGE_2_TRANSFER_BIT
 	}
 	return flags
 }
 
-// convAccess converts a driver.Access to a VkAccessFlags.
-func convAccess(acc driver.Access) C.VkAccessFlags {
+// convAccess converts a driver.Access to a VkAccessFlags2.
+func convAccess(acc driver.Access) C.VkAccessFlags2 {
 	if acc == driver.ANone {
-		return C.VK_ACCESS_NONE // 0
+		return C.VK_ACCESS_2_NONE // 0
 	}
 
-	var flags C.VkAccessFlags
+	var flags C.VkAccessFlags2
 	if acc&driver.AAnyRead != 0 {
-		flags |= C.VK_ACCESS_MEMORY_READ_BIT
+		flags |= C.VK_ACCESS_2_MEMORY_READ_BIT
 	} else {
 		if acc&driver.AVertexBufRead != 0 {
-			flags |= C.VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
+			flags |= C.VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT
 		}
 		if acc&driver.AIndexBufRead != 0 {
-			flags |= C.VK_ACCESS_INDEX_READ_BIT
+			flags |= C.VK_ACCESS_2_INDEX_READ_BIT
 		}
-		if acc&driver.AColorRead != 0 {
-			flags |= C.VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+		if acc&(driver.AColorRead|driver.AResolveRead) != 0 {
+			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT
 		}
 		if acc&driver.ADSRead != 0 {
-			flags |= C.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
+			flags |= C.VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT
 		}
-		if acc&(driver.AResolveRead|driver.ACopyRead) != 0 {
-			flags |= C.VK_ACCESS_TRANSFER_READ_BIT
+		if acc&driver.ACopyRead != 0 {
+			flags |= C.VK_ACCESS_2_TRANSFER_READ_BIT
 		}
 		if acc&driver.AShaderRead != 0 {
-			flags |= C.VK_ACCESS_SHADER_READ_BIT
+			flags |= C.VK_ACCESS_2_SHADER_READ_BIT
 		}
 	}
 
 	if acc&driver.AAnyWrite != 0 {
-		flags |= C.VK_ACCESS_MEMORY_WRITE_BIT
+		flags |= C.VK_ACCESS_2_MEMORY_WRITE_BIT
 	} else {
-		if acc&driver.AColorWrite != 0 {
-			flags |= C.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+		if acc&(driver.AColorWrite|driver.AResolveWrite) != 0 {
+			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
 		}
 		if acc&driver.ADSWrite != 0 {
-			flags |= C.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+			flags |= C.VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
 		}
-		if acc&(driver.AResolveWrite|driver.ACopyWrite) != 0 {
-			flags |= C.VK_ACCESS_TRANSFER_WRITE_BIT
+		if acc&driver.ACopyWrite != 0 {
+			flags |= C.VK_ACCESS_2_TRANSFER_WRITE_BIT
 		}
 		if acc&driver.AShaderWrite != 0 {
-			flags |= C.VK_ACCESS_SHADER_WRITE_BIT
+			flags |= C.VK_ACCESS_2_SHADER_WRITE_BIT
 		}
 	}
 	return flags
