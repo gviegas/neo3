@@ -108,52 +108,70 @@ func (cb *cmdBuffer) Reset() error {
 
 // Barrier inserts a number of global barriers in the command buffer.
 func (cb *cmdBuffer) Barrier(b []driver.Barrier) {
-	// TODO: Use new synchronization barrier (1.3/synchronization2).
-	mb := C.VkMemoryBarrier{
-		sType: C.VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+	nb := len(b)
+	pb := (*C.VkMemoryBarrier2)(C.malloc(C.sizeof_VkMemoryBarrier2 * C.size_t(nb)))
+	sb := unsafe.Slice(pb, nb)
+	for i := range sb {
+		sb[i] = C.VkMemoryBarrier2{
+			sType:         C.VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+			srcStageMask:  convSync(b[i].SyncBefore),
+			srcAccessMask: convAccess(b[i].AccessBefore),
+			dstStageMask:  convSync(b[i].SyncAfter),
+			dstAccessMask: convAccess(b[i].AccessAfter),
+		}
 	}
-	for i := range b {
-		sstg := convSync(b[i].SyncBefore)
-		dstg := convSync(b[i].SyncAfter)
-		mb.srcAccessMask = convAccess(b[i].AccessBefore)
-		mb.dstAccessMask = convAccess(b[i].AccessAfter)
-		C.vkCmdPipelineBarrier(cb.cb, sstg, dstg, 0, 1, &mb, 0, nil, 0, nil)
+	dep := C.VkDependencyInfo{
+		sType:              C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		memoryBarrierCount: C.uint32_t(nb),
+		pMemoryBarriers:    pb,
 	}
+	C.vkCmdPipelineBarrier2(cb.cb, &dep)
+	C.free(unsafe.Pointer(pb))
 }
 
 // Transition inserts a number of image layout transitions in the
 // command buffer.
 func (cb *cmdBuffer) Transition(t []driver.Transition) {
-	// TODO: Use new synchronization barrier (1.3/synchronization2).
-	imb := C.VkImageMemoryBarrier{
-		sType: C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-	}
-	for i := range t {
-		sstg := convSync(t[i].SyncBefore)
-		dstg := convSync(t[i].SyncAfter)
-		imb.srcAccessMask = convAccess(t[i].AccessBefore)
-		imb.dstAccessMask = convAccess(t[i].AccessAfter)
-		imb.oldLayout = convLayout(t[i].LayoutBefore)
-		imb.newLayout = convLayout(t[i].LayoutAfter)
+	nib := len(t)
+	pib := (*C.VkImageMemoryBarrier2)(C.malloc(C.sizeof_VkImageMemoryBarrier2 * C.size_t(nib)))
+	sib := unsafe.Slice(pib, nib)
+	for i := range sib {
 		view := t[i].IView.(*imageView)
+		sib[i] = C.VkImageMemoryBarrier2{
+			sType:            C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+			srcStageMask:     convSync(t[i].SyncBefore),
+			srcAccessMask:    convAccess(t[i].AccessBefore),
+			dstStageMask:     convSync(t[i].SyncAfter),
+			dstAccessMask:    convAccess(t[i].AccessAfter),
+			oldLayout:        convLayout(t[i].LayoutBefore),
+			newLayout:        convLayout(t[i].LayoutAfter),
+			subresourceRange: view.subres,
+		}
 		if view.i != nil {
-			imb.image = view.i.img
+			sib[i].image = view.i.img
 		} else {
 			for i := range view.s.views {
-				if view.s.views[i] == view {
-					imb.image = view.s.imgs[i]
-					break
+				if view.s.views[i] != view {
+					continue
 				}
+				sib[i].image = view.s.imgs[i]
+				break
 			}
 		}
-		imb.subresourceRange = view.subres
-		C.vkCmdPipelineBarrier(cb.cb, sstg, dstg, 0, 0, nil, 0, nil, 1, &imb)
 	}
+	dep := C.VkDependencyInfo{
+		sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		imageMemoryBarrierCount: C.uint32_t(nib),
+		pImageMemoryBarriers:    pib,
+	}
+	C.vkCmdPipelineBarrier2(cb.cb, &dep)
+	C.free(unsafe.Pointer(pib))
 }
 
 // scBarrier records an image memory barrier in the command buffer.
 // The image is taken from cb.sc.imgs[cb.scView].
 // It assumes that all images in the swapchain have a single layer.
+// TODO: Deprecate.
 func (cb *cmdBuffer) scBarrier(lay1, lay2 C.VkImageLayout, que1, que2 C.uint32_t, stg1, stg2 C.VkPipelineStageFlags, acc1, acc2 C.VkAccessFlags) {
 	imb := C.VkImageMemoryBarrier{
 		sType:               C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
