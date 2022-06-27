@@ -149,14 +149,49 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 		}
 		if view.i != nil {
 			sib[i].image = view.i.img
-		} else {
-			for j := range view.s.views {
-				if view.s.views[j] != view {
-					continue
-				}
-				sib[i].image = view.s.imgs[j]
+			continue
+		}
+		viewIdx := -1
+		for i := range view.s.views {
+			if view.s.views[i] == view {
+				viewIdx = i
 				break
 			}
+		}
+		sib[i].image = view.s.imgs[viewIdx]
+		if cb.qfam == view.s.qfam {
+			// Just the layout transitions from/to
+			// driver.LPresent, which the client is
+			// required to perform, will suffice.
+			continue
+		}
+		if t[i].LayoutAfter == driver.LPresent {
+			// Queue transfer to presentation.
+			sib[i].srcQueueFamilyIndex = cb.qfam
+			sib[i].dstQueueFamilyIndex = view.s.qfam
+			pcb := view.s.pcbs[view.s.viewSync[viewIdx]].(*cmdBuffer)
+			// BUG: Did pcb begun?
+			dep := C.VkDependencyInfo{
+				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+				imageMemoryBarrierCount: 1,
+				pImageMemoryBarriers:    &sib[i], // BUG: Is this a Go ptr?
+			}
+			C.vkCmdPipelineBarrier2(pcb.cb, &dep)
+			continue
+		}
+		if t[i].LayoutBefore == driver.LPresent {
+			// Queue transfer from presentation.
+			sib[i].srcQueueFamilyIndex = view.s.qfam
+			sib[i].dstQueueFamilyIndex = cb.qfam
+			pcb := view.s.pcbs[view.s.viewSync[viewIdx]].(*cmdBuffer)
+			// BUG: Did pcb begun?
+			dep := C.VkDependencyInfo{
+				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+				imageMemoryBarrierCount: 1,
+				pImageMemoryBarriers:    &sib[i], // BUG: Is this a Go ptr?
+			}
+			C.vkCmdPipelineBarrier2(pcb.cb, &dep)
+			continue
 		}
 	}
 	dep := C.VkDependencyInfo{
