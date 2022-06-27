@@ -44,10 +44,10 @@ func TestSwapchain(t *testing.T) {
 			if len(s.views) == 0 {
 				t.Errorf("%s: len(s.views)\nhave 0\nwant > 0", call)
 			}
-			iv := s.Images()
+			iv := s.Views()
 			for i := range iv {
 				if iv[i] != s.views[i] {
-					t.Errorf("s.Images()[%d]\nhave %v\nwant %v", i, iv[i], s.views[i])
+					t.Errorf("s.Views()[%d]\nhave %v\nwant %v", i, iv[i], s.views[i])
 				}
 			}
 			pf := s.Format()

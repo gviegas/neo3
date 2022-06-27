@@ -383,10 +383,11 @@ func (s *swapchain) syncSetup() error {
 	return nil
 }
 
-// Images returns the list of image views that comprises
+// Views returns the list of image views that comprises
 // the swapchain.
-func (s *swapchain) Images() []driver.ImageView {
-	// TODO: Consider sharing s.views instead.
+func (s *swapchain) Views() []driver.ImageView {
+	// It is expected that this method will not be
+	// called often.
 	var views []driver.ImageView
 	return append(views, s.views...)
 }

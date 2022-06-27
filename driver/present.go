@@ -36,7 +36,7 @@ var ErrSwapchain = errors.New("swapchain-related error")
 var ErrNoBackbuffer = errors.New("all backbuffers in use")
 
 // Presenter is the interface that a GPU may implement
-// to enable presentation to a display.
+// to enable presentation on a display.
 type Presenter interface {
 	// NewSwapchain creates a new swapchain.
 	// Only one swapchain can be associated with a specific
@@ -52,16 +52,16 @@ type Presenter interface {
 // the swapchain and then commits the command buffer(s)
 // that it targets for execution.
 // As a limitation, only one Next/Present pair can be
-// recored in a single Commit.
+// recorded in a single Commit.
 type Swapchain interface {
 	Destroyer
 
-	// Images returns the list of image views that
+	// Views returns the list of image views that
 	// comprises the swapchain.
 	// This value remains unchanged as long as the
 	// swapchain's Destroy or Recreate methods are
 	// not called.
-	Images() []ImageView
+	Views() []ImageView
 
 	// Next returns the index of the next writable
 	// image view.

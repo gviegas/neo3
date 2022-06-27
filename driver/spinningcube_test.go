@@ -121,7 +121,7 @@ func (t *T) swapchainSetup() {
 // passSetup creates the depth image/view and sets the
 // render targets to be used during render passes.
 func (t *T) passSetup() {
-	scViews := t.sc.Images()
+	scViews := t.sc.Views()
 	rt := make([]driver.ColorTarget, len(scViews))
 	for i := range rt {
 		rt[i] = driver.ColorTarget{
@@ -781,7 +781,7 @@ func (t *T) recreateSwapchain() {
 	if err = t.sc.Recreate(); err != nil {
 		log.Fatal(err)
 	}
-	scViews := t.sc.Images()
+	scViews := t.sc.Views()
 	if pf != t.sc.Format() || len(scViews) != len(t.rt) {
 		// The solution would be to recreate the pipeline,
 		// which is expensive.
