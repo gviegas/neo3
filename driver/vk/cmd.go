@@ -166,29 +166,27 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			continue
 		}
 		if t[i].LayoutAfter == driver.LPresent {
-			// Queue transfer to presentation.
+			// Queue transfer from rendering to presentation.
 			sib[i].srcQueueFamilyIndex = cb.qfam
 			sib[i].dstQueueFamilyIndex = view.s.qfam
 			pcb := view.s.pcbs[view.s.viewSync[viewIdx]].(*cmdBuffer)
-			// BUG: Did pcb begun?
 			dep := C.VkDependencyInfo{
 				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 				imageMemoryBarrierCount: 1,
-				pImageMemoryBarriers:    &sib[i], // BUG: Is this a Go ptr?
+				pImageMemoryBarriers:    &sib[i],
 			}
 			C.vkCmdPipelineBarrier2(pcb.cb, &dep)
 			continue
 		}
 		if t[i].LayoutBefore == driver.LPresent {
-			// Queue transfer from presentation.
+			// Queue transfer from presentation to rendering.
 			sib[i].srcQueueFamilyIndex = view.s.qfam
 			sib[i].dstQueueFamilyIndex = cb.qfam
 			pcb := view.s.pcbs[view.s.viewSync[viewIdx]].(*cmdBuffer)
-			// BUG: Did pcb begun?
 			dep := C.VkDependencyInfo{
 				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 				imageMemoryBarrierCount: 1,
-				pImageMemoryBarriers:    &sib[i], // BUG: Is this a Go ptr?
+				pImageMemoryBarriers:    &sib[i],
 			}
 			C.vkCmdPipelineBarrier2(pcb.cb, &dep)
 			continue
@@ -201,29 +199,6 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 	}
 	C.vkCmdPipelineBarrier2(cb.cb, &dep)
 	C.free(unsafe.Pointer(pib))
-}
-
-// scBarrier records an image memory barrier in the command buffer.
-// The image is taken from cb.sc.imgs[cb.scView].
-// It assumes that all images in the swapchain have a single layer.
-// TODO: Deprecate.
-func (cb *cmdBuffer) scBarrier(lay1, lay2 C.VkImageLayout, que1, que2 C.uint32_t, stg1, stg2 C.VkPipelineStageFlags, acc1, acc2 C.VkAccessFlags) {
-	imb := C.VkImageMemoryBarrier{
-		sType:               C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-		srcAccessMask:       acc1,
-		dstAccessMask:       acc2,
-		oldLayout:           lay1,
-		newLayout:           lay2,
-		srcQueueFamilyIndex: que1,
-		dstQueueFamilyIndex: que2,
-		image:               cb.sc.imgs[cb.scView],
-		subresourceRange: C.VkImageSubresourceRange{
-			aspectMask: C.VK_IMAGE_ASPECT_COLOR_BIT,
-			levelCount: 1,
-			layerCount: 1,
-		},
-	}
-	C.vkCmdPipelineBarrier(cb.cb, stg1, stg2, 0, 0, nil, 0, nil, 1, &imb)
 }
 
 // BeginPass begins a render pass.
