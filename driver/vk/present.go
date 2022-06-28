@@ -44,7 +44,7 @@ type swapchain struct {
 	//
 	//	viewIdx = <returned by Next>
 	// 	syncIdx = viewSync[viewIdx]
-	// 	maxAcq = 1 + len(views) + minImg
+	// 	maxAcq = 1 + len(views) - minImg
 	// 	if using the same queue
 	// 		nextSem = sems[syncIdx]
 	// 		presSem = sems[maxAcq + viewIdx]
@@ -413,10 +413,6 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 		// Should never happen.
 		panic("no swapchain sync data to use")
 	}
-	c := cb.(*cmdBuffer)
-	if err := c.Begin(); err != nil { // TODO: Remove?
-		return -1, err
-	}
 	var idx C.uint32_t
 	var null C.VkFence
 	res := C.vkAcquireNextImageKHR(s.d.dev, s.sc, C.UINT64_MAX, s.sems[sync], null, &idx)
@@ -425,21 +421,24 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 		s.curImg++
 		s.viewSync[idx] = sync
 		s.syncUsed[sync] = true
+		c := cb.(*cmdBuffer)
+		if c.qfam != s.qfam {
+			// cmdBuffer.Transition, which must eventually be
+			// called after this method, expects pcb to have
+			// begun when recording a queue transfer.
+			// Doing this here allow us to notify the client
+			// in case pcb.Begin fails.
+			// Present is responsible for ending pcb.
+			pcb := s.pcbs[sync].(*cmdBuffer)
+			if err := pcb.Begin(); err != nil {
+				s.broken = true
+				return -1, err
+			}
+		}
 		c.sc = s
 		c.scView = int(idx)
 		c.scNext = true
 		c.scPres = false
-		var (
-			// Discard contents.
-			lay1 = C.VkImageLayout(C.VK_IMAGE_LAYOUT_UNDEFINED)
-			// TODO: Currently, render passes expect that all images
-			// be in the general layout.
-			lay2 = C.VkImageLayout(C.VK_IMAGE_LAYOUT_GENERAL)
-			stg1 = C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
-			stg2 = stg1
-			acc2 = C.VkAccessFlags(C.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
-		)
-		c.scBarrier(lay1, lay2, 0, 0, stg1, stg2, 0, acc2)
 		return int(idx), nil
 	case C.VK_SUBOPTIMAL_KHR:
 		s.curImg++
@@ -463,29 +462,18 @@ func (s *swapchain) Present(index int, cb driver.CmdBuffer) error {
 		return driver.ErrSwapchain
 	}
 	c := cb.(*cmdBuffer)
-	if err := c.Begin(); err != nil { // TODO: Remove?
-		return err
-	}
-	var (
-		// TODO: Currently, render passes transition all images to
-		// the general layout.
-		lay1 = C.VkImageLayout(C.VK_IMAGE_LAYOUT_GENERAL)
-		lay2 = C.VkImageLayout(C.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-		que1 = C.uint32_t(c.qfam)
-		que2 = C.uint32_t(s.qfam)
-		stg1 = C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)
-		stg2 = C.VkPipelineStageFlags(C.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT)
-		acc1 = C.VkAccessFlags(C.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
-	)
-	c.scBarrier(lay1, lay2, que1, que2, stg1, stg2, acc1, 0)
-	if s.qfam != c.qfam {
+	if c.qfam != s.qfam {
+		// There should be be at least one queue transfer
+		// recorded in pcb, since the client is required to
+		// transition the image view to the driver.LPresent
+		// layout before calling this method (a newly
+		// acquired backbuffer that transitions from the
+		// driver.LUndefined layout does not trigger a
+		// queue transfer).
+		// Next is responsible for beginning pcb.
 		pcb := s.pcbs[c.scView].(*cmdBuffer)
-		if err := pcb.Begin(); err != nil {
-			return err
-		}
-		stg1 = C.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
-		pcb.scBarrier(lay1, lay2, que1, que2, stg1, stg2, 0, 0)
 		if err := pcb.End(); err != nil {
+			s.broken = true
 			return err
 		}
 	}
