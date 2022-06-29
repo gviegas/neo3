@@ -498,7 +498,7 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 	}
 	var idx C.uint32_t
 	var null C.VkFence
-	res := C.vkAcquireNextImageKHR(s.d.dev, s.sc, C.UINT64_MAX, s.sems[sync], null, &idx)
+	res := C.vkAcquireNextImageKHR(s.d.dev, s.sc, C.UINT64_MAX, s.nextSem[sync], null, &idx)
 	switch res {
 	case C.VK_SUCCESS:
 		s.curImg++
@@ -506,17 +506,8 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 		s.syncUsed[sync] = true
 		c := cb.(*cmdBuffer)
 		if c.qfam != s.qfam {
-			// cmdBuffer.Transition, which must eventually be
-			// called after this method, expects pcb to have
-			// begun when recording a queue transfer.
-			// Doing this here allow us to notify the client
-			// in case pcb.Begin fails.
-			// Present is responsible for ending pcb.
-			pcb := s.pcbs[sync].(*cmdBuffer)
-			if err := pcb.Begin(); err != nil {
-				s.broken = true
-				return -1, err
-			}
+			// TODO
+			panic("not implemented")
 		}
 		c.sc = s
 		c.scView = int(idx)
@@ -546,19 +537,8 @@ func (s *swapchain) Present(index int, cb driver.CmdBuffer) error {
 	}
 	c := cb.(*cmdBuffer)
 	if c.qfam != s.qfam {
-		// There should be be at least one queue transfer
-		// recorded in pcb, since the client is required to
-		// transition the image view to the driver.LPresent
-		// layout before calling this method (a newly
-		// acquired backbuffer that transitions from the
-		// driver.LUndefined layout does not trigger a
-		// queue transfer).
-		// Next is responsible for beginning pcb.
-		pcb := s.pcbs[c.scView].(*cmdBuffer)
-		if err := pcb.End(); err != nil {
-			s.broken = true
-			return err
-		}
+		// TODO
+		panic("not implemented")
 	}
 	c.scPres = true
 	return nil
@@ -628,10 +608,20 @@ func (s *swapchain) Destroy() {
 		if s.qfam != s.d.qfam {
 			C.vkQueueWaitIdle(s.d.ques[s.qfam])
 		}
-		for _, p := range s.pcbs {
-			p.Destroy()
+		for _, x := range s.queSync {
+			C.vkDestroySemaphore(s.d.dev, x.rendWait, nil)
+			C.vkDestroySemaphore(s.d.dev, x.presWait, nil)
+			if x.presRel != nil {
+				x.presRel.Destroy()
+			}
+			if x.presAcq != nil {
+				x.presAcq.Destroy()
+			}
 		}
-		for _, x := range s.sems {
+		for _, x := range s.presSem {
+			C.vkDestroySemaphore(s.d.dev, x, nil)
+		}
+		for _, x := range s.nextSem {
 			C.vkDestroySemaphore(s.d.dev, x, nil)
 		}
 		for _, v := range s.views {
