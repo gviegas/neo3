@@ -169,26 +169,44 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			// Queue transfer from rendering to presentation.
 			sib[i].srcQueueFamilyIndex = cb.qfam
 			sib[i].dstQueueFamilyIndex = view.s.qfam
-			pcb := view.s.pcbs[view.s.viewSync[viewIdx]].(*cmdBuffer)
 			dep := C.VkDependencyInfo{
 				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			C.vkCmdPipelineBarrier2(pcb.cb, &dep)
+			syncIdx := view.s.viewSync[viewIdx]
+			presAcq := view.s.queSync[syncIdx].presAcq.(*cmdBuffer)
+			if err := presAcq.Begin(); err != nil {
+				// TODO
+				panic("not implemented")
+			}
+			C.vkCmdPipelineBarrier2(presAcq.cb, &dep)
+			if err := presAcq.End(); err != nil {
+				// TODO
+				panic("not implemented")
+			}
 			continue
 		}
 		if t[i].LayoutBefore == driver.LPresent {
 			// Queue transfer from presentation to rendering.
 			sib[i].srcQueueFamilyIndex = view.s.qfam
 			sib[i].dstQueueFamilyIndex = cb.qfam
-			pcb := view.s.pcbs[view.s.viewSync[viewIdx]].(*cmdBuffer)
 			dep := C.VkDependencyInfo{
 				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			C.vkCmdPipelineBarrier2(pcb.cb, &dep)
+			syncIdx := view.s.viewSync[viewIdx]
+			presRel := view.s.queSync[syncIdx].presRel.(*cmdBuffer)
+			if err := presRel.Begin(); err != nil {
+				// TODO
+				panic("not implemented")
+			}
+			C.vkCmdPipelineBarrier2(presRel.cb, &dep)
+			if err := presRel.End(); err != nil {
+				// TODO
+				panic("not implemented")
+			}
 			continue
 		}
 	}
@@ -771,6 +789,9 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 			return
 		}
 	case pres[0] != nil && pres[1] != nil:
+		// TODO
+		panic("not implemented")
+	/*
 		// There is a pending present request.
 		// We assume that pres[0].sc and pres[1].sc refer
 		// to the same swapchain.
@@ -840,6 +861,7 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 			sc.syncUsed[sync] = false
 			sc.mu.Unlock()
 		}
+	*/
 	default:
 		panic("corrupted command buffer presentation")
 	}
