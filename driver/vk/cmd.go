@@ -14,11 +14,12 @@ import (
 
 // cmdBuffer implements driver.CmdBuffer.
 type cmdBuffer struct {
-	d     *Driver
-	qfam  C.uint32_t
-	pool  C.VkCommandPool
-	cb    C.VkCommandBuffer
-	begun bool
+	d      *Driver
+	qfam   C.uint32_t
+	pool   C.VkCommandPool
+	cb     C.VkCommandBuffer
+	status cbStatus
+	err    error // Why cbFailed.
 
 	// When set, sc indicates that there is
 	// an ongoing presentation operation
@@ -30,6 +31,30 @@ type cmdBuffer struct {
 	scNext bool
 	scPres bool
 }
+
+// cbStatus represents the status of the
+// command buffer at a given time.
+type cbStatus int
+
+// cbStatus constants.
+const (
+	// Yet to begun.
+	// Set after creation, committing and
+	// resetting.
+	cbIdle cbStatus = iota
+	// Ready to record commands.
+	// Set after a successful call to Begin.
+	cbBegun
+	// Ready to be committed.
+	// Set after a successful call to End.
+	cbEnded
+	// Ongoing commit.
+	// Set during a call to Commit.
+	cbCommitted
+	// Command recording failed.
+	// Set when a command cannot be recorded.
+	cbFailed
+)
 
 // NewCmdBuffer creates a new command buffer.
 // Its pool is created using d.qfam.
@@ -73,7 +98,8 @@ func (d *Driver) newCmdBuffer(qfam C.uint32_t) (driver.CmdBuffer, error) {
 
 // Begin prepares the command buffer for recording.
 func (cb *cmdBuffer) Begin() error {
-	if !cb.begun {
+	switch cb.status {
+	case cbIdle:
 		info := C.VkCommandBufferBeginInfo{
 			sType: C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 			flags: C.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
@@ -82,28 +108,61 @@ func (cb *cmdBuffer) Begin() error {
 		if err != nil {
 			return err
 		}
-		cb.begun = true
+		cb.status = cbBegun
+	case cbBegun, cbFailed:
+		// Note that cbFailed is handled on End.
+		return nil
 	}
-	return nil
+	// Client error.
+	panic("invalid call to CmdBuffer.Begin")
 }
 
 // End ends command recording and prepares the command buffer for execution.
 func (cb *cmdBuffer) End() error {
-	if cb.begun {
-		cb.begun = false
-		return checkResult(C.vkEndCommandBuffer(cb.cb))
+	switch cb.status {
+	case cbBegun:
+		if err := checkResult(C.vkEndCommandBuffer(cb.cb)); err != nil {
+			// Calling Begin implicitly resets cb.cb.
+			cb.status = cbIdle
+			return err
+		}
+		cb.status = cbEnded
+		return nil
+	case cbEnded:
+		return nil
+	case cbFailed:
+		C.vkEndCommandBuffer(cb.cb)
+		C.vkResetCommandBuffer(cb.cb, 0)
+		cb.status = cbIdle
+		if cb.err == nil {
+			panic("unexpected nil error in failed command recording")
+		}
+		return cb.err
 	}
-	return nil
+	// Client error.
+	panic("invalid call to CmdBuffer.End")
 }
 
 // Reset discards all recorded commands from the command buffer.
 func (cb *cmdBuffer) Reset() error {
-	err := checkResult(C.vkResetCommandBuffer(cb.cb, 0))
-	if err != nil {
-		return err
+	switch cb.status {
+	case cbCommitted:
+		// Client error.
+		panic("invalid call to CmdBuffer.Reset")
+	case cbBegun, cbFailed:
+		// Need to end recording before resetting.
+		C.vkEndCommandBuffer(cb.cb)
+		fallthrough
+	default:
+		// In case of failure here, we can rely on the implicit
+		// reset done during Begin.
+		cb.status = cbIdle
+		err := checkResult(C.vkResetCommandBuffer(cb.cb, 0))
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	cb.begun = false
-	return nil
 }
 
 // Barrier inserts a number of global barriers in the command buffer.
