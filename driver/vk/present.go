@@ -33,43 +33,35 @@ type swapchain struct {
 	minImg int
 	curImg int
 
-	// At least two semaphores per acquisition are required:
-	// one to indicate when the acquired image can be written
-	// and another to indicate when it can be presented.
-	// If the render and present queues differ, we also need
-	// a command buffer into which record the queue ownership
-	// transfer and another semaphore to ensure that it
-	// happens after rendering and before presentation.
-	// The text that follows explains how to use this data.
-	//
-	//	viewIdx = <returned by Next>
-	// 	syncIdx = viewSync[viewIdx]
-	// 	maxAcq = 1 + len(views) - minImg
-	// 	if using the same queue
-	// 		nextSem = sems[syncIdx]
-	// 		presSem = sems[maxAcq + viewIdx]
-	// 	else
-	// 		nextSem = sems[syncIdx]
-	// 		rendSem = sems[syncIdx + maxAcq]
-	// 		presSem = sems[maxAcq*2 + viewIdx]
-	// 		pcb = pcbs[syncIdx]
-	//
-	// Notice that the semaphore upon which the presentation
-	// request waits is exclusive to each image. This is
-	// necessary because, unlike queue submission, queue
-	// presentation is not waited for on Commit.
-	sems []C.VkSemaphore
-	pcbs []driver.CmdBuffer
+	// nextSem contains semaphores that are signaled when the
+	// presentation engine is done presenting the images.
+	// It has 1 + len(views) - minImg elements and is indexed
+	// by viewSync[viewIdx], with viewIdx obtained from Next.
+	nextSem []C.VkSemaphore
 
-	// viewSync contains indices in sems/pcbs representing
-	// the synchronization data held by image views.
+	// presSem contains semaphores that are waited on by the
+	// presentation engine before it presents the images.
+	// It has len(views) elements and is indexed by the view
+	// indices themselves (this is so because cmdBuffer.Commit
+	// does not wait for presentation to complete).
+	presSem []C.VkSemaphore
+
+	// queSync contain additional data for queue transfers.
+	// It has 1 + len(views) - minImg elements and is indexed
+	// by viewSync[viewIdx], with viewIdx obtained from Next.
+	// If the same queue is used for both rendering and
+	// presentation, queSync is nil.
+	queSync []queueSync
+
+	// viewSync contains indices in nextSem/queSync indicating
+	// the synchronization data held by an image view.
 	// If a view is not pending presentation, the index
-	// value is meaningless.
+	// value is undefined.
 	// Its indices match those of the views slice.
 	viewSync []int
 
-	// syncUsed indicates which indices in sems/pcbs are in
-	// use currently.
+	// syncUsed indicates which indices in nextSem and queSync
+	// are currently in use.
 	// Its length is equal to the maximum number of images
 	// that can be acquired (i.e., 1 + len(views) - minImg).
 	syncUsed []bool
@@ -79,6 +71,25 @@ type swapchain struct {
 	// It is expected that Recreate or Destroy will be
 	// called eventually.
 	broken bool
+}
+
+// queueSync contains additional synchronization data
+// necessary to perform queue transfers.
+// It is used by swapchain in cases where the rendering
+// and presentation queues differ.
+type queueSync struct {
+	// Signaled by presRel and waited on by the first
+	// rendering command buffer that uses the view.
+	rendWait C.VkSemaphore
+	// Signaled by the last rendering command buffer
+	// that uses the view and waited on by presAcq.
+	presWait C.VkSemaphore
+	// Where the queue transfer from presentation
+	// to rendering occurs.
+	presRel driver.CmdBuffer
+	// Where the queue transfer from rendering to
+	// presentation occurs.
+	presAcq driver.CmdBuffer
 }
 
 // NewSwapchain creates a new swapchain.
@@ -153,6 +164,7 @@ func (s *swapchain) initSwapchain(imageCount int) error {
 	case ca&C.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR != 0:
 		calpha = C.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
 	default:
+		// TODO: Consider choosing whichever is available instead.
 		return driver.ErrCompositor
 	}
 
@@ -227,6 +239,7 @@ fmtLoop:
 	//}
 
 	// Swapchain.
+	// TODO: Additional usage.
 	defer C.vkDestroySwapchainKHR(s.d.dev, s.sc, nil)
 	info := C.VkSwapchainCreateInfoKHR{
 		sType:            C.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -323,62 +336,132 @@ func (s *swapchain) newViews() error {
 
 // syncSetup creates the synchronization data required for
 // presentation of s.
-// It sets the sems, pcbs, viewSync and syncUsed fields of s.
-// The caller must ensure that no semaphores are in use
-// before calling this method.
+// It sets the nextSem, presSem, queSync, viewSync and syncUsed
+// fields of s.
+// The caller must ensure that no semaphores are in use before
+// calling this method.
 func (s *swapchain) syncSetup() error {
+	// There must be no acquisitions when this method
+	// is called so we do not need to clear viewSync.
 	if len(s.viewSync) != len(s.views) {
 		s.viewSync = make([]int, len(s.views))
 	}
 	n := 1 + len(s.views) - s.minImg
+	// Likewise, syncUsed must have all elements set
+	// to false already.
 	if len(s.syncUsed) != n {
 		s.syncUsed = make([]bool, n)
 	}
-	if s.qfam == s.d.qfam {
-		// Need only graphics wait and signal semaphores.
-		n += len(s.views)
-	} else {
-		i := len(s.pcbs)
-		switch {
-		case i < n:
-			for ; i < n; i++ {
-				pcb, err := s.d.newCmdBuffer(s.qfam)
-				if err != nil {
-					// Keep the ones whose creation succeeded.
-					return err
-				}
-				s.pcbs = append(s.pcbs, pcb)
-			}
-		case i > n:
-			for ; i > n; i-- {
-				s.pcbs[i-1].Destroy()
-			}
-			s.pcbs = s.pcbs[:n]
-		}
-		// Need graphics wait and signal semaphores plus
-		// present signal semaphore.
-		n = n*2 + len(s.views)
-	}
-	i := len(s.sems)
-	switch {
-	case i < n:
+
+	createSem := func() (C.VkSemaphore, error) {
 		info := C.VkSemaphoreCreateInfo{
 			sType: C.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 		}
+		var sem C.VkSemaphore
+		res := C.vkCreateSemaphore(s.d.dev, &info, nil, &sem)
+		return sem, checkResult(res)
+	}
+	destroyQueSync := func(qs queueSync) {
+		C.vkDestroySemaphore(s.d.dev, qs.rendWait, nil)
+		C.vkDestroySemaphore(s.d.dev, qs.presWait, nil)
+		if qs.presRel != nil {
+			qs.presRel.Destroy()
+		}
+		if qs.presAcq != nil {
+			qs.presAcq.Destroy()
+		}
+	}
+
+	if s.qfam == s.d.qfam {
+		// Single queue. The rendering command buffer
+		// waits a nextSem and signals a presSem.
+		// queSync is not needed.
+		for i := range s.queSync {
+			destroyQueSync(s.queSync[i])
+		}
+		s.queSync = nil
+	} else {
+		// Different queues. The rendering command buffer
+		// waits for a queSync.rendWait, which is signaled
+		// by a queSync.presRel, which in turn waits for a
+		// nextSem. Then, the rendering command buffer
+		// signals a queSync.presWait, which is waited on
+		// by a queSync.presAcq, which then signals a
+		// presSem and the presentation can execute.
+		i := len(s.queSync)
+		switch {
+		case i < n:
+			var qs queueSync
+			var err error
+			for ; i < n; i++ {
+				qs.rendWait, err = createSem()
+				if err != nil {
+					destroyQueSync(qs)
+					return err
+				}
+				qs.presWait, err = createSem()
+				if err != nil {
+					destroyQueSync(qs)
+					return err
+				}
+				qs.presRel, err = s.d.newCmdBuffer(s.qfam)
+				if err != nil {
+					destroyQueSync(qs)
+					return err
+				}
+				qs.presAcq, err = s.d.newCmdBuffer(s.qfam)
+				if err != nil {
+					destroyQueSync(qs)
+					return err
+				}
+				s.queSync = append(s.queSync, qs)
+			}
+		case i > n:
+			for ; i > n; i-- {
+				destroyQueSync(s.queSync[i-1])
+			}
+			s.queSync = s.queSync[:n]
+		}
+	}
+
+	// We only need enough nextSem elements to
+	// handle max acquisitions, since rendering
+	// does wait completion.
+	i := len(s.nextSem)
+	switch {
+	case i < n:
 		for ; i < n; i++ {
-			var sem C.VkSemaphore
-			res := C.vkCreateSemaphore(s.d.dev, &info, nil, &sem)
-			if err := checkResult(res); err != nil {
-				// Keep the ones whose creation succeeded.
+			sem, err := createSem()
+			if err != nil {
 				return err
 			}
-			s.sems = append(s.sems, sem)
+			s.nextSem = append(s.nextSem, sem)
 		}
 	case i > n:
 		for ; i > n; i-- {
-			C.vkDestroySemaphore(s.d.dev, s.sems[i-1], nil)
+			C.vkDestroySemaphore(s.d.dev, s.nextSem[i-1], nil)
 		}
-		s.sems = s.sems[:n]
+		s.nextSem = s.nextSem[:n]
+	}
+
+	// We need an element in presSem for each view
+	// because presentation does not wait.
+	n = len(s.views)
+	i = len(s.presSem)
+	switch {
+	case i < n:
+		for ; i < n; i++ {
+			sem, err := createSem()
+			if err != nil {
+				return err
+			}
+			s.presSem = append(s.presSem, sem)
+		}
+	case i > n:
+		for ; i > n; i-- {
+			C.vkDestroySemaphore(s.d.dev, s.presSem[i-1], nil)
+		}
+		s.presSem = s.presSem[:n]
 	}
 	return nil
 }
