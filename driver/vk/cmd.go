@@ -218,6 +218,10 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			sib[i].image = view.i.img
 			continue
 		}
+		// For swapchain views, we need to identify
+		// dependencies to wait on/signal and possibly
+		// perform queue transfers if rendering and
+		// presentation queues differ.
 		viewIdx := -1
 		for i := range view.s.views {
 			if view.s.views[i] == view {
@@ -226,14 +230,33 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			}
 		}
 		sib[i].image = view.s.imgs[viewIdx]
+		presIdx := 0
+		for ; presIdx < len(cb.pres); presIdx++ {
+			if cb.pres[presIdx].sc == view.s && cb.pres[presIdx].view == viewIdx {
+				break
+			}
+		}
+		if presIdx == len(cb.pres) {
+			cb.pres = append(cb.pres, presentOp{sc: view.s, view: viewIdx})
+		}
+		if !view.s.pendOp[viewIdx] {
+			view.s.pendOp[viewIdx] = true
+			cb.pres[presIdx].wait = true
+		}
 		if cb.qfam == view.s.qfam {
+			if t[i].LayoutAfter == driver.LPresent {
+				cb.pres[presIdx].signal = true
+			}
 			// Just the layout transitions from/to
 			// driver.LPresent, which the client is
 			// required to perform, will suffice.
 			continue
 		}
 		if t[i].LayoutAfter == driver.LPresent {
+			cb.pres[presIdx].signal = true
 			// Queue transfer from rendering to presentation.
+			// This transfer must always be performed when
+			// using different queues.
 			sib[i].srcQueueFamilyIndex = cb.qfam
 			sib[i].dstQueueFamilyIndex = view.s.qfam
 			dep := C.VkDependencyInfo{
@@ -244,18 +267,21 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			syncIdx := view.s.viewSync[viewIdx]
 			presAcq := view.s.queSync[syncIdx].presAcq.(*cmdBuffer)
 			if err := presAcq.Begin(); err != nil {
-				// TODO
-				panic("not implemented")
+				cb.status = cbFailed
+				continue
 			}
 			C.vkCmdPipelineBarrier2(presAcq.cb, &dep)
 			if err := presAcq.End(); err != nil {
-				// TODO
-				panic("not implemented")
+				cb.status = cbFailed
+				continue
 			}
+			cb.pres[presIdx].qacq = true
 			continue
 		}
 		if t[i].LayoutBefore == driver.LPresent {
 			// Queue transfer from presentation to rendering.
+			// This transfer can be skipped by transitioning
+			// from driver.LUndefined instead.
 			sib[i].srcQueueFamilyIndex = view.s.qfam
 			sib[i].dstQueueFamilyIndex = cb.qfam
 			dep := C.VkDependencyInfo{
@@ -266,14 +292,15 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			syncIdx := view.s.viewSync[viewIdx]
 			presRel := view.s.queSync[syncIdx].presRel.(*cmdBuffer)
 			if err := presRel.Begin(); err != nil {
-				// TODO
-				panic("not implemented")
+				cb.status = cbFailed
+				continue
 			}
 			C.vkCmdPipelineBarrier2(presRel.cb, &dep)
 			if err := presRel.End(); err != nil {
-				// TODO
-				panic("not implemented")
+				cb.status = cbFailed
+				continue
 			}
+			cb.pres[presIdx].qrel = true
 			continue
 		}
 	}
