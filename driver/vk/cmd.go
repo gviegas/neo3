@@ -132,6 +132,7 @@ func (cb *cmdBuffer) End() error {
 		if err := checkResult(C.vkEndCommandBuffer(cb.cb)); err != nil {
 			// Calling Begin implicitly resets cb.cb.
 			cb.status = cbIdle
+			cb.detachSC()
 			return err
 		}
 		cb.status = cbEnded
@@ -142,6 +143,7 @@ func (cb *cmdBuffer) End() error {
 		C.vkEndCommandBuffer(cb.cb)
 		C.vkResetCommandBuffer(cb.cb, 0)
 		cb.status = cbIdle
+		cb.detachSC()
 		if cb.err == nil {
 			panic("unexpected nil error in failed command recording")
 		}
@@ -165,6 +167,7 @@ func (cb *cmdBuffer) Reset() error {
 		// In case of failure here, we can rely on the implicit
 		// reset done during Begin.
 		cb.status = cbIdle
+		cb.detachSC()
 		err := checkResult(C.vkResetCommandBuffer(cb.cb, 0))
 		if err != nil {
 			return err
@@ -742,11 +745,24 @@ func (cb *cmdBuffer) Fill(buf driver.Buffer, off int64, value byte, size int64) 
 	C.vkCmdFillBuffer(cb.cb, buf.(*buffer).buf, C.VkDeviceSize(off), C.VkDeviceSize(size), val)
 }
 
+// detachSC clears any existing dependencies between the
+// command buffer and swapchains.
+// cb.pres is set to contain no elements.
+func (cb *cmdBuffer) detachSC() {
+	for i := range cb.pres {
+		if cb.pres[i].wait {
+			cb.pres[i].sc.pendOp[cb.pres[i].view] = false
+		}
+	}
+	cb.pres = cb.pres[:0]
+}
+
 // Destroy destroys the command buffer.
 func (cb *cmdBuffer) Destroy() {
 	if cb == nil {
 		return
 	}
+	cb.detachSC()
 	if cb.d != nil {
 		// TODO: Skip wait if not in pending state.
 		C.vkQueueWaitIdle(cb.d.ques[cb.qfam])
