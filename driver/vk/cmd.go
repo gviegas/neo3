@@ -20,16 +20,7 @@ type cmdBuffer struct {
 	cb     C.VkCommandBuffer
 	status cbStatus
 	err    error // Why cbFailed.
-
-	// When set, sc indicates that there is
-	// an ongoing presentation operation
-	// that will target scView.
-	// scNext and scPres are used to track
-	// which methods of sc were called.
-	sc     *swapchain
-	scView int
-	scNext bool
-	scPres bool
+	pres   []presentOp
 }
 
 // cbStatus represents the status of the
@@ -55,6 +46,23 @@ const (
 	// Set when a command cannot be recorded.
 	cbFailed
 )
+
+// presentOp defines the association between an ongoing
+// present operation and a rendering command buffer.
+// During a call to Transition in a rendering command buffer,
+// swapchain views are identified as such, queue transfers
+// are performed as needed, and a new presentOp is added to
+// the command buffer representing this dependency.
+// At Commit time, the presentOp are used to correctly order
+// the queue submissions.
+type presentOp struct {
+	sc     *swapchain
+	view   int
+	wait   bool // Rendering must wait on semaphore.
+	signal bool // Rendering must signal semaphore.
+	qrel   bool // Queue released by sc.qfam.
+	qacq   bool // Queue acquired by sc.qfam.
+}
 
 // NewCmdBuffer creates a new command buffer.
 // Its pool is created using d.qfam.
@@ -791,6 +799,13 @@ func (cd *commitData) resizeCB(min int) {
 }
 
 // Commit commits a batch of command buffers to the GPU for execution.
+func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
+	// TODO
+	panic("not implemented")
+}
+
+/*
+// Commit commits a batch of command buffers to the GPU for execution.
 //
 // TODO: Allow multiple presentation requests per commit and split
 // into multiple submit infos to avoid stalling on semaphores.
@@ -848,9 +863,6 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 			return
 		}
 	case pres[0] != nil && pres[1] != nil:
-		// TODO
-		panic("not implemented")
-	/*
 		// There is a pending present request.
 		// We assume that pres[0].sc and pres[1].sc refer
 		// to the same swapchain.
@@ -920,7 +932,6 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 			sc.syncUsed[sync] = false
 			sc.mu.Unlock()
 		}
-	*/
 	default:
 		panic("corrupted command buffer presentation")
 	}
@@ -943,6 +954,7 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
 		}
 	}
 }
+*/
 
 // convSync converts a driver.Sync to a VkPipelineStageFlags2.
 func convSync(sync driver.Sync) C.VkPipelineStageFlags2 {

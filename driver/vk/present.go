@@ -66,10 +66,19 @@ type swapchain struct {
 	// that can be acquired (i.e., 1 + len(views) - minImg).
 	syncUsed []bool
 
+	// pendOp is used to mark that the first rendering
+	// command buffer that uses a given view was set to wait
+	// on its semaphore.
+	// Its indices match those of the views slice.
+	// NOTE: cmdBuffer code is responsible for keeping
+	// this data up to date.
+	pendOp []bool
+
 	// The swapchain is marked as 'broken' when either
 	// suboptimal or out of date errors occur.
 	// It is expected that Recreate or Destroy will be
 	// called eventually.
+	// NOTE: May be set to true by cmdBuffer code.
 	broken bool
 }
 
@@ -336,19 +345,22 @@ func (s *swapchain) newViews() error {
 
 // syncSetup creates the synchronization data required for
 // presentation of s.
-// It sets the nextSem, presSem, queSync, viewSync and syncUsed
-// fields of s.
+// It sets the nextSem, presSem, queSync, viewSync, syncUsed
+// and pendOp fields of s.
 // The caller must ensure that no semaphores are in use before
 // calling this method.
 func (s *swapchain) syncSetup() error {
+	n := len(s.views)
 	// There must be no acquisitions when this method
-	// is called so we do not need to clear viewSync.
-	if len(s.viewSync) != len(s.views) {
-		s.viewSync = make([]int, len(s.views))
+	// is called so we do not need to worry about
+	// clearing viewSync/pendOp/syncUsed.
+	if len(s.viewSync) != n {
+		s.viewSync = make([]int, n)
 	}
-	n := 1 + len(s.views) - s.minImg
-	// Likewise, syncUsed must have all elements set
-	// to false already.
+	if len(s.pendOp) != n {
+		s.pendOp = make([]bool, n)
+	}
+	n = 1 + n - s.minImg
 	if len(s.syncUsed) != n {
 		s.syncUsed = make([]bool, n)
 	}
@@ -504,15 +516,6 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 		s.curImg++
 		s.viewSync[idx] = sync
 		s.syncUsed[sync] = true
-		c := cb.(*cmdBuffer)
-		if c.qfam != s.qfam {
-			// TODO
-			panic("not implemented")
-		}
-		c.sc = s
-		c.scView = int(idx)
-		c.scNext = true
-		c.scPres = false
 		return int(idx), nil
 	case C.VK_SUBOPTIMAL_KHR:
 		s.curImg++
@@ -535,12 +538,6 @@ func (s *swapchain) Present(index int, cb driver.CmdBuffer) error {
 	if s.broken {
 		return driver.ErrSwapchain
 	}
-	c := cb.(*cmdBuffer)
-	if c.qfam != s.qfam {
-		// TODO
-		panic("not implemented")
-	}
-	c.scPres = true
 	return nil
 }
 
