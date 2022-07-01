@@ -776,10 +776,10 @@ func (cb *cmdBuffer) Destroy() {
 // It is only safe to reuse the data after the Commit call
 // writes to the provided channel.
 type commitData struct {
-	fence C.VkFence
-	cb    []C.VkCommandBuffer      // C memory.
-	sem   []C.VkSemaphore          // C memory.
-	stg   []C.VkPipelineStageFlags // C memory.
+	fence   C.VkFence
+	subInfo []C.VkSubmitInfo2             // Go memory.
+	cbInfo  []C.VkCommandBufferSubmitInfo // C memory.
+	semInfo []C.VkSemaphoreSubmitInfo     // C memory.
 }
 
 // newCommitData creates new commit data.
@@ -793,22 +793,20 @@ func (d *Driver) newCommitData() (*commitData, error) {
 		return nil, err
 	}
 	const (
+		nsub = 4
 		ncb  = 4
-		nsem = 3
-		nstg = 1
+		nsem = ncb * 2
 	)
 	var p unsafe.Pointer
-	p = C.malloc(C.sizeof_VkCommandBuffer * ncb)
-	cb := unsafe.Slice((*C.VkCommandBuffer)(p), ncb)
-	p = C.malloc(C.sizeof_VkSemaphore * nsem)
-	sem := unsafe.Slice((*C.VkSemaphore)(p), nsem)
-	p = C.malloc(C.sizeof_VkPipelineStageFlags * nstg)
-	stg := unsafe.Slice((*C.VkPipelineStageFlags)(p), nstg)
+	p = C.malloc(C.sizeof_VkCommandBufferSubmitInfo * ncb)
+	cbInfo := unsafe.Slice((*C.VkCommandBufferSubmitInfo)(p), ncb)
+	p = C.malloc(C.sizeof_VkSemaphoreSubmitInfo * nsem)
+	semInfo := unsafe.Slice((*C.VkSemaphoreSubmitInfo)(p), nsem)
 	return &commitData{
-		fence: fence,
-		cb:    cb,
-		sem:   sem,
-		stg:   stg,
+		fence:   fence,
+		subInfo: make([]C.VkSubmitInfo2, nsub),
+		cbInfo:  cbInfo,
+		semInfo: semInfo,
 	}, nil
 }
 
@@ -818,27 +816,43 @@ func (d *Driver) destroyCommitData(cd *commitData) {
 		return
 	}
 	C.vkDestroyFence(d.dev, cd.fence, nil)
-	C.free(unsafe.Pointer(&cd.cb[0]))
-	C.free(unsafe.Pointer(&cd.sem[0]))
-	C.free(unsafe.Pointer(&cd.stg[0]))
+	C.free(unsafe.Pointer(&cd.cbInfo[0]))
+	C.free(unsafe.Pointer(&cd.semInfo[0]))
 	*cd = commitData{}
 }
 
-// resizeCB resizes cd.cb.
-func (cd *commitData) resizeCB(min int) {
-	n := len(cd.cb)
+// resizeCB resizes cd.cbInfo.
+func (cd *commitData) resizeCB(cbInfoN int) {
+	n := cap(cd.cbInfo)
 	switch {
-	case n < min:
-		for n < min {
+	case n < cbInfoN:
+		for n < cbInfoN {
 			n *= 2
 		}
-	case n >= 2*min:
-		n = min
+	case n >= 2*cbInfoN:
+		n = cbInfoN
 	default:
 		return
 	}
-	p := C.realloc(unsafe.Pointer(&cd.cb[0]), C.sizeof_VkCommandBuffer*C.size_t(n))
-	cd.cb = unsafe.Slice((*C.VkCommandBuffer)(p), n)
+	p := C.realloc(unsafe.Pointer(&cd.cbInfo[0]), C.sizeof_VkCommandBufferSubmitInfo*C.size_t(n))
+	cd.cbInfo = unsafe.Slice((*C.VkCommandBufferSubmitInfo)(p), n)
+}
+
+// resizeSem resizes cd.semInfo.
+func (cd *commitData) resizeSem(semInfoN int) {
+	n := cap(cd.semInfo)
+	switch {
+	case n < semInfoN:
+		for n < semInfoN {
+			n *= 2
+		}
+	case n >= 2*semInfoN:
+		n = semInfoN
+	default:
+		return
+	}
+	p := C.realloc(unsafe.Pointer(&cd.semInfo[0]), C.sizeof_VkSemaphoreSubmitInfo*C.size_t(n))
+	cd.semInfo = unsafe.Slice((*C.VkSemaphoreSubmitInfo)(p), n)
 }
 
 // Commit commits a batch of command buffers to the GPU for execution.
