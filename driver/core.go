@@ -15,10 +15,12 @@ type GPU interface {
 	// Synchronization operations defined in a command buffer
 	// apply to the batch as a whole, so the order of command
 	// buffers in cb is meaningful.
-	// This method sends the result to ch when all commands
-	// complete execution. Command buffers in cb cannot be
-	// used for recording until then.
-	Commit(cb []CmdBuffer, ch chan<- error)
+	// If successful, this method arranges for commands to
+	// execute in the background, and ch is written to when
+	// all command buffers complete execution.
+	// It is invalid to use any of the command buffers until
+	// ch is notified.
+	Commit(cb []CmdBuffer, ch chan<- error) error
 
 	// NewCmdBuffer creates a new command buffer.
 	NewCmdBuffer() (CmdBuffer, error)
