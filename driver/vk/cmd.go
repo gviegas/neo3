@@ -1068,9 +1068,11 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		}
 		// NOTE: This assumes that all swapchains share the
 		// same queue family.
-		que := d.ques[presRel[0].cb.qfam]
+		qfam := presRel[0].cb.qfam
 		var null C.VkFence
-		res := C.vkQueueSubmit2(que, 1, &ci.subInfo[0], null)
+		d.qmus[qfam].Lock()
+		res := C.vkQueueSubmit2(d.ques[qfam], 1, &ci.subInfo[0], null)
+		d.qmus[qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs
 			return err
@@ -1119,14 +1121,18 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		semInfo = sigInfo
 	}
 	if n := len(presAcq); n == 0 {
+		d.qmus[d.qfam].Lock()
 		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.rendFence)
+		d.qmus[d.qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs
 			return err
 		}
 		fenceN = 1
 	} else {
+		d.qmus[d.qfam].Lock()
 		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.rendFence)
+		d.qmus[d.qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs
 			return err
@@ -1161,13 +1167,15 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		}
 		// NOTE: This assumes that all swapchains share the
 		// same queue family.
-		que := d.ques[presAcq[0].cb.qfam]
+		qfam := presAcq[0].cb.qfam
 		if err := d.createPresFence(cs); err != nil {
 			d.waitCommitFences(cs, 1)
 			d.csync <- cs
 			return err
 		}
-		res = C.vkQueueSubmit2(que, 1, &ci.subInfo[0], cs.presFence)
+		d.qmus[qfam].Lock()
+		res = C.vkQueueSubmit2(d.ques[qfam], 1, &ci.subInfo[0], cs.presFence)
+		d.qmus[qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.waitCommitFences(cs, 1)
 			d.csync <- cs
