@@ -46,13 +46,12 @@ type Presenter interface {
 
 // Swapchain is the interface that defines a n-buffered
 // swapchain for presentation.
-// Presentation works similar as commands, such that it
-// only takes effect after calling GPU.Commit.
-// To present, one calls the Next and Present methods of
-// the swapchain and then commits the command buffer(s)
-// that it targets for execution.
-// As a limitation, only one Next/Present pair can be
-// recorded in a single Commit.
+// To present, one calls Next to obtain the index of an
+// image view to target, transitions the view to a valid
+// layout (e.g, from LUndefined to LColorTarget),
+// record commands as needed, transitions the view to
+// the LPresent layout, commits these commands and then
+// calls Present to present this image view.
 type Swapchain interface {
 	Destroyer
 
@@ -61,27 +60,27 @@ type Swapchain interface {
 	// This value remains unchanged as long as the
 	// swapchain's Destroy or Recreate methods are
 	// not called.
+	// Swapchain image views are in the LUndefined
+	// layout when (re)created.
 	Views() []ImageView
 
 	// Next returns the index of the next writable
 	// image view.
-	// cb must be the first command buffer that will
-	// access the image's contents.
-	// This method must be called before the image
-	// is written, i.e., any render pass that uses
-	// the image as render target must be recorded
-	// after Next.
-	Next(cb CmdBuffer) (int, error)
+	// The image view must be transitioned to a
+	// valid layout before it can be used.
+	// If there was a prior presentation whose
+	// execution succeeded, the view can be
+	// transitioned from LPresent instead of
+	// LUndefined.
+	Next() (int, error)
 
 	// Present presents the image view identified
 	// by index.
-	// cb must be the last command buffer that will
-	// write to the image.
-	// This method must be called after the image is
-	// written, i.e., any render pass that uses the
-	// image as render target must be recorded
-	// before Present.
-	Present(index int, cb CmdBuffer) error
+	// Before calling this method, the given image
+	// view must be transitioned to the LPresent
+	// layout and the command buffer used to
+	// record this transition must be committed.
+	Present(index int) error
 
 	// Recreate recreates the swapchain.
 	// It is meant to be called in response to a
