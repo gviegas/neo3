@@ -40,7 +40,8 @@ type Driver struct {
 	// Commit data created in advance.
 	// The capacity of the channel limits the number
 	// of concurrent Commit calls.
-	cdata chan *commitData
+	cinfo chan *commitInfo
+	csync chan *commitSync
 
 	// Enabled extensions, indexed by ext* constants.
 	exts [extN]bool
@@ -315,13 +316,22 @@ func (d *Driver) Open() (gpu driver.GPU, err error) {
 		goto fail
 	}
 	d.qmus = make([]sync.Mutex, len(d.ques))
-	d.cdata = make(chan *commitData, runtime.NumCPU())
-	for i := 0; i < runtime.NumCPU(); i++ {
-		var cd *commitData
-		if cd, err = d.newCommitData(); err != nil {
+	d.cinfo = make(chan *commitInfo, runtime.NumCPU())
+	for i := 0; i < cap(d.cinfo); i++ {
+		var ci *commitInfo
+		if ci, err = d.newCommitInfo(); err != nil {
 			goto fail
 		}
-		d.cdata <- cd
+		d.cinfo <- ci
+	}
+	// This channel's capacity is arbitrary.
+	d.csync = make(chan *commitSync, cap(d.cinfo)*2)
+	for i := 0; i < cap(d.csync); i++ {
+		var cs *commitSync
+		if cs, err = d.newCommitSync(); err != nil {
+			goto fail
+		}
+		d.csync <- cs
 	}
 	return d, nil
 fail:
@@ -342,8 +352,11 @@ func (d *Driver) Close() {
 	if d.inst != nil {
 		if d.dev != nil {
 			C.vkDeviceWaitIdle(d.dev)
-			for len(d.cdata) > 0 {
-				d.destroyCommitData(<-d.cdata)
+			for len(d.cinfo) > 0 {
+				d.destroyCommitInfo(<-d.cinfo)
+			}
+			for len(d.csync) > 0 {
+				d.destroyCommitSync(<-d.csync)
 			}
 			// TODO: Ensure that all objects created
 			// from d.dev were destroyed.

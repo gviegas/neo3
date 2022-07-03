@@ -771,27 +771,18 @@ func (cb *cmdBuffer) Destroy() {
 	*cb = cmdBuffer{}
 }
 
-// commitData contains common data used during a call to the
-// Driver.Commit method.
-// It is only safe to reuse the data after the Commit call
-// writes to the provided channel.
-type commitData struct {
-	fence   C.VkFence
+// commitInfo contains common data structures used during
+// a call to the Driver.Commit method.
+// It is only safe to reuse these data after the Commit
+// call returns.
+type commitInfo struct {
 	subInfo []C.VkSubmitInfo2             // Go memory.
 	cbInfo  []C.VkCommandBufferSubmitInfo // C memory.
 	semInfo []C.VkSemaphoreSubmitInfo     // C memory.
 }
 
-// newCommitData creates new commit data.
-func (d *Driver) newCommitData() (*commitData, error) {
-	info := C.VkFenceCreateInfo{
-		sType: C.VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-	}
-	var fence C.VkFence
-	err := checkResult(C.vkCreateFence(d.dev, &info, nil, &fence))
-	if err != nil {
-		return nil, err
-	}
+// newCommitInfo creates new commitInfo data.
+func (d *Driver) newCommitInfo() (*commitInfo, error) {
 	const (
 		nsub = 4
 		ncb  = 4
@@ -802,28 +793,26 @@ func (d *Driver) newCommitData() (*commitData, error) {
 	cbInfo := unsafe.Slice((*C.VkCommandBufferSubmitInfo)(p), ncb)
 	p = C.malloc(C.sizeof_VkSemaphoreSubmitInfo * nsem)
 	semInfo := unsafe.Slice((*C.VkSemaphoreSubmitInfo)(p), nsem)
-	return &commitData{
-		fence:   fence,
+	return &commitInfo{
 		subInfo: make([]C.VkSubmitInfo2, nsub),
 		cbInfo:  cbInfo,
 		semInfo: semInfo,
 	}, nil
 }
 
-// destroyCommitData destroys commit data.
-func (d *Driver) destroyCommitData(cd *commitData) {
-	if cd == nil {
+// destroyCommitInfo destroys ci.
+func (d *Driver) destroyCommitInfo(ci *commitInfo) {
+	if ci == nil {
 		return
 	}
-	C.vkDestroyFence(d.dev, cd.fence, nil)
-	C.free(unsafe.Pointer(&cd.cbInfo[0]))
-	C.free(unsafe.Pointer(&cd.semInfo[0]))
-	*cd = commitData{}
+	C.free(unsafe.Pointer(&ci.cbInfo[0]))
+	C.free(unsafe.Pointer(&ci.semInfo[0]))
+	*ci = commitInfo{}
 }
 
-// resizeCB resizes cd.cbInfo.
-func (cd *commitData) resizeCB(cbInfoN int) {
-	n := cap(cd.cbInfo)
+// resizeCB resizes ci.cbInfo.
+func (ci *commitInfo) resizeCB(cbInfoN int) {
+	n := cap(ci.cbInfo)
 	switch {
 	case n < cbInfoN:
 		for n < cbInfoN {
@@ -834,13 +823,13 @@ func (cd *commitData) resizeCB(cbInfoN int) {
 	default:
 		return
 	}
-	p := C.realloc(unsafe.Pointer(&cd.cbInfo[0]), C.sizeof_VkCommandBufferSubmitInfo*C.size_t(n))
-	cd.cbInfo = unsafe.Slice((*C.VkCommandBufferSubmitInfo)(p), n)
+	p := C.realloc(unsafe.Pointer(&ci.cbInfo[0]), C.sizeof_VkCommandBufferSubmitInfo*C.size_t(n))
+	ci.cbInfo = unsafe.Slice((*C.VkCommandBufferSubmitInfo)(p), n)
 }
 
-// resizeSem resizes cd.semInfo.
-func (cd *commitData) resizeSem(semInfoN int) {
-	n := cap(cd.semInfo)
+// resizeSem resizes ci.semInfo.
+func (ci *commitInfo) resizeSem(semInfoN int) {
+	n := cap(ci.semInfo)
 	switch {
 	case n < semInfoN:
 		for n < semInfoN {
@@ -851,8 +840,101 @@ func (cd *commitData) resizeSem(semInfoN int) {
 	default:
 		return
 	}
-	p := C.realloc(unsafe.Pointer(&cd.semInfo[0]), C.sizeof_VkSemaphoreSubmitInfo*C.size_t(n))
-	cd.semInfo = unsafe.Slice((*C.VkSemaphoreSubmitInfo)(p), n)
+	p := C.realloc(unsafe.Pointer(&ci.semInfo[0]), C.sizeof_VkSemaphoreSubmitInfo*C.size_t(n))
+	ci.semInfo = unsafe.Slice((*C.VkSemaphoreSubmitInfo)(p), n)
+}
+
+// commitSync contains common synchronization data used
+// during a call to the Driver.Commit method.
+// It is only safe to reuse these data after the Commit
+// call writes to the provided channel.
+type commitSync struct {
+	rendFence C.VkFence // For rendering queue.
+	presFence C.VkFence // For presentation queue.
+}
+
+// newCommitSync creates new commitSync data.
+// NOTE: Only commitSync.rendFence is created by this method,
+// commitSync.presFence is created by Driver.createPresFence.
+func (d *Driver) newCommitSync() (*commitSync, error) {
+	info := C.VkFenceCreateInfo{
+		sType: C.VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+	}
+	var fence C.VkFence
+	err := checkResult(C.vkCreateFence(d.dev, &info, nil, &fence))
+	if err != nil {
+		return nil, err
+	}
+	return &commitSync{rendFence: fence}, nil
+}
+
+// createPresFence creates cs.presFence.
+// Only call this method when using different queues for
+// rendering and presentation.
+func (d *Driver) createPresFence(cs *commitSync) error {
+	var null C.VkFence
+	if cs.presFence != null {
+		return nil
+	}
+	info := C.VkFenceCreateInfo{
+		sType: C.VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+	}
+	err := checkResult(C.vkCreateFence(d.dev, &info, nil, &cs.presFence))
+	if err != nil {
+		cs.presFence = null
+		return err
+	}
+	return nil
+}
+
+// waitCommitFences wait for cs.rendFence and, optionally,
+// cs.presFence.
+func (d *Driver) waitCommitFences(cs *commitSync, fenceN int) error {
+	fences := [2]C.VkFence{cs.rendFence}
+	switch fenceN {
+	case 1:
+	case 2:
+		if cs.presFence != fences[1] {
+			fences[1] = cs.presFence
+		} else {
+			fenceN--
+		}
+	default:
+		panic("invalid fence count in call to waitCommitFences")
+	}
+	res := C.vkWaitForFences(d.dev, C.uint32_t(fenceN), &fences[0], C.VK_TRUE, C.UINT64_MAX)
+	switch res {
+	case C.VK_SUCCESS:
+		return nil
+	default:
+		switch err := checkResult(res); err {
+		case nil:
+			// Should never happen.
+			panic("unexpected result from fence waiting")
+		default:
+			return err
+		}
+	}
+}
+
+// resetCommitFences resets cs.rendFence and, if non-null,
+// cs.presFence.
+func (d *Driver) resetCommitFences(cs *commitSync) error {
+	var null C.VkFence
+	if cs.presFence != null {
+		fences := [2]C.VkFence{cs.rendFence, cs.presFence}
+		return checkResult(C.vkResetFences(d.dev, 2, &fences[0]))
+	}
+	return checkResult(C.vkResetFences(d.dev, 1, &cs.rendFence))
+}
+
+// destroyCommitSync destroys cs.
+func (d *Driver) destroyCommitSync(cs *commitSync) {
+	if cs == nil {
+		return
+	}
+	C.vkDestroyFence(d.dev, cs.rendFence, nil)
+	C.vkDestroyFence(d.dev, cs.presFence, nil)
 }
 
 // Commit commits a batch of command buffers to the GPU for execution.
@@ -866,14 +948,14 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 	// this call completes.
 	// If too many calls to Commit were issued, we will
 	// block here waiting that another call completes.
-	cd := <-d.cdata
-	// BUG: Need to split commit data because the fence
-	// is used by the goroutine.
-	defer func() { d.cdata <- cd }()
-	err := checkResult(C.vkResetFences(d.dev, 1, &cd.fence))
-	if err != nil {
+	ci := <-d.cinfo
+	defer func() { d.cinfo <- ci }()
+	cs := <-d.csync
+	if err := d.resetCommitFences(cs); err != nil {
+		d.csync <- cs
 		return err
 	}
+	var fenceN int
 
 	// Start by identifying what we will need to submit.
 	type submit struct {
@@ -952,33 +1034,33 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 			semInfoN = 2 * n
 		}
 	}
-	cd.resizeCB(cbInfoN)
-	cd.resizeSem(semInfoN)
+	ci.resizeCB(cbInfoN)
+	ci.resizeSem(semInfoN)
 
 	// Presentation queue's command buffers that release
 	// ownership must be submitted first.
 	if n := len(presRel); n > 0 {
-		cd.subInfo = cd.subInfo[:0]
-		cd.subInfo = append(cd.subInfo, C.VkSubmitInfo2{
+		ci.subInfo = ci.subInfo[:0]
+		ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
 			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
 			waitSemaphoreInfoCount:   C.uint32_t(n),
-			pWaitSemaphoreInfos:      &cd.semInfo[0],
+			pWaitSemaphoreInfos:      &ci.semInfo[0],
 			commandBufferInfoCount:   1,
-			pCommandBufferInfos:      &cd.cbInfo[0],
+			pCommandBufferInfos:      &ci.cbInfo[0],
 			signalSemaphoreInfoCount: C.uint32_t(n),
-			pSignalSemaphoreInfos:    &cd.semInfo[n],
+			pSignalSemaphoreInfos:    &ci.semInfo[n],
 		})
 		for i := range presRel {
-			cd.cbInfo[i] = C.VkCommandBufferSubmitInfo{
+			ci.cbInfo[i] = C.VkCommandBufferSubmitInfo{
 				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 				commandBuffer: presRel[i].cb.cb,
 			}
-			cd.semInfo[i] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[i] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: presRel[i].wait[0],
 				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 			}
-			cd.semInfo[i+n] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[i+n] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: presRel[i].signal[0],
 				stageMask: C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, // ?
@@ -988,15 +1070,16 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		// same queue family.
 		que := d.ques[presRel[0].cb.qfam]
 		var null C.VkFence
-		res := C.vkQueueSubmit2(que, 1, &cd.subInfo[0], null)
+		res := C.vkQueueSubmit2(que, 1, &ci.subInfo[0], null)
 		if err := checkResult(res); err != nil {
+			d.csync <- cs
 			return err
 		}
 	}
 	// Rendering command buffers must be submitted after
 	// all queue release and before all queue acquisition
 	// operations that happen in the presentation queue.
-	cd.subInfo = cd.subInfo[:0]
+	ci.subInfo = ci.subInfo[:0]
 	var (
 		cbInfo  int
 		semInfo int
@@ -1008,17 +1091,17 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 			waitInfo  = semInfo
 			sigInfo   = waitInfo + waitInfoN
 		)
-		cd.subInfo = append(cd.subInfo, C.VkSubmitInfo2{
+		ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
 			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
 			waitSemaphoreInfoCount:   C.uint32_t(waitInfoN),
-			pWaitSemaphoreInfos:      &cd.semInfo[waitInfo],
+			pWaitSemaphoreInfos:      &ci.semInfo[waitInfo],
 			commandBufferInfoCount:   1,
-			pCommandBufferInfos:      &cd.cbInfo[cbInfo],
+			pCommandBufferInfos:      &ci.cbInfo[cbInfo],
 			signalSemaphoreInfoCount: C.uint32_t(sigInfoN),
-			pSignalSemaphoreInfos:    &cd.semInfo[sigInfo],
+			pSignalSemaphoreInfos:    &ci.semInfo[sigInfo],
 		})
 		for j := range rend[i].wait {
-			cd.semInfo[waitInfo] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[waitInfo] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: rend[i].wait[j],
 				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -1026,7 +1109,7 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 			waitInfo++
 		}
 		for j := range rend[i].signal {
-			cd.semInfo[sigInfo] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[sigInfo] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: rend[i].signal[j],
 				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -1036,40 +1119,41 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		semInfo = sigInfo
 	}
 	if n := len(presAcq); n == 0 {
-		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &cd.subInfo[0], cd.fence)
+		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.rendFence)
 		if err := checkResult(res); err != nil {
+			d.csync <- cs
 			return err
 		}
+		fenceN = 1
 	} else {
-		// BUG: Need another fence here.
-		var null C.VkFence
-		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &cd.subInfo[0], null)
+		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.rendFence)
 		if err := checkResult(res); err != nil {
+			d.csync <- cs
 			return err
 		}
 		// Presentation queue's command buffers that acquire
 		// ownership must be submitted last.
-		cd.subInfo = cd.subInfo[:0]
-		cd.subInfo = append(cd.subInfo, C.VkSubmitInfo2{
+		ci.subInfo = ci.subInfo[:0]
+		ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
 			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
 			waitSemaphoreInfoCount:   C.uint32_t(n),
-			pWaitSemaphoreInfos:      &cd.semInfo[0],
+			pWaitSemaphoreInfos:      &ci.semInfo[0],
 			commandBufferInfoCount:   1,
-			pCommandBufferInfos:      &cd.cbInfo[0],
+			pCommandBufferInfos:      &ci.cbInfo[0],
 			signalSemaphoreInfoCount: C.uint32_t(n),
-			pSignalSemaphoreInfos:    &cd.semInfo[n],
+			pSignalSemaphoreInfos:    &ci.semInfo[n],
 		})
 		for i := range presAcq {
-			cd.cbInfo[i] = C.VkCommandBufferSubmitInfo{
+			ci.cbInfo[i] = C.VkCommandBufferSubmitInfo{
 				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 				commandBuffer: presAcq[i].cb.cb,
 			}
-			cd.semInfo[i] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[i] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: presAcq[i].wait[0],
 				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 			}
-			cd.semInfo[i+n] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[i+n] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: presAcq[i].signal[0],
 				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -1078,29 +1162,25 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		// NOTE: This assumes that all swapchains share the
 		// same queue family.
 		que := d.ques[presAcq[0].cb.qfam]
-		res = C.vkQueueSubmit2(que, 1, &cd.subInfo[0], cd.fence)
-		if err := checkResult(res); err != nil {
+		if err := d.createPresFence(cs); err != nil {
+			d.waitCommitFences(cs, 1)
+			d.csync <- cs
 			return err
 		}
+		res = C.vkQueueSubmit2(que, 1, &ci.subInfo[0], cs.presFence)
+		if err := checkResult(res); err != nil {
+			d.waitCommitFences(cs, 1)
+			d.csync <- cs
+			return err
+		}
+		fenceN = 2
 	}
 
-	// Wait in the background for queue submission to
+	// Wait in the background for queue submissions to
 	// complete execution.
 	go func() {
-		res := C.vkWaitForFences(d.dev, 1, &cd.fence, C.VK_TRUE, C.UINT64_MAX)
-		switch res {
-		case C.VK_SUCCESS:
-			ch <- nil
-		default:
-			switch err := checkResult(res); err {
-			case nil:
-				// Should never happen.
-				ch <- errUnknown
-				panic("unexpected result from fence wait")
-			default:
-				ch <- err
-			}
-		}
+		ch <- d.waitCommitFences(cs, fenceN)
+		d.csync <- cs
 	}()
 	return nil
 }
