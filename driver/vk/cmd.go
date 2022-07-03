@@ -856,162 +856,254 @@ func (cd *commitData) resizeSem(semInfoN int) {
 }
 
 // Commit commits a batch of command buffers to the GPU for execution.
-func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
-	// TODO
-	panic("not implemented")
-}
-
-/*
-// Commit commits a batch of command buffers to the GPU for execution.
-//
-// TODO: Allow multiple presentation requests per commit and split
-// into multiple submit infos to avoid stalling on semaphores.
-func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) {
+// TODO: Lock queues; cbStatus, ...
+func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 	if len(cb) == 0 {
 		ch <- nil
-		return
+		return nil
 	}
 	// Take commit data from the driver an return it when
 	// this call completes.
 	// If too many calls to Commit were issued, we will
-	// block here waiting for data to become available.
+	// block here waiting that another call completes.
 	cd := <-d.cdata
+	// BUG: Need to split commit data because the fence
+	// is used by the goroutine.
 	defer func() { d.cdata <- cd }()
 	err := checkResult(C.vkResetFences(d.dev, 1, &cd.fence))
 	if err != nil {
-		ch <- err
-		return
-	}
-	cd.resizeCB(len(cb))
-	for i := range cb {
-		cd.cb[i] = cb[i].(*cmdBuffer).cb
-	}
-	info := C.VkSubmitInfo{
-		sType:              C.VK_STRUCTURE_TYPE_SUBMIT_INFO,
-		commandBufferCount: C.uint32_t(len(cb)),
-		pCommandBuffers:    &cd.cb[0],
+		return err
 	}
 
-	// Command buffers that have a pending present request
-	// will contain a non-nil swapchain.
-	// Note that the swapchain's Next and Present methods
-	// need not be called on the same command buffer.
-	var pres [2]*cmdBuffer
-	for i := range cb {
-		if c := cb[i].(*cmdBuffer); c.sc != nil {
-			if c.scNext {
-				pres[0] = c
-			}
-			if c.scPres {
-				pres[1] = c
-				break
-			}
-		}
+	// Start by identifying what we will need to submit.
+	type submit struct {
+		cb     *cmdBuffer
+		wait   []C.VkSemaphore
+		signal []C.VkSemaphore
 	}
-	release := func() {}
-	switch {
-	case pres[0] == nil && pres[1] == nil:
-		// There is nothing to present.
-		d.qchan <- 1
-		res := C.vkQueueSubmit(d.ques[d.qfam], 1, &info, cd.fence)
-		<-d.qchan
-		if err = checkResult(res); err != nil {
-			ch <- err
-			return
-		}
-	case pres[0] != nil && pres[1] != nil:
-		// There is a pending present request.
-		// We assume that pres[0].sc and pres[1].sc refer
-		// to the same swapchain.
-		sc := pres[0].sc
-		iv := pres[0].scView
-		sync := sc.viewSync[iv]
-		strd := 1 + len(sc.views) - sc.minImg
-		cd.sem[0] = sc.sems[sync]
-		cd.stg[0] = C.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-		info.waitSemaphoreCount = 1
-		info.pWaitSemaphores = &cd.sem[0]
-		info.pWaitDstStageMask = &cd.stg[0]
-		info.signalSemaphoreCount = 1
-		info.pSignalSemaphores = &cd.sem[1]
-		var presSem *C.VkSemaphore
-		d.qchan <- 1
-		if sc.qfam == d.qfam {
-			cd.sem[1] = sc.sems[strd+iv]
-			res := C.vkQueueSubmit(d.ques[d.qfam], 1, &info, cd.fence)
-			if err = checkResult(res); err != nil {
-				// We need to release the swapchain's image.
-				// Presenting it is trick because its state in unknown,
-				// so we take the easy way out and mark the swapchain
-				// as broken instead. Further uses of the swapchain
-				// will fail and the caller will have to either
-				// recreate or destroy it.
-				sc.broken = true
-				<-d.qchan
-				ch <- err
-				return
+	var (
+		// Rendering command buffers.
+		rend = make([]submit, len(cb))
+		// Presentation command buffers that
+		// release queue ownership.
+		presRel []submit
+		// Presentation command buffers that
+		// acquire queue ownership.
+		presAcq []submit
+	)
+	for i := range cb {
+		cb := cb[i].(*cmdBuffer)
+		rend[i].cb = cb
+		for i := range cb.pres {
+			var (
+				sc   = cb.pres[i].sc
+				view = cb.pres[i].view
+				sync = sc.viewSync[view]
+			)
+			if cb.pres[i].wait {
+				sem := sc.nextSem[sync : sync+1]
+				if cb.pres[i].qrel {
+					presRel = append(presRel, submit{
+						cb:     sc.queSync[sync].presRel.(*cmdBuffer),
+						wait:   sem,
+						signal: []C.VkSemaphore{sc.queSync[sync].rendWait},
+					})
+					sem = presRel[len(presRel)-1].signal
+				}
+				rend[i].wait = append(rend[i].wait, sem...)
 			}
-			presSem = &cd.sem[1]
-		} else {
-			var null C.VkFence
-			cd.sem[1] = sc.sems[sync+strd]
-			res := C.vkQueueSubmit(d.ques[d.qfam], 1, &info, null)
-			if err = checkResult(res); err != nil {
-				sc.broken = true
-				<-d.qchan
-				ch <- err
-				return
+			if cb.pres[i].signal {
+				sem := sc.presSem[view : view+1]
+				if cb.pres[i].qacq {
+					presAcq = append(presAcq, submit{
+						cb:     sc.queSync[sync].presAcq.(*cmdBuffer),
+						wait:   []C.VkSemaphore{sc.queSync[sync].presWait},
+						signal: sem,
+					})
+					sem = presAcq[len(presAcq)-1].wait
+				}
+				rend[i].signal = append(rend[i].signal, sem...)
 			}
-			cd.cb[0] = sc.pcbs[sync].(*cmdBuffer).cb
-			cd.sem[2] = sc.sems[strd*2+iv]
-			cd.stg[0] = C.VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
-			info.commandBufferCount = 1
-			info.pWaitSemaphores = &cd.sem[1]
-			info.pSignalSemaphores = &cd.sem[2]
-			res = C.vkQueueSubmit(d.ques[sc.qfam], 1, &info, cd.fence)
-			if err = checkResult(res); err != nil {
-				sc.broken = true
-				C.vkQueueWaitIdle(d.ques[d.qfam])
-				<-d.qchan
-				ch <- err
-				return
-			}
-			presSem = &cd.sem[2]
 		}
-		// Ignore presentation error.
-		sc.present(iv, presSem)
-		<-d.qchan
-		pres[0].sc = nil
-		pres[1].sc = nil
-		release = func() {
-			sc.mu.Lock()
-			sc.curImg--
-			sc.syncUsed[sync] = false
-			sc.mu.Unlock()
-		}
-	default:
-		panic("corrupted command buffer presentation")
 	}
 
-	// Wait until queue submission has completed execution.
-	// Note that queue presentation is not waited for, and as such
-	// may not have completed when we send to ch.
-	res := C.vkWaitForFences(d.dev, 1, &cd.fence, C.VK_TRUE, C.UINT64_MAX)
-	release()
-	switch res {
-	case C.VK_SUCCESS:
-		ch <- nil
-	default:
-		switch err := checkResult(res); err {
-		case nil:
-			// Should never happen.
-			panic("unexpected result from fence wait")
+	// TODO: Consider calculating these values in the
+	// previous loop instead.
+	var (
+		cbInfoN  = len(rend)
+		semInfoN int
+	)
+	for i := range rend {
+		semInfoN += len(rend[i].wait) + len(rend[i].signal)
+	}
+	if n := len(presRel); n > 0 {
+		if n > cbInfoN {
+			cbInfoN = n
+		}
+		if 2*n > semInfoN {
+			semInfoN = 2 * n
+		}
+	}
+	if n := len(presAcq); n > 0 {
+		if n > cbInfoN {
+			cbInfoN = n
+		}
+		if 2*n > semInfoN {
+			semInfoN = 2 * n
+		}
+	}
+	cd.resizeCB(cbInfoN)
+	cd.resizeSem(semInfoN)
+
+	// Presentation queue's command buffers that release
+	// ownership must be submitted first.
+	if n := len(presRel); n > 0 {
+		cd.subInfo = cd.subInfo[:0]
+		cd.subInfo = append(cd.subInfo, C.VkSubmitInfo2{
+			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			waitSemaphoreInfoCount:   C.uint32_t(n),
+			pWaitSemaphoreInfos:      &cd.semInfo[0],
+			commandBufferInfoCount:   1,
+			pCommandBufferInfos:      &cd.cbInfo[0],
+			signalSemaphoreInfoCount: C.uint32_t(n),
+			pSignalSemaphoreInfos:    &cd.semInfo[n],
+		})
+		for i := range presRel {
+			cd.cbInfo[i] = C.VkCommandBufferSubmitInfo{
+				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+				commandBuffer: presRel[i].cb.cb,
+			}
+			cd.semInfo[i] = C.VkSemaphoreSubmitInfo{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				semaphore: presRel[i].wait[0],
+				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			}
+			cd.semInfo[i+n] = C.VkSemaphoreSubmitInfo{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				semaphore: presRel[i].signal[0],
+				stageMask: C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, // ?
+			}
+		}
+		// NOTE: This assumes that all swapchains share the
+		// same queue family.
+		que := d.ques[presRel[0].cb.qfam]
+		var null C.VkFence
+		res := C.vkQueueSubmit2(que, 1, &cd.subInfo[0], null)
+		if err := checkResult(res); err != nil {
+			return err
+		}
+	}
+	// Rendering command buffers must be submitted after
+	// all queue release and before all queue acquisition
+	// operations that happen in the presentation queue.
+	cd.subInfo = cd.subInfo[:0]
+	var (
+		cbInfo  int
+		semInfo int
+	)
+	for i := range rend {
+		var (
+			waitInfoN = len(rend[i].wait)
+			sigInfoN  = len(rend[i].signal)
+			waitInfo  = semInfo
+			sigInfo   = waitInfo + waitInfoN
+		)
+		cd.subInfo = append(cd.subInfo, C.VkSubmitInfo2{
+			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			waitSemaphoreInfoCount:   C.uint32_t(waitInfoN),
+			pWaitSemaphoreInfos:      &cd.semInfo[waitInfo],
+			commandBufferInfoCount:   1,
+			pCommandBufferInfos:      &cd.cbInfo[cbInfo],
+			signalSemaphoreInfoCount: C.uint32_t(sigInfoN),
+			pSignalSemaphoreInfos:    &cd.semInfo[sigInfo],
+		})
+		for j := range rend[i].wait {
+			cd.semInfo[waitInfo] = C.VkSemaphoreSubmitInfo{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				semaphore: rend[i].wait[j],
+				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			}
+			waitInfo++
+		}
+		for j := range rend[i].signal {
+			cd.semInfo[sigInfo] = C.VkSemaphoreSubmitInfo{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				semaphore: rend[i].signal[j],
+				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			}
+			sigInfo++
+		}
+		semInfo = sigInfo
+	}
+	if n := len(presAcq); n == 0 {
+		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &cd.subInfo[0], cd.fence)
+		if err := checkResult(res); err != nil {
+			return err
+		}
+	} else {
+		// BUG: Need another fence here.
+		var null C.VkFence
+		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &cd.subInfo[0], null)
+		if err := checkResult(res); err != nil {
+			return err
+		}
+		// Presentation queue's command buffers that acquire
+		// ownership must be submitted last.
+		cd.subInfo = cd.subInfo[:0]
+		cd.subInfo = append(cd.subInfo, C.VkSubmitInfo2{
+			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			waitSemaphoreInfoCount:   C.uint32_t(n),
+			pWaitSemaphoreInfos:      &cd.semInfo[0],
+			commandBufferInfoCount:   1,
+			pCommandBufferInfos:      &cd.cbInfo[0],
+			signalSemaphoreInfoCount: C.uint32_t(n),
+			pSignalSemaphoreInfos:    &cd.semInfo[n],
+		})
+		for i := range presAcq {
+			cd.cbInfo[i] = C.VkCommandBufferSubmitInfo{
+				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+				commandBuffer: presAcq[i].cb.cb,
+			}
+			cd.semInfo[i] = C.VkSemaphoreSubmitInfo{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				semaphore: presAcq[i].wait[0],
+				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			}
+			cd.semInfo[i+n] = C.VkSemaphoreSubmitInfo{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				semaphore: presAcq[i].signal[0],
+				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+			}
+		}
+		// NOTE: This assumes that all swapchains share the
+		// same queue family.
+		que := d.ques[presAcq[0].cb.qfam]
+		res = C.vkQueueSubmit2(que, 1, &cd.subInfo[0], cd.fence)
+		if err := checkResult(res); err != nil {
+			return err
+		}
+	}
+
+	// Wait in the background for queue submission to
+	// complete execution.
+	go func() {
+		res := C.vkWaitForFences(d.dev, 1, &cd.fence, C.VK_TRUE, C.UINT64_MAX)
+		switch res {
+		case C.VK_SUCCESS:
+			ch <- nil
 		default:
-			ch <- err
+			switch err := checkResult(res); err {
+			case nil:
+				// Should never happen.
+				ch <- errUnknown
+				panic("unexpected result from fence wait")
+			default:
+				ch <- err
+			}
 		}
-	}
+	}()
+	return nil
 }
-*/
 
 // convSync converts a driver.Sync to a VkPipelineStageFlags2.
 func convSync(sync driver.Sync) C.VkPipelineStageFlags2 {
