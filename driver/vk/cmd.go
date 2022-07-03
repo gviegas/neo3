@@ -938,7 +938,6 @@ func (d *Driver) destroyCommitSync(cs *commitSync) {
 }
 
 // Commit commits a batch of command buffers to the GPU for execution.
-// TODO: Lock queues; cbStatus, ...
 func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 	if len(cb) == 0 {
 		ch <- nil
@@ -1186,8 +1185,15 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 
 	// Wait in the background for queue submissions to
 	// complete execution.
+	for i := range rend {
+		rend[i].cb.status = cbCommitted
+	}
 	go func() {
-		ch <- d.waitCommitFences(cs, fenceN)
+		err := d.waitCommitFences(cs, fenceN)
+		for i := range rend {
+			rend[i].cb.status = cbIdle
+		}
+		ch <- err
 		d.csync <- cs
 	}()
 	return nil
