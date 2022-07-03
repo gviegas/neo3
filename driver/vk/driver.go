@@ -10,6 +10,7 @@ import "C"
 import (
 	"errors"
 	"runtime"
+	"sync"
 	"unsafe"
 
 	"github.com/gviegas/scene/driver"
@@ -30,11 +31,11 @@ type Driver struct {
 	ques  []C.VkQueue
 	qfam  C.uint32_t
 
-	// Channel for ques[qfam] synchronization.
+	// Mutexes for ques synchronization.
 	// Queue submission requires that the queue handle
 	// be externally synchronized, thus this is needed
 	// to allow Commit calls to run concurrently.
-	qchan chan int
+	qmus []sync.Mutex
 
 	// Commit data created in advance.
 	// The capacity of the channel limits the number
@@ -313,7 +314,7 @@ func (d *Driver) Open() (gpu driver.GPU, err error) {
 	if err = d.initDevice(); err != nil {
 		goto fail
 	}
-	d.qchan = make(chan int, 1)
+	d.qmus = make([]sync.Mutex, len(d.ques))
 	d.cdata = make(chan *commitData, runtime.NumCPU())
 	for i := 0; i < runtime.NumCPU(); i++ {
 		var cd *commitData
