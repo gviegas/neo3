@@ -372,7 +372,7 @@ func (s *swapchain) syncSetup() error {
 	}
 
 	// presInfo never changes.
-	if s.presInfo != nil {
+	if s.presInfo == nil {
 		s.presInfo = (*C.VkPresentInfoKHR)(C.malloc(C.sizeof_VkPresentInfoKHR))
 		*s.presInfo = C.VkPresentInfoKHR{
 			sType:              C.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
