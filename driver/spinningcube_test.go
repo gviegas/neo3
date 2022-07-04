@@ -435,7 +435,7 @@ func (t *T) renderLoop() {
 		next := -1
 	nextLoop:
 		for {
-			next, err = t.sc.Next(t.cb[frame])
+			next, err = t.sc.Next()
 			switch err {
 			case nil:
 				// Got a backbuffer to use as render target.
@@ -454,8 +454,8 @@ func (t *T) renderLoop() {
 			}
 		}
 
-		// We record the first render pass that will use
-		// the swapchain's image only after Next succeeds.
+		// After acquiring a backbuffer that we can use as
+		// render target, we transition it to a valid layout.
 		t.cb[frame].Transition([]driver.Transition{
 			{
 				Barrier:      driver.Barrier{},
@@ -464,6 +464,9 @@ func (t *T) renderLoop() {
 				IView:        t.rt[next].Color,
 			},
 		})
+
+		// We now record a render pass that draws the cube
+		// in the image view we acquired previously.
 		t.cb[frame].BeginPass(dim.Width, dim.Height, 1, []driver.ColorTarget{t.rt[next]}, &t.ds)
 		t.cb[frame].SetPipeline(t.pipeln)
 		t.cb[frame].SetViewport([]driver.Viewport{t.vport})
@@ -473,8 +476,8 @@ func (t *T) renderLoop() {
 		t.cb[frame].Draw(36, 1, 0, 0)
 		t.cb[frame].EndPass()
 
-		// We call Present only after the last render pass
-		// that will use the swapchain's image is recorded.
+		// When done writing to the image view, we transition
+		// it to driver.LPresent so we can present it.
 		t.cb[frame].Transition([]driver.Transition{
 			// TODO: Improve this when supported by driver/vk.
 			{
@@ -485,22 +488,29 @@ func (t *T) renderLoop() {
 					AccessAfter:  driver.AAnyRead | driver.AAnyWrite,
 				},
 				LayoutBefore: driver.LColorTarget,
-				LayoutAfter:  driver.LCommon,
+				LayoutAfter:  driver.LPresent,
 				IView:        t.rt[next].Color,
 			},
 		})
-		if err = t.sc.Present(next, t.cb[frame]); err != nil {
-			log.Fatal(err)
-		}
 
-		// End must come after Next, EndPass and Present.
+		// End must be called when done recording commands.
 		if err := t.cb[frame].End(); err != nil {
 			log.Fatal(err)
 		}
 
-		// We are done with this frame, so commit it and
-		// start working on the next one.
-		go gpu.Commit([]driver.CmdBuffer{t.cb[frame]}, t.ch)
+		// Commit the commands for this frame.
+		// Notice that we do not wait for the work to complete.
+		if err := gpu.Commit([]driver.CmdBuffer{t.cb[frame]}, t.ch); err != nil {
+			log.Fatal(err)
+		}
+
+		// Now we can present the swapchain's view.
+		if err := t.sc.Present(next); err != nil {
+			log.Fatal(err)
+		}
+
+		// We are done with this frame, so start working on
+		// the next one.
 		frame = (frame + 1) % NFrame
 	}
 	for len(t.ch) != cap(t.ch) {
