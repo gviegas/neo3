@@ -813,6 +813,10 @@ func (d *Driver) destroyCommitInfo(ci *commitInfo) {
 
 // resizeCB resizes ci.cbInfo.
 func (ci *commitInfo) resizeCB(cbInfoN int) {
+	const min = 1
+	if cbInfoN < min {
+		cbInfoN = min
+	}
 	n := cap(ci.cbInfo)
 	switch {
 	case n < cbInfoN:
@@ -830,6 +834,10 @@ func (ci *commitInfo) resizeCB(cbInfoN int) {
 
 // resizeSem resizes ci.semInfo.
 func (ci *commitInfo) resizeSem(semInfoN int) {
+	const min = 1
+	if semInfoN < min {
+		semInfoN = min
+	}
 	n := cap(ci.semInfo)
 	switch {
 	case n < semInfoN:
