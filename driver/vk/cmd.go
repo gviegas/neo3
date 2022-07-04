@@ -1096,27 +1096,31 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
 			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
 			waitSemaphoreInfoCount:   C.uint32_t(waitInfoN),
-			pWaitSemaphoreInfos:      &ci.semInfo[waitInfo],
 			commandBufferInfoCount:   1,
 			pCommandBufferInfos:      &ci.cbInfo[cbInfo],
 			signalSemaphoreInfoCount: C.uint32_t(sigInfoN),
-			pSignalSemaphoreInfos:    &ci.semInfo[sigInfo],
 		})
-		for j := range rend[i].wait {
-			ci.semInfo[waitInfo] = C.VkSemaphoreSubmitInfo{
-				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-				semaphore: rend[i].wait[j],
-				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+		if waitInfoN > 0 {
+			ci.subInfo[len(ci.subInfo)-1].pWaitSemaphoreInfos = &ci.semInfo[waitInfo]
+			for j := range rend[i].wait {
+				ci.semInfo[waitInfo] = C.VkSemaphoreSubmitInfo{
+					sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+					semaphore: rend[i].wait[j],
+					stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+				}
+				waitInfo++
 			}
-			waitInfo++
 		}
-		for j := range rend[i].signal {
-			ci.semInfo[sigInfo] = C.VkSemaphoreSubmitInfo{
-				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-				semaphore: rend[i].signal[j],
-				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+		if sigInfoN > 0 {
+			ci.subInfo[len(ci.subInfo)-1].pSignalSemaphoreInfos = &ci.semInfo[sigInfo]
+			for j := range rend[i].signal {
+				ci.semInfo[sigInfo] = C.VkSemaphoreSubmitInfo{
+					sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+					semaphore: rend[i].signal[j],
+					stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+				}
+				sigInfo++
 			}
-			sigInfo++
 		}
 		semInfo = sigInfo
 	}
