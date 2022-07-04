@@ -1204,6 +1204,7 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 	// complete execution.
 	for i := range rend {
 		rend[i].cb.status = cbCommitted
+		rend[i].cb.detachSC()
 	}
 	go func() {
 		err := d.waitCommitFences(cs, fenceN)
