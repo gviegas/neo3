@@ -82,7 +82,11 @@ func TestCmdRecording(t *testing.T) {
 		return
 	}
 	ch := make(chan error)
-	go tDrv.Commit([]driver.CmdBuffer{cb}, ch)
+	err = tDrv.Commit([]driver.CmdBuffer{cb}, ch)
+	if err != nil {
+		t.Errorf("(error) tDrv.Commit(): %v", err)
+		return
+	}
 	err = <-ch
 	if err != nil {
 		t.Errorf("(error) tDrv.Commit(): %v", err)
