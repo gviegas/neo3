@@ -123,15 +123,19 @@ func initXCB() error {
 		*atoms[i].dst = reply.atom
 	}
 
-	valMask := C.uint32_t(C.XCB_KB_AUTO_REPEAT_MODE)
-	valList := C.uint32_t(C.XCB_AUTO_REPEAT_MODE_OFF)
-	cookie := C.changeKeyboardControlCheckedXCB(connXCB, valMask, unsafe.Pointer(&valList))
-	genErr = C.requestCheckXCB(connXCB, cookie)
-	if genErr != nil {
-		C.free(unsafe.Pointer(genErr))
-		C.disconnectXCB(connXCB)
-		connXCB = nil
-		return errors.New("changeKeyboardControlCheckedXCB failed")
+	// NOTE: This leaks to the whole desktop environment in
+	// certain cases, so turning it off for now.
+	if false {
+		valMask := C.uint32_t(C.XCB_KB_AUTO_REPEAT_MODE)
+		valList := C.uint32_t(C.XCB_AUTO_REPEAT_MODE_OFF)
+		cookie := C.changeKeyboardControlCheckedXCB(connXCB, valMask, unsafe.Pointer(&valList))
+		genErr = C.requestCheckXCB(connXCB, cookie)
+		if genErr != nil {
+			C.free(unsafe.Pointer(genErr))
+			C.disconnectXCB(connXCB)
+			connXCB = nil
+			return errors.New("changeKeyboardControlCheckedXCB failed")
+		}
 	}
 
 	if C.flushXCB(connXCB) <= 0 {
