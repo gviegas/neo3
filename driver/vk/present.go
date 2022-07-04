@@ -548,39 +548,26 @@ func (s *swapchain) Next() (int, error) {
 		}
 		// Should never happen.
 		println(res)
-		panic("unexpected result from swapchain's acquisition")
+		panic("unexpected result in Swapchain.Next")
 	}
 }
 
 // Present presents the image view identified by index.
 func (s *swapchain) Present(index int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.broken {
 		return driver.ErrSwapchain
 	}
-	return nil
-}
-
-// present enqueues an image for presentation.
-// It assumes that Next and Present were called and that the
-// command buffer(s) they target have been submitted for
-// execution.
-// waitSem must refer to C memory.
-func (s *swapchain) present(index int, waitSem *C.VkSemaphore) error {
-	psc := (*C.VkSwapchainKHR)(C.malloc(C.sizeof_VkSwapchainKHR))
-	defer C.free(unsafe.Pointer(psc))
-	*psc = s.sc
-	pidx := (*C.uint32_t)(C.malloc(4))
-	defer C.free(unsafe.Pointer(pidx))
-	*pidx = C.uint32_t(index)
-	info := C.VkPresentInfoKHR{
-		sType:              C.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-		waitSemaphoreCount: 1,
-		pWaitSemaphores:    waitSem,
-		swapchainCount:     1,
-		pSwapchains:        psc,
-		pImageIndices:      pidx,
-	}
-	res := C.vkQueuePresentKHR(s.d.ques[s.qfam], &info)
+	*s.presInfo.pWaitSemaphores = s.presSem[index]
+	*s.presInfo.pSwapchains = s.sc
+	*s.presInfo.pImageIndices = C.uint32_t(index)
+	s.d.qmus[s.qfam].Lock()
+	res := C.vkQueuePresentKHR(s.d.ques[s.qfam], s.presInfo)
+	s.d.qmus[s.qfam].Unlock()
+	s.curImg--
+	s.syncUsed[s.viewSync[index]] = false
+	s.viewSync[index] = -1 // Unnecessary currently.
 	switch res {
 	case C.VK_SUCCESS:
 		return nil
@@ -588,11 +575,14 @@ func (s *swapchain) present(index int, waitSem *C.VkSemaphore) error {
 		return driver.ErrSwapchain
 	default:
 		if err := checkResult(res); err != nil {
+			// Cannot be called again.
+			s.broken = true
 			return err
 		}
+		// Should never happen.
+		println(res)
+		panic("unexpected result in Swapchain.Present")
 	}
-	// Should never happen.
-	return errUnknown
 }
 
 // Recreate recreates the swapchain.
