@@ -117,6 +117,7 @@ func (cb *cmdBuffer) Begin() error {
 			return err
 		}
 		cb.status = cbBegun
+		return nil
 	case cbBegun, cbFailed:
 		// Note that cbFailed is handled on End.
 		return nil
