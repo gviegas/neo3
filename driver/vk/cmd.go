@@ -1100,6 +1100,10 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 			pCommandBufferInfos:      &ci.cbInfo[cbInfo],
 			signalSemaphoreInfoCount: C.uint32_t(sigInfoN),
 		})
+		ci.cbInfo[cbInfo] = C.VkCommandBufferSubmitInfo{
+			sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+			commandBuffer: rend[i].cb.cb,
+		}
 		if waitInfoN > 0 {
 			ci.subInfo[len(ci.subInfo)-1].pWaitSemaphoreInfos = &ci.semInfo[waitInfo]
 			for j := range rend[i].wait {
