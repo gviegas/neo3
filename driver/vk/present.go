@@ -42,8 +42,8 @@ type swapchain struct {
 	// presSem contains semaphores that are waited on by the
 	// presentation engine before it presents the images.
 	// It has len(views) elements and is indexed by the view
-	// indices themselves (this is so because cmdBuffer.Commit
-	// does not wait for presentation to complete).
+	// indices themselves (this is so because Present does not
+	// wait for presentation to complete).
 	presSem []C.VkSemaphore
 
 	// queSync contain additional data for queue transfers.
@@ -74,11 +74,17 @@ type swapchain struct {
 	// this data up to date.
 	pendOp []bool
 
+	// presInfo contains C-allocated memory used during a call
+	// to Present. The pWaitSemaphores, pSwapchains and
+	// pImageIndices fields, along with the info structure
+	// itself, all refer to C memory. They can hold a single
+	// element each.
+	presInfo *C.VkPresentInfoKHR
+
 	// The swapchain is marked as 'broken' when either
 	// suboptimal or out of date errors occur.
 	// It is expected that Recreate or Destroy will be
 	// called eventually.
-	// NOTE: May be set to true by cmdBuffer code.
 	broken bool
 }
 
@@ -345,8 +351,8 @@ func (s *swapchain) newViews() error {
 
 // syncSetup creates the synchronization data required for
 // presentation of s.
-// It sets the nextSem, presSem, queSync, viewSync, syncUsed
-// and pendOp fields of s.
+// It sets the nextSem, presSem, queSync, viewSync, syncUsed,
+// pendOp and presInfo fields of s.
 // The caller must ensure that no semaphores are in use before
 // calling this method.
 func (s *swapchain) syncSetup() error {
@@ -363,6 +369,19 @@ func (s *swapchain) syncSetup() error {
 	n = 1 + n - s.minImg
 	if len(s.syncUsed) != n {
 		s.syncUsed = make([]bool, n)
+	}
+
+	// presInfo never changes.
+	if s.presInfo != nil {
+		s.presInfo = (*C.VkPresentInfoKHR)(C.malloc(C.sizeof_VkPresentInfoKHR))
+		*s.presInfo = C.VkPresentInfoKHR{
+			sType:              C.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+			waitSemaphoreCount: 1,
+			pWaitSemaphores:    (*C.VkSemaphore)(C.malloc(C.sizeof_VkSemaphore)),
+			swapchainCount:     1,
+			pSwapchains:        (*C.VkSwapchainKHR)(C.malloc(C.sizeof_VkSwapchainKHR)),
+			pImageIndices:      (*C.uint32_t)(C.malloc(C.sizeof_uint32_t)),
+		}
 	}
 
 	createSem := func() (C.VkSemaphore, error) {
@@ -488,7 +507,7 @@ func (s *swapchain) Views() []driver.ImageView {
 }
 
 // Next returns the index of the next writable image view.
-func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
+func (s *swapchain) Next() (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.broken {
@@ -534,7 +553,7 @@ func (s *swapchain) Next(cb driver.CmdBuffer) (int, error) {
 }
 
 // Present presents the image view identified by index.
-func (s *swapchain) Present(index int, cb driver.CmdBuffer) error {
+func (s *swapchain) Present(index int) error {
 	if s.broken {
 		return driver.ErrSwapchain
 	}
@@ -604,6 +623,12 @@ func (s *swapchain) Destroy() {
 		C.vkQueueWaitIdle(s.d.ques[s.d.qfam])
 		if s.qfam != s.d.qfam {
 			C.vkQueueWaitIdle(s.d.ques[s.qfam])
+		}
+		if s.presInfo != nil {
+			C.free(unsafe.Pointer(s.presInfo.pWaitSemaphores))
+			C.free(unsafe.Pointer(s.presInfo.pSwapchains))
+			C.free(unsafe.Pointer(s.presInfo.pImageIndices))
+			C.free(unsafe.Pointer(s.presInfo))
 		}
 		for _, x := range s.queSync {
 			C.vkDestroySemaphore(s.d.dev, x.rendWait, nil)
