@@ -10,17 +10,16 @@ type GPU interface {
 	// Driver returns the Driver that owns the GPU.
 	Driver() Driver
 
-	// Commit commits a batch of command buffers to the GPU
-	// for execution.
-	// Synchronization operations defined in a command buffer
-	// apply to the batch as a whole, so the order of command
-	// buffers in cb is meaningful.
+	// Commit commits a work item to the GPU for execution.
 	// If successful, this method arranges for commands to
 	// execute in the background, and ch is written to when
 	// all command buffers complete execution.
-	// It is invalid to use any of the command buffers until
-	// ch is notified.
-	Commit(cb []CmdBuffer, ch chan<- error) error
+	// In case that execution itself fails, wk.Err can be
+	// used to determine the cause, since Commit will set
+	// its value just before sending to ch.
+	// It is invalid to use any of the command buffers in
+	// wk.Work until ch is notified.
+	Commit(wk *WorkItem, ch chan<- *WorkItem) error
 
 	// NewCmdBuffer creates a new command buffer.
 	NewCmdBuffer() (CmdBuffer, error)
@@ -69,6 +68,18 @@ type Dim3D struct {
 // Off3D is a three-dimensional offset.
 type Off3D struct {
 	X, Y, Z int
+}
+
+// WorkItem defines a batch of command buffers for execution.
+// Synchronization operations defined in a command buffer
+// apply to the batch as a whole, so the order of elements
+// in Work is meaningful.
+// Err is set by GPU.Commit to indicate the result of the
+// call, while Custom is ignored.
+type WorkItem struct {
+	Work   []CmdBuffer
+	Err    error
+	Custom any
 }
 
 // CmdBuffer is the interface that defines a command buffer.
