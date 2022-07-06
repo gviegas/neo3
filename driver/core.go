@@ -332,7 +332,6 @@ const (
 	// Everything.
 	SAll
 	// Nothing.
-	// Must be paired with Access' ANone.
 	SNone Sync = 0
 )
 
@@ -366,7 +365,6 @@ const (
 	// Any kind of write.
 	AAnyWrite
 	// No access.
-	// Must be paired with Sync's SNone.
 	ANone Access = 0
 )
 
@@ -385,8 +383,13 @@ const (
 	// Shader read/sample.
 	LShaderRead
 	// Color render target.
+	// Every ColorTarget view that is used in a
+	// render pass must be transitioned to this
+	// layout.
 	LColorTarget
 	// Depth/stencil render target.
+	// Every DSTarget view that is used in a render
+	// pass must be transitioned to this layout.
 	LDSTarget
 	// Read-only depth/stencil.
 	LDSRead
