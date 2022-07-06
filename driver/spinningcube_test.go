@@ -29,7 +29,7 @@ var dim = driver.Dim3D{
 
 type T struct {
 	cb       [NFrame]driver.CmdBuffer
-	ch       chan error
+	ch       chan *driver.WorkItem
 	win      wsi.Window
 	sc       driver.Swapchain
 	rt       []driver.ColorTarget
@@ -64,7 +64,7 @@ func Example_spinningCube() {
 			log.Fatal(err)
 		}
 	}
-	t.ch = make(chan error, NFrame)
+	t.ch = make(chan *driver.WorkItem, NFrame)
 	t.swapchainSetup()
 	t.passSetup()
 	t.shaderSetup()
@@ -274,9 +274,12 @@ func (t *T) samplingSetup() {
 	if err := t.cb[0].End(); err != nil {
 		log.Fatal(err)
 	}
-	ch := make(chan error)
-	go gpu.Commit([]driver.CmdBuffer{t.cb[0]}, ch)
-	if err := <-ch; err != nil {
+	wk := driver.WorkItem{Work: []driver.CmdBuffer{t.cb[0]}}
+	ch := make(chan *driver.WorkItem)
+	if err := gpu.Commit(&wk, ch); err != nil {
+		log.Fatal(err)
+	}
+	if err := (<-ch).Err; err != nil {
 		log.Fatal(err)
 	}
 
@@ -410,15 +413,22 @@ func (t *T) pipelineSetup() {
 
 // renderLoop renders the cube in a loop.
 func (t *T) renderLoop() {
-	var frame int
 	var err error
 	for i := 0; i < cap(t.ch); i++ {
-		t.ch <- nil
+		wk := &driver.WorkItem{Work: []driver.CmdBuffer{t.cb[i]}}
+		t.ch <- wk
 	}
 	for !t.quit {
-		if err = <-t.ch; err != nil {
-			log.Fatal(err)
+		wk := <-t.ch
+		if err = wk.Err; err != nil {
+			switch err {
+			case driver.ErrFatal:
+				log.Fatal(err)
+			default:
+				log.Printf("GPU.Commit <send>: %v\n", err)
+			}
 		}
+		cb := wk.Work[0]
 
 		wsi.Dispatch()
 
@@ -428,7 +438,7 @@ func (t *T) renderLoop() {
 		copy(t.constBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
 
 		// Begin must come before anything else.
-		if err = t.cb[frame].Begin(); err != nil {
+		if err = cb.Begin(); err != nil {
 			log.Fatal(err)
 		}
 
@@ -456,36 +466,51 @@ func (t *T) renderLoop() {
 
 		// After acquiring a backbuffer that we can use as
 		// render target, we transition it to a valid layout.
-		t.cb[frame].Transition([]driver.Transition{
+		cb.Transition([]driver.Transition{
 			{
-				Barrier:      driver.Barrier{},
+				Barrier: driver.Barrier{
+					SyncBefore:   driver.SColorOutput,
+					SyncAfter:    driver.SColorOutput,
+					AccessBefore: driver.ANone,
+					AccessAfter:  driver.AColorWrite,
+				},
 				LayoutBefore: driver.LUndefined,
 				LayoutAfter:  driver.LColorTarget,
 				IView:        t.rt[next].Color,
+			},
+			{
+				Barrier: driver.Barrier{
+					SyncBefore:   driver.SDSOutput,
+					SyncAfter:    driver.SDSOutput,
+					AccessBefore: driver.ADSWrite,
+					AccessAfter:  driver.ADSRead | driver.ADSWrite,
+				},
+				LayoutBefore: driver.LUndefined,
+				LayoutAfter:  driver.LDSTarget,
+				IView:        t.dsView,
 			},
 		})
 
 		// We now record a render pass that draws the cube
 		// in the image view we acquired previously.
-		t.cb[frame].BeginPass(dim.Width, dim.Height, 1, []driver.ColorTarget{t.rt[next]}, &t.ds)
-		t.cb[frame].SetPipeline(t.pipeln)
-		t.cb[frame].SetViewport([]driver.Viewport{t.vport})
-		t.cb[frame].SetScissor([]driver.Scissor{t.sciss})
-		t.cb[frame].SetVertexBuf(0, []driver.Buffer{t.vertBuf, t.vertBuf}, []int64{0, 512})
-		t.cb[frame].SetDescTableGraph(t.dtab, 0, []int{0})
-		t.cb[frame].Draw(36, 1, 0, 0)
-		t.cb[frame].EndPass()
+		cb.BeginPass(dim.Width, dim.Height, 1, []driver.ColorTarget{t.rt[next]}, &t.ds)
+		cb.SetPipeline(t.pipeln)
+		cb.SetViewport([]driver.Viewport{t.vport})
+		cb.SetScissor([]driver.Scissor{t.sciss})
+		cb.SetVertexBuf(0, []driver.Buffer{t.vertBuf, t.vertBuf}, []int64{0, 512})
+		cb.SetDescTableGraph(t.dtab, 0, []int{0})
+		cb.Draw(36, 1, 0, 0)
+		cb.EndPass()
 
 		// When done writing to the image view, we transition
 		// it to driver.LPresent so we can present it.
-		t.cb[frame].Transition([]driver.Transition{
-			// TODO: Improve this when supported by driver/vk.
+		cb.Transition([]driver.Transition{
 			{
 				Barrier: driver.Barrier{
-					SyncBefore:   driver.SAll,
-					SyncAfter:    driver.SAll,
-					AccessBefore: driver.AAnyRead | driver.AAnyWrite,
-					AccessAfter:  driver.AAnyRead | driver.AAnyWrite,
+					SyncBefore:   driver.SColorOutput,
+					SyncAfter:    driver.SColorOutput,
+					AccessBefore: driver.AColorWrite,
+					AccessAfter:  driver.AColorRead,
 				},
 				LayoutBefore: driver.LColorTarget,
 				LayoutAfter:  driver.LPresent,
@@ -494,24 +519,28 @@ func (t *T) renderLoop() {
 		})
 
 		// End must be called when done recording commands.
-		if err := t.cb[frame].End(); err != nil {
+		if err := cb.End(); err != nil {
 			log.Fatal(err)
 		}
 
 		// Commit the commands for this frame.
 		// Notice that we do not wait for the work to complete.
-		if err := gpu.Commit([]driver.CmdBuffer{t.cb[frame]}, t.ch); err != nil {
+		if err := gpu.Commit(wk, t.ch); err != nil {
 			log.Fatal(err)
 		}
 
 		// Now we can present the swapchain's view.
 		if err := t.sc.Present(next); err != nil {
-			log.Fatal(err)
+			switch err {
+			case driver.ErrSwapchain:
+				log.Printf("Swapchain.Present: %v\n", err)
+			default:
+				log.Fatal(err)
+			}
 		}
 
 		// We are done with this frame, so start working on
 		// the next one.
-		frame = (frame + 1) % NFrame
 	}
 	for len(t.ch) != cap(t.ch) {
 	}
@@ -812,6 +841,7 @@ func (t *T) recreateSwapchain() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		t.ds.DS = t.dsView
 		t.vport.Width = float32(width)
 		t.vport.Height = float32(height)
 		t.sciss.Width = width

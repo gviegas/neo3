@@ -263,16 +263,15 @@ func Example_draw() {
 			Size:   dim,
 		}
 		tdraw = [1]driver.Transition{
-			// TODO: Improve this when supported by driver/vk.
 			{
 				Barrier: driver.Barrier{
 					SyncBefore:   driver.SNone,
-					SyncAfter:    driver.SAll,
+					SyncAfter:    driver.SColorOutput,
 					AccessBefore: driver.ANone,
-					AccessAfter:  driver.AAnyWrite,
+					AccessAfter:  driver.AColorWrite,
 				},
 				LayoutBefore: driver.LUndefined,
-				LayoutAfter:  driver.LCommon,
+				LayoutAfter:  driver.LColorTarget,
 				IView:        view,
 			},
 		}
@@ -317,13 +316,16 @@ func Example_draw() {
 	}
 
 	// Commit the command buffer.
-	// When Commit completes execution of the commands, it sends
-	// the result to the provided channel. Only then the command
-	// buffers can receive new recordings.
-	ch := make(chan error)
-	go gpu.Commit([]driver.CmdBuffer{cb}, ch)
-	err = <-ch
+	// When Commit completes execution of the commands,
+	// it sends to the provided channel. Only then the
+	// command buffers can receive new recordings.
+	wk := driver.WorkItem{Work: []driver.CmdBuffer{cb}}
+	ch := make(chan *driver.WorkItem)
+	err = gpu.Commit(&wk, ch)
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err := (<-ch).Err; err != nil {
 		log.Fatal(err)
 	}
 
