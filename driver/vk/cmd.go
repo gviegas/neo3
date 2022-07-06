@@ -858,60 +858,42 @@ func (ci *commitInfo) resizeSem(semInfoN int) {
 // It is only safe to reuse these data after the Commit
 // call writes to the provided channel.
 type commitSync struct {
-	rendFence C.VkFence // For rendering queue.
-	presFence C.VkFence // For presentation queue.
+	fence []C.VkFence
 }
 
 // newCommitSync creates new commitSync data.
-// NOTE: Only commitSync.rendFence is created by this method,
-// commitSync.presFence is created by Driver.createPresFence.
+// It initializes commitSync.fence with a single fence.
 func (d *Driver) newCommitSync() (*commitSync, error) {
-	info := C.VkFenceCreateInfo{
-		sType: C.VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-	}
-	var fence C.VkFence
-	err := checkResult(C.vkCreateFence(d.dev, &info, nil, &fence))
-	if err != nil {
+	cs := new(commitSync)
+	if err := d.resizeCommitFence(cs, 1); err != nil {
 		return nil, err
 	}
-	return &commitSync{rendFence: fence}, nil
+	return cs, nil
 }
 
-// createPresFence creates cs.presFence.
-// Only call this method when using different queues for
-// rendering and presentation.
-func (d *Driver) createPresFence(cs *commitSync) error {
-	var null C.VkFence
-	if cs.presFence != null {
+// resizeCommitFence resizes cs.fence.
+// NOTE: It only increases the size currently.
+func (d *Driver) resizeCommitFence(cs *commitSync, fenceN int) error {
+	n := len(cs.fence)
+	if n >= fenceN || fenceN < 1 {
 		return nil
 	}
-	info := C.VkFenceCreateInfo{
-		sType: C.VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-	}
-	err := checkResult(C.vkCreateFence(d.dev, &info, nil, &cs.presFence))
-	if err != nil {
-		cs.presFence = null
-		return err
+	info := C.VkFenceCreateInfo{sType: C.VK_STRUCTURE_TYPE_FENCE_CREATE_INFO}
+	var fence C.VkFence
+	for i := n; i < fenceN; i++ {
+		err := checkResult(C.vkCreateFence(d.dev, &info, nil, &fence))
+		if err != nil {
+			return err
+		}
+		cs.fence = append(cs.fence, fence)
 	}
 	return nil
 }
 
-// waitCommitFences wait for cs.rendFence and, optionally,
-// cs.presFence.
-func (d *Driver) waitCommitFences(cs *commitSync, fenceN int) error {
-	fences := [2]C.VkFence{cs.rendFence}
-	switch fenceN {
-	case 1:
-	case 2:
-		if cs.presFence != fences[1] {
-			fences[1] = cs.presFence
-		} else {
-			fenceN--
-		}
-	default:
-		panic("invalid fence count in call to waitCommitFences")
-	}
-	res := C.vkWaitForFences(d.dev, C.uint32_t(fenceN), &fences[0], C.VK_TRUE, C.UINT64_MAX)
+// waitCommitFence waits for a number of cs.fence.
+// fenceN must be at least 1 and no greater than len(cs.fence).
+func (d *Driver) waitCommitFence(cs *commitSync, fenceN int) error {
+	res := C.vkWaitForFences(d.dev, C.uint32_t(fenceN), &cs.fence[0], C.VK_TRUE, C.UINT64_MAX)
 	switch res {
 	case C.VK_SUCCESS:
 		return nil
@@ -926,24 +908,19 @@ func (d *Driver) waitCommitFences(cs *commitSync, fenceN int) error {
 	}
 }
 
-// resetCommitFences resets cs.rendFence and, if non-null,
-// cs.presFence.
-func (d *Driver) resetCommitFences(cs *commitSync) error {
-	var null C.VkFence
-	if cs.presFence != null {
-		fences := [2]C.VkFence{cs.rendFence, cs.presFence}
-		return checkResult(C.vkResetFences(d.dev, 2, &fences[0]))
-	}
-	return checkResult(C.vkResetFences(d.dev, 1, &cs.rendFence))
+// resetCommitFence resets a number of cs.fence.
+// fenceN must be at least 1 and no greater than len(cs.fence).
+func (d *Driver) resetCommitFence(cs *commitSync, fenceN int) error {
+	return checkResult(C.vkResetFences(d.dev, C.uint32_t(fenceN), &cs.fence[0]))
 }
 
 // destroyCommitSync destroys cs.
 func (d *Driver) destroyCommitSync(cs *commitSync) {
-	if cs == nil {
-		return
+	if cs != nil {
+		for _, fence := range cs.fence {
+			C.vkDestroyFence(d.dev, fence, nil)
+		}
 	}
-	C.vkDestroyFence(d.dev, cs.rendFence, nil)
-	C.vkDestroyFence(d.dev, cs.presFence, nil)
 }
 
 // Commit commits a work item to the GPU for execution.
@@ -959,11 +936,11 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 	ci := <-d.cinfo
 	defer func() { d.cinfo <- ci }()
 	cs := <-d.csync
-	if err := d.resetCommitFences(cs); err != nil {
+	if err := d.resetCommitFence(cs, len(cs.fence)); err != nil {
 		d.csync <- cs
 		return err
 	}
-	var fenceN int
+	fenceN := 1
 
 	// Start by identifying what we will need to submit.
 	type submit struct {
@@ -1049,41 +1026,51 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 	// ownership must be submitted first.
 	if n := len(presRel); n > 0 {
 		ci.subInfo = ci.subInfo[:0]
-		ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
-			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-			waitSemaphoreInfoCount:   C.uint32_t(n),
-			pWaitSemaphoreInfos:      &ci.semInfo[0],
-			commandBufferInfoCount:   1,
-			pCommandBufferInfos:      &ci.cbInfo[0],
-			signalSemaphoreInfoCount: C.uint32_t(n),
-			pSignalSemaphoreInfos:    &ci.semInfo[n],
-		})
-		for i := range presRel {
+		var (
+			subInfo int
+			presQF  = presRel[0].cb.qfam
+		)
+		for i := 0; i < n; i++ {
+			ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
+				sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+				waitSemaphoreInfoCount:   1,
+				pWaitSemaphoreInfos:      &ci.semInfo[2*i],
+				commandBufferInfoCount:   1,
+				pCommandBufferInfos:      &ci.cbInfo[i],
+				signalSemaphoreInfoCount: 1,
+				pSignalSemaphoreInfos:    &ci.semInfo[2*i+1],
+			})
 			ci.cbInfo[i] = C.VkCommandBufferSubmitInfo{
 				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 				commandBuffer: presRel[i].cb.cb,
 			}
-			ci.semInfo[i] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[2*i] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: presRel[i].wait[0],
 				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 			}
-			ci.semInfo[i+n] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[2*i+1] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: presRel[i].signal[0],
-				stageMask: C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, // ?
+				stageMask: C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
 			}
-		}
-		// NOTE: This assumes that all swapchains share the
-		// same queue family.
-		qfam := presRel[0].cb.qfam
-		var null C.VkFence
-		d.qmus[qfam].Lock()
-		res := C.vkQueueSubmit2(d.ques[qfam], 1, &ci.subInfo[0], null)
-		d.qmus[qfam].Unlock()
-		if err := checkResult(res); err != nil {
-			d.csync <- cs
-			return err
+			if i == n-1 || presQF != presRel[i+1].cb.qfam {
+				var null C.VkFence
+				subN := C.uint32_t(1 + i - subInfo)
+				d.qmus[presQF].Lock()
+				res := C.vkQueueSubmit2(d.ques[presQF], subN, &ci.subInfo[subInfo], null)
+				d.qmus[presQF].Unlock()
+				if err := checkResult(res); err != nil {
+					d.csync <- cs
+					return err
+				}
+				if i < n-1 {
+					subInfo = i + 1
+					presQF = presRel[i+1].cb.qfam
+				} else {
+					break
+				}
+			}
 		}
 	}
 	// Rendering command buffers must be submitted after
@@ -1138,16 +1125,15 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 	}
 	if n := len(presAcq); n == 0 {
 		d.qmus[d.qfam].Lock()
-		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.rendFence)
+		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.fence[0])
 		d.qmus[d.qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs
 			return err
 		}
-		fenceN = 1
 	} else {
 		d.qmus[d.qfam].Lock()
-		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.rendFence)
+		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.fence[0])
 		d.qmus[d.qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs
@@ -1156,48 +1142,58 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 		// Presentation queue's command buffers that acquire
 		// ownership must be submitted last.
 		ci.subInfo = ci.subInfo[:0]
-		ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
-			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-			waitSemaphoreInfoCount:   C.uint32_t(n),
-			pWaitSemaphoreInfos:      &ci.semInfo[0],
-			commandBufferInfoCount:   1,
-			pCommandBufferInfos:      &ci.cbInfo[0],
-			signalSemaphoreInfoCount: C.uint32_t(n),
-			pSignalSemaphoreInfos:    &ci.semInfo[n],
-		})
-		for i := range presAcq {
+		var (
+			subInfo int
+			presQF  = presAcq[0].cb.qfam
+		)
+		for i := 0; i < n; i++ {
+			ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
+				sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+				waitSemaphoreInfoCount:   1,
+				pWaitSemaphoreInfos:      &ci.semInfo[2*i],
+				commandBufferInfoCount:   1,
+				pCommandBufferInfos:      &ci.cbInfo[i],
+				signalSemaphoreInfoCount: 1,
+				pSignalSemaphoreInfos:    &ci.semInfo[2*i+1],
+			})
 			ci.cbInfo[i] = C.VkCommandBufferSubmitInfo{
 				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 				commandBuffer: presAcq[i].cb.cb,
 			}
-			ci.semInfo[i] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[2*i] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: presAcq[i].wait[0],
 				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 			}
-			ci.semInfo[i+n] = C.VkSemaphoreSubmitInfo{
+			ci.semInfo[2*i+1] = C.VkSemaphoreSubmitInfo{
 				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
 				semaphore: presAcq[i].signal[0],
 				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
 			}
+			if i == n-1 || presQF != presAcq[i+1].cb.qfam {
+				if err := d.resizeCommitFence(cs, fenceN+1); err != nil {
+					d.waitCommitFence(cs, fenceN)
+					d.csync <- cs
+					return err
+				}
+				subN := C.uint32_t(1 + i - subInfo)
+				d.qmus[presQF].Lock()
+				res = C.vkQueueSubmit2(d.ques[presQF], subN, &ci.subInfo[subInfo], cs.fence[fenceN])
+				d.qmus[presQF].Unlock()
+				if err := checkResult(res); err != nil {
+					d.waitCommitFence(cs, fenceN)
+					d.csync <- cs
+					return err
+				}
+				fenceN++
+				if i < n-1 {
+					subInfo = i + 1
+					presQF = presAcq[i+1].cb.qfam
+				} else {
+					break
+				}
+			}
 		}
-		// NOTE: This assumes that all swapchains share the
-		// same queue family.
-		qfam := presAcq[0].cb.qfam
-		if err := d.createPresFence(cs); err != nil {
-			d.waitCommitFences(cs, 1)
-			d.csync <- cs
-			return err
-		}
-		d.qmus[qfam].Lock()
-		res = C.vkQueueSubmit2(d.ques[qfam], 1, &ci.subInfo[0], cs.presFence)
-		d.qmus[qfam].Unlock()
-		if err := checkResult(res); err != nil {
-			d.waitCommitFences(cs, 1)
-			d.csync <- cs
-			return err
-		}
-		fenceN = 2
 	}
 
 	// Wait in the background for queue submissions to
@@ -1207,7 +1203,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 		rend[i].cb.detachSC()
 	}
 	go func() {
-		wk.Err = d.waitCommitFences(cs, fenceN)
+		wk.Err = d.waitCommitFence(cs, fenceN)
 		for i := range rend {
 			rend[i].cb.status = cbIdle
 		}
@@ -1240,6 +1236,7 @@ func convSync(sync driver.Sync) C.VkPipelineStageFlags2 {
 			flags |= C.VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
 		}
 		if sync&driver.SDSOutput != 0 {
+			flags |= C.VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
 			flags |= C.VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT
 		}
 		if sync&driver.SColorOutput != 0 {
