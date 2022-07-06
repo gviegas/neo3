@@ -946,11 +946,11 @@ func (d *Driver) destroyCommitSync(cs *commitSync) {
 	C.vkDestroyFence(d.dev, cs.presFence, nil)
 }
 
-// Commit commits a batch of command buffers to the GPU for execution.
-func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
-	if len(cb) == 0 {
-		ch <- nil
-		return nil
+// Commit commits a work item to the GPU for execution.
+func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
+	if wk == nil || len(wk.Work) == 0 || ch == nil {
+		// Client error.
+		panic("invalid call to GPU.Commit")
 	}
 	// Take commit data from the driver an return it when
 	// this call completes.
@@ -973,7 +973,7 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 	}
 	var (
 		// Rendering command buffers.
-		rend = make([]submit, len(cb))
+		rend = make([]submit, len(wk.Work))
 		// Presentation command buffers that
 		// release queue ownership.
 		presRel []submit
@@ -981,8 +981,8 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		// acquire queue ownership.
 		presAcq []submit
 	)
-	for i := range cb {
-		cb := cb[i].(*cmdBuffer)
+	for i := range wk.Work {
+		cb := wk.Work[i].(*cmdBuffer)
 		rend[i].cb = cb
 		for i := range cb.pres {
 			var (
@@ -1207,11 +1207,11 @@ func (d *Driver) Commit(cb []driver.CmdBuffer, ch chan<- error) error {
 		rend[i].cb.detachSC()
 	}
 	go func() {
-		err := d.waitCommitFences(cs, fenceN)
+		wk.Err = d.waitCommitFences(cs, fenceN)
 		for i := range rend {
 			rend[i].cb.status = cbIdle
 		}
-		ch <- err
+		ch <- wk
 		d.csync <- cs
 	}()
 	return nil

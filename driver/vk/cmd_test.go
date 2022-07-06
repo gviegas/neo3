@@ -81,16 +81,23 @@ func TestCmdRecording(t *testing.T) {
 		t.Errorf("(error) cb.End(): %v", err)
 		return
 	}
-	ch := make(chan error)
-	err = tDrv.Commit([]driver.CmdBuffer{cb}, ch)
+	wk := driver.WorkItem{
+		Work: []driver.CmdBuffer{cb},
+		Err:  errUnknown,
+	}
+	ch := make(chan *driver.WorkItem)
+	err = tDrv.Commit(&wk, ch)
 	if err != nil {
 		t.Errorf("(error) tDrv.Commit(): %v", err)
 		return
 	}
-	err = <-ch
-	if err != nil {
-		t.Errorf("(error) tDrv.Commit(): %v", err)
+	wkPtr := <-ch
+	if wk.Err != nil {
+		t.Errorf("(error) tDrv.Commit(): %v", wkPtr.Err)
+	} else if &wk != wkPtr {
+		t.Errorf("(<-ch unexpected value) tDrv.Commit(): %v instead of %v", wkPtr, &wk)
 	} else {
+		t.Logf("wk: %+v\n", wk)
 		t.Log(src.Bytes())
 		t.Log(dst.Bytes())
 	}
