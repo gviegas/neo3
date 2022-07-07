@@ -1306,6 +1306,8 @@ func convLayout(lay driver.Layout) C.VkImageLayout {
 	switch lay {
 	case driver.LUndefined:
 		return C.VK_IMAGE_LAYOUT_UNDEFINED
+	case driver.LShaderStore:
+		return C.VK_IMAGE_LAYOUT_GENERAL
 	case driver.LShaderRead:
 		return C.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 	case driver.LColorTarget:

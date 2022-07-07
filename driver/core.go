@@ -377,6 +377,11 @@ const (
 	// It can be used as the layout transitioned from
 	// when contents need not be preserved.
 	LUndefined Layout = iota
+	// Shader storage.
+	// Every image view in a descriptor heap that will
+	// be written in shaders must be transitioned to
+	// this layout.
+	LShaderStore
 	// Shader read/sample.
 	// Every image view in a descriptor heap that will
 	// be read/sampled in shaders must be transitioned
