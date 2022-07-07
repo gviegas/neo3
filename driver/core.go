@@ -415,10 +415,9 @@ type Barrier struct {
 // specific image subresource.
 type Transition struct {
 	Barrier
-
 	LayoutBefore Layout
 	LayoutAfter  Layout
-	IView        ImageView
+	View         ImageView
 }
 
 // ShaderCode is the interface that defines a shader binary

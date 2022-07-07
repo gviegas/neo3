@@ -207,7 +207,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 	pib := (*C.VkImageMemoryBarrier2)(C.malloc(C.sizeof_VkImageMemoryBarrier2 * C.size_t(nib)))
 	sib := unsafe.Slice(pib, nib)
 	for i := range sib {
-		view := t[i].IView.(*imageView)
+		view := t[i].View.(*imageView)
 		sib[i] = C.VkImageMemoryBarrier2{
 			sType:            C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 			srcStageMask:     convSync(t[i].SyncBefore),

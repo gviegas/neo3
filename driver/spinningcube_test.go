@@ -476,7 +476,7 @@ func (t *T) renderLoop() {
 				},
 				LayoutBefore: driver.LUndefined,
 				LayoutAfter:  driver.LColorTarget,
-				IView:        t.rt[next].Color,
+				View:         t.rt[next].Color,
 			},
 			{
 				Barrier: driver.Barrier{
@@ -487,7 +487,7 @@ func (t *T) renderLoop() {
 				},
 				LayoutBefore: driver.LUndefined,
 				LayoutAfter:  driver.LDSTarget,
-				IView:        t.dsView,
+				View:         t.dsView,
 			},
 		})
 
@@ -514,7 +514,7 @@ func (t *T) renderLoop() {
 				},
 				LayoutBefore: driver.LColorTarget,
 				LayoutAfter:  driver.LPresent,
-				IView:        t.rt[next].Color,
+				View:         t.rt[next].Color,
 			},
 		})
 
