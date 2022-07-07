@@ -259,17 +259,43 @@ func (t *T) samplingSetup() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	view, err := img.NewView(driver.IView2D, 0, 1, 0, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Images are always GPU private. We need to use a
 	// staging buffer to copy data to an image.
 	if err = t.cb[0].Begin(); err != nil {
 		log.Fatal(err)
 	}
+	t.cb[0].Transition([]driver.Transition{
+		{
+			Barrier: driver.Barrier{
+				SyncAfter:   driver.SCopy,
+				AccessAfter: driver.ACopyWrite,
+			},
+			LayoutBefore: driver.LUndefined,
+			LayoutAfter:  driver.LCopyDst,
+			View:         view,
+		},
+	})
 	t.cb[0].CopyBufToImg(&driver.BufImgCopy{
 		Buf:    buf,
 		Stride: [2]int64{int64(size.Width)},
 		Img:    img,
 		Size:   size,
+	})
+	t.cb[0].Transition([]driver.Transition{
+		{
+			Barrier: driver.Barrier{
+				SyncBefore:   driver.SCopy,
+				AccessBefore: driver.ACopyWrite,
+			},
+			LayoutBefore: driver.LCopyDst,
+			LayoutAfter:  driver.LShaderRead,
+			View:         view,
+		},
 	})
 	if err := t.cb[0].End(); err != nil {
 		log.Fatal(err)
@@ -280,11 +306,6 @@ func (t *T) samplingSetup() {
 		log.Fatal(err)
 	}
 	if err := (<-ch).Err; err != nil {
-		log.Fatal(err)
-	}
-
-	view, err := img.NewView(driver.IView2D, 0, 1, 0, 1)
-	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -469,10 +490,9 @@ func (t *T) renderLoop() {
 		cb.Transition([]driver.Transition{
 			{
 				Barrier: driver.Barrier{
-					SyncBefore:   driver.SColorOutput,
-					SyncAfter:    driver.SColorOutput,
-					AccessBefore: driver.ANone,
-					AccessAfter:  driver.AColorWrite,
+					SyncBefore:  driver.SColorOutput,
+					SyncAfter:   driver.SColorOutput,
+					AccessAfter: driver.AColorWrite,
 				},
 				LayoutBefore: driver.LUndefined,
 				LayoutAfter:  driver.LColorTarget,
