@@ -377,10 +377,10 @@ const (
 	// It can be used as the layout transitioned from
 	// when contents need not be preserved.
 	LUndefined Layout = iota
-	// A layout supporting all types of operations,
-	// but not presentation.
-	LCommon
 	// Shader read/sample.
+	// Every image view in a descriptor heap that will
+	// be read/sampled in shaders must be transitioned
+	// to this layout.
 	LShaderRead
 	// Color render target.
 	// Every ColorTarget view that is used in a
@@ -392,10 +392,18 @@ const (
 	// pass must be transitioned to this layout.
 	LDSTarget
 	// Read-only depth/stencil.
+	// This layout should be used instead of LDSTarget
+	// if the image view is not going to be updated.
 	LDSRead
 	// Source of a copy command.
+	// The source image range defined in ImageCopy and
+	// BufImgCopy must be in this layout when used in
+	// CopyImage and CopyImgToBuf commands.
 	LCopySrc
 	// Destination of a copy command.
+	// The destination image range defined in ImageCopy
+	// and BufImgCopy must be in this layout when used
+	// in CopyImage and CopyBufToImg commands.
 	LCopyDst
 	// Presentation.
 	// A swapchain's view must be transitioned to this
