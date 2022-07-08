@@ -937,6 +937,12 @@ const (
 // an Image resource.
 type ImageView interface {
 	Destroyer
+
+	// Image returns the image from which the view
+	// was created.
+	// This value is immutable for the lifetime of
+	// the ImageView.
+	Image() Image
 }
 
 // Filter is the type of sampler filters.
@@ -1036,6 +1042,6 @@ type Limits struct {
 	// fragment shader.
 	MaxFragmentIn int
 
-	// Maximum dipatch count.
+	// Maximum dispatch count.
 	MaxDispatch [3]int
 }

@@ -212,6 +212,9 @@ func (im *image) NewView(typ driver.ViewType, layer, layers, level, levels int) 
 	}, nil
 }
 
+// Image returns the image from which the view was created.
+func (v *imageView) Image() driver.Image { return v.i }
+
 // Destroy destroys the image view.
 func (v *imageView) Destroy() {
 	if v == nil {
