@@ -207,46 +207,53 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 	pib := (*C.VkImageMemoryBarrier2)(C.malloc(C.sizeof_VkImageMemoryBarrier2 * C.size_t(nib)))
 	sib := unsafe.Slice(pib, nib)
 	for i := range sib {
-		view := t[i].View.(*imageView)
+		img := t[i].Img.(*image)
 		sib[i] = C.VkImageMemoryBarrier2{
-			sType:            C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-			srcStageMask:     convSync(t[i].SyncBefore),
-			srcAccessMask:    convAccess(t[i].AccessBefore),
-			dstStageMask:     convSync(t[i].SyncAfter),
-			dstAccessMask:    convAccess(t[i].AccessAfter),
-			oldLayout:        convLayout(t[i].LayoutBefore),
-			newLayout:        convLayout(t[i].LayoutAfter),
-			image:            view.i.img,
-			subresourceRange: view.subres,
+			sType:         C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+			srcStageMask:  convSync(t[i].SyncBefore),
+			srcAccessMask: convAccess(t[i].AccessBefore),
+			dstStageMask:  convSync(t[i].SyncAfter),
+			dstAccessMask: convAccess(t[i].AccessAfter),
+			oldLayout:     convLayout(t[i].LayoutBefore),
+			newLayout:     convLayout(t[i].LayoutAfter),
+			image:         img.img,
+			subresourceRange: C.VkImageSubresourceRange{
+				aspectMask:     img.subres.aspectMask,
+				baseMipLevel:   C.uint32_t(t[i].Level),
+				levelCount:     C.uint32_t(t[i].Levels),
+				baseArrayLayer: C.uint32_t(t[i].Layer),
+				layerCount:     C.uint32_t(t[i].Layers),
+			},
 		}
-		if view.i.m != nil {
+		if img.m != nil {
 			continue
 		}
-		// For swapchain views, we need to identify
+		// For swapchain images, we need to identify
 		// dependencies to wait on/signal and possibly
 		// perform queue transfers if rendering and
 		// presentation queues differ.
+		sc := img.s
 		viewIdx := -1
-		for i := range view.i.s.views {
-			if view.i.s.views[i] == view {
+		for i := range sc.views {
+			if sc.views[i].(*imageView).i == img {
 				viewIdx = i
 				break
 			}
 		}
 		presIdx := 0
 		for ; presIdx < len(cb.pres); presIdx++ {
-			if cb.pres[presIdx].sc == view.i.s && cb.pres[presIdx].view == viewIdx {
+			if cb.pres[presIdx].sc == sc && cb.pres[presIdx].view == viewIdx {
 				break
 			}
 		}
 		if presIdx == len(cb.pres) {
-			cb.pres = append(cb.pres, presentOp{sc: view.i.s, view: viewIdx})
+			cb.pres = append(cb.pres, presentOp{sc: sc, view: viewIdx})
 		}
-		if !view.i.s.pendOp[viewIdx] {
-			view.i.s.pendOp[viewIdx] = true
+		if !sc.pendOp[viewIdx] {
+			sc.pendOp[viewIdx] = true
 			cb.pres[presIdx].wait = true
 		}
-		if cb.qfam == view.i.s.qfam {
+		if cb.qfam == sc.qfam {
 			if t[i].LayoutAfter == driver.LPresent {
 				cb.pres[presIdx].signal = true
 			}
@@ -261,14 +268,14 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			// This transfer must always be performed when
 			// using different queues.
 			sib[i].srcQueueFamilyIndex = cb.qfam
-			sib[i].dstQueueFamilyIndex = view.i.s.qfam
+			sib[i].dstQueueFamilyIndex = sc.qfam
 			dep := C.VkDependencyInfo{
 				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			syncIdx := view.i.s.viewSync[viewIdx]
-			presAcq := view.i.s.queSync[syncIdx].presAcq.(*cmdBuffer)
+			syncIdx := sc.viewSync[viewIdx]
+			presAcq := sc.queSync[syncIdx].presAcq.(*cmdBuffer)
 			if err := presAcq.Begin(); err != nil {
 				cb.status = cbFailed
 				continue
@@ -285,15 +292,15 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			// Queue transfer from presentation to rendering.
 			// This transfer can be skipped by transitioning
 			// from driver.LUndefined instead.
-			sib[i].srcQueueFamilyIndex = view.i.s.qfam
+			sib[i].srcQueueFamilyIndex = sc.qfam
 			sib[i].dstQueueFamilyIndex = cb.qfam
 			dep := C.VkDependencyInfo{
 				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			syncIdx := view.i.s.viewSync[viewIdx]
-			presRel := view.i.s.queSync[syncIdx].presRel.(*cmdBuffer)
+			syncIdx := sc.viewSync[viewIdx]
+			presRel := sc.queSync[syncIdx].presRel.(*cmdBuffer)
 			if err := presRel.Begin(); err != nil {
 				cb.status = cbFailed
 				continue

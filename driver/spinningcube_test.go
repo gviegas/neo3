@@ -277,7 +277,9 @@ func (t *T) samplingSetup() {
 			},
 			LayoutBefore: driver.LUndefined,
 			LayoutAfter:  driver.LCopyDst,
-			View:         view,
+			Img:          img,
+			Layers:       1,
+			Levels:       1,
 		},
 	})
 	t.cb[0].CopyBufToImg(&driver.BufImgCopy{
@@ -294,7 +296,9 @@ func (t *T) samplingSetup() {
 			},
 			LayoutBefore: driver.LCopyDst,
 			LayoutAfter:  driver.LShaderRead,
-			View:         view,
+			Img:          img,
+			Layers:       1,
+			Levels:       1,
 		},
 	})
 	if err := t.cb[0].End(); err != nil {
@@ -496,7 +500,9 @@ func (t *T) renderLoop() {
 				},
 				LayoutBefore: driver.LUndefined,
 				LayoutAfter:  driver.LColorTarget,
-				View:         t.rt[next].Color,
+				Img:          t.rt[next].Color.Image(),
+				Layers:       1,
+				Levels:       1,
 			},
 			{
 				Barrier: driver.Barrier{
@@ -507,7 +513,9 @@ func (t *T) renderLoop() {
 				},
 				LayoutBefore: driver.LUndefined,
 				LayoutAfter:  driver.LDSTarget,
-				View:         t.dsView,
+				Img:          t.dsImg,
+				Layers:       1,
+				Levels:       1,
 			},
 		})
 
@@ -522,8 +530,8 @@ func (t *T) renderLoop() {
 		cb.Draw(36, 1, 0, 0)
 		cb.EndPass()
 
-		// When done writing to the image view, we transition
-		// it to driver.LPresent so we can present it.
+		// When done writing to the image, we transition it
+		// to driver.LPresent so we can present the result.
 		cb.Transition([]driver.Transition{
 			{
 				Barrier: driver.Barrier{
@@ -534,7 +542,9 @@ func (t *T) renderLoop() {
 				},
 				LayoutBefore: driver.LColorTarget,
 				LayoutAfter:  driver.LPresent,
-				View:         t.rt[next].Color,
+				Img:          t.rt[next].Color.Image(),
+				Layers:       1,
+				Levels:       1,
 			},
 		})
 

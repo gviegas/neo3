@@ -430,7 +430,11 @@ type Transition struct {
 	Barrier
 	LayoutBefore Layout
 	LayoutAfter  Layout
-	View         ImageView
+	Img          Image
+	Layer        int
+	Layers       int
+	Level        int
+	Levels       int
 }
 
 // ShaderCode is the interface that defines a shader binary
@@ -1023,8 +1027,8 @@ type Limits struct {
 	// Maximum range of constant descriptors.
 	MaxDescConstantRange int64
 
-	// Maximum number of color render targets in a
-	// subpass of a render pass.
+	// Maximum number of color render targets in
+	// a render pass.
 	MaxColorTargets int
 	// Maximum width/height in a render pass.
 	MaxRenderSize [2]int

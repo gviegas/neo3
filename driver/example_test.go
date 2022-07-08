@@ -272,7 +272,11 @@ func Example_draw() {
 				},
 				LayoutBefore: driver.LUndefined,
 				LayoutAfter:  driver.LColorTarget,
-				View:         view,
+				Img:          img,
+				Layer:        0,
+				Layers:       1,
+				Level:        0,
+				Levels:       1,
 			},
 		}
 		tcopy = [1]driver.Transition{
@@ -285,7 +289,11 @@ func Example_draw() {
 				},
 				LayoutBefore: driver.LColorTarget,
 				LayoutAfter:  driver.LCopySrc,
-				View:         view,
+				Img:          img,
+				Layer:        0,
+				Layers:       1,
+				Level:        0,
+				Levels:       1,
 			},
 		}
 	)
