@@ -11,7 +11,8 @@ import (
 
 // image implements driver.Image.
 type image struct {
-	m      *memory
+	m      *memory    // Created by Driver.NewImage (s field is nil).
+	s      *swapchain // Created by Driver.NewSwapchain (m field is nil).
 	img    C.VkImage
 	fmt    C.VkFormat
 	subres C.VkImageSubresourceRange
@@ -150,8 +151,7 @@ func (im *image) Destroy() {
 
 // imageView implements driver.ImageView.
 type imageView struct {
-	i      *image     // Created from an image (s field is nil).
-	s      *swapchain // Created from a swapchain (i field is nil).
+	i      *image
 	view   C.VkImageView
 	subres C.VkImageSubresourceRange
 }
@@ -194,8 +194,14 @@ func (im *image) NewView(typ driver.ViewType, layer, layers, level, levels int) 
 			layerCount:     C.uint32_t(layers),
 		},
 	}
+	var dev C.VkDevice
+	if im.m != nil {
+		dev = im.m.d.dev
+	} else {
+		dev = im.s.d.dev
+	}
 	var view C.VkImageView
-	err := checkResult(C.vkCreateImageView(im.m.d.dev, &info, nil, &view))
+	err := checkResult(C.vkCreateImageView(dev, &info, nil, &view))
 	if err != nil {
 		return nil, err
 	}
@@ -212,9 +218,11 @@ func (v *imageView) Destroy() {
 		return
 	}
 	if v.i != nil {
-		C.vkDestroyImageView(v.i.m.d.dev, v.view, nil)
-	} else if v.s != nil {
-		C.vkDestroyImageView(v.s.d.dev, v.view, nil)
+		if v.i.m != nil {
+			C.vkDestroyImageView(v.i.m.d.dev, v.view, nil)
+		} else if v.i.s != nil {
+			C.vkDestroyImageView(v.i.s.d.dev, v.view, nil)
+		}
 	}
 	*v = imageView{}
 }

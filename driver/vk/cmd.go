@@ -216,10 +216,10 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			dstAccessMask:    convAccess(t[i].AccessAfter),
 			oldLayout:        convLayout(t[i].LayoutBefore),
 			newLayout:        convLayout(t[i].LayoutAfter),
+			image:            view.i.img,
 			subresourceRange: view.subres,
 		}
-		if view.i != nil {
-			sib[i].image = view.i.img
+		if view.i.m != nil {
 			continue
 		}
 		// For swapchain views, we need to identify
@@ -227,27 +227,26 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 		// perform queue transfers if rendering and
 		// presentation queues differ.
 		viewIdx := -1
-		for i := range view.s.views {
-			if view.s.views[i] == view {
+		for i := range view.i.s.views {
+			if view.i.s.views[i] == view {
 				viewIdx = i
 				break
 			}
 		}
-		sib[i].image = view.s.imgs[viewIdx]
 		presIdx := 0
 		for ; presIdx < len(cb.pres); presIdx++ {
-			if cb.pres[presIdx].sc == view.s && cb.pres[presIdx].view == viewIdx {
+			if cb.pres[presIdx].sc == view.i.s && cb.pres[presIdx].view == viewIdx {
 				break
 			}
 		}
 		if presIdx == len(cb.pres) {
-			cb.pres = append(cb.pres, presentOp{sc: view.s, view: viewIdx})
+			cb.pres = append(cb.pres, presentOp{sc: view.i.s, view: viewIdx})
 		}
-		if !view.s.pendOp[viewIdx] {
-			view.s.pendOp[viewIdx] = true
+		if !view.i.s.pendOp[viewIdx] {
+			view.i.s.pendOp[viewIdx] = true
 			cb.pres[presIdx].wait = true
 		}
-		if cb.qfam == view.s.qfam {
+		if cb.qfam == view.i.s.qfam {
 			if t[i].LayoutAfter == driver.LPresent {
 				cb.pres[presIdx].signal = true
 			}
@@ -262,14 +261,14 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			// This transfer must always be performed when
 			// using different queues.
 			sib[i].srcQueueFamilyIndex = cb.qfam
-			sib[i].dstQueueFamilyIndex = view.s.qfam
+			sib[i].dstQueueFamilyIndex = view.i.s.qfam
 			dep := C.VkDependencyInfo{
 				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			syncIdx := view.s.viewSync[viewIdx]
-			presAcq := view.s.queSync[syncIdx].presAcq.(*cmdBuffer)
+			syncIdx := view.i.s.viewSync[viewIdx]
+			presAcq := view.i.s.queSync[syncIdx].presAcq.(*cmdBuffer)
 			if err := presAcq.Begin(); err != nil {
 				cb.status = cbFailed
 				continue
@@ -286,15 +285,15 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			// Queue transfer from presentation to rendering.
 			// This transfer can be skipped by transitioning
 			// from driver.LUndefined instead.
-			sib[i].srcQueueFamilyIndex = view.s.qfam
+			sib[i].srcQueueFamilyIndex = view.i.s.qfam
 			sib[i].dstQueueFamilyIndex = cb.qfam
 			dep := C.VkDependencyInfo{
 				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			syncIdx := view.s.viewSync[viewIdx]
-			presRel := view.s.queSync[syncIdx].presRel.(*cmdBuffer)
+			syncIdx := view.i.s.viewSync[viewIdx]
+			presRel := view.i.s.queSync[syncIdx].presRel.(*cmdBuffer)
 			if err := presRel.Begin(); err != nil {
 				cb.status = cbFailed
 				continue

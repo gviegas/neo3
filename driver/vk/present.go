@@ -22,7 +22,6 @@ type swapchain struct {
 	sf    C.VkSurfaceKHR
 	sc    C.VkSwapchainKHR
 	pf    driver.PixelFmt
-	imgs  []C.VkImage
 	views []driver.ImageView
 	mu    sync.Mutex
 
@@ -128,7 +127,9 @@ func (d *Driver) NewSwapchain(win wsi.Window, imageCount int) (driver.Swapchain,
 		}
 		if err := s.syncSetup(); err != nil {
 			for _, v := range s.views {
+				i := v.(*imageView).i
 				v.Destroy()
+				i.Destroy()
 			}
 			C.vkDestroySwapchainKHR(d.dev, s.sc, nil)
 			C.vkDestroySurfaceKHR(d.inst, s.sf, nil)
@@ -284,67 +285,49 @@ fmtLoop:
 }
 
 // newViews creates new image views from s.sc.
-// It sets the imgs and views fields of s.
+// It sets the views field of s.
 // If len(s.views) is not zero, it calls Destroy on each view.
 func (s *swapchain) newViews() error {
+	for i := range s.views {
+		defer s.views[i].(*imageView).i.Destroy() // Unnecessary currently.
+		s.views[i].Destroy()
+	}
 	var nimg C.uint32_t
 	res := C.vkGetSwapchainImagesKHR(s.d.dev, s.sc, &nimg, nil)
 	if err := checkResult(res); err != nil {
 		return err
 	}
-	if len(s.imgs) != int(nimg) {
-		s.imgs = make([]C.VkImage, nimg)
-	}
-	res = C.vkGetSwapchainImagesKHR(s.d.dev, s.sc, &nimg, &s.imgs[0])
+	imgs := make([]C.VkImage, nimg)
+	res = C.vkGetSwapchainImagesKHR(s.d.dev, s.sc, &nimg, &imgs[0])
 	if err := checkResult(res); err != nil {
 		return err
 	}
-	info := C.VkImageViewCreateInfo{
-		sType:    C.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		viewType: C.VK_IMAGE_VIEW_TYPE_2D,
-		format:   convPixelFmt(s.pf),
-		components: C.VkComponentMapping{
-			r: C.VK_COMPONENT_SWIZZLE_IDENTITY,
-			g: C.VK_COMPONENT_SWIZZLE_IDENTITY,
-			b: C.VK_COMPONENT_SWIZZLE_IDENTITY,
-			a: C.VK_COMPONENT_SWIZZLE_IDENTITY,
-		},
-		subresourceRange: C.VkImageSubresourceRange{
+	img := image{
+		s:   s,
+		fmt: convPixelFmt(s.pf),
+		subres: C.VkImageSubresourceRange{
 			aspectMask: C.VK_IMAGE_ASPECT_COLOR_BIT,
 			levelCount: 1,
 			layerCount: 1,
 		},
 	}
-	for i := range s.views {
-		s.views[i].Destroy()
-	}
 	if len(s.views) != int(nimg) {
 		s.views = make([]driver.ImageView, nimg)
 	}
-	for i := range s.views {
-		info.image = s.imgs[i]
-		var view C.VkImageView
-		res := C.vkCreateImageView(s.d.dev, &info, nil, &view)
-		if err := checkResult(res); err != nil {
+	for i := range imgs {
+		img := img
+		img.img = imgs[i]
+		// Notice that view keeps a reference to img.
+		view, err := img.NewView(driver.IView2D, 0, 1, 0, 1)
+		if err != nil {
 			for ; i > 0; i-- {
+				defer s.views[i-1].(*imageView).i.Destroy()
 				s.views[i-1].Destroy()
 			}
 			s.views = nil
 			return err
 		}
-		if s.views[i] == nil {
-			s.views[i] = &imageView{
-				s:      s,
-				view:   view,
-				subres: info.subresourceRange,
-			}
-		} else {
-			*s.views[i].(*imageView) = imageView{
-				s:      s,
-				view:   view,
-				subres: info.subresourceRange,
-			}
-		}
+		s.views[i] = view
 	}
 	return nil
 }
@@ -637,7 +620,9 @@ func (s *swapchain) Destroy() {
 			C.vkDestroySemaphore(s.d.dev, x, nil)
 		}
 		for _, v := range s.views {
+			i := v.(*imageView).i
 			v.Destroy()
+			i.Destroy()
 		}
 		C.vkDestroySwapchainKHR(s.d.dev, s.sc, nil)
 		C.vkDestroySurfaceKHR(s.d.inst, s.sf, nil)
