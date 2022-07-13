@@ -32,3 +32,22 @@ func TestGLTF(t *testing.T) {
 	}
 	t.Log(string(buf.Bytes()))
 }
+
+func TestGLB(t *testing.T) {
+	file, err := os.Open("testdata/cube.glb")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if !IsGLB(file) {
+		t.Fatal("IsGLB(file):\nwant true\nhave false")
+	}
+	r := bytes.NewReader([]byte(`{"asset:"{"version":"2.0"}}`))
+	if IsGLB(r) {
+		t.Fatal("IsGLB(r):\nwant false\nhave true")
+	}
+	file.Seek(0, 0)
+	if !IsGLB(file) {
+		t.Fatal("IsGLB(file):\nwant true\nhave false")
+	}
+}
