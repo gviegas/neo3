@@ -144,13 +144,13 @@ func (w *windowWin32) SetTitle(title string) error {
 
 // Close closes the window.
 func (w *windowWin32) Close() {
-	if w == nil {
-		return
+	if w != nil {
+		closeWindow(w)
+		if w.hwnd != nil {
+			C.DestroyWindow(w.hwnd)
+		}
+		*w = windowWin32{}
 	}
-	if w.hwnd != nil {
-		C.DestroyWindow(w.hwnd)
-	}
-	*w = windowWin32{}
 }
 
 // Width returns the window's width.
