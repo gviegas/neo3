@@ -188,12 +188,71 @@ func wndProcWin32(hwnd C.HWND, msg C.UINT, wprm C.WPARAM, lprm C.LPARAM) C.LRESU
 	//case C.WM_CREATE:
 	//case C.WM_PAINT:
 	//case C.WM_SIZE:
+	case C.WM_KEYDOWN, C.WM_KEYUP:
+		keyMsgWin32(wprm, lprm)
+		return 0
 	case C.WM_DESTROY:
 		C.PostQuitMessage(0)
 		return 0
 	default:
 		return C.DefWindowProc(hwnd, msg, wprm, lprm)
 	}
+}
+
+// keyMsgWin32 handles WM_KEYDOWN/WM_KEYUP messages.
+func keyMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
+	if keyboardHandler == nil {
+		return
+	}
+	const (
+		// ?
+		low  = C.SHORT(1)
+		high = ^low
+	)
+	var modMask Modifier
+	if C.GetKeyState(C.VK_CAPITAL)&low != 0 {
+		modMask |= ModCapsLock
+	}
+	if C.GetKeyState(C.VK_SHIFT)&high != 0 {
+		modMask |= ModShift
+	}
+	if C.GetKeyState(C.VK_CONTROL)&high != 0 {
+		modMask |= ModCtrl
+	}
+	if C.GetKeyState(C.VK_MENU)&high != 0 {
+		modMask |= ModAlt
+	}
+	key := keyFrom(int(wprm))
+	if key == KeyUnknown {
+		scan := C.UINT(lprm >> 16 & 255)
+		switch wprm {
+		case C.VK_SHIFT:
+			if C.MapVirtualKey(C.VK_LSHIFT, C.MAPVK_VK_TO_VSC) == scan {
+				key = KeyLShift
+			} else {
+				key = KeyRShift
+			}
+		case C.VK_CONTROL:
+			if C.MapVirtualKey(C.VK_LCONTROL, C.MAPVK_VK_TO_VSC) == scan {
+				key = KeyLCtrl
+			} else {
+				key = KeyRCtrl
+			}
+		case C.VK_MENU:
+			if C.MapVirtualKey(C.VK_LMENU, C.MAPVK_VK_TO_VSC) == scan {
+				key = KeyLAlt
+			} else {
+				key = KeyRAlt
+			}
+		}
+	}
+	pressed := lprm&(1<<31) == 0
+	keyboardHandler.KeyboardKey(key, pressed, modMask)
+}
+
+// focusMsgWin32 handles WM_SETFOCUS/WM_KILLFOCUS messages.
+func focusMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
+	// TODO
 }
 
 // setAppNameWin32 updates the string used to identify the
