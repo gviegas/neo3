@@ -15,6 +15,7 @@ import "C"
 
 import (
 	"errors"
+	"unicode/utf16"
 	"unsafe"
 )
 
@@ -29,14 +30,7 @@ func initWin32() error {
 	if hinst = C.GetModuleHandle(nil); hinst == nil {
 		return errors.New("Failed to obtain Win32 instance handle")
 	}
-	// TODO
-	n := C.size_t(unsafe.Sizeof(*className) * 16)
-	className = C.LPCWSTR(C.malloc(n))
-	s := unsafe.Slice(className, n)
-	s[0] = 'w'
-	s[1] = 's'
-	s[2] = 'i'
-	s[3] = 0
+	className = stringToLPCWSTR("scene/wsi")
 	wc := C.WNDCLASS{
 		style:         C.CS_HREDRAW | C.CS_VREDRAW,
 		lpfnWndProc:   C.WNDPROC(C.wndProcWrapper),
@@ -93,17 +87,17 @@ type windowWin32 struct {
 
 // newWindowWin32 creates a new window.
 func newWindowWin32(width, height int, title string) (Window, error) {
-	// TODO
 	var (
 		estyle = C.DWORD(0)
-		ptitle = className // C.LPCWSTR(nil)
+		wname  = stringToLPCWSTR(title)
 		style  = C.DWORD(C.WS_OVERLAPPEDWINDOW)
 		x      = C.int(C.CW_USEDEFAULT)
 		y      = C.int(C.CW_USEDEFAULT)
 		w      = C.int(width)
 		h      = C.int(height)
 	)
-	hwnd := C.CreateWindowEx(estyle, className, ptitle, style, x, y, w, h, nil, nil, hinst, nil)
+	hwnd := C.CreateWindowEx(estyle, className, wname, style, x, y, w, h, nil, nil, hinst, nil)
+	C.free(unsafe.Pointer(wname))
 	if hwnd == nil {
 		return nil, errors.New("Failed to create Win32 window")
 	}
@@ -207,4 +201,26 @@ func wndProcWin32(hwnd C.HWND, msg C.UINT, wprm C.WPARAM, lprm C.LPARAM) C.LRESU
 func setAppNameWin32(s string) {
 	// TODO
 	panic("not implemented")
+}
+
+// stringToLPCWSTR converts s to UTF16 and stores it
+// in the C heap.
+// Call free to deallocate the wide string.
+func stringToLPCWSTR(s string) C.LPCWSTR {
+	var n int
+	for ; n < len(s); n++ {
+		if s[n] == '\x00' {
+			break
+		}
+	}
+	if n == 0 {
+		return nil
+	}
+	n++
+	var ws C.LPCWSTR
+	sz := C.size_t(unsafe.Sizeof(*ws) * uintptr(n))
+	ws = C.LPCWSTR(C.malloc(sz))
+	u16 := utf16.Encode([]rune(s[:n-1] + "\x00"))
+	C.memcpy(unsafe.Pointer(ws), unsafe.Pointer(&u16[0]), sz)
+	return ws
 }
