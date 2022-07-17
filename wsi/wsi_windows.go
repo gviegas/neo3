@@ -197,6 +197,53 @@ func wndProcWin32(hwnd C.HWND, msg C.UINT, wprm C.WPARAM, lprm C.LPARAM) C.LRESU
 	case C.WM_KILLFOCUS:
 		killFocusMsgWin32(hwnd)
 		return 0
+	case C.WM_LBUTTONDOWN, C.WM_LBUTTONDBLCLK:
+		buttonMsgWin32(lprm, BtnLeft, true)
+		return 0
+	case C.WM_LBUTTONUP:
+		buttonMsgWin32(lprm, BtnLeft, false)
+		return 0
+	case C.WM_MBUTTONDOWN, C.WM_MBUTTONDBLCLK:
+		buttonMsgWin32(lprm, BtnMiddle, true)
+		return 0
+	case C.WM_MBUTTONUP:
+		buttonMsgWin32(lprm, BtnMiddle, false)
+		return 0
+	case C.WM_RBUTTONDOWN, C.WM_RBUTTONDBLCLK:
+		buttonMsgWin32(lprm, BtnRight, true)
+		return 0
+	case C.WM_RBUTTONUP:
+		buttonMsgWin32(lprm, BtnRight, false)
+		return 0
+	case C.WM_XBUTTONDOWN, C.WM_XBUTTONDBLCLK:
+		btn := BtnSide
+		switch x := C.WORD(wprm >> 16 & 0xffff); {
+		case x == C.XBUTTON1:
+			btn = BtnForward
+		case x == C.XBUTTON2:
+			btn = BtnBackward
+		}
+		buttonMsgWin32(lprm, btn, true)
+		return C.TRUE
+	case C.WM_XBUTTONUP:
+		btn := BtnSide
+		switch x := C.WORD(wprm >> 16 & 0xffff); {
+		case x == C.XBUTTON1:
+			btn = BtnForward
+		case x == C.XBUTTON2:
+			btn = BtnBackward
+		}
+		buttonMsgWin32(lprm, btn, false)
+		return C.TRUE
+	case C.WM_MOUSEMOVE:
+		mouseMoveMsgWin32(lprm)
+		return 0
+	case C.WM_MOUSEHOVER:
+		// TODO
+		return 0
+	case C.WM_MOUSELEAVE:
+		// TODO
+		return 0
 	case C.WM_DESTROY:
 		C.PostQuitMessage(0)
 		return 0
@@ -285,6 +332,24 @@ func killFocusMsgWin32(hwnd C.HWND) {
 		if w := windowFromWin32(hwnd); w != nil {
 			keyboardHandler.KeyboardOut(w)
 		}
+	}
+}
+
+// buttonMsgWin32 handles WM_{L,M,R,X}BUTTON{DOWN,DBLCLK,UP} messages.
+func buttonMsgWin32(lprm C.LPARAM, btn Button, pressed bool) {
+	if pointerHandler != nil {
+		x := int(C.SHORT(lprm & 0xffff))
+		y := int(C.SHORT(lprm >> 16 & 0xffff))
+		pointerHandler.PointerButton(btn, pressed, x, y)
+	}
+}
+
+// mouseMoveMsgWin32 handles WM_MOUSEMOVE messages.
+func mouseMoveMsgWin32(lprm C.LPARAM) {
+	if pointerHandler != nil {
+		newX := int(C.SHORT(lprm & 0xffff))
+		newY := int(C.SHORT(lprm >> 16 & 0xffff))
+		pointerHandler.PointerMotion(newX, newY)
 	}
 }
 
