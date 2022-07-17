@@ -191,12 +191,32 @@ func wndProcWin32(hwnd C.HWND, msg C.UINT, wprm C.WPARAM, lprm C.LPARAM) C.LRESU
 	case C.WM_KEYDOWN, C.WM_KEYUP:
 		keyMsgWin32(wprm, lprm)
 		return 0
+	case C.WM_SETFOCUS:
+		setFocusMsgWin32(hwnd)
+		return 0
+	case C.WM_KILLFOCUS:
+		killFocusMsgWin32(hwnd)
+		return 0
 	case C.WM_DESTROY:
 		C.PostQuitMessage(0)
 		return 0
 	default:
 		return C.DefWindowProc(hwnd, msg, wprm, lprm)
 	}
+}
+
+// windowFromWin32 returns the window in createdWindows
+// whose hwnd field matches hwnd, or nil if none does.
+func windowFromWin32(hwnd C.HWND) Window {
+	if hwnd == nil {
+		return nil
+	}
+	for _, w := range createdWindows {
+		if w != nil && w.(*windowWin32).hwnd == hwnd {
+			return w
+		}
+	}
+	return nil
 }
 
 // keyMsgWin32 handles WM_KEYDOWN/WM_KEYUP messages.
@@ -250,9 +270,22 @@ func keyMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
 	keyboardHandler.KeyboardKey(key, pressed, modMask)
 }
 
-// focusMsgWin32 handles WM_SETFOCUS/WM_KILLFOCUS messages.
-func focusMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
-	// TODO
+// setFocusMsgWin32 handles WM_SETFOCUS messages.
+func setFocusMsgWin32(hwnd C.HWND) {
+	if keyboardHandler != nil {
+		if w := windowFromWin32(hwnd); w != nil {
+			keyboardHandler.KeyboardIn(w)
+		}
+	}
+}
+
+// killFocusMsgWin32 handles WM_KILLFOCUS messages.
+func killFocusMsgWin32(hwnd C.HWND) {
+	if keyboardHandler != nil {
+		if w := windowFromWin32(hwnd); w != nil {
+			keyboardHandler.KeyboardOut(w)
+		}
+	}
 }
 
 // setAppNameWin32 updates the string used to identify the
