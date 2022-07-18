@@ -447,3 +447,19 @@ func stringToLPCWSTR(s string) C.LPCWSTR {
 	C.memcpy(unsafe.Pointer(ws), unsafe.Pointer(&u16[0]), sz)
 	return ws
 }
+
+// HinstWin32 returns the Win32 instance/module handle (HINSTANCE).
+// It must not be called if Win32 is not the platform in use.
+func HinstWin32() unsafe.Pointer { return unsafe.Pointer(hinst) }
+
+// HwndWin32 returns the Win32 window handle (HWND) of the
+// given window.
+// win must refer to a valid window created by NewWindow
+// (note that close invalidates the window).
+// It must not be called if Win32 is not the platform in use.
+func HwndWin32(win Window) unsafe.Pointer {
+	if win != nil {
+		return unsafe.Pointer(win.(*windowWin32).hwnd)
+	}
+	return nil
+}
