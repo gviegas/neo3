@@ -187,7 +187,12 @@ func wndProcWin32(hwnd C.HWND, msg C.UINT, wprm C.WPARAM, lprm C.LPARAM) C.LRESU
 	switch msg {
 	//case C.WM_CREATE:
 	//case C.WM_PAINT:
-	//case C.WM_SIZE:
+	case C.WM_CLOSE:
+		closeMsgWin32(hwnd)
+		return 0
+	case C.WM_SIZE:
+		sizeMsgWin32(hwnd, lprm)
+		return 0
 	case C.WM_KEYDOWN, C.WM_KEYUP:
 		keyMsgWin32(wprm, lprm)
 		return 0
@@ -261,6 +266,28 @@ func windowFromWin32(hwnd C.HWND) Window {
 		}
 	}
 	return nil
+}
+
+// closeMsgWin32 handles WM_CLOSE messages.
+func closeMsgWin32(hwnd C.HWND) {
+	if w := windowFromWin32(hwnd); w != nil {
+		if windowHandler != nil {
+			windowHandler.WindowClose(w)
+		}
+		w.Close()
+	}
+}
+
+// sizeMsgWin32 handles WM_SIZE messages.
+func sizeMsgWin32(hwnd C.HWND, lprm C.LPARAM) {
+	if w := windowFromWin32(hwnd); w != nil {
+		w := w.(*windowWin32)
+		w.width = int(lprm & 0xffff)
+		w.height = int(lprm >> 16 & 0xffff)
+		if windowHandler != nil {
+			windowHandler.WindowResize(w, w.width, w.height)
+		}
+	}
 }
 
 // keyMsgWin32 handles WM_KEYDOWN/WM_KEYUP messages.
