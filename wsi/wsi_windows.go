@@ -236,13 +236,10 @@ func wndProcWin32(hwnd C.HWND, msg C.UINT, wprm C.WPARAM, lprm C.LPARAM) C.LRESU
 		buttonMsgWin32(lprm, btn, false)
 		return C.TRUE
 	case C.WM_MOUSEMOVE:
-		mouseMoveMsgWin32(lprm)
-		return 0
-	case C.WM_MOUSEHOVER:
-		// TODO
+		mouseMoveMsgWin32(hwnd, lprm)
 		return 0
 	case C.WM_MOUSELEAVE:
-		// TODO
+		mouseLeaveMsgWin32(hwnd)
 		return 0
 	case C.WM_DESTROY:
 		C.PostQuitMessage(0)
@@ -344,12 +341,42 @@ func buttonMsgWin32(lprm C.LPARAM, btn Button, pressed bool) {
 	}
 }
 
+// Tracks the window which the mouse is over, if any.
+var hwndMouse C.HWND
+
 // mouseMoveMsgWin32 handles WM_MOUSEMOVE messages.
-func mouseMoveMsgWin32(lprm C.LPARAM) {
+func mouseMoveMsgWin32(hwnd C.HWND, lprm C.LPARAM) {
 	if pointerHandler != nil {
 		newX := int(C.SHORT(lprm & 0xffff))
 		newY := int(C.SHORT(lprm >> 16 & 0xffff))
+		if hwndMouse != hwnd {
+			tme := C.TRACKMOUSEEVENT{
+				cbSize:    C.sizeof_TRACKMOUSEEVENT,
+				dwFlags:   C.TME_LEAVE,
+				hwndTrack: hwnd,
+				//dwHoverTime: C.HOVER_DEFAULT,
+			}
+			if C.TrackMouseEvent(&tme) == C.FALSE {
+				// ?
+			}
+			hwndMouse = hwnd
+			if w := windowFromWin32(hwnd); w != nil {
+				pointerHandler.PointerIn(w, newX, newY)
+			}
+		}
 		pointerHandler.PointerMotion(newX, newY)
+	}
+}
+
+// mouseLeaveMsgWin32 handles WM_MOUSELEAVE messages.
+func mouseLeaveMsgWin32(hwnd C.HWND) {
+	if hwndMouse == hwnd {
+		hwndMouse = nil
+	}
+	if pointerHandler != nil {
+		if w := windowFromWin32(hwnd); w != nil {
+			pointerHandler.PointerOut(w)
+		}
 	}
 }
 
