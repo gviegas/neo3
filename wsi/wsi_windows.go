@@ -132,14 +132,37 @@ func (w *windowWin32) Unmap() error {
 
 // Resize resizes the window.
 func (w *windowWin32) Resize(width, height int) error {
-	// TODO
-	panic("not implemented")
+	if width == w.width && height == w.height {
+		return nil
+	}
+	var x, y C.int
+	var rect C.RECT
+	if C.GetWindowRect(w.hwnd, &rect) != C.FALSE {
+		x = C.int(rect.left)
+		y = C.int(rect.top)
+	}
+	if C.MoveWindow(w.hwnd, x, y, C.int(width), C.int(height), C.TRUE) == C.FALSE {
+		return errors.New("Failed to resize Win32 window")
+	}
+	w.width = width
+	w.height = height
+	return nil
 }
 
 // SetTitle sets the window's title.
 func (w *windowWin32) SetTitle(title string) error {
-	// TODO
-	panic("not implemented")
+	if title == w.title {
+		return nil
+	}
+	var err error
+	ws := stringToLPCWSTR(title)
+	if C.SetWindowText(w.hwnd, ws) == C.FALSE {
+		err = errors.New("Failed to set title of Win32 window")
+	} else {
+		w.title = title
+	}
+	C.free(unsafe.Pointer(ws))
+	return err
 }
 
 // Close closes the window.
@@ -154,26 +177,16 @@ func (w *windowWin32) Close() {
 }
 
 // Width returns the window's width.
-func (w *windowWin32) Width() int {
-	// TODO
-	panic("not implemented")
-}
+func (w *windowWin32) Width() int { return w.width }
 
 // Height returns the window's height.
-func (w *windowWin32) Height() int {
-	// TODO
-	panic("not implemented")
-}
+func (w *windowWin32) Height() int { return w.height }
 
 // Title returns the window's title.
-func (w *windowWin32) Title() string {
-	// TODO
-	panic("not implemented")
-}
+func (w *windowWin32) Title() string { return w.title }
 
 // dispatchWin32 dispatches queued events.
 func dispatchWin32() {
-	// TODO
 	var msg C.MSG
 	for C.PeekMessage(&msg, nil, 0, 0, C.PM_REMOVE) != 0 {
 		C.TranslateMessage(&msg)
@@ -183,10 +196,10 @@ func dispatchWin32() {
 
 //export wndProcWin32
 func wndProcWin32(hwnd C.HWND, msg C.UINT, wprm C.WPARAM, lprm C.LPARAM) C.LRESULT {
-	// TODO
 	switch msg {
 	//case C.WM_CREATE:
 	//case C.WM_PAINT:
+	//case C.WM_WINDOWPOSCHANGED:
 	case C.WM_CLOSE:
 		closeMsgWin32(hwnd)
 		return 0
@@ -411,7 +424,6 @@ func mouseLeaveMsgWin32(hwnd C.HWND) {
 // application.
 func setAppNameWin32(s string) {
 	// TODO
-	panic("not implemented")
 }
 
 // stringToLPCWSTR converts s to UTF16 and stores it
