@@ -278,7 +278,10 @@ func (w *windowXCB) Resize(width, height int) error {
 // SetTitle sets the title.
 func (w *windowXCB) SetTitle(title string) error {
 	if title != w.title {
-		return setTitleXCB(title, w.id)
+		if err := setTitleXCB(title, w.id); err != nil {
+			return err
+		}
+		w.title = title
 	}
 	return nil
 }
