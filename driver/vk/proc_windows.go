@@ -13,11 +13,9 @@ import (
 	"github.com/gviegas/scene/driver"
 )
 
-// BUG: Not tested.
-
 // proc is responsible for loading and unloading the Vulkan library.
 type proc struct {
-	h unsafe.Pointer
+	h C.HMODULE
 }
 
 // open loads the Vulkan library and fetches vkGetInstanceProcAddr.
@@ -36,7 +34,7 @@ func (p *proc) open() error {
 		return driver.ErrNotInstalled
 	}
 	p.h = h
-	C.getInstanceProcAddr = C.PFN_getInstanceProcAddr(f)
+	C.getInstanceProcAddr = C.PFN_vkGetInstanceProcAddr(f)
 	return nil
 }
 
