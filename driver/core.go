@@ -90,23 +90,23 @@ type WorkItem struct {
 // recording. Then, if it succeeds:
 //
 // To record rendering commands:
-// 	1. call BeginPass
-// 	2. call Set* methods to configure rendering state
-// 	3. call Draw* commands
-// 	4. repeat 2-3 as needed
-// 	5. call EndPass
-// 	6. repeat 1-5 as needed
+//  1. call BeginPass
+//  2. call Set* methods to configure rendering state
+//  3. call Draw* commands
+//  4. repeat 2-3 as needed
+//  5. call EndPass
+//  6. repeat 1-5 as needed
 //
 // To record compute commands:
-//	1. call Set* methods to configure compute state
-//	2. call Dispatch commands
-//	3. repeat 1-2 as needed
+//  1. call Set* methods to configure compute state
+//  2. call Dispatch commands
+//  3. repeat 1-2 as needed
 //
 // To record copy commands:
-//	1. call Copy*/Fill commands
+//  1. call Copy*/Fill commands
 //
 // To record synchronization commands:
-//	1. call Barrier/Transition commands
+//  1. call Barrier/Transition commands
 //
 // Finally, call End and, if it succeeds, GPU.Commit.
 // Note that BeginPass commands must not be nested,
