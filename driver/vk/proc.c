@@ -190,10 +190,10 @@ PFN_vkCreateWin32SurfaceKHR createWin32SurfaceKHR = NULL;
 #ifdef _WIN32
 PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR getPhysicalDeviceWin32PresentationSupportKHR = NULL;
 #endif
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 PFN_vkCreateXcbSurfaceKHR createXcbSurfaceKHR = NULL;
 #endif
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR getPhysicalDeviceXcbPresentationSupportKHR = NULL;
 #endif
 PFN_vkGetPhysicalDeviceFeatures2 getPhysicalDeviceFeatures2 = NULL;
@@ -371,11 +371,11 @@ void getInstanceProcs(VkInstance dh) {
 	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceWin32PresentationSupportKHR");
 	getPhysicalDeviceWin32PresentationSupportKHR = (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)fp;
 #endif
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 	fp = getInstanceProcAddr(dh, "vkCreateXcbSurfaceKHR");
 	createXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)fp;
 #endif
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceXcbPresentationSupportKHR");
 	getPhysicalDeviceXcbPresentationSupportKHR = (PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)fp;
 #endif
@@ -981,10 +981,10 @@ void clearProcs(void) {
 #ifdef _WIN32
 	getPhysicalDeviceWin32PresentationSupportKHR = NULL;
 #endif
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 	createXcbSurfaceKHR = NULL;
 #endif
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 	getPhysicalDeviceXcbPresentationSupportKHR = NULL;
 #endif
 	getPhysicalDeviceFeatures2 = NULL;

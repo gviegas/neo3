@@ -4,11 +4,17 @@
 #define PROC_H
 
 #define VK_NO_PROTOTYPES
-#ifndef __linux__
-# error run procgen.go to generate the correct C files for linux
+#if !defined(__ANDROID__) && !defined(_WIN32)
+# define VK_USE_PLATFORM_XCB_KHR
+# ifdef __linux__
+#  define VK_USE_PLATFORM_WAYLAND_KHR
+# endif
+#elif defined(__ANDROID__)
+# define VK_USE_PLATFORM_ANDROID_KHR
+#elif defined(_WIN32)
+# define VK_USE_PLATFORM_WIN32_KHR
 #endif
-#define VK_USE_PLATFORM_WAYLAND_KHR
-#define VK_USE_PLATFORM_XCB_KHR
+
 #include <vulkan/vulkan.h>
 
 // Function pointers.
@@ -200,10 +206,10 @@ extern PFN_vkCreateWin32SurfaceKHR createWin32SurfaceKHR;
 #ifdef _WIN32
 extern PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR getPhysicalDeviceWin32PresentationSupportKHR;
 #endif
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 extern PFN_vkCreateXcbSurfaceKHR createXcbSurfaceKHR;
 #endif
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 extern PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR getPhysicalDeviceXcbPresentationSupportKHR;
 #endif
 extern PFN_vkGetPhysicalDeviceFeatures2 getPhysicalDeviceFeatures2;
@@ -1137,14 +1143,14 @@ static inline VkBool32 vkGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysical
 #endif
 
 // vkCreateXcbSurfaceKHR
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 static inline VkResult vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
 	return createXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
 }
 #endif
 
 // vkGetPhysicalDeviceXcbPresentationSupportKHR
-#ifdef __linux__
+#if !defined(__ANDROID__) && !defined(_WIN32)
 static inline VkBool32 vkGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, xcb_connection_t* connection, xcb_visualid_t visual_id) {
 	return getPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id);
 }
