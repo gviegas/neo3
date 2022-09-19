@@ -32,6 +32,7 @@ type (
 		Param   []Param  `xml:"param"`
 		ignored bool     // Commands marked as ignored will not be loaded.
 		kind    int      // Distinguishes global, instance and device commands.
+		guard   string   // Conditional compilation of commands.
 	}
 	Param struct {
 		XMLName xml.Name `xml:"param"`
@@ -183,42 +184,37 @@ func (cs *Commands) Filter() {
 		"vkGetSwapchainImagesKHR",
 		"vkQueuePresentKHR",
 	}
-
-	switch runtime.GOOS {
-	case "android":
+	wantAndroid := []string{
 		// From VK_KHR_android_surface:
-		want = append(want, "vkCreateAndroidSurfaceKHR")
-	case "windows":
+		"vkCreateAndroidSurfaceKHR",
+	}
+	wantLinux := []string{
+		// From VK_KHR_wayland_surface:
+		"vkCreateWaylandSurfaceKHR",
+		"vkGetPhysicalDeviceWaylandPresentationSupportKHR",
+		// From VK_KHR_xbc_surface:
+		"vkCreateXcbSurfaceKHR",
+		"vkGetPhysicalDeviceXcbPresentationSupportKHR",
+	}
+	wantWin32 := []string{
 		// From VK_KHR_win32_surface:
-		want = append(want, "vkCreateWin32SurfaceKHR", "vkGetPhysicalDeviceWin32PresentationSupportKHR")
-	case "linux":
-		more := []string{
-			// From VK_KHR_wayland_surface:
-			"vkCreateWaylandSurfaceKHR",
-			"vkGetPhysicalDeviceWaylandPresentationSupportKHR",
-			// From VK_KHR_xbc_surface:
-			"vkCreateXcbSurfaceKHR",
-			"vkGetPhysicalDeviceXcbPresentationSupportKHR",
-		}
-		want = append(want, more...)
-		fallthrough
-	default:
-		more := []string{
-			// From VK_KHR_display:
-			"vkCreateDisplayModeKHR",
-			"vkCreateDisplayPlaneSurfaceKHR",
-			"vkGetDisplayModePropertiesKHR",
-			"vkGetDisplayPlaneCapabilitiesKHR",
-			"vkGetDisplayPlaneSupportedDisplaysKHR",
-			"vkGetPhysicalDeviceDisplayPlanePropertiesKHR",
-			"vkGetPhysicalDeviceDisplayPropertiesKHR",
-			// From VK_KHR_display_swapchain:
-			"vkCreateSharedSwapchainsKHR",
-		}
-		want = append(want, more...)
+		"vkCreateWin32SurfaceKHR",
+		"vkGetPhysicalDeviceWin32PresentationSupportKHR",
+	}
+	wantGeneric := []string{
+		// From VK_KHR_display:
+		"vkCreateDisplayModeKHR",
+		"vkCreateDisplayPlaneSurfaceKHR",
+		"vkGetDisplayModePropertiesKHR",
+		"vkGetDisplayPlaneCapabilitiesKHR",
+		"vkGetDisplayPlaneSupportedDisplaysKHR",
+		"vkGetPhysicalDeviceDisplayPlanePropertiesKHR",
+		"vkGetPhysicalDeviceDisplayPropertiesKHR",
+		// From VK_KHR_display_swapchain:
+		"vkCreateSharedSwapchainsKHR",
 	}
 
-	// Ignore all extension commands not present in want.
+	// Ignore all extension commands not present in want*.
 	// Names of extension commands end with an uppercase string (a tag).
 	// As of v1.3, all core commands end with either a lowercase letter or a
 	// number, so it is not necessary to decode the tags from XML for comparison.
@@ -233,6 +229,30 @@ cmdLoop:
 		}
 		for j := range want {
 			if cs.Command[i].Name == want[j] {
+				continue cmdLoop
+			}
+		}
+		for j := range wantAndroid {
+			if cs.Command[i].Name == wantAndroid[j] {
+				cs.Command[i].guard = "#ifdef __ANDROID__\n"
+				continue cmdLoop
+			}
+		}
+		for j := range wantLinux {
+			if cs.Command[i].Name == wantLinux[j] {
+				cs.Command[i].guard = "#ifdef __linux__\n"
+				continue cmdLoop
+			}
+		}
+		for j := range wantWin32 {
+			if cs.Command[i].Name == wantWin32[j] {
+				cs.Command[i].guard = "#ifdef _WIN32\n"
+				continue cmdLoop
+			}
+		}
+		for j := range wantGeneric {
+			if cs.Command[i].Name == wantGeneric[j] {
+				cs.Command[i].guard = "#if !defined(__ANDROID__) && !defined(_WIN32)\n"
 				continue cmdLoop
 			}
 		}
@@ -293,6 +313,13 @@ func (cs *Commands) GenFPs(decl bool) string {
 	for i := range cs.Command {
 		v := cs.Command[i].GenFP()
 		if v != "" {
+			var end string
+			if cs.Command[i].guard != "" {
+				s.WriteString(cs.Command[i].guard)
+				end = ";\n#endif\n"
+			} else {
+				end = ";\n"
+			}
 			if decl {
 				s.WriteString("extern ")
 				s.WriteString(v)
@@ -300,7 +327,7 @@ func (cs *Commands) GenFPs(decl bool) string {
 				s.WriteString(v)
 				s.WriteString(" = NULL")
 			}
-			s.WriteString(";\n")
+			s.WriteString(end)
 		}
 	}
 	return s.String()[:len(s.String())-1]
@@ -312,6 +339,13 @@ func (c *Command) GenCWrapper() string {
 		return ""
 	}
 	var s strings.Builder
+	var end string
+	if c.guard != "" {
+		s.WriteString(c.guard)
+		end = ");\n}\n#endif"
+	} else {
+		end = ");\n}"
+	}
 	s.WriteString("static inline ")
 	s.WriteString(c.Type)
 	s.WriteByte(' ')
@@ -340,7 +374,7 @@ func (c *Command) GenCWrapper() string {
 			s.WriteString(", ")
 		}
 	}
-	s.WriteString(");\n}")
+	s.WriteString(end)
 	return s.String()
 }
 
@@ -370,6 +404,11 @@ func (c *Command) GenCGetProc() string {
 		return ""
 	}
 	var s strings.Builder
+	var end string
+	if c.guard != "" {
+		s.WriteString(c.guard)
+		end = "#endif\n"
+	}
 	s.WriteString("\tfp = ")
 	switch c.kind {
 	case Global:
@@ -386,6 +425,7 @@ func (c *Command) GenCGetProc() string {
 	s.WriteString(" = (PFN_")
 	s.WriteString(c.Name)
 	s.WriteString(")fp;\n")
+	s.WriteString(end)
 	return s.String()
 }
 
@@ -431,9 +471,15 @@ func (c *Command) GenCClearProc() string {
 		return ""
 	}
 	var s strings.Builder
+	var end string
+	if c.guard != "" {
+		s.WriteString(c.guard)
+		end = "#endif\n"
+	}
 	s.WriteByte('\t')
 	s.Write(c.FPName())
 	s.WriteString(" = NULL;\n")
+	s.WriteString(end)
 	return s.String()
 }
 
