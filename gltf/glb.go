@@ -4,6 +4,7 @@ package gltf
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 )
 
@@ -50,4 +51,25 @@ func IsGLB(r io.Reader) bool {
 	default:
 		return true
 	}
+}
+
+// SeekJSON seeks into r until it finds the beginning
+// of the JSON string.
+// If successful, it returns the length of the chunk.
+// r must refer to an unread GLB blob.
+func SeekJSON(r io.Reader) (n int, err error) {
+	if !IsGLB(r) {
+		err = errors.New("gltf: not a GLB blob")
+		return
+	}
+	var c glbChunk
+	err = binary.Read(r, binary.LittleEndian, c[:])
+	switch {
+	case err != nil:
+	case c[chunkLength] == 0 || c[chunkType] != typeJSON:
+		err = errors.New("gltf: invalid GLB chunk")
+	default:
+		n = int(c[chunkLength])
+	}
+	return
 }
