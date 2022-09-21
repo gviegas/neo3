@@ -47,7 +47,32 @@ func TestGLB(t *testing.T) {
 		t.Fatal("IsGLB(r):\nwant false\nhave true")
 	}
 	file.Seek(0, 0)
-	if !IsGLB(file) {
-		t.Fatal("IsGLB(file):\nwant true\nhave false")
+	n, err := SeekJSON(file)
+	if err != nil {
+		t.Fatal(err)
 	}
+	if n <= 0 {
+		t.Fatal("SeekJSON(file):\nwant n > 0\nhave 0")
+	}
+	b := make([]byte, n)
+	n, err = file.Read(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gltf, err := Decode(bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	err = Encode(&buf, gltf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b = append(b[:0], buf.Bytes()...)
+	buf.Reset()
+	err = json.Indent(&buf, b, "", "    ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(buf.Bytes()))
 }
