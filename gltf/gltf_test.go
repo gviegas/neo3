@@ -46,6 +46,8 @@ func TestGLB(t *testing.T) {
 	if IsGLB(r) {
 		t.Fatal("IsGLB(r):\nwant false\nhave true")
 	}
+
+	// SeekJSON
 	file.Seek(0, 0)
 	n, err := SeekJSON(file)
 	if err != nil {
@@ -75,4 +77,27 @@ func TestGLB(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(string(buf.Bytes()))
+
+	// SeekBIN
+	file.Seek(0, 0)
+	n, err = SeekBIN(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := gltf.Buffers[0].ByteLength
+	if pad := want % 4; pad != 0 {
+		want += 4 - pad
+	}
+	if want != int64(n) {
+		t.Fatalf("SeekBIN(file):\nwant n == %d\nhave n == %d", want, n)
+	}
+	if n > len(b) {
+		b = make([]byte, n)
+	} else {
+		b = b[:n]
+	}
+	n, err = file.Read(b)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
