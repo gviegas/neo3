@@ -73,3 +73,40 @@ func SeekJSON(r io.Reader) (n int, err error) {
 	}
 	return
 }
+
+// SeekBIN seeks into r until if finds the beginning
+// of the binary buffer.
+// If successful, it returns the length of the chunk,
+// which may be zero.
+// Note that, the BIN chunk being optional, an error
+// of io.EOF may indicate its absence.
+// r must refer to an unread GLB blob.
+func SeekBIN(r io.Reader) (n int, err error) {
+	n, err = SeekJSON(r)
+	if err != nil {
+		return
+	}
+	if s, ok := r.(io.Seeker); ok {
+		_, err = s.Seek(int64(n), io.SeekCurrent)
+	} else {
+		b := make([]byte, n)
+		for len(b) > 0 && err == nil {
+			n, err = r.Read(b)
+			b = b[n:]
+		}
+	}
+	n = 0
+	if err != nil {
+		return
+	}
+	var c glbChunk
+	err = binary.Read(r, binary.LittleEndian, c[:])
+	switch {
+	case err != nil:
+	case c[chunkType] != typeBIN:
+		err = errors.New("gltf: invalid GLB chunk")
+	default:
+		n = int(c[chunkLength])
+	}
+	return
+}
