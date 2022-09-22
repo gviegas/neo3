@@ -56,10 +56,20 @@ func IsGLB(r io.Reader) bool {
 // SeekJSON seeks into r until it finds the beginning
 // of the JSON string.
 // If successful, it returns the length of the chunk.
-// r must refer to an unread GLB blob.
-func SeekJSON(r io.Reader) (n int, err error) {
-	if !IsGLB(r) {
-		err = errors.New("gltf: not a GLB blob")
+// whence must be either io.SeekStart, indicating that
+// r refers to an unread GLB blob, or io.SeekCurrent,
+// in which case r is assumed to be positioned at the
+// beginning of the JSON chunk.
+func SeekJSON(r io.Reader, whence int) (n int, err error) {
+	switch whence {
+	case io.SeekStart:
+		if !IsGLB(r) {
+			err = errors.New("gltf: not a GLB blob")
+			return
+		}
+	case io.SeekCurrent:
+	default:
+		err = errors.New("gltf: invalid whence value")
 		return
 	}
 	var c glbChunk
@@ -80,23 +90,33 @@ func SeekJSON(r io.Reader) (n int, err error) {
 // which may be zero.
 // Note that, the BIN chunk being optional, an error
 // of io.EOF may indicate its absence.
-// r must refer to an unread GLB blob.
-func SeekBIN(r io.Reader) (n int, err error) {
-	n, err = SeekJSON(r)
-	if err != nil {
-		return
-	}
-	if s, ok := r.(io.Seeker); ok {
-		_, err = s.Seek(int64(n), io.SeekCurrent)
-	} else {
-		b := make([]byte, n)
-		for len(b) > 0 && err == nil {
-			n, err = r.Read(b)
-			b = b[n:]
+// whence must be either io.SeekStart, indicating that
+// r refers to an unread GLB blob, or io.SeekCurrent,
+// in which case r is assumed to be positioned at the
+// the beginning of the BIN chunk.
+func SeekBIN(r io.Reader, whence int) (n int, err error) {
+	switch whence {
+	case io.SeekStart:
+		n, err = SeekJSON(r, whence)
+		if err != nil {
+			return
 		}
-	}
-	n = 0
-	if err != nil {
+		if s, ok := r.(io.Seeker); ok {
+			_, err = s.Seek(int64(n), io.SeekCurrent)
+		} else {
+			b := make([]byte, n)
+			for len(b) > 0 && err == nil {
+				n, err = r.Read(b)
+				b = b[n:]
+			}
+		}
+		n = 0
+		if err != nil {
+			return
+		}
+	case io.SeekCurrent:
+	default:
+		err = errors.New("gltf: invalid whence value")
 		return
 	}
 	var c glbChunk

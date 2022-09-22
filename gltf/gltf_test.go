@@ -48,8 +48,8 @@ func TestGLB(t *testing.T) {
 	}
 
 	// SeekJSON
-	file.Seek(0, 0)
-	n, err := SeekJSON(file)
+	//file.Seek(0, 0)
+	n, err := SeekJSON(file, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,8 +79,8 @@ func TestGLB(t *testing.T) {
 	t.Log(string(buf.Bytes()))
 
 	// SeekBIN
-	file.Seek(0, 0)
-	n, err = SeekBIN(file)
+	//file.Seek(0, 0)
+	n, err = SeekBIN(file, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
