@@ -9,6 +9,13 @@ import (
 	"testing"
 )
 
+// This needs to match binary buffer length from both
+// testdata/cube.glb and testdata/cube.bin, ignoring
+// padding bytes.
+// Also, the contents of testdata/cube.bin must be
+// identical to those in testdata/cube.glb's BIN chunk.
+const cubeByteLen = 840
+
 func TestGLTF(t *testing.T) {
 	file, err := os.Open("testdata/cube.gltf")
 	if err != nil {
@@ -132,5 +139,39 @@ func TestPack(t *testing.T) {
 	file.Close()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestUnpack(t *testing.T) {
+	file, err := os.Open("testdata/cube.glb")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gltf, bin, err := Unpack(file)
+	file.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	if err = Encode(&buf, gltf); err != nil {
+		t.Fatal(err)
+	}
+	if gltf.Buffers[0].ByteLength != cubeByteLen {
+		panic("gltf tests must be kept in sync with testdata/cube.*")
+	}
+	file, err = os.Open("testdata/cube.bin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	buf.Reset()
+	n, err := buf.ReadFrom(file)
+	file.Close()
+	if n < gltf.Buffers[0].ByteLength && err != nil {
+		t.Fatal(err)
+	}
+	b1 := (*[cubeByteLen]byte)(bin[:cubeByteLen])
+	b2 := (*[cubeByteLen]byte)(buf.Bytes()[:cubeByteLen])
+	if *b1 != *b2 {
+		t.Fatal("Unpack(file):\nbinary buffer mismatch")
 	}
 }
