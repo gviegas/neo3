@@ -214,6 +214,9 @@ func Unpack(r io.Reader) (gltf *GLTF, bin []byte, err error) {
 		return
 	}
 	if n, err = SeekBIN(r, io.SeekCurrent); err != nil {
+		if n == 0 && err == io.EOF {
+			err = nil
+		}
 		return
 	}
 	bin = make([]byte, n)
