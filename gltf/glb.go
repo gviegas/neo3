@@ -3,6 +3,7 @@
 package gltf
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -127,6 +128,75 @@ func SeekBIN(r io.Reader, whence int) (n int, err error) {
 		err = errors.New("gltf: invalid GLB chunk")
 	default:
 		n = int(c[chunkLength])
+	}
+	return
+}
+
+// Pack writes to w a GLB blob assembled from gltf and bin
+// as JSON and BIN chunks, respectively.
+func Pack(w io.Writer, gltf *GLTF, bin []byte) (err error) {
+	h := glbHeader{
+		headerMagic:   magic,
+		headerVersion: 2,
+	}
+	var buf bytes.Buffer
+	if err = Encode(&buf, gltf); err != nil {
+		return
+	}
+	// Encoding produces compacted JSON, but appends a
+	// newline at the end.
+	buf.Truncate(buf.Len() - 1)
+	if pad := buf.Len() % 4; pad != 0 {
+		for ; pad != 4; pad++ {
+			buf.WriteByte(0x20)
+		}
+	}
+	jc := glbChunk{
+		chunkLength: uint32(buf.Len()),
+		chunkType:   typeJSON,
+	}
+	// Note that the binary buffer is optional.
+	if bn := len(bin); bn == 0 {
+		h[headerLength] = 12 + 8 + jc[chunkLength]
+		if err = binary.Write(w, binary.LittleEndian, h[:]); err != nil {
+			return
+		}
+		if err = binary.Write(w, binary.LittleEndian, jc[:]); err != nil {
+			return
+		}
+		if _, err = w.Write(buf.Bytes()); err != nil {
+			return
+		}
+	} else {
+		pad := bn % 4
+		if pad == 0 {
+			pad = 4
+		}
+		bc := glbChunk{
+			chunkLength: uint32(bn + 4 - pad),
+			chunkType:   typeBIN,
+		}
+		h[headerLength] = 12 + 8 + jc[chunkLength] + 8 + bc[chunkLength]
+		if err = binary.Write(w, binary.LittleEndian, h[:]); err != nil {
+			return
+		}
+		if err = binary.Write(w, binary.LittleEndian, jc[:]); err != nil {
+			return
+		}
+		if _, err = w.Write(buf.Bytes()); err != nil {
+			return
+		}
+		if err = binary.Write(w, binary.LittleEndian, bc[:]); err != nil {
+			return
+		}
+		if _, err = w.Write(bin); err != nil {
+			return
+		}
+		for ; pad != 4; pad++ {
+			if _, err = w.Write([]byte{0}); err != nil {
+				return
+			}
+		}
 	}
 	return
 }
