@@ -105,7 +105,7 @@ func SeekBIN(r io.Reader, whence int) (n int, err error) {
 		if s, ok := r.(io.Seeker); ok {
 			_, err = s.Seek(int64(n), io.SeekCurrent)
 		} else {
-			b := make([]byte, n)
+			b := make(glbChunkData, n)
 			for len(b) > 0 && err == nil {
 				n, err = r.Read(b)
 				b = b[n:]
@@ -196,6 +196,35 @@ func Pack(w io.Writer, gltf *GLTF, bin []byte) (err error) {
 			if _, err = w.Write([]byte{0}); err != nil {
 				return
 			}
+		}
+	}
+	return
+}
+
+// Unpack reads the GLB blob from r to decode the JSON chunk
+// (structured JSON content) into a new GLTF struct.
+// If the BIN chunk (binary buffer) is present, its contents
+// are copied as-is into a new byte slice.
+func Unpack(r io.Reader) (gltf *GLTF, bin []byte, err error) {
+	n := 0
+	if n, err = SeekJSON(r, io.SeekStart); err != nil {
+		return
+	}
+	if gltf, err = Decode(io.LimitReader(r, int64(n))); err != nil {
+		return
+	}
+	if n, err = SeekBIN(r, io.SeekCurrent); err != nil {
+		return
+	}
+	bin = make([]byte, n)
+	for err == nil {
+		off := len(bin) - n
+		x := 0
+		x, err = r.Read(bin[off:])
+		n -= x
+		if n == 0 {
+			err = nil
+			break
 		}
 	}
 	return
