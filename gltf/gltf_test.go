@@ -101,3 +101,36 @@ func TestGLB(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPack(t *testing.T) {
+	file, err := os.Open("testdata/cube.gltf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gltf, err := Decode(file)
+	file.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	gltf.Asset.Generator = "TestPack"
+	var buf bytes.Buffer
+	file, err = os.Open("testdata/cube.bin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	n, err := buf.ReadFrom(file)
+	file.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	gltf.Buffers[0] = Buffer{ByteLength: n}
+	file, err = os.Create("testdata/out.glb")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = Pack(file, gltf, buf.Bytes())
+	file.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
