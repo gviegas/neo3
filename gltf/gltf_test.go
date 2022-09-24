@@ -168,6 +168,67 @@ func TestSeekJSON(t *testing.T) {
 	}
 }
 
+func TestSeekBIN(t *testing.T) {
+	file, err := os.Open("testdata/cube.glb")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	n, err := SeekJSON(file, io.SeekStart)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n <= 0 {
+		t.Fatalf("SeekJSON(file): n:\nwant > 0\nhave %d", n)
+	}
+	b := make([]byte, n)
+	if x, err := file.Read(b); err != nil {
+		t.Fatal(err)
+	} else if x != n {
+		t.Fatal()
+	}
+	gltf, err := Decode(bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	nwant := gltf.Buffers[0].ByteLength
+	if pad := nwant % 4; pad != 0 {
+		nwant += 4 - pad
+	}
+	// From the beginning of the BIN chunk.
+	n, err = SeekBIN(file, io.SeekCurrent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nwant != int64(n) {
+		t.Fatalf("SeekBIN(file): n:\nwant %d\nhave %d", nwant, n)
+	}
+	if n > len(b) {
+		b = make([]byte, n)
+	} else {
+		b = b[:n]
+	}
+	if x, err := file.Read(b); err != nil {
+		if x != n || err != io.EOF {
+			t.Fatal(err)
+		}
+	}
+	// From the beginning of the GLB.
+	file.Seek(0, 0)
+	n, err = SeekBIN(file, io.SeekStart)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nwant != int64(n) {
+		t.Fatalf("SeekBIN(file): n:\nwant %d\nhave %d", nwant, n)
+	}
+	if x, err := file.Read(b); err != nil {
+		if x != n || err != io.EOF {
+			t.Fatal(err)
+		}
+	}
+}
+
 func TestPack(t *testing.T) {
 	file, err := os.Open("testdata/cube.gltf")
 	if err != nil {
