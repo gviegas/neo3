@@ -175,3 +175,32 @@ func TestUnpack(t *testing.T) {
 		t.Fatal("Unpack(file):\nbinary buffer mismatch")
 	}
 }
+
+func TestNoBINChunk(t *testing.T) {
+	var gltf GLTF
+	gltf.Asset.Generator = "TestNoBINChunk"
+	gltf.Asset.Version = "2.0"
+	gltf.Nodes = append(gltf.Nodes, Node{Name: "Node#0"})
+	var buf bytes.Buffer
+	if err := Encode(&buf, &gltf); err != nil {
+		t.Fatal()
+	}
+	s := buf.String()
+	buf.Reset()
+	if err := Pack(&buf, &gltf, nil); err != nil {
+		t.Fatal()
+	}
+	tf, bin, err := Unpack(&buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := len(bin); n != 0 {
+		t.Fatalf("Unpack(&buf): len(bin):\nwant 0\nhave %d", n)
+	}
+	if err = Encode(&buf, tf); err != nil {
+		t.Fatal(err)
+	}
+	if x := buf.String(); x != s {
+		t.Fatalf("Unpack(&buf): Encode(&buf, tf):\nwant %s\nhave %s", s, x)
+	}
+}
