@@ -17,6 +17,43 @@ import (
 // identical to those in testdata/cube.glb's BIN chunk.
 const cubeByteLen = 840
 
+func TestMinimalGLTF(t *testing.T) {
+	r := bytes.NewReader([]byte(`{"asset":{"version":"2.0"}}`))
+	gltf, err := Decode(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s := gltf.Asset.Version; s != "2.0" {
+		t.Fatalf("Decode(r): gltf.Asset.Version:\nwant 2.0\nhave %s", s)
+	}
+	var buf bytes.Buffer
+	if err = Encode(&buf, gltf); err != nil {
+		t.Fatal(err)
+	}
+	r.Seek(0, 0)
+	n := int(r.Size())
+	if buf.Len()-1 == n {
+		s := buf.String()
+		for ; n > 0; n-- {
+			b1, err1 := r.ReadByte()
+			b2, err2 := buf.ReadByte()
+			if b1 != b2 {
+				t.Fatal("Encode(&buf, gltf):\ncontent mismatch")
+			}
+			if err1 != nil || err2 != nil {
+				if n == 1 && err1 == io.EOF {
+					break
+				} else {
+					t.Fatal(err1, err2)
+				}
+			}
+		}
+		t.Log(s)
+		return
+	}
+	t.Fatalf("Encode(&buf, gltf): buf.Len()\nwant %d\nhave %d", n+1, buf.Len())
+}
+
 func TestGLTF(t *testing.T) {
 	file, err := os.Open("testdata/cube.gltf")
 	if err != nil {
