@@ -134,6 +134,7 @@ func SeekBIN(r io.Reader, whence int) (n int, err error) {
 
 // Pack writes to w a GLB blob assembled from gltf and bin
 // as JSON and BIN chunks, respectively.
+// If len(bin) is 0, the BIN chunk is omitted.
 func Pack(w io.Writer, gltf *GLTF, bin []byte) (err error) {
 	h := glbHeader{
 		headerMagic:   magic,
@@ -145,18 +146,24 @@ func Pack(w io.Writer, gltf *GLTF, bin []byte) (err error) {
 	}
 	// Encoding produces compacted JSON, but appends a
 	// newline at the end.
-	buf.Truncate(buf.Len() - 1)
-	if pad := buf.Len() % 4; pad != 0 {
+	jn := buf.Len() - 1
+	buf.Truncate(jn)
+	if pad := jn % 4; pad != 0 {
 		for ; pad != 4; pad++ {
 			buf.WriteByte(0x20)
 		}
+		jn = buf.Len()
 	}
 	jc := glbChunk{
-		chunkLength: uint32(buf.Len()),
+		chunkLength: uint32(jn),
 		chunkType:   typeJSON,
 	}
 	// Note that the binary buffer is optional.
 	if bn := len(bin); bn == 0 {
+		if uint64(20+jn) > uint64(^uint32(0)-3) {
+			err = errors.New("gltf: GLB length overflow")
+			return
+		}
 		h[headerLength] = 12 + 8 + jc[chunkLength]
 		if err = binary.Write(w, binary.LittleEndian, h[:]); err != nil {
 			return
@@ -175,6 +182,10 @@ func Pack(w io.Writer, gltf *GLTF, bin []byte) (err error) {
 		bc := glbChunk{
 			chunkLength: uint32(bn + 4 - pad),
 			chunkType:   typeBIN,
+		}
+		if uint64(32+jn+bn-pad) > uint64(^uint32(0)-3) {
+			err = errors.New("gltf: GLB length overflow")
+			return
 		}
 		h[headerLength] = 12 + 8 + jc[chunkLength] + 8 + bc[chunkLength]
 		if err = binary.Write(w, binary.LittleEndian, h[:]); err != nil {
