@@ -5,6 +5,7 @@ package gltf
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"testing"
 )
@@ -106,6 +107,64 @@ func TestGLB(t *testing.T) {
 	n, err = file.Read(b)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSeekJSON(t *testing.T) {
+	file, err := os.Open("testdata/cube.glb")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	// From the beginning of the GLB.
+	n, err := SeekJSON(file, io.SeekStart)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n <= 0 {
+		t.Fatalf("SeekJSON(file): n:\nwant > 0\nhave %d", n)
+	}
+	b := make([]byte, n)
+	if x, err := file.Read(b); err != nil {
+		if x != n || err != io.EOF {
+			t.Fatal(err)
+		}
+	}
+	gltf, err := Decode(bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	if err = Encode(&buf, gltf); err != nil {
+		t.Fatal(err)
+	}
+	nprev := n
+	sprev := buf.String()
+	buf.Reset()
+	// From the beginning of the JSON chunk.
+	file.Seek(0, 0)
+	IsGLB(file)
+	n, err = SeekJSON(file, io.SeekCurrent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != nprev {
+		t.Fatalf("SeekJSON(file): n:\nwant %d\nhave %d", nprev, n)
+	}
+	if x, err := file.Read(b); err != nil {
+		if x != n || err != io.EOF {
+			t.Fatal(err)
+		}
+	}
+	if gltf, err = Decode(bytes.NewReader(b)); err != nil {
+		t.Fatal(err)
+	}
+	if err = Encode(&buf, gltf); err != nil {
+		t.Fatal(err)
+	}
+	s := buf.String()
+	if s != sprev {
+		t.Fatalf("SeekJson(file): Decode/Encode:\nwant %s\nhave %s", sprev, s)
 	}
 }
 
