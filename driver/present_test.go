@@ -53,9 +53,9 @@ type T struct {
 	quit     bool
 }
 
-// Example_spinningCube renders a spinning cube and presents
+// Example_present renders a spinning cube and presents
 // the result in a window.
-func Example_spinningCube() {
+func Example_present() {
 	var t T
 	var err error
 	for i := range t.cb {
@@ -99,7 +99,7 @@ func (t *T) swapchainSetup() {
 	if wsi.PlatformInUse() == wsi.None {
 		log.Fatal("WSI unavailable")
 	}
-	win, err := wsi.NewWindow(dim.Width, dim.Height, "Spinning Cube Example")
+	win, err := wsi.NewWindow(dim.Width, dim.Height, "Present Example")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func (t *T) passSetup() {
 			Color: scViews[i],
 			Load:  driver.LClear,
 			Store: driver.SStore,
-			Clear: [4]float32{0.1, 0.1, 0.1, 1},
+			Clear: [4]float32{0.01, 0.01, 0.01, 1},
 		}
 	}
 
