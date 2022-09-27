@@ -208,11 +208,17 @@ func (h *descHeap) SetImage(cpy, nr, start int, iv []driver.ImageView) {
 	p := (*C.VkDescriptorImageInfo)(C.malloc(C.size_t(len(iv)) * C.sizeof_VkDescriptorImageInfo))
 	defer C.free(unsafe.Pointer(p))
 	s := unsafe.Slice(p, len(iv))
+	typ := h.typeOf(nr)
+	var lay C.VkImageLayout
+	if typ == C.VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE {
+		lay = C.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	} else {
+		lay = C.VK_IMAGE_LAYOUT_GENERAL
+	}
 	for i := range s {
-		// TODO: This layout assumption is too fragile.
 		s[i] = C.VkDescriptorImageInfo{
 			imageView:   iv[i].(*imageView).view,
-			imageLayout: C.VK_IMAGE_LAYOUT_GENERAL,
+			imageLayout: lay,
 		}
 	}
 	write := C.VkWriteDescriptorSet{
@@ -221,7 +227,7 @@ func (h *descHeap) SetImage(cpy, nr, start int, iv []driver.ImageView) {
 		dstBinding:      C.uint32_t(nr),
 		dstArrayElement: C.uint32_t(start),
 		descriptorCount: C.uint32_t(len(iv)),
-		descriptorType:  h.typeOf(nr),
+		descriptorType:  typ,
 		pImageInfo:      p,
 	}
 	C.vkUpdateDescriptorSets(h.d.dev, 1, &write, 0, nil)
