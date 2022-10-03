@@ -4,6 +4,7 @@ package node
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -127,4 +128,30 @@ func TestNode(t *testing.T) {
 	//n1.testInsert(n2, t)
 	//n2.testInsert(n1, t)
 	//n1.logGraph(t)
+}
+
+const graphDepth = 100_000
+
+func TestGraphDepth(t *testing.T) {
+	root := New()
+	root.Name = "0"
+	nd := root
+	for i := 1; i < graphDepth; i++ {
+		nd.Insert(New())
+		nd = nd.sub
+		nd.Name = strconv.Itoa(i)
+	}
+	i := 1
+	root.ForEach(func(n *Node) {
+		if n.prev.sub != n {
+			t.Fatalf("n.prev.sub:\nhave %v\nwant %v", n.prev.sub, n)
+		}
+		if n.next != nil {
+			t.Fatalf("n.next:\nhave %v\nwant nil", n.next)
+		}
+		i++
+	})
+	if i != graphDepth {
+		t.Fatalf("unexpected graph depth:\nhave %d\nwant %d", i, graphDepth)
+	}
 }
