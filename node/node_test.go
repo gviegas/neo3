@@ -130,7 +130,10 @@ func TestNode(t *testing.T) {
 	//n1.logGraph(t)
 }
 
-const graphDepth = 100_000
+const (
+	graphDepth   = 100_000
+	graphBreadth = 100_000
+)
 
 func TestGraphDepth(t *testing.T) {
 	root := New()
@@ -153,5 +156,28 @@ func TestGraphDepth(t *testing.T) {
 	})
 	if i != graphDepth {
 		t.Fatalf("unexpected graph depth:\nhave %d\nwant %d", i, graphDepth)
+	}
+}
+
+func TestGraphBreadth(t *testing.T) {
+	root := New()
+	root.Name = "0"
+	for i := 1; i <= graphBreadth; i++ {
+		nd := New()
+		nd.Name = strconv.Itoa(i)
+		root.Insert(nd)
+	}
+	i := 0
+	root.ForEach(func(n *Node) {
+		if n.prev == nil {
+			t.Fatalf("n.prev:\nhave %v\nwant nil", n.prev)
+		}
+		if n.sub != nil {
+			t.Fatalf("n.sub:\nhave %v\nwant non-nil", n.next)
+		}
+		i++
+	})
+	if i != graphBreadth {
+		t.Fatalf("unexpected graph breadth:\nhave %d\nwant %d", i, graphDepth)
 	}
 }
