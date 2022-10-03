@@ -60,18 +60,38 @@ func (n *Node) Remove() {
 }
 
 // ForEach calls f for each descendant of node n.
-// Ancestors are processed first. If f returns true,
-// ForEach returns immediately.
+// Ancestors are processed first.
 // The scene graph must not be changed until this
 // method returns.
-func (n *Node) ForEach(f func(*Node) bool) {
+func (n *Node) ForEach(f func(*Node)) {
 	if n.sub == nil {
 		return
 	}
 	que := []*Node{n.sub}
 	for len(que) > 0 {
 		for nd := que[0]; nd != nil; nd = nd.next {
-			if f(nd) {
+			f(nd)
+			if sub := nd.sub; sub != nil {
+				que = append(que, sub)
+			}
+		}
+		que = que[1:]
+	}
+}
+
+// Until calls f for each descendant of node n.
+// Ancestors are processed first. If f returns false,
+// Until returns immediately.
+// The scene graph must not be changed until this
+// method returns.
+func (n *Node) Until(f func(*Node) bool) {
+	if n.sub == nil {
+		return
+	}
+	que := []*Node{n.sub}
+	for len(que) > 0 {
+		for nd := que[0]; nd != nil; nd = nd.next {
+			if !f(nd) {
 				return
 			}
 			if sub := nd.sub; sub != nil {

@@ -32,9 +32,8 @@ func (n *Node) String() string {
 // logGraph outputs the scene graph whose root is n.
 func (n *Node) logGraph(t *testing.T) {
 	s := n.String()
-	n.ForEach(func(n *Node) bool {
+	n.ForEach(func(n *Node) {
 		s += n.String()
-		return false
 	})
 	t.Log(s)
 }
