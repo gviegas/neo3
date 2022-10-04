@@ -27,6 +27,8 @@ var dim = driver.Dim3D{
 	Depth:  1,
 }
 
+var brokenSC bool
+
 type T struct {
 	cb       [NFrame]driver.CmdBuffer
 	ch       chan *driver.WorkItem
@@ -456,6 +458,10 @@ func (t *T) renderLoop() {
 		cb := wk.Work[0]
 
 		wsi.Dispatch()
+		if brokenSC {
+			t.recreateSwapchain()
+			brokenSC = false
+		}
 
 		// Note that, as long as we use the same buffer range,
 		// we need not set the descriptor heap again.
@@ -830,7 +836,7 @@ func (t *T) WindowClose(win wsi.Window) {
 		t.quit = true
 	}
 }
-func (t *T) WindowResize(wsi.Window, int, int) { t.recreateSwapchain() }
+func (t *T) WindowResize(wsi.Window, int, int) { brokenSC = true }
 func (t *T) KeyboardIn(wsi.Window)             {}
 func (t *T) KeyboardOut(wsi.Window)            {}
 func (t *T) KeyboardKey(key wsi.Key, pressed bool, modMask wsi.Modifier) {
