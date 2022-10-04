@@ -24,7 +24,7 @@ func TestMinimalGLTF(t *testing.T) {
 		t.Fatal(err)
 	}
 	if s := gltf.Asset.Version; s != "2.0" {
-		t.Fatalf("Decode(r): gltf.Asset.Version:\nwant 2.0\nhave %s", s)
+		t.Fatalf("Decode(r): gltf.Asset.Version\nhave %s\nwant 2.0", s)
 	}
 	var buf bytes.Buffer
 	if err = Encode(&buf, gltf); err != nil {
@@ -51,7 +51,7 @@ func TestMinimalGLTF(t *testing.T) {
 		t.Log(s)
 		return
 	}
-	t.Fatalf("Encode(&buf, gltf): buf.Len()\nwant %d\nhave %d", n+1, buf.Len())
+	t.Fatalf("Encode(&buf, gltf): buf.Len()\nhave %d\nwant %d", buf.Len(), n+1)
 }
 
 func TestGLTF(t *testing.T) {
@@ -85,11 +85,11 @@ func TestIsGLB(t *testing.T) {
 	}
 	defer file.Close()
 	if !IsGLB(file) {
-		t.Fatal("IsGLB(file):\nwant true\nhave false")
+		t.Fatal("IsGLB(file):\nhave false\nwant true")
 	}
 	r := bytes.NewReader([]byte(`{"asset:"{"version":"2.0"}}`))
 	if IsGLB(r) {
-		t.Fatal("IsGLB(r):\nwant false\nhave true")
+		t.Fatal("IsGLB(r):\nhave true\nwant false")
 	}
 }
 
@@ -105,7 +105,7 @@ func TestSeekJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	if n <= 0 {
-		t.Fatalf("SeekJSON(file): n:\nwant > 0\nhave %d", n)
+		t.Fatalf("SeekJSON(file): n\nhave %d\nwant > 0", n)
 	}
 	b := make([]byte, n)
 	if x, err := file.Read(b); err != nil {
@@ -132,7 +132,7 @@ func TestSeekJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	if n != nprev {
-		t.Fatalf("SeekJSON(file): n:\nwant %d\nhave %d", nprev, n)
+		t.Fatalf("SeekJSON(file): n\nhave %d\nwant %d", n, nprev)
 	}
 	if x, err := file.Read(b); err != nil {
 		if x != n || err != io.EOF {
@@ -147,7 +147,7 @@ func TestSeekJSON(t *testing.T) {
 	}
 	s := buf.String()
 	if s != sprev {
-		t.Fatalf("SeekJson(file): Decode/Encode:\nwant %s\nhave %s", sprev, s)
+		t.Fatalf("SeekJson(file): Decode/Encode\nhave %s\nwant %s", s, sprev)
 	}
 }
 
@@ -162,7 +162,7 @@ func TestSeekBIN(t *testing.T) {
 		t.Fatal(err)
 	}
 	if n <= 0 {
-		t.Fatalf("SeekJSON(file): n:\nwant > 0\nhave %d", n)
+		t.Fatalf("SeekJSON(file): n\nhave %d\nwant > 0", n)
 	}
 	b := make([]byte, n)
 	if x, err := file.Read(b); err != nil {
@@ -184,7 +184,7 @@ func TestSeekBIN(t *testing.T) {
 		t.Fatal(err)
 	}
 	if nwant != int64(n) {
-		t.Fatalf("SeekBIN(file): n:\nwant %d\nhave %d", nwant, n)
+		t.Fatalf("SeekBIN(file): n\nhave %d\nwant %d", n, nwant)
 	}
 	if n > len(b) {
 		b = make([]byte, n)
@@ -203,7 +203,7 @@ func TestSeekBIN(t *testing.T) {
 		t.Fatal(err)
 	}
 	if nwant != int64(n) {
-		t.Fatalf("SeekBIN(file): n:\nwant %d\nhave %d", nwant, n)
+		t.Fatalf("SeekBIN(file): n\nhave %d\nwant %d", n, nwant)
 	}
 	if x, err := file.Read(b); err != nil {
 		if x != n || err != io.EOF {
@@ -298,12 +298,12 @@ func TestNoBINChunk(t *testing.T) {
 		t.Fatal(err)
 	}
 	if n := len(bin); n != 0 {
-		t.Fatalf("Unpack(&buf): len(bin):\nwant 0\nhave %d", n)
+		t.Fatalf("Unpack(&buf): len(bin)\nhave %d\nwant 0", n)
 	}
 	if err = Encode(&buf, tf); err != nil {
 		t.Fatal(err)
 	}
 	if x := buf.String(); x != s {
-		t.Fatalf("Unpack(&buf): Encode(&buf, tf):\nwant %s\nhave %s", s, x)
+		t.Fatalf("Unpack(&buf): Encode(&buf, tf)\nhave %s\nwant %s", x, s)
 	}
 }
