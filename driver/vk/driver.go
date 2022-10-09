@@ -409,7 +409,7 @@ func (d *Driver) newMemory(req C.VkMemoryRequirements, visible bool) (*memory, e
 	}
 	typ = d.selectMemory(uint(req.memoryTypeBits), prop)
 	if typ == -1 {
-		return nil, errors.New("no suitable memory type found")
+		return nil, errors.New("vk: no suitable memory type found")
 	}
 
 	info := C.VkMemoryAllocateInfo{
@@ -534,24 +534,24 @@ func checkResult(res C.VkResult) error {
 var (
 	errNoHostMemory      = driver.ErrNoHostMemory
 	errNoDeviceMemory    = driver.ErrNoDeviceMemory
-	errInitFailed        = errors.New("initialization failed")
+	errInitFailed        = errors.New("vk: initialization failed")
 	errDeviceLost        = driver.ErrFatal
-	errMMapFailed        = errors.New("memory map failed")
-	errNoLayer           = errors.New("layer not present")
-	errNoExtension       = errors.New("extension not present")
-	errNoFeature         = errors.New("feature not present")
-	errDriverCompat      = errors.New("incompatible driver")
-	errTooManyObjects    = errors.New("too many objects")
-	errUnsupportedFormat = errors.New("format not supported")
-	errFragmentedPool    = errors.New("fragmented pool")
-	errUnknown           = errors.New("unknown error")
-	errNoPoolMemory      = errors.New("out of pool memory")
-	errExternalHandle    = errors.New("invalid external handle")
-	errFragmentation     = errors.New("fragmetation")
-	errSurfaceLost       = errors.New("surface lost")
-	errWindowInUse       = errors.New("native window in use")
+	errMMapFailed        = errors.New("vk: memory map failed")
+	errNoLayer           = errors.New("vk: layer not present")
+	errNoExtension       = errors.New("vk: extension not present")
+	errNoFeature         = errors.New("vk: feature not present")
+	errDriverCompat      = errors.New("vk: incompatible driver")
+	errTooManyObjects    = errors.New("vk: too many objects")
+	errUnsupportedFormat = errors.New("vk: format not supported")
+	errFragmentedPool    = errors.New("vk: fragmented pool")
+	errUnknown           = errors.New("vk: unknown error")
+	errNoPoolMemory      = errors.New("vk: out of pool memory")
+	errExternalHandle    = errors.New("vk: invalid external handle")
+	errFragmentation     = errors.New("vk: fragmentation")
+	errSurfaceLost       = errors.New("vk: surface lost")
+	errWindowInUse       = errors.New("vk: native window in use")
 	errOutOfDate         = driver.ErrSwapchain
-	errDisplayCompat     = errors.New("incompatible display")
+	errDisplayCompat     = errors.New("vk: incompatible display")
 )
 
 // DeviceName returns the name of the VkDevice that the driver

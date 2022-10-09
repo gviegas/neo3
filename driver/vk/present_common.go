@@ -8,8 +8,6 @@ package vk
 import "C"
 
 import (
-	"errors"
-
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/wsi"
 )
@@ -43,5 +41,5 @@ func (s *swapchain) initDisplaySurface() error {
 	if !s.d.exts[extDisplay] {
 		return driver.ErrCannotPresent
 	}
-	return errors.New("display surface not implemented")
+	panic("not implemented")
 }

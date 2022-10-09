@@ -60,7 +60,8 @@ func (d *Driver) NewDescHeap(ds []driver.Descriptor) (driver.DescHeap, error) {
 		// unique within a descriptor set.
 		for j := i + 1; j < len(ds); j++ {
 			if ds[i].Nr == ds[j].Nr {
-				return nil, errors.New("descriptor number is not unique")
+				// TODO: Consider panicking instead.
+				return nil, errors.New("vk: descriptor number is not unique")
 			}
 		}
 		binds[i].binding = C.uint32_t(ds[i].Nr)

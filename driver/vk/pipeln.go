@@ -28,7 +28,8 @@ func (d *Driver) NewPipeline(state any) (driver.Pipeline, error) {
 	case *driver.CompState:
 		return d.newCompute(t)
 	}
-	return nil, errors.New("unknown pipeline state type")
+	// TODO: Consider panicking instead.
+	return nil, errors.New("vk: unknown pipeline state type")
 }
 
 // newGraphics creates a new graphics pipeline.
