@@ -43,7 +43,7 @@ type Window interface {
 // NewWindow creates a new window.
 func NewWindow(width, height int, title string) (Window, error) {
 	if windowCount >= MaxWindows {
-		return nil, errors.New("too many windows")
+		return nil, errors.New("wsi: too many windows")
 	}
 	win, err := newWindow(width, height, title)
 	if err != nil {

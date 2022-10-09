@@ -6,7 +6,7 @@ import (
 	"errors"
 )
 
-var errMissing = errors.New("no wsi implementation")
+var errMissing = errors.New("wsi: no backend")
 
 func initDummy() {
 	newWindow = newWindowDummy

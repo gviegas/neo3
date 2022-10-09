@@ -28,7 +28,7 @@ var className C.LPCWSTR
 // initWin32 initializes the Win32 platform.
 func initWin32() error {
 	if hinst = C.GetModuleHandle(nil); hinst == nil {
-		return errors.New("Failed to obtain Win32 instance handle")
+		return errors.New("wsi: failed to obtain Win32 instance handle")
 	}
 	className = stringToLPCWSTR("scene/wsi")
 	wc := C.WNDCLASS{
@@ -47,7 +47,7 @@ func initWin32() error {
 		C.free(unsafe.Pointer(className))
 		className = nil
 		hinst = nil
-		return errors.New("Failed to register Win32 class")
+		return errors.New("wsi: failed to register Win32 class")
 	}
 	newWindow = newWindowWin32
 	dispatch = dispatchWin32
@@ -99,7 +99,7 @@ func newWindowWin32(width, height int, title string) (Window, error) {
 	hwnd := C.CreateWindowEx(estyle, className, wname, style, x, y, w, h, nil, nil, hinst, nil)
 	C.free(unsafe.Pointer(wname))
 	if hwnd == nil {
-		return nil, errors.New("Failed to create Win32 window")
+		return nil, errors.New("wsi: failed to create Win32 window")
 	}
 	return &windowWin32{
 		hwnd:   hwnd,
@@ -142,7 +142,7 @@ func (w *windowWin32) Resize(width, height int) error {
 		y = C.int(rect.top)
 	}
 	if C.MoveWindow(w.hwnd, x, y, C.int(width), C.int(height), C.TRUE) == C.FALSE {
-		return errors.New("Failed to resize Win32 window")
+		return errors.New("wsi: failed to resize Win32 window")
 	}
 	w.width = width
 	w.height = height
@@ -157,7 +157,7 @@ func (w *windowWin32) SetTitle(title string) error {
 	var err error
 	ws := stringToLPCWSTR(title)
 	if C.SetWindowText(w.hwnd, ws) == C.FALSE {
-		err = errors.New("Failed to set title of Win32 window")
+		err = errors.New("wsi: failed to set title of Win32 window")
 	} else {
 		w.title = title
 	}

@@ -42,14 +42,14 @@ func openXCB() error {
 		defer C.free(unsafe.Pointer(lib))
 		hXCB := C.dlopen(lib, C.RTLD_LAZY|C.RTLD_GLOBAL)
 		if hXCB == nil {
-			return errors.New("failed to open libxcb")
+			return errors.New("wsi: failed to open libxcb")
 		}
 		for i := range C.nameXCB {
 			C.ptrXCB[i] = C.dlsym(hXCB, C.nameXCB[i])
 			if C.ptrXCB[i] == nil {
 				C.dlclose(hXCB)
 				hXCB = nil
-				return errors.New("failed to fetch XCB symbol")
+				return errors.New("wsi: failed to fetch XCB symbol")
 			}
 		}
 	}
@@ -82,13 +82,13 @@ func initXCB() error {
 			C.disconnectXCB(connXCB)
 			connXCB = nil
 		}
-		return errors.New("connectXCB failed")
+		return errors.New("wsi: connectXCB failed")
 	}
 	setup := C.getSetupXCB(connXCB)
 	if setup == nil {
 		C.disconnectXCB(connXCB)
 		connXCB = nil
-		return errors.New("getSetupXCB failed")
+		return errors.New("wsi: getSetupXCB failed")
 	}
 	screenIt := C.setupRootsIteratorXCB(setup)
 	visualXCB = screenIt.data.root_visual
@@ -118,7 +118,7 @@ func initXCB() error {
 			C.free(unsafe.Pointer(genErr))
 			C.disconnectXCB(connXCB)
 			connXCB = nil
-			return errors.New("internAtomXCB failed")
+			return errors.New("wsi: internAtomXCB failed")
 		}
 		*atoms[i].dst = reply.atom
 	}
@@ -134,14 +134,14 @@ func initXCB() error {
 			C.free(unsafe.Pointer(genErr))
 			C.disconnectXCB(connXCB)
 			connXCB = nil
-			return errors.New("changeKeyboardControlCheckedXCB failed")
+			return errors.New("wsi: changeKeyboardControlCheckedXCB failed")
 		}
 	}
 
 	if C.flushXCB(connXCB) <= 0 {
 		C.disconnectXCB(connXCB)
 		connXCB = nil
-		return errors.New("flushXCB failed")
+		return errors.New("wsi: flushXCB failed")
 	}
 
 	newWindow = newWindowXCB
@@ -198,7 +198,7 @@ func newWindowXCB(width, height int, title string) (Window, error) {
 		if id != 0 {
 			C.destroyWindowXCB(connXCB, id)
 		}
-		return nil, errors.New("createWindowCheckedXCB failed")
+		return nil, errors.New("wsi: createWindowCheckedXCB failed")
 	}
 
 	if err := setTitleXCB(title, id); err != nil {
@@ -233,7 +233,7 @@ func (w *windowXCB) Map() error {
 	genErr := C.requestCheckXCB(connXCB, cookie)
 	if genErr != nil {
 		C.free(unsafe.Pointer(genErr))
-		return errors.New("mapWindowCheckedXCB failed")
+		return errors.New("wsi: mapWindowCheckedXCB failed")
 	}
 	w.mapped = true
 	return nil
@@ -248,7 +248,7 @@ func (w *windowXCB) Unmap() error {
 	genErr := C.requestCheckXCB(connXCB, cookie)
 	if genErr != nil {
 		C.free(unsafe.Pointer(genErr))
-		return errors.New("unmapWindowCheckedXCB failed")
+		return errors.New("wsi: unmapWindowCheckedXCB failed")
 	}
 	w.mapped = false
 	return nil
@@ -257,7 +257,7 @@ func (w *windowXCB) Unmap() error {
 // Resize resizes the window.
 func (w *windowXCB) Resize(width, height int) error {
 	if width <= 0 || height <= 0 {
-		return errors.New("width/height less than or equal 0")
+		return errors.New("wsi: width/height less than or equal 0")
 	}
 	if width == w.width && height == w.height {
 		return nil
@@ -268,7 +268,7 @@ func (w *windowXCB) Resize(width, height int) error {
 	genErr := C.requestCheckXCB(connXCB, cookie)
 	if genErr != nil {
 		C.free(unsafe.Pointer(genErr))
-		return errors.New("configureWindowCheckedXCB failed")
+		return errors.New("wsi: configureWindowCheckedXCB failed")
 	}
 	w.width = width
 	w.height = height
@@ -315,7 +315,7 @@ func setTitleXCB(title string, id C.xcb_window_t) error {
 	genErr := C.requestCheckXCB(connXCB, cookie)
 	if genErr != nil {
 		C.free(unsafe.Pointer(genErr))
-		return errors.New("changePropertyCheckedXCB failed")
+		return errors.New("wsi: changePropertyCheckedXCB failed")
 	}
 	return nil
 }
@@ -334,7 +334,7 @@ func setClassXCB(class [2]string, id C.xcb_window_t) error {
 	genErr := C.requestCheckXCB(connXCB, cookie)
 	if genErr != nil {
 		C.free(unsafe.Pointer(genErr))
-		return errors.New("changePropertyCheckedXCB failed")
+		return errors.New("wsi: changePropertyCheckedXCB failed")
 	}
 	return nil
 }
@@ -351,7 +351,7 @@ func setDeleteXCB(t bool, id C.xcb_window_t) error {
 	genErr := C.requestCheckXCB(connXCB, cookie)
 	if genErr != nil {
 		C.free(unsafe.Pointer(genErr))
-		return errors.New("changePropertyCheckedXCB failed")
+		return errors.New("wsi: changePropertyCheckedXCB failed")
 	}
 	return nil
 }
