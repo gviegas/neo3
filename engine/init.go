@@ -14,7 +14,7 @@ var (
 	gpu driver.GPU
 )
 
-var errNoDriver = errors.New("driver not found")
+var errNoDriver = errors.New("engine: driver not found")
 
 // loadDriver attempts to load any driver whose name contains
 // the provided name string. It is case-sensitive.
