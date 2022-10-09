@@ -34,26 +34,26 @@ type Driver interface {
 // ErrNotInstalled means that a platform-specific library
 // required for the driver to work is not present in the
 // system.
-var ErrNotInstalled = errors.New("missing required library")
+var ErrNotInstalled = errors.New("driver: missing required library")
 
 // ErrNoDevice means that no suitable device could be
 // found.
-var ErrNoDevice = errors.New("no suitable device found")
+var ErrNoDevice = errors.New("driver: no suitable device found")
 
 // ErrNoHostMemory means that host memory could not be
 // allocated.
-var ErrNoHostMemory = errors.New("out of host memory")
+var ErrNoHostMemory = errors.New("driver: out of host memory")
 
 // ErrNoDeviceMemory means that device memory could not
 // be allocated.
-var ErrNoDeviceMemory = errors.New("out of device memory")
+var ErrNoDeviceMemory = errors.New("driver: out of device memory")
 
 // ErrFatal means that the driver is in an unrecoverable
 // state. Upon encountering such an error, the application
 // must destroy everything that it created using the
 // driver's GPU and then call the Close method. It may call
 // Open again to reinitialize the driver for further use.
-var ErrFatal = errors.New("fatal error")
+var ErrFatal = errors.New("driver: fatal error")
 
 // Drivers returns the registered Drivers.
 // Client code imports specific driver packages, and then

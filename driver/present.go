@@ -10,30 +10,30 @@ import (
 
 // ErrCannotPresent means that the driver and/or device do not
 // support presentation.
-var ErrCannotPresent = errors.New("presentation not supported")
+var ErrCannotPresent = errors.New("driver: presentation not supported")
 
 // ErrWindow represents an error related to a specific window.
 // This error usually indicates that a window misconfiguration
 // is preventing correct operation. For instance, the driver
 // may require a visible window to create a swapchain.
-var ErrWindow = errors.New("window-related error")
+var ErrWindow = errors.New("driver: window-related error")
 
 // ErrCompositor represents an error related to the compositor.
 // This error usually indicates that the compositor behavior
 // is preventing correct operation. For instance, the driver
 // may require support for opaque composition.
-var ErrCompositor = errors.New("compositor-related error")
+var ErrCompositor = errors.New("driver: compositor-related error")
 
 // ErrSwapchain represents an error related to a specific
 // swapchain.
 // This error usually indicates that changes to the window or
 // compositor made the swapchain unusable.
-var ErrSwapchain = errors.New("swapchain-related error")
+var ErrSwapchain = errors.New("driver: swapchain-related error")
 
 // ErrNoBackbuffer means that all available backbuffers
 // were acquired.
 // Backbuffers are released during presentation.
-var ErrNoBackbuffer = errors.New("all backbuffers in use")
+var ErrNoBackbuffer = errors.New("driver: all backbuffers in use")
 
 // Presenter is the interface that a GPU may implement
 // to enable presentation on a display.
