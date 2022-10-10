@@ -66,8 +66,7 @@ func closeXCB() {
 	}
 }
 
-// initXCB calls openXCB to open the shared library,
-// initializes a connection and sets variables.
+// initXCB initializes the XCB platform.
 func initXCB() error {
 	if connXCB != nil {
 		return nil
@@ -151,8 +150,7 @@ func initXCB() error {
 	return nil
 }
 
-// deinitXCB terminates the connection and calls closeXCB
-// to close the shared library.
+// deinitXCB deinitializes the XCB platform.
 func deinitXCB() {
 	if windowCount > 0 {
 		for _, w := range createdWindows {
@@ -275,7 +273,7 @@ func (w *windowXCB) Resize(width, height int) error {
 	return nil
 }
 
-// SetTitle sets the title.
+// SetTitle sets the window's title.
 func (w *windowXCB) SetTitle(title string) error {
 	if title != w.title {
 		if err := setTitleXCB(title, w.id); err != nil {
@@ -357,7 +355,7 @@ func setDeleteXCB(t bool, id C.xcb_window_t) error {
 }
 
 // pollXCB process the next event.
-// It returns false if no events are available.
+// It returns false if there are no events to process.
 func pollXCB() bool {
 	event := C.pollForEventXCB(connXCB)
 	if event != nil {

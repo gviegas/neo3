@@ -455,7 +455,7 @@ func HinstWin32() unsafe.Pointer { return unsafe.Pointer(hinst) }
 // HwndWin32 returns the Win32 window handle (HWND) of the
 // given window.
 // win must refer to a valid window created by NewWindow
-// (note that close invalidates the window).
+// (note that Close invalidates the window).
 // It must not be called if Win32 is not the platform in use.
 func HwndWin32(win Window) unsafe.Pointer {
 	if win != nil {
