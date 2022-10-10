@@ -103,7 +103,7 @@ inline const struct xcb_setup_t* getSetupXCB(xcb_connection_t* conn) {
 	return f(conn);
 }
 
-// xcb_setup_roots_iterartor.
+// xcb_setup_roots_iterator.
 inline xcb_screen_iterator_t setupRootsIteratorXCB(const xcb_setup_t* setup) {
 	xcb_screen_iterator_t (*f)(const xcb_setup_t*);
 	*(void**)(&f) = ptrXCB[SETUP_ROOTS_ITERATOR_XCB];
