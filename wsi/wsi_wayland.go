@@ -18,7 +18,7 @@ var hWayland unsafe.Pointer
 // Common Wayland variables.
 var (
 	dpyWayland *C.struct_wl_display
-	// TODO
+	rtyWayland *C.struct_wl_registry
 )
 
 // initWayland initializes the Wayland platform.
@@ -26,16 +26,24 @@ func initWayland() error {
 	if dpyWayland != nil {
 		return nil
 	}
+
+	// TODO: Destroy things and close the lib on error.
+
 	if hWayland = C.openWayland(); hWayland == nil {
 		return errors.New("wsi: openWayland failed")
 	}
-
-	dpyWayland = C.displayConnectWayland(nil)
-	if dpyWayland == nil {
+	if dpyWayland = C.displayConnectWayland(nil); dpyWayland == nil {
 		return errors.New("wsi: displayConnectWayland failed")
 	}
+	if rtyWayland = C.displayGetRegistryWayland(dpyWayland); rtyWayland == nil {
+		return errors.New("wsi: displayGetRegistryWayland failed")
+	}
+	if C.registryAddListenerWayland(rtyWayland) != 0 {
+		return errors.New("wsi: registryAddListenerWayland failed")
+	}
+	C.displayRoundtripWayland(dpyWayland)
 
-	// TODO
+	// TODO...
 
 	return nil
 }
@@ -122,4 +130,17 @@ func dispatchWayland() {
 func setAppNameWayland(s string) {
 	// TODO
 	panic("not implemented")
+}
+
+//export registryGlobalWayland
+func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
+	// TODO
+	s := C.GoString(iface)
+	println("\tregistryGlobalWayland:", name, s, vers)
+}
+
+//export registryGlobalRemoveWayland
+func registryGlobalRemoveWayland(name C.uint32_t) {
+	// TODO
+	println("\tregistryGlobalRemoveWayland", name)
 }

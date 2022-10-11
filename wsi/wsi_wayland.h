@@ -25,3 +25,16 @@ int displayDispatchWayland(struct wl_display* dpy);
 
 // wl_display_flush.
 int displayFlushWayland(struct wl_display* dpy);
+
+// wl_display_roundtrip.
+int displayRoundtripWayland(struct wl_display* dpy);
+
+// wl_display_get_registry.
+struct wl_registry* displayGetRegistryWayland(struct wl_display* dpy);
+
+// wl_registry_add_listener.
+// This wrapper requires the following exported Go functions:
+//
+// - func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t)
+// - func registryGlobalRemoveWayland(name C.uint32_t)
+int registryAddListenerWayland(struct wl_registry* rty);
