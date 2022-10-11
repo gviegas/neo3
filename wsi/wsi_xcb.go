@@ -1,6 +1,6 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
-//go:build !android && !darwin && !windows
+//go:build unix && !android && !darwin
 
 package wsi
 

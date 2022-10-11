@@ -1,7 +1,9 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
+//go:build linux && !android
+
 #include <dlfcn.h>
-#include "wsi_wayland.h"
+#include <wsi_wayland.h>
 
 static struct wl_display* (*displayConnect)(const char*);
 struct wl_display* displayConnectWayland(const char* name) {

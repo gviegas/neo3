@@ -1,5 +1,7 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
+//go:build linux && !android
+
 #include <wayland-client.h>
 
 // openWayland opens the shared library and gets function pointers.

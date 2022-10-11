@@ -1,5 +1,7 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
+//go:build unix && !android && !darwin
+
 // Include this file only from wsi_xcb.go.
 
 #include <xcb/xcb.h>
