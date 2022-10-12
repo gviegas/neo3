@@ -19,6 +19,7 @@ var hWayland unsafe.Pointer
 var (
 	dpyWayland *C.struct_wl_display
 	rtyWayland *C.struct_wl_registry
+	cptWayland *C.struct_wl_compositor
 )
 
 // initWayland initializes the Wayland platform.
@@ -27,7 +28,7 @@ func initWayland() error {
 		return nil
 	}
 
-	// TODO: Destroy things and close the lib on error.
+	// TODO: Close the lib and clear globals on error.
 
 	if hWayland = C.openWayland(); hWayland == nil {
 		return errors.New("wsi: openWayland failed")
@@ -42,6 +43,13 @@ func initWayland() error {
 		return errors.New("wsi: registryAddListenerWayland failed")
 	}
 	C.displayRoundtripWayland(dpyWayland)
+
+	// TODO
+	if cptWayland == nil {
+		panic("cptWayland is nil")
+	} else {
+		println("cptWayland:", cptWayland)
+	}
 
 	// TODO...
 
@@ -137,10 +145,32 @@ func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
 	// TODO
 	s := C.GoString(iface)
 	println("\tregistryGlobalWayland:", name, s, vers)
+
+	if s == "wl_compositor" {
+		i := &C.compositorInterfaceWayland
+		p := C.registryBindWayland(rtyWayland, name, i, vers)
+		if p == nil {
+			// TODO
+			panic("could not bind to compositor")
+		}
+		cptWayland = (*C.struct_wl_compositor)(p)
+	}
 }
 
 //export registryGlobalRemoveWayland
 func registryGlobalRemoveWayland(name C.uint32_t) {
 	// TODO
-	println("\tregistryGlobalRemoveWayland", name)
+	println("\tregistryGlobalRemoveWayland:", name)
+}
+
+//export surfaceEnterWayland
+func surfaceEnterWayland(sfc *C.struct_wl_surface, out *C.struct_wl_output) {
+	// TODO
+	println("\tsurfaceEnterWayland:", sfc, out)
+}
+
+//export surfaceLeaveWayland
+func surfaceLeaveWayland(sfc *C.struct_wl_surface, out *C.struct_wl_output) {
+	// TODO
+	println("\tsurfaceLeaveWayland:", sfc, out)
 }
