@@ -17,10 +17,11 @@ var hWayland unsafe.Pointer
 
 // Common Wayland variables.
 var (
-	dpyWayland *C.struct_wl_display
-	rtyWayland *C.struct_wl_registry
-	cptWayland *C.struct_wl_compositor
-	wmXDG      *C.struct_xdg_wm_base
+	dpyWayland  *C.struct_wl_display
+	rtyWayland  *C.struct_wl_registry
+	cptWayland  *C.struct_wl_compositor
+	wmXDG       *C.struct_xdg_wm_base
+	seatWayland *C.struct_wl_seat
 )
 
 // initWayland initializes the Wayland platform.
@@ -49,14 +50,16 @@ func initWayland() error {
 	// TODO
 	if cptWayland == nil {
 		panic("cptWayland is nil")
-	} else {
-		println("cptWayland:", cptWayland)
 	}
+	println("cptWayland:", cptWayland)
 	if wmXDG == nil {
 		panic("wmXDG is nil")
-	} else {
-		println("wmXDG:", wmXDG)
 	}
+	println("wmXDG:", wmXDG)
+	if seatWayland == nil {
+		panic("seatWayland is nil")
+	}
+	println("seatWayland:", seatWayland)
 
 	return nil
 }
@@ -160,6 +163,10 @@ func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
 		i := &C.wmBaseInterfaceXDG
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		wmXDG = (*C.struct_xdg_wm_base)(p)
+	case "wl_seat":
+		i := &C.seatInterfaceWayland
+		p := C.registryBindWayland(rtyWayland, name, i, vers)
+		seatWayland = (*C.struct_wl_seat)(p)
 	}
 }
 
@@ -170,19 +177,31 @@ func registryGlobalRemoveWayland(name C.uint32_t) {
 }
 
 //export surfaceEnterWayland
-func surfaceEnterWayland(sfc *C.struct_wl_surface, out *C.struct_wl_output) {
+func surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {
 	// TODO
-	println("\tsurfaceEnterWayland:", sfc, out)
+	println("\tsurfaceEnterWayland:", sf, out)
 }
 
 //export surfaceLeaveWayland
-func surfaceLeaveWayland(sfc *C.struct_wl_surface, out *C.struct_wl_output) {
+func surfaceLeaveWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {
 	// TODO
-	println("\tsurfaceLeaveWayland:", sfc, out)
+	println("\tsurfaceLeaveWayland:", sf, out)
 }
 
 //export wmBasePingXDG
 func wmBasePingXDG(serial C.uint32_t) {
 	// TODO
 	println("\twmBasePingXDG:", serial)
+}
+
+//export seatCapabilitiesWayland
+func seatCapabilitiesWayland(capab C.uint32_t) {
+	// TODO
+	println("\tseatCapabilitiesWayland:", capab)
+}
+
+//export seatNameWayland
+func seatNameWayland(name *C.char) {
+	// TODO
+	println("\tseatNameWayland:", C.GoString(name))
 }

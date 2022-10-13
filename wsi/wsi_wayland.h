@@ -72,15 +72,34 @@ struct wl_surface* compositorCreateSurfaceWayland(struct wl_compositor* cpt);
 // wl_surface_add_listener.
 // This wrapper requires the following exported Go functions:
 //
-// - surfaceEnterWayland(sfc *C.struct_wl_surface, out *C.struct_wl_output)
-// - surfaceLeaveWayland(sfc *C.struct_wl_surface, out *C.struct_wl_output)
-int surfaceAddListenerWayland(struct wl_surface* sfc);
+// - surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output)
+// - surfaceLeaveWayland(sf *C.struct_wl_surface, out *C.struct_wl_output)
+int surfaceAddListenerWayland(struct wl_surface* sf);
 
 // wl_surface_destroy.
-void surfaceDestroyWayland(struct wl_surface* sfc);
+void surfaceDestroyWayland(struct wl_surface* sf);
 
 // xdg_wm_base_add_listener.
 // This wrapper requires the following exported Go function:
 //
 // - wmBasePingXDG(serial C.uint32_t)
-int wmBaseAddListener(struct xdg_wm_base* wm);
+int wmBaseAddListenerXDG(struct xdg_wm_base* wm);
+
+// xdg_wm_base_destroy.
+void wmBaseDestroyXDG(struct xdg_wm_base* wm);
+
+// xdg_wm_base_create_positioner.
+struct xdg_positioner* wmBaseCreatePositionerXDG(struct xdg_wm_base* wm);
+
+// xdg_wm_base_get_xdg_surface.
+struct xdg_surface* wmBaseGetXDGSurfaceXDG(struct xdg_wm_base* wm, struct wl_surface* sf);
+
+// xdg_wm_base_pong.
+void wmBasePongXDG(struct xdg_wm_base* wm, uint32_t serial);
+
+// wl_seat_add_listener.
+// This wrapper requires the following exported Go functions:
+//
+// - seatCapabilitiesWayland(capab C.uint32_t)
+// - seatNameWayland(name *C.char)
+int seatAddListenerWayland(struct wl_seat *seat);
