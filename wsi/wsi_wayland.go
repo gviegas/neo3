@@ -20,6 +20,7 @@ var (
 	dpyWayland *C.struct_wl_display
 	rtyWayland *C.struct_wl_registry
 	cptWayland *C.struct_wl_compositor
+	wmXDG      *C.struct_xdg_wm_base
 )
 
 // initWayland initializes the Wayland platform.
@@ -42,6 +43,7 @@ func initWayland() error {
 	if C.registryAddListenerWayland(rtyWayland) != 0 {
 		return errors.New("wsi: registryAddListenerWayland failed")
 	}
+
 	C.displayRoundtripWayland(dpyWayland)
 
 	// TODO
@@ -50,8 +52,11 @@ func initWayland() error {
 	} else {
 		println("cptWayland:", cptWayland)
 	}
-
-	// TODO...
+	if wmXDG == nil {
+		panic("wmXDG is nil")
+	} else {
+		println("wmXDG:", wmXDG)
+	}
 
 	return nil
 }
@@ -142,18 +147,19 @@ func setAppNameWayland(s string) {
 
 //export registryGlobalWayland
 func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
-	// TODO
 	s := C.GoString(iface)
-	println("\tregistryGlobalWayland:", name, s, vers)
 
-	if s == "wl_compositor" {
+	println("\tregistryGlobalWayland:", name, s, vers) // XXX
+
+	switch s {
+	case "wl_compositor":
 		i := &C.compositorInterfaceWayland
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
-		if p == nil {
-			// TODO
-			panic("could not bind to compositor")
-		}
 		cptWayland = (*C.struct_wl_compositor)(p)
+	case "xdg_wm_base":
+		i := &C.wmBaseInterfaceXDG
+		p := C.registryBindWayland(rtyWayland, name, i, vers)
+		wmXDG = (*C.struct_xdg_wm_base)(p)
 	}
 }
 
@@ -173,4 +179,10 @@ func surfaceEnterWayland(sfc *C.struct_wl_surface, out *C.struct_wl_output) {
 func surfaceLeaveWayland(sfc *C.struct_wl_surface, out *C.struct_wl_output) {
 	// TODO
 	println("\tsurfaceLeaveWayland:", sfc, out)
+}
+
+//export wmBasePingXDG
+func wmBasePingXDG(serial C.uint32_t) {
+	// TODO
+	println("\twmBasePingXDG:", serial)
 }

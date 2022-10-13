@@ -3,6 +3,7 @@
 //go:build linux && !android
 
 #include <wayland-client.h>
+#include <xdg-shell-client.h>
 
 // openWayland opens the shared library and gets function pointers.
 // It is not safe to call any of the C wrappers unless this
@@ -15,13 +16,27 @@ void* openWayland(void);
 void closeWayland(void* handle);
 
 // wl_*_interface.
+extern const struct wl_interface displayInterfaceWayland;
 extern const struct wl_interface registryInterfaceWayland;
+extern const struct wl_interface callbackInterfaceWayland;
 extern const struct wl_interface compositorInterfaceWayland;
+extern const struct wl_interface shmInterfaceWayland;
+extern const struct wl_interface shmPoolInterfaceWayland;
+extern const struct wl_interface bufferInterfaceWayland;
 extern const struct wl_interface surfaceInterfaceWayland;
 extern const struct wl_interface regionInterfaceWayland;
 extern const struct wl_interface outputInterfaceWayland;
-extern const struct wl_interface bufferInterfaceWayland;
-extern const struct wl_interface callbackInterfaceWayland;
+extern const struct wl_interface seatInterfaceWayland;
+extern const struct wl_interface pointerInterfaceWayland;
+extern const struct wl_interface keyboardInterfaceWayland;
+extern const struct wl_interface touchInterfaceWayland;
+
+// xdg_*_interface.
+extern const struct wl_interface wmBaseInterfaceXDG;
+extern const struct wl_interface positionerInterfaceXDG;
+extern const struct wl_interface surfaceInterfaceXDG;
+extern const struct wl_interface toplevelInterfaceXDG;
+extern const struct wl_interface popupInterfaceXDG;
 
 // wl_display_connect.
 struct wl_display* displayConnectWayland(const char* name);
@@ -63,3 +78,9 @@ int surfaceAddListenerWayland(struct wl_surface* sfc);
 
 // wl_surface_destroy.
 void surfaceDestroyWayland(struct wl_surface* sfc);
+
+// xdg_wm_base_add_listener.
+// This wrapper requires the following exported Go function:
+//
+// - wmBasePingXDG(serial C.uint32_t)
+int wmBaseAddListener(struct xdg_wm_base* wm);

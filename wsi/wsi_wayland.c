@@ -66,6 +66,9 @@ void closeWayland(void* handle) {
 
 static const struct wl_interface* nullInterface[8];
 
+// TODO
+const struct wl_interface displayInterfaceWayland;
+
 const struct wl_interface registryInterfaceWayland = {
 	.name = "wl_registry",
 	.version = 1,
@@ -80,6 +83,9 @@ const struct wl_interface registryInterfaceWayland = {
 	},
 };
 
+// TODO
+const struct wl_interface callbackInterfaceWayland;
+
 const struct wl_interface compositorInterfaceWayland = {
 	.name = "wl_compositor",
 	.version = 5,
@@ -91,6 +97,11 @@ const struct wl_interface compositorInterfaceWayland = {
 	.event_count = 0,
 	.events = NULL,
 };
+
+// TODO
+const struct wl_interface shmInterfaceWayland;
+const struct wl_interface shmPoolInterfaceWayland;
+const struct wl_interface bufferInterfaceWayland;
 
 const struct wl_interface surfaceInterfaceWayland = {
 	.name = "wl_surface",
@@ -116,13 +127,111 @@ const struct wl_interface surfaceInterfaceWayland = {
 	},
 };
 
-const struct wl_interface regionInterfaceWayland = { /* TODO */ };
+// TODO
+const struct wl_interface regionInterfaceWayland;
+const struct wl_interface outputInterfaceWayland;
+const struct wl_interface seatInterfaceWayland;
+const struct wl_interface pointerInterfaceWayland;
+const struct wl_interface keyboardInterfaceWayland;
+const struct wl_interface touchInterfaceWayland;
 
-const struct wl_interface outputInterfaceWayland = { /* TODO */ };
+const struct wl_interface wmBaseInterfaceXDG = {
+	.name = "xdg_wm_base",
+	.version = 4,
+	.method_count = 4,
+	.methods = (const struct wl_message[4]){
+		{ "destroy", "", nullInterface },
+		{ "create_positioner", "n", (const struct wl_interface*[1]){&positionerInterfaceXDG} },
+		{ "get_xdg_surface", "no", (const struct wl_interface*[2]){&surfaceInterfaceXDG, &surfaceInterfaceWayland} },
+		{ "pong", "u", nullInterface },
+	},
+	.event_count = 1,
+	.events = (const struct wl_message[1]){
+		{ "ping", "u", nullInterface },
+	},
+};
 
-const struct wl_interface bufferInterfaceWayland = { /* TODO */ };
+const struct wl_interface positionerInterfaceXDG = {
+	.name = "xdg_positioner",
+	.version = 4,
+	.method_count = 10,
+	.methods = (const struct wl_message[10]){
+		{ "destroy", "", nullInterface },
+		{ "set_size", "ii", nullInterface },
+		{ "set_anchor_rect", "iiii", nullInterface },
+		{ "set_anchor", "u", nullInterface },
+		{ "set_gravity", "u", nullInterface },
+		{ "set_constraint_adjustment", "u", nullInterface },
+		{ "set_offset", "ii", nullInterface },
+		{ "set_reactive", "3", nullInterface },
+		{ "set_parent_size", "3ii", nullInterface },
+		{ "set_parent_configure", "3u", nullInterface },
+	},
+	.event_count = 0,
+	.events = NULL,
+};
 
-const struct wl_interface callbackInterfaceWayland = { /* TODO */ };
+const struct wl_interface surfaceInterfaceXDG = {
+	.name = "xdg_surface",
+	.version = 4,
+	.method_count = 5,
+	.methods = (const struct wl_message[5]){
+		{ "destroy", "", nullInterface },
+		{ "get_toplevel", "n", (const struct wl_interface*[1]){&toplevelInterfaceXDG} },
+		{ "get_popup", "n?oo", (const struct wl_interface*[3]){&popupInterfaceXDG, &surfaceInterfaceXDG, &positionerInterfaceXDG} },
+		{ "set_window_geometry", "iiii", nullInterface },
+		{ "ack_configure", "u", nullInterface },
+	},
+	.event_count = 1,
+	.events = (const struct wl_message[1]) {
+		{ "configure", "u", nullInterface },
+	},
+};
+
+const struct wl_interface toplevelInterfaceXDG = {
+	.name = "xdg_toplevel",
+	.version = 4,
+	.method_count = 14,
+	.methods = (const struct wl_message[14]) {
+		{ "destroy", "", nullInterface },
+		{ "set_parent", "?o", (const struct wl_interface*[1]){&toplevelInterfaceXDG} },
+		{ "set_title", "s", nullInterface },
+		{ "set_app_id", "s", nullInterface },
+		{ "show_window_menu", "ouii", (const struct wl_interface*[4]){&seatInterfaceWayland} },
+		{ "move", "ou", (const struct wl_interface*[2]){&seatInterfaceWayland} },
+		{ "resize", "ouu", (const struct wl_interface*[3]){&seatInterfaceWayland} },
+		{ "set_max_size", "ii", nullInterface },
+		{ "set_min_size", "ii", nullInterface },
+		{ "set_maximized", "", nullInterface },
+		{ "unset_maximized", "", nullInterface },
+		{ "set_fullscreen", "?o", (const struct wl_interface*[1]){&outputInterfaceWayland} },
+		{ "unset_fullscreen", "", nullInterface },
+		{ "set_minimized", "", nullInterface },
+	},
+	.event_count = 3,
+	.events = (const struct wl_message[3]) {
+		{ "configure", "iia", nullInterface },
+		{ "close", "", nullInterface },
+		{ "configure_bounds", "4ii", nullInterface },
+	},
+};
+
+const struct wl_interface popupInterfaceXDG = {
+	.name = "xdg_popup",
+	.version = 4,
+	.method_count = 3,
+	.methods = (const struct wl_message[3]) {
+		{ "destroy", "", nullInterface },
+		{ "grab", "ou", (const struct wl_interface*[2]){&seatInterfaceWayland} },
+		{ "reposition", "3ou", (const struct wl_interface*[2]){&positionerInterfaceXDG} },
+	},
+	.event_count = 3,
+	.events = (const struct wl_message[3]) {
+		{ "configure", "iiii", nullInterface },
+		{ "popup_done", "", nullInterface },
+		{ "repositioned", "3u", nullInterface },
+	},
+};
 
 struct wl_display* displayConnectWayland(const char* name) {
 	return displayConnect(name);
@@ -196,4 +305,13 @@ int surfaceAddListenerWayland(struct wl_surface* sfc) {
 
 void surfaceDestroyWayland(struct wl_surface* sfc) {
 	proxyMarshalFlags((struct wl_proxy*)sfc, WL_SURFACE_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)sfc), WL_MARSHAL_FLAG_DESTROY);
+}
+
+static void wmBasePing(void*, struct xdg_wm_base*, uint32_t serial) {
+	wmBasePingXDG(serial);
+}
+
+int wmBaseAddListenerXDG(struct xdg_wm_base* wm) {
+	const struct xdg_wm_base_listener ltn = { wmBasePing };
+	return proxyAddListener((struct wl_proxy*)wm, (void (**)(void))&ltn, NULL);
 }
