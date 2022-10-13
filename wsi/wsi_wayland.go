@@ -25,43 +25,44 @@ var (
 )
 
 // initWayland initializes the Wayland platform.
-func initWayland() error {
+func initWayland() (err error) {
 	if dpyWayland != nil {
-		return nil
+		return
 	}
-
-	// TODO: Close the lib and clear globals on error.
-
 	if hWayland = C.openWayland(); hWayland == nil {
 		return errors.New("wsi: openWayland failed")
 	}
+	defer func() {
+		if err != nil {
+			deinitWayland()
+		}
+	}()
 	if dpyWayland = C.displayConnectWayland(nil); dpyWayland == nil {
-		return errors.New("wsi: displayConnectWayland failed")
+		err = errors.New("wsi: displayConnectWayland failed")
+		return
 	}
 	if rtyWayland = C.displayGetRegistryWayland(dpyWayland); rtyWayland == nil {
-		return errors.New("wsi: displayGetRegistryWayland failed")
+		err = errors.New("wsi: displayGetRegistryWayland failed")
+		return
 	}
 	if C.registryAddListenerWayland(rtyWayland) != 0 {
-		return errors.New("wsi: registryAddListenerWayland failed")
+		err = errors.New("wsi: registryAddListenerWayland failed")
+		return
 	}
-
 	C.displayRoundtripWayland(dpyWayland)
-
-	// TODO
 	if cptWayland == nil {
-		panic("cptWayland is nil")
+		err = errors.New("wsi: cptWayland is nil")
+		return
 	}
-	println("cptWayland:", cptWayland)
 	if wmXDG == nil {
-		panic("wmXDG is nil")
+		err = errors.New("wsi: wmXDG is nil")
+		return
 	}
-	println("wmXDG:", wmXDG)
 	if seatWayland == nil {
-		panic("seatWayland is nil")
+		err = errors.New("wsi: seatWayland is nil")
+		return
 	}
-	println("seatWayland:", seatWayland)
-
-	return nil
+	return
 }
 
 // deinitWayland deinitializes the Wayland platform.
@@ -74,6 +75,18 @@ func deinitWayland() {
 		}
 	}
 	if dpyWayland != nil {
+		if cptWayland != nil {
+			// TODO
+		}
+		if wmXDG != nil {
+			// TODO
+		}
+		if seatWayland != nil {
+			// TODO
+		}
+		if rtyWayland != nil {
+			// TODO
+		}
 		C.displayDisconnectWayland(dpyWayland)
 		dpyWayland = nil
 	}
