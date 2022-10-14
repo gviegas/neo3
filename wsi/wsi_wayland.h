@@ -82,6 +82,18 @@ int surfaceAddListenerWayland(struct wl_surface* sf);
 // wl_surface_destroy.
 void surfaceDestroyWayland(struct wl_surface* sf);
 
+// wl_surface_attach.
+void surfaceAttachWayland(struct wl_surface* sf, struct wl_buffer* buf, int32_t x, int32_t y);
+
+// wl_surface_frame.
+struct wl_callback* surfaceFrameWayland(struct wl_surface* sf);
+
+// wl_surface_commit.
+void surfaceCommitWayland(struct wl_surface* sf);
+
+// wl_surface_damage_buffer.
+void surfaceDamageBufferWayland(struct wl_surface* sf, int32_t x, int32_t y, int32_t width, int32_t height);
+
 // xdg_wm_base_add_listener.
 // This wrapper requires the following exported Go function:
 //
@@ -99,6 +111,30 @@ struct xdg_surface* wmBaseGetXDGSurfaceXDG(struct xdg_wm_base* wm, struct wl_sur
 
 // xdg_wm_base_pong.
 void wmBasePongXDG(struct xdg_wm_base* wm, uint32_t serial);
+
+// xdg_positioner_destroy.
+void positionerDestroyXDG(struct xdg_positioner* pos);
+
+// xdg_surface_add_listener.
+// This wrapper requires the following exported Go function:
+//
+// - surfaceConfigureXDG(xsf *C.struct_xdg_surface, serial C.uint32_t)
+int surfaceAddListenerXDG(struct xdg_surface* xsf);
+
+// xdg_surface_destroy.
+void surfaceDestroyXDG(struct xdg_surface* xsf);
+
+// xdg_surface_get_toplevel.
+struct xdg_toplevel* surfaceGetToplevelXDG(struct xdg_surface* xsf);
+
+// xdg_surface_get_popup.
+struct xdg_popup* surfaceGetPopupXDG(struct xdg_surface* xsf, struct xdg_surface* parent, struct xdg_positioner* pos);
+
+// xdg_surface_set_window_geometry.
+void surfaceSetWindowGeometryXDG(struct xdg_surface* xsf, int32_t x, int32_t y, int32_t width, int32_t height);
+
+// xdg_surface_ack_configure.
+void surfaceAckConfigureXDG(struct xdg_surface* xsf, uint32_t serial);
 
 // wl_seat_add_listener.
 // This wrapper requires the following exported Go functions:

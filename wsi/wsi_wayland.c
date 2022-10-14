@@ -83,8 +83,16 @@ const struct wl_interface registryInterfaceWayland = {
 	},
 };
 
-// TODO
-const struct wl_interface callbackInterfaceWayland;
+const struct wl_interface callbackInterfaceWayland = {
+	.name = "wl_callback",
+	.version = 1,
+	.method_count = 0,
+	.methods = NULL,
+	.event_count = 1,
+	.events = (const struct wl_message[1]){
+		{ "done", "u", nullInterface },
+	},
+};
 
 const struct wl_interface compositorInterfaceWayland = {
 	.name = "wl_compositor",
@@ -98,10 +106,44 @@ const struct wl_interface compositorInterfaceWayland = {
 	.events = NULL,
 };
 
-// TODO
-const struct wl_interface shmInterfaceWayland;
-const struct wl_interface shmPoolInterfaceWayland;
-const struct wl_interface bufferInterfaceWayland;
+const struct wl_interface shmInterfaceWayland = {
+	.name = "wl_shm",
+	.version = 1,
+	.method_count = 1,
+	.methods = (const struct wl_message[1]){
+		{ "create_pool", "nhi", (const struct wl_interface*[3]){&shmPoolInterfaceWayland} },
+	},
+	.event_count = 1,
+	.events = (const struct wl_message[1]){
+		{ "format", "u", nullInterface },
+	},
+};
+
+const struct wl_interface shmPoolInterfaceWayland = {
+	.name = "wl_shm_pool",
+	.version = 1,
+	.method_count = 3,
+	.methods = (const struct wl_message[3]){
+		{ "create_buffer", "niiiiu", (const struct wl_interface*[6]){&bufferInterfaceWayland} },
+		{ "destroy", "", nullInterface },
+		{ "resize", "i", nullInterface },
+	},
+	.event_count = 0,
+	.events = NULL,
+};
+
+const struct wl_interface bufferInterfaceWayland = {
+	.name = "wl_buffer",
+	.version = 1,
+	.method_count = 1,
+	.methods = (const struct wl_message[1]){
+		{ "destroy", "", nullInterface },
+	},
+	.event_count = 1,
+	.events = (const struct wl_message[1]){
+		{ "release", "", nullInterface },
+	},
+};
 
 const struct wl_interface surfaceInterfaceWayland = {
 	.name = "wl_surface",
@@ -127,9 +169,36 @@ const struct wl_interface surfaceInterfaceWayland = {
 	},
 };
 
-// TODO
-const struct wl_interface regionInterfaceWayland;
-const struct wl_interface outputInterfaceWayland;
+const struct wl_interface regionInterfaceWayland = {
+	.name = "wl_region",
+	.version = 1,
+	.method_count = 3,
+	.methods = (const struct wl_message[3]){
+		{ "destroy", "", nullInterface },
+		{ "add", "iiii", nullInterface },
+		{ "subtract", "iiii", nullInterface },
+	},
+	.event_count = 0,
+	.events = NULL,
+};
+
+const struct wl_interface outputInterfaceWayland = {
+	.name = "wl_output",
+	.version = 4,
+	.method_count = 1,
+	.methods = (const struct wl_message[1]){
+		{ "release", "3", nullInterface },
+	},
+	.event_count = 6,
+	.events = (const struct wl_message[6]){
+		{ "geometry", "iiiiissi", nullInterface },
+		{ "mode", "uiii", nullInterface },
+		{ "done", "2", nullInterface },
+		{ "scale", "2i", nullInterface },
+		{ "name", "4s", nullInterface },
+		{ "description", "4s", nullInterface },
+	},
+};
 
 const struct wl_interface seatInterfaceWayland = {
 	.name = "wl_seat",
@@ -383,6 +452,23 @@ void surfaceDestroyWayland(struct wl_surface* sf) {
 	proxyMarshalFlags((struct wl_proxy*)sf, WL_SURFACE_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)sf), WL_MARSHAL_FLAG_DESTROY);
 }
 
+void surfaceAttachWayland(struct wl_surface* sf, struct wl_buffer* buf, int32_t x, int32_t y) {
+	proxyMarshalFlags((struct wl_proxy*)sf, WL_SURFACE_ATTACH, NULL, proxyGetVersion((struct wl_proxy*)sf), 0, buf, x, y);
+}
+
+struct wl_callback* surfaceFrameWayland(struct wl_surface* sf) {
+	return (struct wl_callback*)proxyMarshalFlags(
+		(struct wl_proxy*)sf, WL_SURFACE_FRAME, &callbackInterfaceWayland, proxyGetVersion((struct wl_proxy*)sf), 0, NULL);
+}
+
+void surfaceCommitWayland(struct wl_surface* sf) {
+	proxyMarshalFlags((struct wl_proxy*)sf, WL_SURFACE_COMMIT, NULL, proxyGetVersion((struct wl_proxy*)sf), 0);
+}
+
+void surfaceDamageBufferWayland(struct wl_surface* sf, int32_t x, int32_t y, int32_t width, int32_t height) {
+	proxyMarshalFlags((struct wl_proxy*)sf, WL_SURFACE_DAMAGE_BUFFER, NULL, proxyGetVersion((struct wl_proxy*)sf), 0, x, y, width, height);
+}
+
 static void wmBasePing(void*, struct xdg_wm_base*, uint32_t serial) {
 	wmBasePingXDG(serial);
 }
@@ -408,6 +494,41 @@ struct xdg_surface* wmBaseGetXDGSurfaceXDG(struct xdg_wm_base* wm, struct wl_sur
 
 void wmBasePongXDG(struct xdg_wm_base* wm, uint32_t serial) {
 	proxyMarshalFlags((struct wl_proxy*)wm, XDG_WM_BASE_PONG, NULL, proxyGetVersion((struct wl_proxy*)wm), 0, serial);
+}
+
+void positionerDestroyXDG(struct xdg_positioner* pos) {
+	proxyMarshalFlags((struct wl_proxy*)pos, XDG_POSITIONER_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)pos), WL_MARSHAL_FLAG_DESTROY);
+}
+
+static void surfaceConfigure(void*, struct xdg_surface* xsf, uint32_t serial) {
+	surfaceConfigureXDG(xsf, serial);
+}
+
+int surfaceAddListenerXDG(struct xdg_surface* xsf) {
+	static const struct xdg_surface_listener ltn = { surfaceConfigure };
+	return proxyAddListener((struct wl_proxy*)xsf, (void (**)(void))&ltn, NULL);
+}
+
+void surfaceDestroyXDG(struct xdg_surface* xsf) {
+	proxyMarshalFlags((struct wl_proxy*)xsf, XDG_SURFACE_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)xsf), WL_MARSHAL_FLAG_DESTROY);
+}
+
+struct xdg_toplevel* surfaceGetToplevelXDG(struct xdg_surface* xsf) {
+	return (struct xdg_toplevel*)proxyMarshalFlags(
+		(struct wl_proxy*)xsf, XDG_SURFACE_GET_TOPLEVEL, &toplevelInterfaceXDG, proxyGetVersion((struct wl_proxy*)xsf), 0, NULL);
+}
+
+struct xdg_popup* surfaceGetPopupXDG(struct xdg_surface* xsf, struct xdg_surface* parent, struct xdg_positioner* pos) {
+	return (struct xdg_popup*)proxyMarshalFlags(
+		(struct wl_proxy*)xsf, XDG_SURFACE_GET_POPUP, &popupInterfaceXDG, proxyGetVersion((struct wl_proxy*)xsf), 0, NULL, parent, pos);
+}
+
+void surfaceSetWindowGeometryXDG(struct xdg_surface* xsf, int32_t x, int32_t y, int32_t width, int32_t height) {
+	proxyMarshalFlags((struct wl_proxy*)xsf, XDG_SURFACE_SET_WINDOW_GEOMETRY, NULL, proxyGetVersion((struct wl_proxy*)xsf), 0, x, y, width, height);
+}
+
+void surfaceAckConfigureXDG(struct xdg_surface* xsf, uint32_t serial) {
+	proxyMarshalFlags((struct wl_proxy*)xsf, XDG_SURFACE_ACK_CONFIGURE, NULL, proxyGetVersion((struct wl_proxy*)xsf), 0, serial);
 }
 
 static void seatCapabilities(void*, struct wl_seat*, uint32_t capab) {

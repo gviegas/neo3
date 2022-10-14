@@ -51,6 +51,9 @@ func initWayland() (err error) {
 		err = errors.New("wsi: registryAddListenerWayland failed")
 		return
 	}
+
+	// These globals are required. If all goes well,
+	// they will be set from within their callbacks.
 	C.displayRoundtripWayland(dpyWayland)
 	if cptWayland == nil {
 		err = errors.New("wsi: cptWayland is nil")
@@ -64,10 +67,16 @@ func initWayland() (err error) {
 		err = errors.New("wsi: seatWayland is nil")
 		return
 	}
+	if C.wmBaseAddListenerXDG(wmXDG) != 0 {
+		err = errors.New("wsi: wmBaseAddListenerXDG failed")
+		return
+	}
 	if C.seatAddListenerWayland(seatWayland) != 0 {
 		err = errors.New("wsi: seatAddListenerWayland failed")
 		return
 	}
+
+	// It is ok for input to be missing initially.
 	C.displayRoundtripWayland(dpyWayland)
 	if ptWayland != nil && C.pointerAddListenerWayland(ptWayland) != 0 {
 		err = errors.New("wsi: pointerAddListenerWayland failed")
@@ -77,6 +86,7 @@ func initWayland() (err error) {
 		err = errors.New("wsi: keyboardAddListenerWayland failed")
 		return
 	}
+
 	C.displayRoundtripWayland(dpyWayland)
 	return
 }
@@ -98,6 +108,12 @@ func deinitWayland() {
 			// TODO
 		}
 		if seatWayland != nil {
+			// TODO
+		}
+		if ptWayland != nil {
+			// TODO
+		}
+		if kbWayland != nil {
 			// TODO
 		}
 		if rtyWayland != nil {
@@ -219,8 +235,15 @@ func surfaceLeaveWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {
 
 //export wmBasePingXDG
 func wmBasePingXDG(serial C.uint32_t) {
+	println("\twmBasePingXDG:", serial) // XXX
+
+	C.wmBasePongXDG(wmXDG, serial)
+}
+
+//export surfaceConfigureXDG
+func surfaceConfigureXDG(xsf *C.struct_xdg_surface, serial C.uint32_t) {
 	// TODO
-	println("\twmBasePingXDG:", serial)
+	println("\tsurfaceConfigureXDG:", xsf, serial)
 }
 
 //export seatCapabilitiesWayland
