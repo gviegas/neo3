@@ -63,6 +63,9 @@ struct wl_registry* displayGetRegistryWayland(struct wl_display* dpy);
 // - registryGlobalRemoveWayland(name C.uint32_t)
 int registryAddListenerWayland(struct wl_registry* rty);
 
+// wl_registry_destroy.
+void registryDestroyWayland(struct wl_registry* rty);
+
 // wl_registry_bind.
 void* registryBindWayland(struct wl_registry* rty, uint32_t name, const struct wl_interface* iface, uint32_t vers);
 
@@ -103,3 +106,55 @@ void wmBasePongXDG(struct xdg_wm_base* wm, uint32_t serial);
 // - seatCapabilitiesWayland(capab C.uint32_t)
 // - seatNameWayland(name *C.char)
 int seatAddListenerWayland(struct wl_seat *seat);
+
+// wl_seat_destroy.
+void seatDestroyWayland(struct wl_seat* seat);
+
+// wl_seat_get_pointer.
+struct wl_pointer* seatGetPointerWayland(struct wl_seat* seat);
+
+// wl_seat_get_keyboard.
+struct wl_keyboard* seatGetKeyboardWayland(struct wl_seat* seat);
+
+// wl_seat_release.
+void seatReleaseWayland(struct wl_seat* seat);
+
+// wl_pointer_add_listener.
+// This wrapper requires the following exported Go functions:
+//
+// - pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_fixed_t)
+// - pointerLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface)
+// - pointerMotionWayland(millis C.uint32_t, x, y C.wl_fixed_t)
+// - pointerButtonWayland(serial, millis, button, state C.uint32_t)
+// - pointerAxisWayland(millis, axis C.uint32_t, value C.wl_fixed_t)
+// - pointerFrameWayland()
+// - pointerAxisSourceWayland(axisSrc C.uint32_t)
+// - pointerAxisStopWayland(millis, axis C.uint32_t)
+// - pointerAxisDiscreteWayland(axis C.uint32_t, discrete C.int32_t)
+int pointerAddListenerWayland(struct wl_pointer* pt);
+
+// wl_pointer_destroy.
+void pointerDestroyWayland(struct wl_pointer* pt);
+
+// wl_pointer_set_cursor.
+void pointerSetCursorWayland(struct wl_pointer* pt, uint32_t serial, struct wl_surface* sf, int32_t hotspotX, int32_t hotspotY);
+
+// wl_pointer_release.
+void pointerReleaseWayland(struct wl_pointer* pt);
+
+// wl_keyboard_add_listener.
+// This wrapper requires the following exported Go functions:
+//
+// - keyboardKeymapWayland(format C.uint32_t, fd C.int32_t, size C.uint32_t)
+// - keyboardEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, keys *C.struct_wl_array)
+// - keyboardLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface)
+// - keyboardKeyWayland(serial, millis, key, state C.uint32_t)
+// - keyboardModifiersWayland(serial, depressed, latched, locked, group C.uint32_t)
+// - keyboardRepeatInfoWayland(rate, delay C.int32_t)
+int keyboardAddListenerWayland(struct wl_keyboard* kb);
+
+// wl_keyboard_destroy.
+void keyboardDestroyWayland(struct wl_keyboard* kb);
+
+// wl_keyboard_release.
+void keyboardReleaseWayland(struct wl_keyboard* kb);

@@ -22,6 +22,8 @@ var (
 	cptWayland  *C.struct_wl_compositor
 	wmXDG       *C.struct_xdg_wm_base
 	seatWayland *C.struct_wl_seat
+	ptWayland   *C.struct_wl_pointer
+	kbWayland   *C.struct_wl_keyboard
 )
 
 // initWayland initializes the Wayland platform.
@@ -62,6 +64,20 @@ func initWayland() (err error) {
 		err = errors.New("wsi: seatWayland is nil")
 		return
 	}
+	if C.seatAddListenerWayland(seatWayland) != 0 {
+		err = errors.New("wsi: seatAddListenerWayland failed")
+		return
+	}
+	C.displayRoundtripWayland(dpyWayland)
+	if ptWayland != nil && C.pointerAddListenerWayland(ptWayland) != 0 {
+		err = errors.New("wsi: pointerAddListenerWayland failed")
+		return
+	}
+	if kbWayland != nil && C.keyboardAddListenerWayland(kbWayland) != 0 {
+		err = errors.New("wsi: keyboardAddListenerWayland failed")
+		return
+	}
+	C.displayRoundtripWayland(dpyWayland)
 	return
 }
 
@@ -209,12 +225,108 @@ func wmBasePingXDG(serial C.uint32_t) {
 
 //export seatCapabilitiesWayland
 func seatCapabilitiesWayland(capab C.uint32_t) {
-	// TODO
-	println("\tseatCapabilitiesWayland:", capab)
+	println("\tseatCapabilitiesWayland:", capab) // XXX
+
+	if capab&C.WL_SEAT_CAPABILITY_POINTER != 0 {
+		ptWayland = C.seatGetPointerWayland(seatWayland)
+	}
+	if capab&C.WL_SEAT_CAPABILITY_KEYBOARD != 0 {
+		kbWayland = C.seatGetKeyboardWayland(seatWayland)
+	}
 }
 
 //export seatNameWayland
 func seatNameWayland(name *C.char) {
 	// TODO
 	println("\tseatNameWayland:", C.GoString(name))
+}
+
+//export pointerEnterWayland
+func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_fixed_t) {
+	// TODO
+	println("\tpointerEnterWayland:", serial, sf, x, y)
+}
+
+//export pointerLeaveWayland
+func pointerLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
+	// TODO
+	println("\tpointerleaveWayland:", serial, sf)
+}
+
+//export pointerMotionWayland
+func pointerMotionWayland(millis C.uint32_t, x, y C.wl_fixed_t) {
+	// TODO
+	println("\tpointerMotionWayland:", millis, x, y)
+}
+
+//export pointerButtonWayland
+func pointerButtonWayland(serial, millis, button, state C.uint32_t) {
+	// TODO
+	println("\tpointerButtonWayland:", serial, millis, button, state)
+}
+
+//export pointerAxisWayland
+func pointerAxisWayland(millis, axis C.uint32_t, value C.wl_fixed_t) {
+	// TODO
+	println("\tpointerAxisWayland:", millis, axis, value)
+}
+
+//export pointerFrameWayland
+func pointerFrameWayland() {
+	// TODO
+	println("\tpointerFrameWyland: n/a")
+}
+
+//export pointerAxisSourceWayland
+func pointerAxisSourceWayland(axisSrc C.uint32_t) {
+	// TODO
+	println("\tpointerAxisSourceWayland:", axisSrc)
+}
+
+//export pointerAxisStopWayland
+func pointerAxisStopWayland(millis, axis C.uint32_t) {
+	// TODO
+	println("\tpointerAxisStopWayland:", millis, axis)
+}
+
+//export pointerAxisDiscreteWayland
+func pointerAxisDiscreteWayland(axis C.uint32_t, discrete C.int32_t) {
+	// TODO
+	println("\tpointerAxisDiscreteWayland:", axis, discrete)
+}
+
+//export keyboardKeymapWayland
+func keyboardKeymapWayland(format C.uint32_t, fd C.int32_t, size C.uint32_t) {
+	// TODO
+	println("\tkeyboardKeymapWayland:", format, fd, size)
+}
+
+//export keyboardEnterWayland
+func keyboardEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, keys *C.struct_wl_array) {
+	// TODO
+	println("\tkeyboardEnterWayland:", serial, sf, keys)
+}
+
+//export keyboardLeaveWayland
+func keyboardLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
+	// TODO
+	println("\tkeyboardLeaveWayland:", serial, sf)
+}
+
+//export keyboardKeyWayland
+func keyboardKeyWayland(serial, millis, key, state C.uint32_t) {
+	// TODO
+	println("\tkeyboardKeyWayland:", serial, millis, key, state)
+}
+
+//export keyboardModifiersWayland
+func keyboardModifiersWayland(serial, depressed, latched, locked, group C.uint32_t) {
+	// TODO
+	println("\tkeyboardModifiersWayland:", serial, depressed, latched, locked, group)
+}
+
+//export keyboardRepeatInfoWayland
+func keyboardRepeatInfoWayland(rate, delay C.int32_t) {
+	// TODO
+	println("\tkeyboardRepeatInfoWayland:", rate, delay)
 }

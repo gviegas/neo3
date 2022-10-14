@@ -132,7 +132,7 @@ const struct wl_interface regionInterfaceWayland;
 const struct wl_interface outputInterfaceWayland;
 
 const struct wl_interface seatInterfaceWayland = {
-	.name = "wm_seat",
+	.name = "wl_seat",
 	.version = 7,
 	.method_count = 4,
 	.methods = (const struct wl_message[4]){
@@ -149,7 +149,7 @@ const struct wl_interface seatInterfaceWayland = {
 };
 
 const struct wl_interface pointerInterfaceWayland = {
-	.name = "wm_pointer",
+	.name = "wl_pointer",
 	.version = 7,
 	.method_count = 2,
 	.methods = (const struct wl_message[2]){
@@ -171,7 +171,7 @@ const struct wl_interface pointerInterfaceWayland = {
 };
 
 const struct wl_interface keyboardInterfaceWayland = {
-	.name = "wm_keyboard",
+	.name = "wl_keyboard",
 	.version = 7,
 	.method_count = 1,
 	.methods = (const struct wl_message[1]){
@@ -188,8 +188,24 @@ const struct wl_interface keyboardInterfaceWayland = {
 	},
 };
 
-// TODO
-const struct wl_interface touchInterfaceWayland;
+const struct wl_interface touchInterfaceWayland = {
+	.name = "wl_touch",
+	.version = 7,
+	.method_count = 1,
+	.methods = (const struct wl_message[1]){
+		{ "release", "3", nullInterface },
+	},
+	.event_count = 7,
+	.events = (const struct wl_message[7]){
+		{ "down", "uuoiff", (const struct wl_interface*[6]){NULL, NULL, &surfaceInterfaceWayland} },
+		{ "up", "uui", nullInterface },
+		{ "motion", "uiff", nullInterface },
+		{ "frame", "", nullInterface },
+		{ "cancel", "", nullInterface },
+		{ "shape", "6iff", nullInterface },
+		{ "orientation", "6if", nullInterface },
+	},
+};
 
 const struct wl_interface wmBaseInterfaceXDG = {
 	.name = "xdg_wm_base",
@@ -327,11 +343,15 @@ static void registryGlobalRemove(void*, struct wl_registry*, uint32_t name) {
 }
 
 int registryAddListenerWayland(struct wl_registry* rty) {
-	const struct wl_registry_listener ltn = {
+	static const struct wl_registry_listener ltn = {
 		.global = registryGlobal,
 		.global_remove = registryGlobalRemove,
 	};
 	return proxyAddListener((struct wl_proxy*)rty, (void (**)(void))&ltn, NULL);
+}
+
+void registryDestroyWayland(struct wl_registry* rty) {
+	proxyDestroy((struct wl_proxy*)rty);
 }
 
 void* registryBindWayland(struct wl_registry* rty, uint32_t name, const struct wl_interface* iface, uint32_t vers) {
@@ -352,7 +372,7 @@ static void surfaceLeave(void*, struct wl_surface* sf, struct wl_output* out) {
 }
 
 int surfaceAddListenerWayland(struct wl_surface* sf) {
-	const struct wl_surface_listener ltn = {
+	static const struct wl_surface_listener ltn = {
 		.enter = surfaceEnter,
 		.leave = surfaceLeave,
 	};
@@ -368,7 +388,7 @@ static void wmBasePing(void*, struct xdg_wm_base*, uint32_t serial) {
 }
 
 int wmBaseAddListenerXDG(struct xdg_wm_base* wm) {
-	const struct xdg_wm_base_listener ltn = { wmBasePing };
+	static const struct xdg_wm_base_listener ltn = { wmBasePing };
 	return proxyAddListener((struct wl_proxy*)wm, (void (**)(void))&ltn, NULL);
 }
 
@@ -403,9 +423,134 @@ static void seatName(void*, struct wl_seat*, const char* name) {
 }
 
 int seatAddListenerWayland(struct wl_seat *seat) {
-	const struct wl_seat_listener ltn = {
+	static const struct wl_seat_listener ltn = {
 		.capabilities = seatCapabilities,
 		.name = seatName,
 	};
 	return proxyAddListener((struct wl_proxy*)seat, (void (**)(void))&ltn, NULL);
+}
+
+void seatDestroyWayland(struct wl_seat* seat) {
+	proxyDestroy((struct wl_proxy*)seat);
+}
+
+struct wl_pointer* seatGetPointerWayland(struct wl_seat* seat) {
+	return (struct wl_pointer*)proxyMarshalFlags(
+		(struct wl_proxy*)seat, WL_SEAT_GET_POINTER, &pointerInterfaceWayland, proxyGetVersion((struct wl_proxy*)seat), 0, NULL);
+}
+
+struct wl_keyboard* seatGetKeyboardWayland(struct wl_seat* seat) {
+	return (struct wl_keyboard*)proxyMarshalFlags(
+		(struct wl_proxy*)seat, WL_SEAT_GET_KEYBOARD, &keyboardInterfaceWayland, proxyGetVersion((struct wl_proxy*)seat), 0, NULL);
+}
+
+void seatReleaseWayland(struct wl_seat* seat) {
+	proxyMarshalFlags((struct wl_proxy*)seat, WL_SEAT_RELEASE, NULL, proxyGetVersion((struct wl_proxy*)seat), WL_MARSHAL_FLAG_DESTROY);
+}
+
+static void pointerEnter(void*, struct wl_pointer*, uint32_t serial, struct wl_surface* sf, wl_fixed_t x, wl_fixed_t y) {
+	pointerEnterWayland(serial, sf, x, y);
+}
+
+static void pointerLeave(void*, struct wl_pointer*, uint32_t serial, struct wl_surface* sf) {
+	pointerLeaveWayland(serial, sf);
+}
+
+static void pointerMotion(void*, struct wl_pointer*, uint32_t millis, wl_fixed_t x, wl_fixed_t y) {
+	pointerMotionWayland(millis, x, y);
+}
+
+static void pointerButton(void*, struct wl_pointer*, uint32_t serial, uint32_t millis, uint32_t button, uint32_t state) {
+	pointerButtonWayland(serial, millis, button, state);
+}
+
+static void pointerAxis(void*, struct wl_pointer*, uint32_t millis, uint32_t axis, wl_fixed_t value) {
+	pointerAxisWayland(millis, axis, value);
+}
+
+static void pointerFrame(void*, struct wl_pointer*) {
+	pointerFrameWayland();
+}
+
+static void pointerAxisSource(void*, struct wl_pointer*, uint32_t axisSrc) {
+	pointerAxisSourceWayland(axisSrc);
+}
+
+static void pointerAxisStop(void*, struct wl_pointer*, uint32_t millis, uint32_t axis) {
+	pointerAxisStopWayland(millis, axis);
+}
+
+static void pointerAxisDiscrete(void*, struct wl_pointer*, uint32_t axis, int32_t discrete) {
+	pointerAxisDiscreteWayland(axis, discrete);
+}
+
+int pointerAddListenerWayland(struct wl_pointer* pt) {
+	static const struct wl_pointer_listener ltn = {
+		.enter = pointerEnter,
+		.leave = pointerLeave,
+		.motion = pointerMotion,
+		.button = pointerButton,
+		.axis = pointerAxis,
+		.frame = pointerFrame,
+		.axis_source = pointerAxisSource,
+		.axis_stop = pointerAxisStop,
+		.axis_discrete = pointerAxisDiscrete,
+	};
+	return proxyAddListener((struct wl_proxy*)pt, (void (**)(void))&ltn, NULL);
+}
+
+void pointerDestroyWayland(struct wl_pointer* pt) {
+	proxyDestroy((struct wl_proxy*)pt);
+}
+
+void pointerSetCursorWayland(struct wl_pointer* pt, uint32_t serial, struct wl_surface* sf, int32_t hotspotX, int32_t hotspotY) {
+	proxyMarshalFlags((struct wl_proxy*)pt, WL_POINTER_SET_CURSOR, NULL, proxyGetVersion((struct wl_proxy*)pt), 0, serial, sf, hotspotX, hotspotY);
+}
+
+void pointerReleaseWayland(struct wl_pointer* pt) {
+	proxyMarshalFlags((struct wl_proxy*)pt, WL_POINTER_RELEASE, NULL, proxyGetVersion((struct wl_proxy*)pt), WL_MARSHAL_FLAG_DESTROY);
+}
+
+static void keyboardKeymap(void*, struct wl_keyboard*, uint32_t format, int32_t fd, uint32_t size) {
+	keyboardKeymapWayland(format, fd, size);
+}
+
+static void keyboardEnter(void*, struct wl_keyboard*, uint32_t serial, struct wl_surface* sf, struct wl_array* keys) {
+	keyboardEnterWayland(serial, sf, keys);
+}
+
+static void keyboardLeave(void*, struct wl_keyboard*, uint32_t serial, struct wl_surface* sf) {
+	keyboardLeaveWayland(serial, sf);
+}
+
+static void keyboardKey(void*, struct wl_keyboard*, uint32_t serial, uint32_t millis, uint32_t key, uint32_t state) {
+	keyboardKeyWayland(serial, millis, key, state);
+}
+
+static void keyboardModifiers(void*, struct wl_keyboard*, uint32_t serial, uint32_t depressed, uint32_t latched, uint32_t locked, uint32_t group) {
+	keyboardModifiersWayland(serial, depressed, latched, locked, group);
+}
+
+static void keyboardRepeatInfo(void*, struct wl_keyboard*, int32_t rate, int32_t delay) {
+	keyboardRepeatInfoWayland(rate, delay);
+}
+
+int keyboardAddListenerWayland(struct wl_keyboard* kb) {
+	static const struct wl_keyboard_listener ltn = {
+		.keymap = keyboardKeymap,
+		.enter = keyboardEnter,
+		.leave = keyboardLeave,
+		.key = keyboardKey,
+		.modifiers = keyboardModifiers,
+		.repeat_info = keyboardRepeatInfo,
+	};
+	return proxyAddListener((struct wl_proxy*)kb, (void (**)(void))&ltn, NULL);
+}
+
+void keyboardDestroyWayland(struct wl_keyboard* kb) {
+	proxyDestroy((struct wl_proxy*)kb);
+}
+
+void keyboardReleaseWayland(struct wl_keyboard* kb) {
+	proxyMarshalFlags((struct wl_proxy*)kb, WL_KEYBOARD_RELEASE, NULL, proxyGetVersion((struct wl_proxy*)kb), WL_MARSHAL_FLAG_DESTROY);
 }
