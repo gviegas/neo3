@@ -235,8 +235,16 @@ func (w *windowWayland) SetTitle(title string) error {
 
 // Close closes the window.
 func (w *windowWayland) Close() {
-	// TODO
-	println("windowWayland.Close: not implemented")
+	if w != nil {
+		closeWindow(w)
+		if dpyWayland != nil {
+			C.toplevelDestroyXDG(w.toplevel)
+			C.surfaceDestroyXDG(w.xsf)
+			C.surfaceDestroyWayland(w.wsf)
+			C.displayFlushWayland(dpyWayland)
+		}
+		*w = windowWayland{}
+	}
 }
 
 // Width returns the window's width.
