@@ -69,6 +69,9 @@ void registryDestroyWayland(struct wl_registry* rty);
 // wl_registry_bind.
 void* registryBindWayland(struct wl_registry* rty, uint32_t name, const struct wl_interface* iface, uint32_t vers);
 
+// wl_compositor_destroy.
+void compositorDestroyWayland(struct wl_compositor* cpt);
+
 // wl_compositor_create_surface.
 struct wl_surface* compositorCreateSurfaceWayland(struct wl_compositor* cpt);
 
@@ -135,6 +138,38 @@ void surfaceSetWindowGeometryXDG(struct xdg_surface* xsf, int32_t x, int32_t y, 
 
 // xdg_surface_ack_configure.
 void surfaceAckConfigureXDG(struct xdg_surface* xsf, uint32_t serial);
+
+// xdg_toplevel_add_listener.
+// This wrapper requires the following exported Go functions:
+//
+// - toplevelConfigureXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t, states *C.struct_wl_array)
+// - toplevelCloseXDG(tl *C.struct_xdg_toplevel)
+// - toplevelConfigureBoundsXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t)
+int toplevelAddListenerXDG(struct xdg_toplevel* tl);
+
+// xdg_toplevel_destroy.
+void toplevelDestroyXDG(struct xdg_toplevel* tl);
+
+// xdg_toplevel_set_parent.
+void toplevelSetParentXDG(struct xdg_toplevel* tl, struct xdg_toplevel* parent);
+
+// xdg_toplevel_set_title.
+void toplevelSetTitleXDG(struct xdg_toplevel* tl, const char* title);
+
+// xdg_toplevel_set_app_id.
+void toplevelSetAppIDXDG(struct xdg_toplevel* tl, const char* appID);
+
+// xdg_toplevel_set_max_size.
+void toplevelSetMaxSizeXDG(struct xdg_toplevel* tl, int32_t width, int32_t height);
+
+// xdg_toplevel_set_min_size.
+void toplevelSetMinSizeXDG(struct xdg_toplevel* tl, int32_t width, int32_t height);
+
+// xdg_toplevel_set_fullscreen.
+void toplevelSetFullscreenXDG(struct xdg_toplevel* tl, struct wl_output* out);
+
+// xdg_toplevel_unset_fullscreen.
+void toplevelUnsetFullscreenXDG(struct xdg_toplevel* tl);
 
 // wl_seat_add_listener.
 // This wrapper requires the following exported Go functions:

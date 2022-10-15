@@ -102,22 +102,28 @@ func deinitWayland() {
 	}
 	if dpyWayland != nil {
 		if cptWayland != nil {
-			// TODO
+			C.compositorDestroyWayland(cptWayland)
+			cptWayland = nil
 		}
 		if wmXDG != nil {
-			// TODO
-		}
-		if seatWayland != nil {
-			// TODO
+			C.wmBaseDestroyXDG(wmXDG)
+			wmXDG = nil
 		}
 		if ptWayland != nil {
-			// TODO
+			C.pointerDestroyWayland(ptWayland)
+			ptWayland = nil
 		}
 		if kbWayland != nil {
-			// TODO
+			C.keyboardDestroyWayland(kbWayland)
+			kbWayland = nil
+		}
+		if seatWayland != nil {
+			C.seatDestroyWayland(seatWayland)
+			seatWayland = nil
 		}
 		if rtyWayland != nil {
-			// TODO
+			C.registryDestroyWayland(rtyWayland)
+			rtyWayland = nil
 		}
 		C.displayDisconnectWayland(dpyWayland)
 		dpyWayland = nil
@@ -244,6 +250,24 @@ func wmBasePingXDG(serial C.uint32_t) {
 func surfaceConfigureXDG(xsf *C.struct_xdg_surface, serial C.uint32_t) {
 	// TODO
 	println("\tsurfaceConfigureXDG:", xsf, serial)
+}
+
+//export toplevelConfigureXDG
+func toplevelConfigureXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t, states *C.struct_wl_array) {
+	// TODO
+	println("\ttoplevelConfigureXDG:", tl, width, height, states)
+}
+
+//export toplevelCloseXDG
+func toplevelCloseXDG(tl *C.struct_xdg_toplevel) {
+	// TODO
+	println("\ttoplevelCloseXDG:", tl)
+}
+
+//export toplevelConfigureBoundsXDG
+func toplevelConfigureBoundsXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t) {
+	// TODO
+	println("\ttoplevelConfigureBoundsXDG:", tl, width, height)
 }
 
 //export seatCapabilitiesWayland

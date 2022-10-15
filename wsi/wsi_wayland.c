@@ -427,6 +427,10 @@ void* registryBindWayland(struct wl_registry* rty, uint32_t name, const struct w
       return proxyMarshalFlags((struct wl_proxy*)rty, WL_REGISTRY_BIND, iface, vers, 0, name, iface->name, vers, NULL);
 }
 
+void compositorDestroyWayland(struct wl_compositor* cpt) {
+	proxyDestroy((struct wl_proxy*)cpt);
+}
+
 struct wl_surface* compositorCreateSurfaceWayland(struct wl_compositor* cpt) {
 	return (struct wl_surface*)proxyMarshalFlags(
 		(struct wl_proxy*)cpt, WL_COMPOSITOR_CREATE_SURFACE, &surfaceInterfaceWayland, proxyGetVersion((struct wl_proxy*)cpt), 0, NULL);
@@ -529,6 +533,59 @@ void surfaceSetWindowGeometryXDG(struct xdg_surface* xsf, int32_t x, int32_t y, 
 
 void surfaceAckConfigureXDG(struct xdg_surface* xsf, uint32_t serial) {
 	proxyMarshalFlags((struct wl_proxy*)xsf, XDG_SURFACE_ACK_CONFIGURE, NULL, proxyGetVersion((struct wl_proxy*)xsf), 0, serial);
+}
+
+static void toplevelConfigure(void*, struct xdg_toplevel* tl, int32_t width, int32_t height, struct wl_array* states) {
+	toplevelConfigureXDG(tl, width, height, states);
+}
+
+static void toplevelClose(void*, struct xdg_toplevel* tl) {
+	toplevelCloseXDG(tl);
+}
+
+static void toplevelConfigureBounds(void*, struct xdg_toplevel* tl, int32_t width, int32_t height) {
+	toplevelConfigureBoundsXDG(tl, width, height);
+}
+
+int toplevelAddListenerXDG(struct xdg_toplevel* tl) {
+	static const struct xdg_toplevel_listener ltn = {
+		.configure = toplevelConfigure,
+		.close = toplevelClose,
+		.configure_bounds = toplevelConfigureBounds,
+	};
+	return proxyAddListener((struct wl_proxy*)tl, (void (**)(void))&ltn, NULL);
+}
+
+void toplevelDestroyXDG(struct xdg_toplevel* tl) {
+	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)tl), WL_MARSHAL_FLAG_DESTROY);
+}
+
+void toplevelSetParentXDG(struct xdg_toplevel* tl, struct xdg_toplevel* parent) {
+	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_SET_PARENT, NULL, proxyGetVersion((struct wl_proxy*)tl), 0, parent);
+}
+
+void toplevelSetTitleXDG(struct xdg_toplevel* tl, const char* title) {
+	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_SET_TITLE, NULL, proxyGetVersion((struct wl_proxy*)tl), 0, title);
+}
+
+void toplevelSetAppIDXDG(struct xdg_toplevel* tl, const char* appID) {
+	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_SET_APP_ID, NULL, proxyGetVersion((struct wl_proxy*)tl), 0, appID);
+}
+
+void toplevelSetMaxSizeXDG(struct xdg_toplevel* tl, int32_t width, int32_t height) {
+	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_SET_MAX_SIZE, NULL, proxyGetVersion((struct wl_proxy*)tl), 0, width, height);
+}
+
+void toplevelSetMinSizeXDG(struct xdg_toplevel* tl, int32_t width, int32_t height) {
+	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_SET_MIN_SIZE, NULL, proxyGetVersion((struct wl_proxy*)tl), 0, width, height);
+}
+
+void toplevelSetFullscreenXDG(struct xdg_toplevel* tl, struct wl_output* out) {
+	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_SET_FULLSCREEN, NULL, proxyGetVersion((struct wl_proxy*)tl), 0, out);
+}
+
+void toplevelUnsetFullscreenXDG(struct xdg_toplevel* tl) {
+	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_UNSET_FULLSCREEN, NULL, proxyGetVersion((struct wl_proxy*)tl), 0);
 }
 
 static void seatCapabilities(void*, struct wl_seat*, uint32_t capab) {
