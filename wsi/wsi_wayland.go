@@ -44,6 +44,7 @@ func initWayland() (err error) {
 			deinitWayland()
 		}
 	}()
+
 	if dpyWayland = C.displayConnectWayland(nil); dpyWayland == nil {
 		err = errors.New("wsi: displayConnectWayland failed")
 		return
@@ -56,10 +57,8 @@ func initWayland() (err error) {
 		err = errors.New("wsi: registryAddListenerWayland failed")
 		return
 	}
-
-	// These globals are required. If all goes well,
-	// they will be set from within their callbacks.
 	C.displayRoundtripWayland(dpyWayland)
+
 	if cptWayland == nil {
 		err = errors.New("wsi: cptWayland is nil")
 		return
@@ -80,9 +79,8 @@ func initWayland() (err error) {
 		err = errors.New("wsi: seatAddListenerWayland failed")
 		return
 	}
-
-	// It is ok for input to be missing initially.
 	C.displayRoundtripWayland(dpyWayland)
+
 	if ptWayland != nil && C.pointerAddListenerWayland(ptWayland) != 0 {
 		err = errors.New("wsi: pointerAddListenerWayland failed")
 		return
@@ -91,8 +89,12 @@ func initWayland() (err error) {
 		err = errors.New("wsi: keyboardAddListenerWayland failed")
 		return
 	}
-
 	C.displayRoundtripWayland(dpyWayland)
+
+	newWindow = newWindowWayland
+	dispatch = dispatchWayland
+	setAppName = setAppNameWayland
+	platform = Wayland
 	return
 }
 
@@ -149,37 +151,42 @@ type windowWayland struct {
 // newWindowWayland creates a new window.
 func newWindowWayland(width, height int, title string) (Window, error) {
 	// TODO
-	panic("not implemented")
+	println("newWindowWayland: not implemented")
+	return new(windowWayland), nil
 }
 
 // Map makes the window visible.
 func (w *windowWayland) Map() error {
 	// TODO
-	panic("not implemented")
+	println("windowWayland.Map: not implemented")
+	return nil
 }
 
 // Unmap hides the window.
 func (w *windowWayland) Unmap() error {
 	// TODO
-	panic("not implemented")
+	println("windowWayland.Unmap: not implemented")
+	return nil
 }
 
 // Resize resizes the window.
 func (w *windowWayland) Resize(width, height int) error {
 	// TODO
-	panic("not implemented")
+	println("windowWayland.Resize: not implemented")
+	return nil
 }
 
 // SetTitle sets the window's title.
 func (w *windowWayland) SetTitle(title string) error {
 	// TODO
-	panic("not implemented")
+	println("windowWayland.SetTitle: not implemented")
+	return nil
 }
 
 // Close closes the window.
 func (w *windowWayland) Close() {
 	// TODO
-	panic("not implemented")
+	println("windowWayland.Close: not implemented")
 }
 
 // Width returns the window's width.
@@ -194,14 +201,14 @@ func (w *windowWayland) Title() string { return w.title }
 // dispatchWayland dispatches queued events.
 func dispatchWayland() {
 	// TODO
-	panic("not implemented")
+	println("dispatchWayland: not implemented")
 }
 
 // setAppNameWayland updates the string used to identify the
 // application.
 func setAppNameWayland(s string) {
 	// TODO
-	panic("not implemented")
+	println("setAppNameWayland: not implemented")
 }
 
 //export registryGlobalWayland
