@@ -47,6 +47,9 @@ void displayDisconnectWayland(struct wl_display* dpy);
 // wl_display_dispatch.
 int displayDispatchWayland(struct wl_display* dpy);
 
+// wl_display_dispatch_pending.
+int displayDispatchPendingWayland(struct wl_display* dpy);
+
 // wl_display_flush.
 int displayFlushWayland(struct wl_display* dpy);
 

@@ -258,8 +258,8 @@ func (w *windowWayland) Title() string { return w.title }
 
 // dispatchWayland dispatches queued events.
 func dispatchWayland() {
-	// TODO
-	println("dispatchWayland: not implemented")
+	C.displayFlushWayland(dpyWayland)
+	C.displayDispatchPendingWayland(dpyWayland)
 }
 
 // setAppNameWayland updates the string used to identify the

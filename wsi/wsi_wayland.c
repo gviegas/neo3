@@ -13,6 +13,7 @@
 static struct wl_display* (*displayConnect)(const char*);
 static void (*displayDisconnect)(struct wl_display*);
 static int (*displayDispatch)(struct wl_display*);
+static int (*displayDispatchPending)(struct wl_display*);
 static int (*displayFlush)(struct wl_display*);
 static int (*displayRoundtrip)(struct wl_display*);
 static void (*proxyDestroy)(struct wl_proxy*);
@@ -33,6 +34,9 @@ void* openWayland(void) {
 		goto nosym;
 	displayDispatch = dlsym(handle, "wl_display_dispatch");
 	if (displayDispatch == NULL)
+		goto nosym;
+	displayDispatchPending = dlsym(handle, "wl_display_dispatch_pending");
+	if (displayDispatchPending == NULL)
 		goto nosym;
 	displayFlush = dlsym(handle, "wl_display_flush");
 	if (displayFlush == NULL)
@@ -384,6 +388,10 @@ void displayDisconnectWayland(struct wl_display* dpy) {
 
 int displayDispatchWayland(struct wl_display* dpy) {
 	return displayDispatch(dpy);
+}
+
+int displayDispatchPendingWayland(struct wl_display* dpy) {
+	return displayDispatchPending(dpy);
 }
 
 int displayFlushWayland(struct wl_display* dpy) {
