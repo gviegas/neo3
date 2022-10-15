@@ -10,8 +10,11 @@ import (
 
 func init() {
 	if os.Getenv("WAYLAND_DISPLAY") != "" {
-		// TODO
-		os.Stderr.WriteString("note: wsi doesn't support wayland yet\n")
+		if err := initWayland(); err != nil {
+			os.Stderr.WriteString(err.Error() + "\n")
+		} else {
+			return
+		}
 	}
 	if os.Getenv("DISPLAY") != "" {
 		if err := initXCB(); err != nil {
