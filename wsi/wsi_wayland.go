@@ -141,18 +141,68 @@ func deinitWayland() {
 
 // windowWayland implements Window.
 type windowWayland struct {
-	// TODO
-	width  int
-	height int
-	title  string
-	mapped bool
+	wsf      *C.struct_wl_surface
+	xsf      *C.struct_xdg_surface
+	toplevel *C.struct_xdg_toplevel
+	width    int
+	height   int
+	title    string
+	mapped   bool
 }
 
 // newWindowWayland creates a new window.
 func newWindowWayland(width, height int, title string) (Window, error) {
-	// TODO
-	println("newWindowWayland: not implemented")
-	return new(windowWayland), nil
+	if wmXDG == nil {
+		return nil, errors.New("wsi: xdg_wm_base not present")
+	}
+
+	wsf := C.compositorCreateSurfaceWayland(cptWayland)
+	if wsf == nil {
+		return nil, errors.New("wsi: compositorCreateSurfaceWayland failed")
+	}
+	if C.surfaceAddListenerWayland(wsf) != 0 {
+		C.surfaceDestroyWayland(wsf)
+		return nil, errors.New("wsi: surfaceAddListenerWayland failed")
+	}
+
+	xsf := C.wmBaseGetXDGSurfaceXDG(wmXDG, wsf)
+	if xsf == nil {
+		C.surfaceDestroyWayland(wsf)
+		return nil, errors.New("wsi: wmBaseGetXDGSurfaceXDG failed")
+	}
+	if C.surfaceAddListenerXDG(xsf) != 0 {
+		C.surfaceDestroyXDG(xsf)
+		C.surfaceDestroyWayland(wsf)
+		return nil, errors.New("wsi: surfaceAddListenerXDG failed")
+	}
+
+	toplevel := C.surfaceGetToplevelXDG(xsf)
+	if toplevel == nil {
+		C.surfaceDestroyXDG(xsf)
+		C.surfaceDestroyWayland(wsf)
+		return nil, errors.New("wsi: surfaceGetToplevelXDG failed")
+	}
+	if C.toplevelAddListenerXDG(toplevel) != 0 {
+		C.toplevelDestroyXDG(toplevel)
+		C.surfaceDestroyXDG(xsf)
+		C.surfaceDestroyWayland(wsf)
+		return nil, errors.New("wsi: toplevelAddListenerXDG failed")
+	}
+
+	// TODO: Title.
+
+	C.surfaceCommitWayland(wsf)
+	C.displayRoundtripWayland(dpyWayland)
+
+	return &windowWayland{
+		wsf:      wsf,
+		xsf:      xsf,
+		toplevel: toplevel,
+		width:    width,
+		height:   height,
+		title:    title,
+		mapped:   false,
+	}, nil
 }
 
 // Map makes the window visible.
@@ -297,8 +347,10 @@ func wmBasePingXDG(serial C.uint32_t) {
 
 //export surfaceConfigureXDG
 func surfaceConfigureXDG(xsf *C.struct_xdg_surface, serial C.uint32_t) {
-	// TODO
-	println("\tsurfaceConfigureXDG:", xsf, serial)
+	println("\tsurfaceConfigureXDG:", xsf, serial) // XXX
+
+	// TODO: Avoid this whenever possible.
+	C.surfaceAckConfigureXDG(xsf, serial)
 }
 
 //export toplevelConfigureXDG
