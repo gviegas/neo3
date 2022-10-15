@@ -265,8 +265,15 @@ func dispatchWayland() {
 // setAppNameWayland updates the string used to identify the
 // application.
 func setAppNameWayland(s string) {
-	// TODO
-	println("setAppNameWayland: not implemented")
+	if windowCount > 0 {
+		appID := C.CString(s)
+		for _, w := range createdWindows {
+			if w != nil {
+				C.toplevelSetAppIDXDG(w.(*windowWayland).toplevel, appID)
+			}
+		}
+		C.displayFlushWayland(dpyWayland)
+	}
 }
 
 //export registryGlobalWayland
