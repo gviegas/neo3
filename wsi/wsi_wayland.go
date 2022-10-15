@@ -24,6 +24,11 @@ var (
 	seatWayland *C.struct_wl_seat
 	ptWayland   *C.struct_wl_pointer
 	kbWayland   *C.struct_wl_keyboard
+
+	// Name of globals in the server.
+	nameCptWayland  C.uint32_t
+	nameWMXDG       C.uint32_t
+	nameSeatWayland C.uint32_t
 )
 
 // initWayland initializes the Wayland platform.
@@ -210,21 +215,58 @@ func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
 		i := &C.compositorInterfaceWayland
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		cptWayland = (*C.struct_wl_compositor)(p)
+		nameCptWayland = name
 	case "xdg_wm_base":
 		i := &C.wmBaseInterfaceXDG
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		wmXDG = (*C.struct_xdg_wm_base)(p)
+		nameWMXDG = name
 	case "wl_seat":
 		i := &C.seatInterfaceWayland
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		seatWayland = (*C.struct_wl_seat)(p)
+		nameSeatWayland = name
 	}
 }
 
 //export registryGlobalRemoveWayland
 func registryGlobalRemoveWayland(name C.uint32_t) {
-	// TODO
-	println("\tregistryGlobalRemoveWayland:", name)
+	println("\tregistryGlobalRemoveWayland:", name) // XXX
+
+	closeWin := func() {
+		if windowCount > 0 {
+			for _, w := range createdWindows {
+				if w != nil {
+					w.Close()
+				}
+			}
+		}
+	}
+
+	switch {
+	case name == nameCptWayland && cptWayland != nil:
+		closeWin()
+		C.compositorDestroyWayland(cptWayland)
+		cptWayland = nil
+		nameCptWayland = 0
+	case name == nameWMXDG && wmXDG != nil:
+		closeWin()
+		C.wmBaseDestroyXDG(wmXDG)
+		wmXDG = nil
+		nameWMXDG = 0
+	case name == nameSeatWayland && seatWayland != nil:
+		if ptWayland != nil {
+			C.pointerDestroyWayland(ptWayland)
+			ptWayland = nil
+		}
+		if kbWayland != nil {
+			C.keyboardDestroyWayland(kbWayland)
+			kbWayland = nil
+		}
+		C.seatDestroyWayland(seatWayland)
+		seatWayland = nil
+		nameSeatWayland = 0
+	}
 }
 
 //export surfaceEnterWayland
