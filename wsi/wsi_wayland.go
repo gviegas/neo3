@@ -571,20 +571,38 @@ func keyboardKeymapWayland(format C.uint32_t, fd C.int32_t, size C.uint32_t) {
 
 //export keyboardEnterWayland
 func keyboardEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, keys *C.struct_wl_array) {
-	// TODO
-	println("\tkeyboardEnterWayland:", serial, sf, keys)
+	println("\tkeyboardEnterWayland:", serial, sf, keys) // XXX
+
+	// TODO: Check keys.
+	if keyboardHandler != nil {
+		if win := windowFromWayland(sf); win != nil {
+			keyboardHandler.KeyboardIn(win)
+		}
+	}
 }
 
 //export keyboardLeaveWayland
 func keyboardLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
-	// TODO
-	println("\tkeyboardLeaveWayland:", serial, sf)
+	println("\tkeyboardLeaveWayland:", serial, sf) // XXX
+
+	if keyboardHandler != nil {
+		if win := windowFromWayland(sf); win != nil {
+			keyboardHandler.KeyboardOut(win)
+		}
+	}
 }
 
 //export keyboardKeyWayland
 func keyboardKeyWayland(serial, millis, key, state C.uint32_t) {
-	// TODO
-	println("\tkeyboardKeyWayland:", serial, millis, key, state)
+	println("\tkeyboardKeyWayland:", serial, millis, key, state) // XXX
+
+	// TODO: Do not assume WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1.
+	if keyboardHandler != nil {
+		key := keyFrom(int(8 + key))
+		pressed := state == C.WL_KEYBOARD_KEY_STATE_PRESSED
+		var modMask Modifier // TODO
+		keyboardHandler.KeyboardKey(key, pressed, modMask)
+	}
 }
 
 //export keyboardModifiersWayland
