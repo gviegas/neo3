@@ -616,3 +616,19 @@ func keyboardRepeatInfoWayland(rate, delay C.int32_t) {
 	// TODO
 	println("\tkeyboardRepeatInfoWayland:", rate, delay)
 }
+
+// DisplayWayland returns the Wayland display (*C.struct_wl_display).
+// It must not be called if Wayland is not the platform in use.
+func DisplayWayland() unsafe.Pointer { return unsafe.Pointer(dpyWayland) }
+
+// SurfaceWayland returns the Wayland surface (*C.struct_wl_surface)
+// of the given window.
+// win must refer to a valid window created by NewWindow
+// (note that Close invalidates the window).
+// It must not be called if Wayland is not the platform in use.
+func SurfaceWayland(win Window) unsafe.Pointer {
+	if win != nil {
+		return unsafe.Pointer(win.(*windowWayland).wsf)
+	}
+	return nil
+}
