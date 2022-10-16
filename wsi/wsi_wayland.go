@@ -423,6 +423,7 @@ func surfaceConfigureXDG(xsf *C.struct_xdg_surface, serial C.uint32_t) {
 func toplevelConfigureXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t, states *C.struct_wl_array) {
 	println("\ttoplevelConfigureXDG:", tl, width, height, states) // XXX
 
+	// TODO: Check states.
 	var win *windowWayland
 	if x := windowFromToplevel(tl); x == nil {
 		return
@@ -476,26 +477,60 @@ func seatNameWayland(name *C.char) {
 
 //export pointerEnterWayland
 func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_fixed_t) {
-	// TODO
-	println("\tpointerEnterWayland:", serial, sf, x, y)
+	println("\tpointerEnterWayland:", serial, sf, x, y) // XXX
+
+	// TODO: Set cursor.
+	if pointerHandler != nil {
+		if win := windowFromWayland(sf); win != nil {
+			pointerHandler.PointerIn(win, int(x/256), int(y/256))
+		}
+	}
 }
 
 //export pointerLeaveWayland
 func pointerLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
-	// TODO
-	println("\tpointerleaveWayland:", serial, sf)
+	println("\tpointerleaveWayland:", serial, sf) // XXX
+
+	if pointerHandler != nil {
+		if win := windowFromWayland(sf); win != nil {
+			pointerHandler.PointerOut(win)
+		}
+	}
 }
 
 //export pointerMotionWayland
 func pointerMotionWayland(millis C.uint32_t, x, y C.wl_fixed_t) {
-	// TODO
-	println("\tpointerMotionWayland:", millis, x, y)
+	println("\tpointerMotionWayland:", millis, x, y) // XXX
+
+	if pointerHandler != nil {
+		pointerHandler.PointerMotion(int(x/256), int(y/256))
+	}
 }
 
 //export pointerButtonWayland
 func pointerButtonWayland(serial, millis, button, state C.uint32_t) {
-	// TODO
-	println("\tpointerButtonWayland:", serial, millis, button, state)
+	println("\tpointerButtonWayland:", serial, millis, button, state) // XXX
+
+	if pointerHandler != nil {
+		btn := BtnUnknown
+		switch button {
+		case 0x110:
+			btn = BtnLeft
+		case 0x111:
+			btn = BtnRight
+		case 0x112:
+			btn = BtnMiddle
+		case 0x113:
+			btn = BtnSide
+		case 0x115:
+			btn = BtnForward
+		case 0x116:
+			btn = BtnBackward
+		}
+		pressed := state == C.WL_POINTER_BUTTON_STATE_PRESSED
+		var x, y int // TODO
+		pointerHandler.PointerButton(btn, pressed, x, y)
+	}
 }
 
 //export pointerAxisWayland
