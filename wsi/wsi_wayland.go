@@ -207,15 +207,18 @@ func newWindowWayland(width, height int, title string) (Window, error) {
 
 // Map makes the window visible.
 func (w *windowWayland) Map() error {
-	// TODO
-	println("windowWayland.Map: not implemented")
+	w.mapped = true
 	return nil
 }
 
 // Unmap hides the window.
 func (w *windowWayland) Unmap() error {
-	// TODO
-	println("windowWayland.Unmap: not implemented")
+	if w.mapped {
+		w.mapped = false
+		C.surfaceAttachWayland(w.wsf, nil, 0, 0)
+		C.surfaceCommitWayland(w.wsf)
+		C.displayFlushWayland(dpyWayland)
+	}
 	return nil
 }
 
