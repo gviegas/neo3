@@ -4,6 +4,7 @@
 
 package wsi
 
+// #include <stdlib.h>
 // #include <wsi_wayland.h>
 import "C"
 
@@ -147,6 +148,7 @@ type windowWayland struct {
 	width    int
 	height   int
 	title    string
+	ctitle   []C.char
 	mapped   bool
 }
 
@@ -188,8 +190,8 @@ func newWindowWayland(width, height int, title string) (Window, error) {
 		C.surfaceDestroyWayland(wsf)
 		return nil, errors.New("wsi: toplevelAddListenerXDG failed")
 	}
-
-	// TODO: Title.
+	ctitle := unsafe.Slice(C.CString(title), len(title)+1)
+	C.toplevelSetTitleXDG(toplevel, &ctitle[0])
 
 	C.surfaceCommitWayland(wsf)
 	C.displayRoundtripWayland(dpyWayland)
@@ -201,6 +203,7 @@ func newWindowWayland(width, height int, title string) (Window, error) {
 		width:    width,
 		height:   height,
 		title:    title,
+		ctitle:   ctitle,
 		mapped:   false,
 	}, nil
 }
@@ -231,8 +234,18 @@ func (w *windowWayland) Resize(width, height int) error {
 
 // SetTitle sets the window's title.
 func (w *windowWayland) SetTitle(title string) error {
-	// TODO
-	println("windowWayland.SetTitle: not implemented")
+	if title == w.title {
+		return nil
+	}
+	if n := len(title); n >= len(w.ctitle) {
+		C.free(unsafe.Pointer(&w.ctitle[0]))
+		w.ctitle = unsafe.Slice(C.CString(title), n+1)
+	} else {
+		sl := unsafe.Slice((*byte)(unsafe.Pointer(&w.ctitle[0])), n+1)
+		copy(sl, title)
+		sl[n] = 0
+	}
+	w.title = title
 	return nil
 }
 
@@ -246,6 +259,7 @@ func (w *windowWayland) Close() {
 			C.surfaceDestroyWayland(w.wsf)
 			C.displayFlushWayland(dpyWayland)
 		}
+		C.free(unsafe.Pointer(&w.ctitle[0]))
 		*w = windowWayland{}
 	}
 }
@@ -276,6 +290,7 @@ func setAppNameWayland(s string) {
 			}
 		}
 		C.displayFlushWayland(dpyWayland)
+		C.free(unsafe.Pointer(appID))
 	}
 }
 
