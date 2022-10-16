@@ -294,6 +294,39 @@ func setAppNameWayland(s string) {
 	}
 }
 
+// windowFromWayland returns the window in createdWindows
+// whose wsf field matches sf, or nil if none does.
+func windowFromWayland(sf *C.struct_wl_surface) Window {
+	for _, w := range createdWindows {
+		if w != nil && w.(*windowWayland).wsf == sf {
+			return w
+		}
+	}
+	return nil
+}
+
+// windowFromXDG returns the window in createdWindows
+// whose xsf field matches sf, or nil if none does.
+func windowFromXDG(sf *C.struct_xdg_surface) Window {
+	for _, w := range createdWindows {
+		if w != nil && w.(*windowWayland).xsf == sf {
+			return w
+		}
+	}
+	return nil
+}
+
+// windowFromToplevel returns the window in createdWindows
+// whose toplevel field matches tl, or nil if none does.
+func windowFromToplevel(tl *C.struct_xdg_toplevel) Window {
+	for _, w := range createdWindows {
+		if w != nil && w.(*windowWayland).toplevel == tl {
+			return w
+		}
+	}
+	return nil
+}
+
 //export registryGlobalWayland
 func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
 	s := C.GoString(iface)
@@ -388,14 +421,33 @@ func surfaceConfigureXDG(xsf *C.struct_xdg_surface, serial C.uint32_t) {
 
 //export toplevelConfigureXDG
 func toplevelConfigureXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t, states *C.struct_wl_array) {
-	// TODO
-	println("\ttoplevelConfigureXDG:", tl, width, height, states)
+	println("\ttoplevelConfigureXDG:", tl, width, height, states) // XXX
+
+	var win *windowWayland
+	if x := windowFromToplevel(tl); x == nil {
+		return
+	} else {
+		win = x.(*windowWayland)
+	}
+	if int(width) == win.width && int(height) == win.height {
+		return
+	}
+	win.width = int(width)
+	win.height = int(height)
+	if windowHandler != nil {
+		windowHandler.WindowResize(win, win.width, win.height)
+	}
 }
 
 //export toplevelCloseXDG
 func toplevelCloseXDG(tl *C.struct_xdg_toplevel) {
-	// TODO
-	println("\ttoplevelCloseXDG:", tl)
+	println("\ttoplevelCloseXDG:", tl) // XXX
+
+	if windowHandler != nil {
+		if win := windowFromToplevel(tl); win != nil {
+			windowHandler.WindowClose(win)
+		}
+	}
 }
 
 //export toplevelConfigureBoundsXDG
