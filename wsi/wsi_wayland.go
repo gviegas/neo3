@@ -228,8 +228,7 @@ func (w *windowWayland) Unmap() error {
 // Resize resizes the window.
 func (w *windowWayland) Resize(width, height int) error {
 	// TODO
-	println("windowWayland.Resize: not implemented")
-	return nil
+	return errors.New("wsi: windowWayland.Resize: not implemented")
 }
 
 // SetTitle sets the window's title.
@@ -329,11 +328,7 @@ func windowFromToplevel(tl *C.struct_xdg_toplevel) Window {
 
 //export registryGlobalWayland
 func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
-	s := C.GoString(iface)
-
-	println("\tregistryGlobalWayland:", name, s, vers) // XXX
-
-	switch s {
+	switch C.GoString(iface) {
 	case "wl_compositor":
 		i := &C.compositorInterfaceWayland
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
@@ -354,8 +349,6 @@ func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
 
 //export registryGlobalRemoveWayland
 func registryGlobalRemoveWayland(name C.uint32_t) {
-	println("\tregistryGlobalRemoveWayland:", name) // XXX
-
 	closeWin := func() {
 		if windowCount > 0 {
 			for _, w := range createdWindows {
@@ -365,7 +358,6 @@ func registryGlobalRemoveWayland(name C.uint32_t) {
 			}
 		}
 	}
-
 	switch {
 	case name == nameCptWayland && cptWayland != nil:
 		closeWin()
@@ -395,34 +387,26 @@ func registryGlobalRemoveWayland(name C.uint32_t) {
 //export surfaceEnterWayland
 func surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {
 	// TODO
-	println("\tsurfaceEnterWayland:", sf, out)
 }
 
 //export surfaceLeaveWayland
 func surfaceLeaveWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {
 	// TODO
-	println("\tsurfaceLeaveWayland:", sf, out)
 }
 
 //export wmBasePingXDG
 func wmBasePingXDG(serial C.uint32_t) {
-	println("\twmBasePingXDG:", serial) // XXX
-
 	C.wmBasePongXDG(wmXDG, serial)
 }
 
 //export surfaceConfigureXDG
 func surfaceConfigureXDG(xsf *C.struct_xdg_surface, serial C.uint32_t) {
-	println("\tsurfaceConfigureXDG:", xsf, serial) // XXX
-
 	// TODO: Avoid this whenever possible.
 	C.surfaceAckConfigureXDG(xsf, serial)
 }
 
 //export toplevelConfigureXDG
 func toplevelConfigureXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t, states *C.struct_wl_array) {
-	println("\ttoplevelConfigureXDG:", tl, width, height, states) // XXX
-
 	// TODO: Check states.
 	var win *windowWayland
 	if x := windowFromToplevel(tl); x == nil {
@@ -442,8 +426,6 @@ func toplevelConfigureXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t, st
 
 //export toplevelCloseXDG
 func toplevelCloseXDG(tl *C.struct_xdg_toplevel) {
-	println("\ttoplevelCloseXDG:", tl) // XXX
-
 	if windowHandler != nil {
 		if win := windowFromToplevel(tl); win != nil {
 			windowHandler.WindowClose(win)
@@ -454,13 +436,10 @@ func toplevelCloseXDG(tl *C.struct_xdg_toplevel) {
 //export toplevelConfigureBoundsXDG
 func toplevelConfigureBoundsXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t) {
 	// TODO
-	println("\ttoplevelConfigureBoundsXDG:", tl, width, height)
 }
 
 //export seatCapabilitiesWayland
 func seatCapabilitiesWayland(capab C.uint32_t) {
-	println("\tseatCapabilitiesWayland:", capab) // XXX
-
 	if capab&C.WL_SEAT_CAPABILITY_POINTER != 0 {
 		ptWayland = C.seatGetPointerWayland(seatWayland)
 	}
@@ -472,13 +451,10 @@ func seatCapabilitiesWayland(capab C.uint32_t) {
 //export seatNameWayland
 func seatNameWayland(name *C.char) {
 	// TODO
-	println("\tseatNameWayland:", C.GoString(name))
 }
 
 //export pointerEnterWayland
 func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_fixed_t) {
-	println("\tpointerEnterWayland:", serial, sf, x, y) // XXX
-
 	// TODO: Set cursor.
 	if pointerHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
@@ -489,8 +465,6 @@ func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_f
 
 //export pointerLeaveWayland
 func pointerLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
-	println("\tpointerleaveWayland:", serial, sf) // XXX
-
 	if pointerHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
 			pointerHandler.PointerOut(win)
@@ -500,8 +474,6 @@ func pointerLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
 
 //export pointerMotionWayland
 func pointerMotionWayland(millis C.uint32_t, x, y C.wl_fixed_t) {
-	println("\tpointerMotionWayland:", millis, x, y) // XXX
-
 	if pointerHandler != nil {
 		pointerHandler.PointerMotion(int(x/256), int(y/256))
 	}
@@ -509,8 +481,6 @@ func pointerMotionWayland(millis C.uint32_t, x, y C.wl_fixed_t) {
 
 //export pointerButtonWayland
 func pointerButtonWayland(serial, millis, button, state C.uint32_t) {
-	println("\tpointerButtonWayland:", serial, millis, button, state) // XXX
-
 	if pointerHandler != nil {
 		btn := BtnUnknown
 		switch button {
@@ -536,43 +506,35 @@ func pointerButtonWayland(serial, millis, button, state C.uint32_t) {
 //export pointerAxisWayland
 func pointerAxisWayland(millis, axis C.uint32_t, value C.wl_fixed_t) {
 	// TODO
-	println("\tpointerAxisWayland:", millis, axis, value)
 }
 
 //export pointerFrameWayland
 func pointerFrameWayland() {
 	// TODO
-	println("\tpointerFrameWyland: n/a")
 }
 
 //export pointerAxisSourceWayland
 func pointerAxisSourceWayland(axisSrc C.uint32_t) {
 	// TODO
-	println("\tpointerAxisSourceWayland:", axisSrc)
 }
 
 //export pointerAxisStopWayland
 func pointerAxisStopWayland(millis, axis C.uint32_t) {
 	// TODO
-	println("\tpointerAxisStopWayland:", millis, axis)
 }
 
 //export pointerAxisDiscreteWayland
 func pointerAxisDiscreteWayland(axis C.uint32_t, discrete C.int32_t) {
 	// TODO
-	println("\tpointerAxisDiscreteWayland:", axis, discrete)
 }
 
 //export keyboardKeymapWayland
 func keyboardKeymapWayland(format C.uint32_t, fd C.int32_t, size C.uint32_t) {
 	// TODO
-	println("\tkeyboardKeymapWayland:", format, fd, size)
 }
 
 //export keyboardEnterWayland
 func keyboardEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, keys *C.struct_wl_array) {
-	println("\tkeyboardEnterWayland:", serial, sf, keys) // XXX
-
 	// TODO: Check keys.
 	if keyboardHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
@@ -583,8 +545,6 @@ func keyboardEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, keys *C.st
 
 //export keyboardLeaveWayland
 func keyboardLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
-	println("\tkeyboardLeaveWayland:", serial, sf) // XXX
-
 	if keyboardHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
 			keyboardHandler.KeyboardOut(win)
@@ -594,8 +554,6 @@ func keyboardLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
 
 //export keyboardKeyWayland
 func keyboardKeyWayland(serial, millis, key, state C.uint32_t) {
-	println("\tkeyboardKeyWayland:", serial, millis, key, state) // XXX
-
 	// TODO: Do not assume WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1.
 	if keyboardHandler != nil {
 		key := keyFrom(int(key))
@@ -608,13 +566,11 @@ func keyboardKeyWayland(serial, millis, key, state C.uint32_t) {
 //export keyboardModifiersWayland
 func keyboardModifiersWayland(serial, depressed, latched, locked, group C.uint32_t) {
 	// TODO
-	println("\tkeyboardModifiersWayland:", serial, depressed, latched, locked, group)
 }
 
 //export keyboardRepeatInfoWayland
 func keyboardRepeatInfoWayland(rate, delay C.int32_t) {
 	// TODO
-	println("\tkeyboardRepeatInfoWayland:", rate, delay)
 }
 
 // DisplayWayland returns the Wayland display (*C.struct_wl_display).
