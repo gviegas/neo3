@@ -469,7 +469,7 @@ func enterEventXCB(event *C.xcb_generic_event_t) {
 		win := windowFromXCB(evt.event)
 		x := int(evt.event_x)
 		y := int(evt.event_y)
-		pointerHandler.PointerIn(win, x, y)
+		pointerHandler.PointerEnter(win, x, y)
 	}
 }
 
@@ -478,7 +478,7 @@ func leaveEventXCB(event *C.xcb_generic_event_t) {
 	if pointerHandler != nil {
 		evt := (*C.xcb_leave_notify_event_t)(unsafe.Pointer(event))
 		win := windowFromXCB(evt.event)
-		pointerHandler.PointerOut(win)
+		pointerHandler.PointerLeave(win)
 	}
 }
 
@@ -487,7 +487,7 @@ func focusInEventXCB(event *C.xcb_generic_event_t) {
 	if keyboardHandler != nil {
 		evt := (*C.xcb_focus_in_event_t)(unsafe.Pointer(event))
 		win := windowFromXCB(evt.event)
-		keyboardHandler.KeyboardIn(win)
+		keyboardHandler.KeyboardEnter(win)
 	}
 }
 
@@ -496,7 +496,7 @@ func focusOutXCB(event *C.xcb_generic_event_t) {
 	if keyboardHandler != nil {
 		evt := (*C.xcb_focus_out_event_t)(unsafe.Pointer(event))
 		win := windowFromXCB(evt.event)
-		keyboardHandler.KeyboardOut(win)
+		keyboardHandler.KeyboardLeave(win)
 	}
 }
 
@@ -545,15 +545,16 @@ func setAppNameXCB(s string) {
 	}
 }
 
-// ConnXCB returns the XCB connection.
+// ConnXCB returns the XCB connection (*C.xcb_connection_t).
 // It must not be called if XCB is not the platform is use.
 func ConnXCB() unsafe.Pointer { return unsafe.Pointer(connXCB) }
 
-// VisualXCB returns the XCB visual ID.
+// VisualXCB returns the XCB visual ID (C.xcb_visualid_t).
 // It must not be called if XCB is not the platform is use.
 func VisualXCB() uint32 { return uint32(visualXCB) }
 
-// WindowXCB returns the XCB window ID of the given window.
+// WindowXCB returns the XCB window ID (C.xcb_window_t) of
+// the given window.
 // win must refer to a valid window created by NewWindow
 // (note that Close invalidates the window).
 // It must not be called if XCB is not the platform is use.

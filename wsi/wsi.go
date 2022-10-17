@@ -269,11 +269,11 @@ var windowHandler WindowHandler
 // KeyboardHandler is the interface that defines the methods
 // for handling keyboard events.
 type KeyboardHandler interface {
-	// KeyboardIn is called when focus is gained.
-	KeyboardIn(win Window)
+	// KeyboardEnter is called when focus is gained.
+	KeyboardEnter(win Window)
 
-	// KeyboardOut is called when focus is lost.
-	KeyboardOut(win Window)
+	// KeyboardLeave is called when focus is lost.
+	KeyboardLeave(win Window)
 
 	// KeyboardKey is called when a key is pressed/released.
 	KeyboardKey(key Key, pressed bool, modMask Modifier)
@@ -289,11 +289,11 @@ var keyboardHandler KeyboardHandler
 // PointerHandler is the interface that defines the methods
 // for handling pointer events.
 type PointerHandler interface {
-	// PointerIn is called when the pointer enters a window.
-	PointerIn(win Window, x, y int)
+	// PointerEnter is called when the pointer enters a window.
+	PointerEnter(win Window, x, y int)
 
-	// PointerOut is called when the pointer leaves a window.
-	PointerOut(win Window)
+	// PointerLeave is called when the pointer leaves a window.
+	PointerLeave(win Window)
 
 	// PointerMotion is called when the pointer changes position.
 	PointerMotion(newX, newY int)
@@ -349,7 +349,6 @@ const (
 	Wayland
 	Win32
 	XCB
-	// TODO...
 )
 
 // PlatformInUse identifies the underlying platform which

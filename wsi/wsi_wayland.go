@@ -458,7 +458,7 @@ func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_f
 	// TODO: Set cursor.
 	if pointerHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
-			pointerHandler.PointerIn(win, int(x/256), int(y/256))
+			pointerHandler.PointerEnter(win, int(x/256), int(y/256))
 		}
 	}
 }
@@ -467,7 +467,7 @@ func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_f
 func pointerLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
 	if pointerHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
-			pointerHandler.PointerOut(win)
+			pointerHandler.PointerLeave(win)
 		}
 	}
 }
@@ -538,7 +538,7 @@ func keyboardEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, keys *C.st
 	// TODO: Check keys.
 	if keyboardHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
-			keyboardHandler.KeyboardIn(win)
+			keyboardHandler.KeyboardEnter(win)
 		}
 	}
 }
@@ -547,7 +547,7 @@ func keyboardEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, keys *C.st
 func keyboardLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
 	if keyboardHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
-			keyboardHandler.KeyboardOut(win)
+			keyboardHandler.KeyboardLeave(win)
 		}
 	}
 }

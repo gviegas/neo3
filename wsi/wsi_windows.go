@@ -283,22 +283,22 @@ func windowFromWin32(hwnd C.HWND) Window {
 
 // closeMsgWin32 handles WM_CLOSE messages.
 func closeMsgWin32(hwnd C.HWND) {
-	if w := windowFromWin32(hwnd); w != nil {
+	if win := windowFromWin32(hwnd); win != nil {
 		if windowHandler != nil {
-			windowHandler.WindowClose(w)
+			windowHandler.WindowClose(win)
 		}
-		w.Close()
+		win.Close()
 	}
 }
 
 // sizeMsgWin32 handles WM_SIZE messages.
 func sizeMsgWin32(hwnd C.HWND, lprm C.LPARAM) {
-	if w := windowFromWin32(hwnd); w != nil {
-		w := w.(*windowWin32)
-		w.width = int(lprm & 0xffff)
-		w.height = int(lprm >> 16 & 0xffff)
+	if win := windowFromWin32(hwnd); win != nil {
+		win := win.(*windowWin32)
+		win.width = int(lprm & 0xffff)
+		win.height = int(lprm >> 16 & 0xffff)
 		if windowHandler != nil {
-			windowHandler.WindowResize(w, w.width, w.height)
+			windowHandler.WindowResize(win, win.width, win.height)
 		}
 	}
 }
@@ -357,8 +357,8 @@ func keyMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
 // setFocusMsgWin32 handles WM_SETFOCUS messages.
 func setFocusMsgWin32(hwnd C.HWND) {
 	if keyboardHandler != nil {
-		if w := windowFromWin32(hwnd); w != nil {
-			keyboardHandler.KeyboardIn(w)
+		if win := windowFromWin32(hwnd); win != nil {
+			keyboardHandler.KeyboardEnter(win)
 		}
 	}
 }
@@ -366,8 +366,8 @@ func setFocusMsgWin32(hwnd C.HWND) {
 // killFocusMsgWin32 handles WM_KILLFOCUS messages.
 func killFocusMsgWin32(hwnd C.HWND) {
 	if keyboardHandler != nil {
-		if w := windowFromWin32(hwnd); w != nil {
-			keyboardHandler.KeyboardOut(w)
+		if win := windowFromWin32(hwnd); win != nil {
+			keyboardHandler.KeyboardLeave(win)
 		}
 	}
 }
@@ -400,8 +400,8 @@ func mouseMoveMsgWin32(hwnd C.HWND, lprm C.LPARAM) {
 				// ?
 			}
 			hwndMouse = hwnd
-			if w := windowFromWin32(hwnd); w != nil {
-				pointerHandler.PointerIn(w, newX, newY)
+			if win := windowFromWin32(hwnd); win != nil {
+				pointerHandler.PointerEnter(win, newX, newY)
 			}
 		}
 		pointerHandler.PointerMotion(newX, newY)
@@ -414,8 +414,8 @@ func mouseLeaveMsgWin32(hwnd C.HWND) {
 		hwndMouse = nil
 	}
 	if pointerHandler != nil {
-		if w := windowFromWin32(hwnd); w != nil {
-			pointerHandler.PointerOut(w)
+		if win := windowFromWin32(hwnd); win != nil {
+			pointerHandler.PointerLeave(win)
 		}
 	}
 }
@@ -448,11 +448,11 @@ func stringToLPCWSTR(s string) C.LPCWSTR {
 	return ws
 }
 
-// HinstWin32 returns the Win32 instance/module handle (HINSTANCE).
+// HinstWin32 returns the Win32 instance/module handle (C.HINSTANCE).
 // It must not be called if Win32 is not the platform in use.
 func HinstWin32() unsafe.Pointer { return unsafe.Pointer(hinst) }
 
-// HwndWin32 returns the Win32 window handle (HWND) of the
+// HwndWin32 returns the Win32 window handle (C.HWND) of the
 // given window.
 // win must refer to a valid window created by NewWindow
 // (note that Close invalidates the window).

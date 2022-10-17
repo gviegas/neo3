@@ -10,8 +10,8 @@ import (
 
 func TestWSI(t *testing.T) {
 	SetWindowHandler(E{})
-	SetPointerHandler(E{})
 	SetKeyboardHandler(E{})
+	SetPointerHandler(E{})
 	switch PlatformInUse() {
 	case None:
 		win, err := NewWindow(480, 360, "Will fail")
@@ -40,7 +40,7 @@ func TestWSI(t *testing.T) {
 		}
 		win.Unmap()
 		win.Map()
-		for i := 0; i < 150; i++ {
+		for i := 0; i < 100; i++ {
 			Dispatch()
 			time.Sleep(time.Millisecond * 42)
 		}
@@ -73,12 +73,23 @@ func (E) WindowResize(win Window, newWidth, newHeight int) {
 	fmt.Printf("E.WindowResize: %v, %d, %d\n", win, newWidth, newHeight)
 }
 
-func (E) PointerIn(win Window, x, y int) {
-	fmt.Printf("E.PointerIn: %v, %d, %d\n", win, x, y)
+func (E) KeyboardEnter(win Window) {
+	fmt.Printf("E.KeyboardEnter: %v\n", win)
 }
 
-func (E) PointerOut(win Window) {
-	fmt.Printf("E.PointerOut: %v\n", win)
+func (E) KeyboardLeave(win Window) {
+	fmt.Printf("E.KeyboardLeave: %v\n", win)
+}
+
+func (E) KeyboardKey(key Key, pressed bool, modMask Modifier) {
+	fmt.Printf("E.KeyboardKey: %d, %t, %x\n", key, pressed, modMask)
+}
+func (E) PointerEnter(win Window, x, y int) {
+	fmt.Printf("E.PointerEnter: %v, %d, %d\n", win, x, y)
+}
+
+func (E) PointerLeave(win Window) {
+	fmt.Printf("E.PointerLeave: %v\n", win)
 }
 
 func (E) PointerMotion(newX, newY int) {
@@ -87,16 +98,4 @@ func (E) PointerMotion(newX, newY int) {
 
 func (E) PointerButton(btn Button, pressed bool, x, y int) {
 	fmt.Printf("E.PointerButton: %d, %t, %d, %d\n", btn, pressed, x, y)
-}
-
-func (E) KeyboardIn(win Window) {
-	fmt.Printf("E.KeyboardIn: %v\n", win)
-}
-
-func (E) KeyboardOut(win Window) {
-	fmt.Printf("E.KeyboardOut: %v\n", win)
-}
-
-func (E) KeyboardKey(key Key, pressed bool, modMask Modifier) {
-	fmt.Printf("E.KeyboardKey: %d, %t, %x\n", key, pressed, modMask)
 }
