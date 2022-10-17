@@ -498,8 +498,7 @@ func pointerButtonWayland(serial, millis, button, state C.uint32_t) {
 			btn = BtnBackward
 		}
 		pressed := state == C.WL_POINTER_BUTTON_STATE_PRESSED
-		var x, y int // TODO
-		pointerHandler.PointerButton(btn, pressed, x, y)
+		pointerHandler.PointerButton(btn, pressed)
 	}
 }
 

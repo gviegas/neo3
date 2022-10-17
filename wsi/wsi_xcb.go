@@ -446,9 +446,7 @@ func buttonEventXCB(event *C.xcb_generic_event_t) {
 			// TODO: Scroll.
 		}
 		pressed := evt.response_type&127 == C.XCB_BUTTON_PRESS
-		x := int(evt.event_x)
-		y := int(evt.event_y)
-		pointerHandler.PointerButton(btn, pressed, x, y)
+		pointerHandler.PointerButton(btn, pressed)
 	}
 }
 

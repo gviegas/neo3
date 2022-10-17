@@ -375,9 +375,9 @@ func killFocusMsgWin32(hwnd C.HWND) {
 // buttonMsgWin32 handles WM_{L,M,R,X}BUTTON{DOWN,DBLCLK,UP} messages.
 func buttonMsgWin32(lprm C.LPARAM, btn Button, pressed bool) {
 	if pointerHandler != nil {
-		x := int(C.SHORT(lprm & 0xffff))
-		y := int(C.SHORT(lprm >> 16 & 0xffff))
-		pointerHandler.PointerButton(btn, pressed, x, y)
+		//x := int(C.SHORT(lprm & 0xffff))
+		//y := int(C.SHORT(lprm >> 16 & 0xffff))
+		pointerHandler.PointerButton(btn, pressed)
 	}
 }
 

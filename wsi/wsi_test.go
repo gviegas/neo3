@@ -96,6 +96,6 @@ func (E) PointerMotion(newX, newY int) {
 	fmt.Printf("E.PointerMotion: %d, %d\n", newX, newY)
 }
 
-func (E) PointerButton(btn Button, pressed bool, x, y int) {
-	fmt.Printf("E.PointerButton: %d, %t, %d, %d\n", btn, pressed, x, y)
+func (E) PointerButton(btn Button, pressed bool) {
+	fmt.Printf("E.PointerButton: %d, %t\n", btn, pressed)
 }

@@ -299,7 +299,7 @@ type PointerHandler interface {
 	PointerMotion(newX, newY int)
 
 	// PointerButton is called when a button is pressed/released.
-	PointerButton(btn Button, pressed bool, x, y int)
+	PointerButton(btn Button, pressed bool)
 }
 
 // SetPointerHandler sets the global PointerHandler.
