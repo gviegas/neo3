@@ -24,10 +24,26 @@ func (s *swapchain) initSurface() error {
 	return driver.ErrCannotPresent
 }
 
-// TODO
 func (s *swapchain) initWaylandSurface() error {
 	if !s.d.exts[extWaylandSurface] {
 		return driver.ErrCannotPresent
 	}
-	panic("not implemented")
+	info := C.VkWaylandSurfaceCreateInfoKHR{
+		sType:   C.VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
+		display: (*C.struct_wl_display)(wsi.DisplayWayland()),
+		surface: (*C.struct_wl_surface)(wsi.SurfaceWayland(s.win)),
+	}
+	var sf C.VkSurfaceKHR
+	err := checkResult(C.vkCreateWaylandSurfaceKHR(s.d.inst, &info, nil, &sf))
+	if err != nil {
+		return err
+	}
+	qfam, err := s.d.presQueueFor(sf)
+	if err != nil {
+		C.vkDestroySurfaceKHR(s.d.inst, sf, nil)
+		return err
+	}
+	s.qfam = qfam
+	s.sf = sf
+	return nil
 }
