@@ -10,6 +10,8 @@ import "C"
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"unsafe"
 )
 
@@ -385,14 +387,10 @@ func registryGlobalRemoveWayland(name C.uint32_t) {
 }
 
 //export surfaceEnterWayland
-func surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {
-	// TODO
-}
+func surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {}
 
 //export surfaceLeaveWayland
-func surfaceLeaveWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {
-	// TODO
-}
+func surfaceLeaveWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {}
 
 //export wmBasePingXDG
 func wmBasePingXDG(serial C.uint32_t) {
@@ -434,9 +432,7 @@ func toplevelCloseXDG(tl *C.struct_xdg_toplevel) {
 }
 
 //export toplevelConfigureBoundsXDG
-func toplevelConfigureBoundsXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t) {
-	// TODO
-}
+func toplevelConfigureBoundsXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t) {}
 
 //export seatCapabilitiesWayland
 func seatCapabilitiesWayland(capab C.uint32_t) {
@@ -449,13 +445,12 @@ func seatCapabilitiesWayland(capab C.uint32_t) {
 }
 
 //export seatNameWayland
-func seatNameWayland(name *C.char) {
-	// TODO
-}
+func seatNameWayland(name *C.char) {}
 
 //export pointerEnterWayland
 func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_fixed_t) {
 	// TODO: Set cursor.
+	C.pointerSetCursorWayland(ptWayland, serial, nil, 0, 0)
 	if pointerHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
 			pointerHandler.PointerEnter(win, int(x/256), int(y/256))
@@ -529,7 +524,13 @@ func pointerAxisDiscreteWayland(axis C.uint32_t, discrete C.int32_t) {
 
 //export keyboardKeymapWayland
 func keyboardKeymapWayland(format C.uint32_t, fd C.int32_t, size C.uint32_t) {
-	// TODO
+	if format != C.WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1 {
+		fmt.Fprintf(os.Stderr, "wsi: unknown Wayland keymap format (%d) - cannot use seat's keyboard\n", format)
+		if kbWayland != nil {
+			C.keyboardDestroyWayland(kbWayland)
+			kbWayland = nil
+		}
+	}
 }
 
 //export keyboardEnterWayland
@@ -553,7 +554,6 @@ func keyboardLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
 
 //export keyboardKeyWayland
 func keyboardKeyWayland(serial, millis, key, state C.uint32_t) {
-	// TODO: Do not assume WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1.
 	if keyboardHandler != nil {
 		key := keyFrom(int(key))
 		pressed := state == C.WL_KEYBOARD_KEY_STATE_PRESSED
