@@ -836,14 +836,15 @@ func (t *T) WindowClose(win wsi.Window) {
 		t.quit = true
 	}
 }
-func (t *T) WindowResize(wsi.Window, int, int) { brokenSC = true }
-func (t *T) KeyboardIn(wsi.Window)             {}
-func (t *T) KeyboardOut(wsi.Window)            {}
-func (t *T) KeyboardKey(key wsi.Key, pressed bool, modMask wsi.Modifier) {
-	if key == wsi.KeyEsc {
+func (*T) WindowResize(wsi.Window, int, int) { brokenSC = true }
+func (*T) KeyboardEnter(wsi.Window)          {}
+func (*T) KeyboardLeave(wsi.Window)          {}
+func (t *T) KeyboardKey(key wsi.Key, pressed bool) {
+	if pressed && key == wsi.KeyEsc {
 		t.quit = true
 	}
 }
+func (*T) KeyboardModifiers(wsi.Modifier) {}
 
 // recreateSwapchain recreates the swapchain and all
 // framebuffers.
