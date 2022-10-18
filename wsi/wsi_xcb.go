@@ -451,7 +451,7 @@ func keyEventXCB(event *C.xcb_generic_event_t) {
 	}
 	if keyboardHandler != nil {
 		modMask := modCapsXCB | modLeftXCB | modRightXCB
-		keyboardHandler.KeyboardKey(key, pressed, modMask)
+		keyboardHandler.KeyboardKey(key, pressed)
 		if modMask != prevModMask {
 			keyboardHandler.KeyboardModifiers(modMask)
 		}

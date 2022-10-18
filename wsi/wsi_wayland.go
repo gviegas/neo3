@@ -557,8 +557,7 @@ func keyboardKeyWayland(serial, millis, key, state C.uint32_t) {
 	if keyboardHandler != nil {
 		key := keyFrom(int(key))
 		pressed := state == C.WL_KEYBOARD_KEY_STATE_PRESSED
-		var modMask Modifier // TODO
-		keyboardHandler.KeyboardKey(key, pressed, modMask)
+		keyboardHandler.KeyboardKey(key, pressed)
 	}
 }
 

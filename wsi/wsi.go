@@ -276,7 +276,7 @@ type KeyboardHandler interface {
 	KeyboardLeave(win Window)
 
 	// KeyboardKey is called when a key is pressed/released.
-	KeyboardKey(key Key, pressed bool, modMask Modifier)
+	KeyboardKey(key Key, pressed bool)
 
 	// KeyboardModifiers is called when modifier state changes.
 	KeyboardModifiers(modMask Modifier)
