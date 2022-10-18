@@ -399,34 +399,62 @@ func windowFromXCB(id C.xcb_window_t) Window {
 	return nil
 }
 
+// Tracks modifier state.
 var (
-	evtStateXCB C.uint16_t
-	modMaskXCB  Modifier
+	modCapsXCB  Modifier
+	modLeftXCB  Modifier
+	modRightXCB Modifier
 )
 
 // keyEventXCB handles key press/release events.
 func keyEventXCB(event *C.xcb_generic_event_t) {
 	evt := (*C.xcb_key_press_event_t)(unsafe.Pointer(event))
-	if evt.state != evtStateXCB {
-		modMaskXCB = 0
-		if evt.state&C.XCB_MOD_MASK_LOCK != 0 {
-			modMaskXCB |= ModCapsLock
+	key := keyFrom(int(evt.detail - 8)) // XXX
+	pressed := evt.response_type&127 == C.XCB_KEY_PRESS
+	prevModMask := modCapsXCB | modLeftXCB | modRightXCB
+	if pressed {
+		switch key {
+		case KeyCapsLock:
+			if evt.state&C.XCB_MOD_MASK_LOCK == 0 {
+				modCapsXCB = ModCapsLock
+			} else {
+				modCapsXCB = 0
+			}
+		case KeyLShift:
+			modLeftXCB |= ModShift
+		case KeyRShift:
+			modRightXCB |= ModShift
+		case KeyLCtrl:
+			modLeftXCB |= ModCtrl
+		case KeyRCtrl:
+			modRightXCB |= ModCtrl
+		case KeyLAlt:
+			modLeftXCB |= ModAlt
+		case KeyRAlt:
+			modRightXCB |= ModAlt
 		}
-		if evt.state&C.XCB_MOD_MASK_SHIFT != 0 {
-			modMaskXCB |= ModShift
+	} else {
+		switch key {
+		case KeyLShift:
+			modLeftXCB &^= ModShift
+		case KeyRShift:
+			modRightXCB &^= ModShift
+		case KeyLCtrl:
+			modLeftXCB &^= ModCtrl
+		case KeyRCtrl:
+			modRightXCB &^= ModCtrl
+		case KeyLAlt:
+			modLeftXCB &^= ModAlt
+		case KeyRAlt:
+			modRightXCB &^= ModAlt
 		}
-		if evt.state&C.XCB_MOD_MASK_CONTROL != 0 {
-			modMaskXCB |= ModCtrl
-		}
-		if evt.state&C.XCB_MOD_MASK_1 != 0 {
-			modMaskXCB |= ModAlt
-		}
-		evtStateXCB = evt.state
 	}
 	if keyboardHandler != nil {
-		key := keyFrom(int(evt.detail - 8))
-		pressed := evt.response_type&127 == C.XCB_KEY_PRESS
-		keyboardHandler.KeyboardKey(key, pressed, modMaskXCB)
+		modMask := modCapsXCB | modLeftXCB | modRightXCB
+		keyboardHandler.KeyboardKey(key, pressed, modMask)
+		if modMask != prevModMask {
+			keyboardHandler.KeyboardModifiers(modMask)
+		}
 	}
 }
 

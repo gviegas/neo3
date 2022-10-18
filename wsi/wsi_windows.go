@@ -303,55 +303,61 @@ func sizeMsgWin32(hwnd C.HWND, lprm C.LPARAM) {
 	}
 }
 
+// Tracks modifier state.
+var modMaskWin32 Modifier
+
 // keyMsgWin32 handles WM_KEYDOWN/WM_KEYUP messages.
 func keyMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
-	if keyboardHandler == nil {
-		return
-	}
 	const (
 		// ?
 		low  = C.SHORT(1)
 		high = ^low
 	)
-	var modMask Modifier
+	prevModMask := modMaskWin32
+	modMaskWin32 = 0
 	if C.GetKeyState(C.VK_CAPITAL)&low != 0 {
-		modMask |= ModCapsLock
+		modMaskWin32 |= ModCapsLock
 	}
 	if C.GetKeyState(C.VK_SHIFT)&high != 0 {
-		modMask |= ModShift
+		modMaskWin32 |= ModShift
 	}
 	if C.GetKeyState(C.VK_CONTROL)&high != 0 {
-		modMask |= ModCtrl
+		modMaskWin32 |= ModCtrl
 	}
 	if C.GetKeyState(C.VK_MENU)&high != 0 {
-		modMask |= ModAlt
+		modMaskWin32 |= ModAlt
 	}
-	key := keyFrom(int(wprm))
-	if key == KeyUnknown {
-		scan := C.UINT(lprm >> 16 & 255)
-		switch wprm {
-		case C.VK_SHIFT:
-			if C.MapVirtualKey(C.VK_LSHIFT, C.MAPVK_VK_TO_VSC) == scan {
-				key = KeyLShift
-			} else {
-				key = KeyRShift
-			}
-		case C.VK_CONTROL:
-			if C.MapVirtualKey(C.VK_LCONTROL, C.MAPVK_VK_TO_VSC) == scan {
-				key = KeyLCtrl
-			} else {
-				key = KeyRCtrl
-			}
-		case C.VK_MENU:
-			if C.MapVirtualKey(C.VK_LMENU, C.MAPVK_VK_TO_VSC) == scan {
-				key = KeyLAlt
-			} else {
-				key = KeyRAlt
+	if keyboardHandler != nil {
+		key := keyFrom(int(wprm))
+		if key == KeyUnknown {
+			scan := C.UINT(lprm >> 16 & 255)
+			switch wprm {
+			case C.VK_SHIFT:
+				if C.MapVirtualKey(C.VK_LSHIFT, C.MAPVK_VK_TO_VSC) == scan {
+					key = KeyLShift
+				} else {
+					key = KeyRShift
+				}
+			case C.VK_CONTROL:
+				if C.MapVirtualKey(C.VK_LCONTROL, C.MAPVK_VK_TO_VSC) == scan {
+					key = KeyLCtrl
+				} else {
+					key = KeyRCtrl
+				}
+			case C.VK_MENU:
+				if C.MapVirtualKey(C.VK_LMENU, C.MAPVK_VK_TO_VSC) == scan {
+					key = KeyLAlt
+				} else {
+					key = KeyRAlt
+				}
 			}
 		}
+		pressed := lprm&(1<<31) == 0
+		keyboardHandler.KeyboardKey(key, pressed, modMaskWin32)
+		if modMaskWin32 != prevModMask {
+			keyboardHandler.KeyboardModifiers(modMaskWin32)
+		}
 	}
-	pressed := lprm&(1<<31) == 0
-	keyboardHandler.KeyboardKey(key, pressed, modMask)
 }
 
 // setFocusMsgWin32 handles WM_SETFOCUS messages.

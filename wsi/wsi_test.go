@@ -84,6 +84,11 @@ func (E) KeyboardLeave(win Window) {
 func (E) KeyboardKey(key Key, pressed bool, modMask Modifier) {
 	fmt.Printf("E.KeyboardKey: %d, %t, %x\n", key, pressed, modMask)
 }
+
+func (E) KeyboardModifiers(modMask Modifier) {
+	fmt.Printf("E.KeyboardModifiers: %x\n", modMask)
+}
+
 func (E) PointerEnter(win Window, x, y int) {
 	fmt.Printf("E.PointerEnter: %v, %d, %d\n", win, x, y)
 }

@@ -277,6 +277,9 @@ type KeyboardHandler interface {
 
 	// KeyboardKey is called when a key is pressed/released.
 	KeyboardKey(key Key, pressed bool, modMask Modifier)
+
+	// KeyboardModifiers is called when modifier state changes.
+	KeyboardModifiers(modMask Modifier)
 }
 
 // SetKeyboardHandler sets the global KeyboardHandler.
