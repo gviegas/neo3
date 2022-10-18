@@ -563,7 +563,31 @@ func keyboardKeyWayland(serial, millis, key, state C.uint32_t) {
 
 //export keyboardModifiersWayland
 func keyboardModifiersWayland(serial, depressed, latched, locked, group C.uint32_t) {
-	// TODO
+	// XXX
+	const (
+		shift = 1 << iota
+		capsLock
+		ctrl
+		alt
+	)
+	if keyboardHandler != nil {
+		// TODO: Track previous state to avoid
+		// needless notifications.
+		var modMask Modifier
+		if depressed&shift != 0 {
+			modMask |= ModShift
+		}
+		if depressed&ctrl != 0 {
+			modMask |= ModCtrl
+		}
+		if depressed&alt != 0 {
+			modMask |= ModAlt
+		}
+		if locked&capsLock != 0 {
+			modMask |= ModCapsLock
+		}
+		keyboardHandler.KeyboardModifiers(modMask)
+	}
 }
 
 //export keyboardRepeatInfoWayland
