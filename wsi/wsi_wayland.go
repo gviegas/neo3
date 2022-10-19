@@ -192,8 +192,6 @@ func newWindowWayland(width, height int, title string) (Window, error) {
 		C.surfaceDestroyWayland(wsf)
 		return nil, errors.New("wsi: toplevelAddListenerXDG failed")
 	}
-	ctitle := unsafe.Slice(C.CString(title), len(title)+1)
-	C.toplevelSetTitleXDG(toplevel, &ctitle[0])
 
 	C.surfaceCommitWayland(wsf)
 	C.displayRoundtripWayland(dpyWayland)
@@ -205,14 +203,22 @@ func newWindowWayland(width, height int, title string) (Window, error) {
 		width:    width,
 		height:   height,
 		title:    title,
-		ctitle:   ctitle,
+		ctitle:   unsafe.Slice(C.CString(title), len(title)+1),
 		mapped:   false,
 	}, nil
 }
 
 // Map makes the window visible.
 func (w *windowWayland) Map() error {
-	w.mapped = true
+	if !w.mapped {
+		w.mapped = true
+		C.toplevelSetTitleXDG(w.toplevel, &w.ctitle[0])
+		appID := C.CString(appName)
+		C.toplevelSetAppIDXDG(w.toplevel, appID)
+		C.surfaceCommitWayland(w.wsf)
+		C.displayFlushWayland(dpyWayland)
+		C.free(unsafe.Pointer(appID))
+	}
 	return nil
 }
 
