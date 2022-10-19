@@ -90,6 +90,7 @@ func Example_present() {
 	}
 	wsi.SetWindowHandler(&t)
 	wsi.SetKeyboardHandler(&t)
+	wsi.SetAppName("driver.example")
 	t.renderLoop()
 	t.destroy()
 
