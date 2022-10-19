@@ -4,10 +4,13 @@ package wsi
 
 import (
 	"os"
+	"runtime"
 )
 
 func init() {
+	runtime.LockOSThread()
 	if err := initWin32(); err != nil {
+		runtime.UnlockOSThread()
 		os.Stderr.WriteString(err.Error() + "\n")
 	} else {
 		return
