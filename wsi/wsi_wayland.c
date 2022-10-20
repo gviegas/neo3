@@ -462,6 +462,28 @@ struct wl_shm_pool* shmCreatePoolWayland(struct wl_shm* shm, int32_t fd, int32_t
 		(struct wl_proxy*)shm, WL_SHM_CREATE_POOL, &shmPoolInterfaceWayland, proxyGetVersion((struct wl_proxy*)shm), 0, NULL, fd, size);
 }
 
+struct wl_buffer* shmPoolCreateBufferWayland(struct wl_shm_pool* shmp, int32_t offset, int32_t width, int32_t height, int32_t stride, uint32_t format) {
+	return (struct wl_buffer*)proxyMarshalFlags(
+		(struct wl_proxy*)shmp, WL_SHM_POOL_CREATE_BUFFER, &bufferInterfaceWayland, proxyGetVersion((struct wl_proxy*)shmp), 0, NULL, offset, width, height, stride, format);
+}
+
+void shmPoolDestroyWayland(struct wl_shm_pool* shmp) {
+	proxyMarshalFlags((struct wl_proxy*)shmp, WL_SHM_POOL_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)shmp), WL_MARSHAL_FLAG_DESTROY);
+}
+
+static void bufferRelease(void*, struct wl_buffer* buf) {
+	bufferReleaseWayland(buf);
+}
+
+int bufferAddListenerWayland(struct wl_buffer* buf) {
+	static struct wl_buffer_listener ltn = { bufferRelease };
+	return proxyAddListener((struct wl_proxy*)buf, (void (**)(void))&ltn, NULL);
+}
+
+void bufferDestroyWayland(struct wl_buffer* buf) {
+	proxyMarshalFlags((struct wl_proxy*)buf, WL_BUFFER_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)buf), WL_MARSHAL_FLAG_DESTROY);
+}
+
 static void surfaceEnter(void*, struct wl_surface* sf, struct wl_output* out) {
 	surfaceEnterWayland(sf, out);
 }

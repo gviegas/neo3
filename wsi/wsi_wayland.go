@@ -4,7 +4,10 @@
 
 package wsi
 
+// #define _GNU_SOURCE
 // #include <stdlib.h>
+// #include <sys/mman.h>
+// #include <unistd.h>
 // #include <wsi_wayland.h>
 import "C"
 
@@ -294,6 +297,86 @@ func (w *windowWayland) Height() int { return w.height }
 // Title returns the window's title.
 func (w *windowWayland) Title() string { return w.title }
 
+// cursorWayland defines a cursor surface.
+type cursorWayland struct {
+	fd  C.int
+	buf *C.struct_wl_buffer
+	sf  *C.struct_wl_surface
+}
+
+// newCursorWayland creates a new cursor.
+func newCursorWayland(data []byte) (*cursorWayland, error) {
+	if cptWayland == nil {
+		return nil, errors.New("wsi: cptWayland is nil")
+	}
+	if shmWayland == nil {
+		return nil, errors.New("wsi: shmWayland is nil")
+	}
+
+	// TODO: Take as param.
+	const (
+		width  = 16
+		height = 16
+		stride = width * 4
+		format = C.WL_SHM_FORMAT_ARGB8888
+		size   = width * height * 4
+	)
+
+	if len(data) < size {
+		return nil, errors.New("wsi: invalid cursor data")
+	}
+
+	name := C.CString("wsi.cursorWayland")
+	defer C.free(unsafe.Pointer(name))
+	fd := C.memfd_create(name, 0)
+	if fd == -1 {
+		return nil, errors.New("wsi: memfd_create failed")
+	}
+	n := C.size_t(size)
+	for {
+		i := size - n
+		x := C.write(fd, unsafe.Pointer(&data[i]), n)
+		if x == -1 {
+			// TODO: Handle errors if possible.
+			C.close(fd)
+			return nil, errors.New("wsi: write failed")
+		}
+		n -= C.size_t(x)
+		if n == 0 {
+			break
+		}
+	}
+
+	shmp := C.shmCreatePoolWayland(shmWayland, fd, size)
+	if shmp == nil {
+		C.close(fd)
+		return nil, errors.New("wsi: shmCreatePoolWayland failed")
+	}
+	buf := C.shmPoolCreateBufferWayland(shmp, 0, width, height, stride, format)
+	C.shmPoolDestroyWayland(shmp)
+	if buf == nil {
+		C.close(fd)
+		return nil, errors.New("wsi: shmPoolCreateBufferWayland failed")
+	}
+	sf := C.compositorCreateSurfaceWayland(cptWayland)
+	if sf == nil {
+		C.bufferDestroyWayland(buf)
+		C.close(fd)
+		return nil, errors.New("wsi: compositorCreateSurfaceWayland failed")
+	}
+	C.surfaceAttachWayland(sf, buf, 0, 0)
+	C.surfaceCommitWayland(sf)
+
+	// TODO: Do not do this here.
+	C.displayFlushWayland(dpyWayland)
+
+	return &cursorWayland{
+		fd:  fd,
+		buf: buf,
+		sf:  sf,
+	}, nil
+}
+
 // dispatchWayland dispatches queued events.
 func dispatchWayland() {
 	C.displayFlushWayland(dpyWayland)
@@ -418,6 +501,9 @@ func registryGlobalRemoveWayland(name C.uint32_t) {
 
 //export shmFormatWayland
 func shmFormatWayland(format C.uint32_t) {}
+
+//export bufferReleaseWayland
+func bufferReleaseWayland(buf *C.struct_wl_buffer) {}
 
 //export surfaceEnterWayland
 func surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {}
