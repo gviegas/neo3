@@ -14,6 +14,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"unsafe"
 )
@@ -106,6 +107,8 @@ func initWayland() (err error) {
 		return
 	}
 	C.displayRoundtripWayland(dpyWayland)
+
+	initDefaultCursorWayland()
 
 	newWindow = newWindowWayland
 	dispatch = dispatchWayland
@@ -431,6 +434,39 @@ func windowFromToplevel(tl *C.struct_xdg_toplevel) Window {
 	return nil
 }
 
+// Default cursor.
+var curWayland *cursorWayland
+
+// initDefaultCursorWayland sets curWayland to contain
+// a placeholder cursor image.
+func initDefaultCursorWayland() (err error) {
+	// TODO: Take as param.
+	const (
+		width  = 16
+		height = 16
+		size   = width * height * 4
+	)
+	data := make([]byte, size)
+	cx, cy := float64(width/2), float64(height/2)
+	cd := math.Sqrt(cx*cx + cy*cy)
+	for i := 0; i < height; i++ {
+		for j := 0; j < width; j++ {
+			off := 4 * (i*width + j)
+			x := math.Abs(cx - float64(j))
+			y := math.Abs(cy - float64(i))
+			val := byte(255 * math.Sqrt(x*x+y*y) / cd)
+			switch {
+			case val < 32:
+				copy(data[off:], []byte{val, val, val, 255})
+			case val < 64:
+				copy(data[off:], []byte{0, 0, 255, val})
+			}
+		}
+	}
+	curWayland, err = newCursorWayland(data)
+	return
+}
+
 //export registryGlobalWayland
 func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
 	switch C.GoString(iface) {
@@ -568,8 +604,12 @@ func seatNameWayland(name *C.char) {}
 
 //export pointerEnterWayland
 func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_fixed_t) {
-	// TODO: Set cursor.
-	C.pointerSetCursorWayland(ptWayland, serial, nil, 0, 0)
+	if curWayland != nil {
+		const x, y = 8, 8 // TODO
+		C.pointerSetCursorWayland(ptWayland, serial, curWayland.sf, x, y)
+	} else {
+		fmt.Fprint(os.Stderr, "[!] wsi: undefined cursor image\n")
+	}
 	if pointerHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
 			pointerHandler.PointerEnter(win, int(x/256), int(y/256))
