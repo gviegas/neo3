@@ -444,6 +444,24 @@ struct wl_surface* compositorCreateSurfaceWayland(struct wl_compositor* cpt) {
 		(struct wl_proxy*)cpt, WL_COMPOSITOR_CREATE_SURFACE, &surfaceInterfaceWayland, proxyGetVersion((struct wl_proxy*)cpt), 0, NULL);
 }
 
+static void shmFormat(void*, struct wl_shm*, uint32_t format) {
+	shmFormatWayland(format);
+}
+
+int shmAddListenerWayland(struct wl_shm* shm) {
+	static const struct wl_shm_listener ltn = { shmFormat };
+	return proxyAddListener((struct wl_proxy*)shm, (void (**)(void))&ltn, NULL);
+}
+
+void shmDestroyWayland(struct wl_shm* shm) {
+	proxyDestroy((struct wl_proxy*)shm);
+}
+
+struct wl_shm_pool* shmCreatePoolWayland(struct wl_shm* shm, int32_t fd, int32_t size) {
+	return (struct wl_shm_pool*)proxyMarshalFlags(
+		(struct wl_proxy*)shm, WL_SHM_CREATE_POOL, &shmPoolInterfaceWayland, proxyGetVersion((struct wl_proxy*)shm), 0, NULL, fd, size);
+}
+
 static void surfaceEnter(void*, struct wl_surface* sf, struct wl_output* out) {
 	surfaceEnterWayland(sf, out);
 }

@@ -78,6 +78,18 @@ void compositorDestroyWayland(struct wl_compositor* cpt);
 // wl_compositor_create_surface.
 struct wl_surface* compositorCreateSurfaceWayland(struct wl_compositor* cpt);
 
+// wl_shm_add_listener.
+// This wrapper requires the following exported Go function:
+//
+// - shmFormatWayland(format C.uint32_t)
+int shmAddListenerWayland(struct wl_shm* shm);
+
+// wl_shm_destroy.
+void shmDestroyWayland(struct wl_shm* shm);
+
+// wl_shm_create_pool.
+struct wl_shm_pool* shmCreatePoolWayland(struct wl_shm* shm, int32_t fd, int32_t size);
+
 // wl_surface_add_listener.
 // This wrapper requires the following exported Go functions:
 //

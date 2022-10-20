@@ -23,6 +23,7 @@ var (
 	dpyWayland  *C.struct_wl_display
 	rtyWayland  *C.struct_wl_registry
 	cptWayland  *C.struct_wl_compositor
+	shmWayland  *C.struct_wl_shm
 	wmXDG       *C.struct_xdg_wm_base
 	seatWayland *C.struct_wl_seat
 	ptWayland   *C.struct_wl_pointer
@@ -30,6 +31,7 @@ var (
 
 	// Name of globals in the server.
 	nameCptWayland  C.uint32_t
+	nameShmWayland  C.uint32_t
 	nameWMXDG       C.uint32_t
 	nameSeatWayland C.uint32_t
 )
@@ -66,12 +68,20 @@ func initWayland() (err error) {
 		err = errors.New("wsi: cptWayland is nil")
 		return
 	}
+	if shmWayland == nil {
+		err = errors.New("wsi: shmWayland is nil")
+		return
+	}
 	if wmXDG == nil {
 		err = errors.New("wsi: wmXDG is nil")
 		return
 	}
 	if seatWayland == nil {
 		err = errors.New("wsi: seatWayland is nil")
+		return
+	}
+	if C.shmAddListenerWayland(shmWayland) != 0 {
+		err = errors.New("wsi: shmAddListenerWayland failed")
 		return
 	}
 	if C.wmBaseAddListenerXDG(wmXDG) != 0 {
@@ -114,6 +124,10 @@ func deinitWayland() {
 		if cptWayland != nil {
 			C.compositorDestroyWayland(cptWayland)
 			cptWayland = nil
+		}
+		if shmWayland != nil {
+			C.shmDestroyWayland(shmWayland)
+			shmWayland = nil
 		}
 		if wmXDG != nil {
 			C.wmBaseDestroyXDG(wmXDG)
@@ -342,6 +356,11 @@ func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		cptWayland = (*C.struct_wl_compositor)(p)
 		nameCptWayland = name
+	case "wl_shm":
+		i := &C.shmInterfaceWayland
+		p := C.registryBindWayland(rtyWayland, name, i, vers)
+		shmWayland = (*C.struct_wl_shm)(p)
+		nameShmWayland = name
 	case "xdg_wm_base":
 		i := &C.wmBaseInterfaceXDG
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
@@ -372,6 +391,11 @@ func registryGlobalRemoveWayland(name C.uint32_t) {
 		C.compositorDestroyWayland(cptWayland)
 		cptWayland = nil
 		nameCptWayland = 0
+	case name == nameShmWayland && shmWayland != nil:
+		closeWin()
+		C.shmDestroyWayland(shmWayland)
+		shmWayland = nil
+		nameShmWayland = 0
 	case name == nameWMXDG && wmXDG != nil:
 		closeWin()
 		C.wmBaseDestroyXDG(wmXDG)
@@ -391,6 +415,9 @@ func registryGlobalRemoveWayland(name C.uint32_t) {
 		nameSeatWayland = 0
 	}
 }
+
+//export shmFormatWayland
+func shmFormatWayland(format C.uint32_t) {}
 
 //export surfaceEnterWayland
 func surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {}
