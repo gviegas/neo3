@@ -126,6 +126,7 @@ func deinitWayland() {
 			}
 		}
 	}
+	curWayland.destroy()
 	if dpyWayland != nil {
 		if cptWayland != nil {
 			C.compositorDestroyWayland(cptWayland)
@@ -378,6 +379,19 @@ func newCursorWayland(data []byte) (*cursorWayland, error) {
 		buf: buf,
 		sf:  sf,
 	}, nil
+}
+
+// destroy destroys the cursor.
+func (c *cursorWayland) destroy() {
+	if c == nil {
+		return
+	}
+	if dpyWayland != nil {
+		C.surfaceDestroyWayland(c.sf)
+		C.bufferDestroyWayland(c.buf)
+		C.close(c.fd)
+	}
+	*c = cursorWayland{}
 }
 
 // dispatchWayland dispatches queued events.
