@@ -215,7 +215,7 @@ func (t *T) bufferSetup() {
 
 	// Shader data is going to change every frame, so it makes
 	// more sense to have it as CPU visible.
-	constBuf, err := gpu.NewBuffer(512, true, driver.UShaderConst)
+	constBuf, err := gpu.NewBuffer(512*NFrame, true, driver.UShaderConst)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -442,6 +442,7 @@ func (t *T) pipelineSetup() {
 // renderLoop renders the cube in a loop.
 func (t *T) renderLoop() {
 	var err error
+	var frame int
 	for i := 0; i < cap(t.ch); i++ {
 		wk := &driver.WorkItem{Work: []driver.CmdBuffer{t.cb[i]}}
 		t.ch <- wk
@@ -467,7 +468,14 @@ func (t *T) renderLoop() {
 		// Note that, as long as we use the same buffer range,
 		// we need not set the descriptor heap again.
 		t.updateTransform(time.Second / 60)
-		copy(t.constBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
+		if NFrame == 1 {
+			copy(t.constBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
+		} else {
+			off := int64(512 * frame)
+			copy(t.constBuf.Bytes()[off:], unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
+			t.dheap.SetBuffer(0, 0, 0, []driver.Buffer{t.constBuf}, []int64{off}, []int64{64})
+			frame = (frame + 1) % NFrame
+		}
 
 		// Begin must come before anything else.
 		if err = cb.Begin(); err != nil {
