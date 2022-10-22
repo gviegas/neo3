@@ -17,13 +17,13 @@ import (
 	"github.com/gviegas/scene/wsi"
 )
 
-const NFrame = 2
+const NFrame = 3
 
 const DepthFmt = driver.D16un
 
 var dim = driver.Dim3D{
-	Width:  640,
-	Height: 480,
+	Width:  480,
+	Height: 300,
 	Depth:  1,
 }
 
@@ -112,7 +112,7 @@ func (t *T) swapchainSetup() {
 	if !ok {
 		log.Fatal("GPU cannot present")
 	}
-	sc, err := gpu.NewSwapchain(win, 3)
+	sc, err := gpu.NewSwapchain(win, NFrame+1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func (t *T) passSetup() {
 			Color: scViews[i],
 			Load:  driver.LClear,
 			Store: driver.SStore,
-			Clear: [4]float32{0.01, 0.01, 0.01, 1},
+			Clear: [4]float32{0.075, 0.075, 0.075, 1},
 		}
 	}
 
