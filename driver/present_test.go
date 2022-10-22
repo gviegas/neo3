@@ -374,12 +374,14 @@ func (t *T) descriptorSetup() {
 	// until execution completes. When there are multiple
 	// instances that use different resources, additional
 	// heap copies need to be created.
-	if err := dheap.New(1); err != nil {
+	if err := dheap.New(NFrame); err != nil {
 		log.Fatal(err)
 	}
-	dheap.SetBuffer(0, 0, 0, []driver.Buffer{t.constBuf}, []int64{0}, []int64{64})
-	dheap.SetImage(0, 1, 0, []driver.ImageView{t.splView})
-	dheap.SetSampler(0, 2, 0, []driver.Sampler{t.splr})
+	for i := 0; i < NFrame; i++ {
+		dheap.SetBuffer(i, 0, 0, []driver.Buffer{t.constBuf}, []int64{int64(512 * i)}, []int64{64})
+		dheap.SetImage(i, 1, 0, []driver.ImageView{t.splView})
+		dheap.SetSampler(i, 2, 0, []driver.Sampler{t.splr})
+	}
 
 	t.dtab = dtab
 	t.dheap = dheap
@@ -468,14 +470,7 @@ func (t *T) renderLoop() {
 		// Note that, as long as we use the same buffer range,
 		// we need not set the descriptor heap again.
 		t.updateTransform(time.Second / 60)
-		if NFrame == 1 {
-			copy(t.constBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
-		} else {
-			off := int64(512 * frame)
-			copy(t.constBuf.Bytes()[off:], unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
-			t.dheap.SetBuffer(0, 0, 0, []driver.Buffer{t.constBuf}, []int64{off}, []int64{64})
-			frame = (frame + 1) % NFrame
-		}
+		copy(t.constBuf.Bytes()[512*frame:], unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
 
 		// Begin must come before anything else.
 		if err = cb.Begin(); err != nil {
@@ -541,7 +536,7 @@ func (t *T) renderLoop() {
 		cb.SetViewport([]driver.Viewport{t.vport})
 		cb.SetScissor([]driver.Scissor{t.sciss})
 		cb.SetVertexBuf(0, []driver.Buffer{t.vertBuf, t.vertBuf}, []int64{0, 512})
-		cb.SetDescTableGraph(t.dtab, 0, []int{0})
+		cb.SetDescTableGraph(t.dtab, 0, []int{frame})
 		cb.Draw(36, 1, 0, 0)
 		cb.EndPass()
 
@@ -586,6 +581,7 @@ func (t *T) renderLoop() {
 
 		// We are done with this frame, so start working on
 		// the next one.
+		frame = (frame + 1) % NFrame
 	}
 	for len(t.ch) != cap(t.ch) {
 	}
