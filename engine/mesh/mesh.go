@@ -4,7 +4,11 @@
 // used in the engine's renderer.
 package mesh
 
-import ()
+import (
+	"io"
+
+	"github.com/gviegas/scene/driver"
+)
 
 // Mesh is a collection of primitives.
 type Mesh struct {
@@ -33,4 +37,37 @@ const (
 	Joints1
 	Weights0
 	Weights1
+
+	MaxSemantic = iota
 )
+
+// PrimitiveData describes the data layout of a mesh's primitive.
+type PrimitiveData struct {
+	Topology    driver.Topology
+	VertexCount int
+	IndexCount  int
+	// SemanticMask indicates which semantics
+	// this primitive provides in the Semantics
+	// array. Unused semantics need not be set.
+	SemanticMask Semantic
+	Semantics    [MaxSemantic]struct {
+		Format driver.VertexFmt
+		Offset int64
+		Src    int
+	}
+	// Index describes the index buffer's data.
+	// It is ignored if IndexCount is less than
+	// or equal zero.
+	Index struct {
+		Format driver.IndexFmt
+		Offset int64
+		Src    int
+	}
+}
+
+// Data defines the data layout of a whole mesh and provides
+// the data sources to read from.
+type Data struct {
+	Primitives []PrimitiveData
+	Srcs       []io.ReadSeeker
+}
