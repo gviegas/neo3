@@ -41,6 +41,16 @@ const (
 	MaxSemantic = iota
 )
 
+// I computes log2(s).
+// This value can be used to index into PrimitiveData.Semantics.
+func (s Semantic) I() (i int) {
+	for s > 1 {
+		s >>= 1
+		i++
+	}
+	return
+}
+
 // PrimitiveData describes the data layout of a mesh's primitive.
 type PrimitiveData struct {
 	Topology    driver.Topology
