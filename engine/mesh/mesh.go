@@ -30,13 +30,9 @@ const (
 	Tangent
 	TexCoord0
 	TexCoord1
-	TexCoord2
 	Color0
-	Color1
 	Joints0
-	Joints1
 	Weights0
-	Weights1
 
 	MaxSemantic = iota
 )
