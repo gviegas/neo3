@@ -1,7 +1,7 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
-// Package mesh implements the mesh data representation
-// used in the engine's renderer.
+// Package mesh implements the mesh data representation used
+// in the engine's renderer.
 package mesh
 
 import (
@@ -12,12 +12,15 @@ import (
 
 // Mesh is a collection of primitives.
 type Mesh struct {
-	// TODO
+	bufIdx  int
+	primIdx int
+	primLen int
 }
 
 // Primitive defines the data for a draw call.
 type Primitive struct {
-	// TODO
+	bufIdx int
+	index  int
 }
 
 // Semantic specifies the intended use of a primitive's attribute.
