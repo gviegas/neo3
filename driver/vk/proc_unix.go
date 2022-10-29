@@ -34,7 +34,7 @@ func (p *proc) open() error {
 		lib = C.CString("libvulkan.so.1")
 	}
 	defer C.free(unsafe.Pointer(lib))
-	h := C.dlopen(lib, C.RTLD_LAZY|C.RTLD_GLOBAL)
+	h := C.dlopen(lib, C.RTLD_LAZY|C.RTLD_LOCAL)
 	if h == nil {
 		return driver.ErrNotInstalled
 	}

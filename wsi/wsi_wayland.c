@@ -22,7 +22,7 @@ static uint32_t (*proxyGetVersion)(struct wl_proxy*);
 static struct wl_proxy* (*proxyMarshalFlags)(struct wl_proxy*, uint32_t, const struct wl_interface*, uint32_t, uint32_t, ...);
 
 void* openWayland(void) {
-	void* handle = dlopen(LIBWAYLAND, RTLD_LAZY|RTLD_GLOBAL);
+	void* handle = dlopen(LIBWAYLAND, RTLD_LAZY|RTLD_LOCAL);
 	if (handle == NULL)
 		return NULL;
 
