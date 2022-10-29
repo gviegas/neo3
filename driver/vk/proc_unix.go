@@ -26,11 +26,9 @@ type proc struct {
 func (p *proc) open() error {
 	var lib *C.char
 	switch runtime.GOOS {
-	default:
-		panic("unsupported OS: " + runtime.GOOS)
 	case "android":
 		lib = C.CString("libvulkan.so")
-	case "linux":
+	default:
 		lib = C.CString("libvulkan.so.1")
 	}
 	defer C.free(unsafe.Pointer(lib))
