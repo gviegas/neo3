@@ -23,8 +23,8 @@ type Bitm[T Uint] struct {
 // TODO: This is not constant.
 func (m *Bitm[T]) nbit() int { return int(unsafe.Sizeof(T(0))) * 8 }
 
-// Len returns the number of bits set in the map.
-func (m *Bitm[_]) Len() int { return len(m.m)*m.nbit() - m.rem }
+// Len returns the number of bits in the map.
+func (m *Bitm[_]) Len() int { return len(m.m) * m.nbit() }
 
-// Cap returns the number of bits in the map.
-func (m *Bitm[_]) Cap() int { return len(m.m) * m.nbit() }
+// Rem returns the number of unset bits in the map.
+func (m *Bitm[_]) Rem() int { return m.rem }

@@ -33,7 +33,7 @@ func TestZero(t *testing.T) {
 	if n := bitm16.Len(); n != 0 {
 		t.Fatalf("bitm16.Len:\nhave %v\nwant 0", n)
 	}
-	if n := bitm16.Cap(); n != 0 {
-		t.Fatalf("bitm16.Cap:\nhave %v\nwant 0", n)
+	if n := bitm16.Rem(); n != 0 {
+		t.Fatalf("bitm16.Rem:\nhave %v\nwant 0", n)
 	}
 }
