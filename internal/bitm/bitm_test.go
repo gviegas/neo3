@@ -37,3 +37,32 @@ func TestZero(t *testing.T) {
 		t.Fatalf("bitm16.Rem:\nhave %v\nwant 0", n)
 	}
 }
+
+func TestGrow(t *testing.T) {
+	var bitm32 Bitm[uint32]
+	for _, x := range [...]struct {
+		nplus, wantLen int
+	}{
+		{1, 32},
+		{2, 96},
+		{3, 192},
+		{0, 192},
+		{16, 704},
+		{17, 1248},
+		{32, 2272},
+		{99, 5440},
+	} {
+		bitm32.Grow(x.nplus)
+		if n := bitm32.Len(); n != x.wantLen {
+			t.Fatalf("bitm32.Grow: Len:\nhave %v\nwant %v", n, x.wantLen)
+		}
+		if n := bitm32.Rem(); n != x.wantLen {
+			t.Fatalf("bitm32.Grow: Rem:\nhave %v\nwant %v", n, x.wantLen)
+		}
+		for i, x := range bitm32.m {
+			if x != 0 {
+				t.Fatalf("bitm32.m[%d]:\nhave %v\nwant 0", i, x)
+			}
+		}
+	}
+}

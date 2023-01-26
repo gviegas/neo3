@@ -28,3 +28,21 @@ func (m *Bitm[_]) Len() int { return len(m.m) * m.nbit() }
 
 // Rem returns the number of unset bits in the map.
 func (m *Bitm[_]) Rem() int { return m.rem }
+
+// Grow resizes the map to contain nplus additional Uints.
+// The newly added extent will be available as a contiguous range
+// of unset bits, such that requesting a range of
+//
+//	nplus * <number of bits in T>
+//
+// is guaranteed to succeed.
+func (m *Bitm[T]) Grow(nplus int) {
+	//m.m = append(m.m, make([]T, nplus)...)
+	m.rem += nplus * m.nbit()
+	var zeroes [16]T
+	for nplus > len(zeroes) {
+		m.m = append(m.m, zeroes[:]...)
+		nplus -= len(zeroes)
+	}
+	m.m = append(m.m, zeroes[:nplus]...)
+}
