@@ -118,3 +118,41 @@ func TestSetUnset(t *testing.T) {
 	}
 	bitm8.checkState([]check[uint8]{{0, 0x11}, {1, 0x11}, {2, 0x11}}, t)
 }
+
+func TestIsSet(t *testing.T) {
+	var bitm64 Bitm[uint64]
+	bitm64.Grow(2)
+	checkUnset := func(start, end int) {
+		for i := start; i < end; i++ {
+			if bitm64.IsSet(i) {
+				t.Fatalf("bitm64.isSet: %d:\nhave true\nwant false", i)
+			}
+		}
+	}
+	checkSet := func(start, end int) {
+		for i := start; i < end; i++ {
+			if !bitm64.IsSet(i) {
+				t.Fatalf("bitm64.isSet: %d:\nhave false\nwant true", i)
+			}
+		}
+	}
+	checkUnset(0, bitm64.Len())
+	bitm64.Set(0)
+	checkSet(0, 1)
+	checkUnset(1, bitm64.Len())
+	bitm64.Set(1)
+	checkSet(0, 2)
+	bitm64.Unset(0)
+	checkUnset(0, 1)
+	checkSet(1, 2)
+	bitm64.Set(bitm64.Len() - 1)
+	checkSet(bitm64.Len()-1, bitm64.Len())
+	for i := 0; i < bitm64.Len(); i++ {
+		bitm64.Unset(i)
+	}
+	checkUnset(0, bitm64.Len())
+	for i := 0; i < bitm64.Len(); i++ {
+		bitm64.Set(i)
+	}
+	checkSet(0, bitm64.Len())
+}

@@ -60,3 +60,10 @@ func (m *Bitm[_]) Unset(index int) {
 	i := index / n
 	m.m[i] &^= 1 << (index & (n - 1))
 }
+
+// IsSet checks whether a given bit is set.
+func (m *Bitm[_]) IsSet(index int) bool {
+	n := m.nbit()
+	i := index / n
+	return m.m[i]&(1<<(index&(n-1))) != 0
+}
