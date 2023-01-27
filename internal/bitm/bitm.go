@@ -48,22 +48,31 @@ func (m *Bitm[T]) Grow(nplus int) {
 }
 
 // Set sets a given bit.
-func (m *Bitm[_]) Set(index int) {
+func (m *Bitm[T]) Set(index int) {
 	n := m.nbit()
 	i := index / n
-	m.m[i] |= 1 << (index & (n - 1))
+	b := T(1) << (index & (n - 1))
+	if m.m[i]&b == 0 {
+		m.m[i] |= b
+		m.rem--
+	}
 }
 
 // Unset unsets a given bit.
-func (m *Bitm[_]) Unset(index int) {
+func (m *Bitm[T]) Unset(index int) {
 	n := m.nbit()
 	i := index / n
-	m.m[i] &^= 1 << (index & (n - 1))
+	b := T(1) << (index & (n - 1))
+	if m.m[i]&b != 0 {
+		m.m[i] &^= b
+		m.rem++
+	}
 }
 
 // IsSet checks whether a given bit is set.
-func (m *Bitm[_]) IsSet(index int) bool {
+func (m *Bitm[T]) IsSet(index int) bool {
 	n := m.nbit()
 	i := index / n
-	return m.m[i]&(1<<(index&(n-1))) != 0
+	b := T(1) << (index & (n - 1))
+	return m.m[i]&b != 0
 }

@@ -82,6 +82,22 @@ func (m *Bitm[T]) checkState(v []check[T], t *testing.T) {
 	}
 }
 
+// checkRem checks that m.Rem() matches the state of m.m.
+func (m *Bitm[T]) checkRem(t *testing.T) {
+	want := m.Len()
+	n := m.nbit()
+	for _, x := range m.m {
+		for i := 0; i < n; i++ {
+			if x&(1<<i) != 0 {
+				want--
+			}
+		}
+	}
+	if r := m.Rem(); r != want {
+		t.Fatalf("m.Rem:\nhave %d\nwant %d", r, want)
+	}
+}
+
 func TestSetUnset(t *testing.T) {
 	var bitm8 Bitm[uint8]
 	bitm8.Grow(1)
@@ -89,8 +105,10 @@ func TestSetUnset(t *testing.T) {
 	bitm8.checkState([]check[uint8]{{0, 0x40}}, t)
 	bitm8.Set(1)
 	bitm8.checkState([]check[uint8]{{0, 0x42}}, t)
+	bitm8.checkRem(t)
 	bitm8.Unset(6)
 	bitm8.checkState([]check[uint8]{{0, 0x02}}, t)
+	bitm8.checkRem(t)
 	bitm8.Set(6)
 	bitm8.checkState([]check[uint8]{{0, 0x42}}, t)
 	bitm8.Grow(2)
@@ -105,6 +123,7 @@ func TestSetUnset(t *testing.T) {
 	bitm8.Unset(23)
 	bitm8.Unset(0)
 	bitm8.checkState([]check[uint8]{{0, 0x40}, {1, 0x04}, {2, 0x20}}, t)
+	bitm8.checkRem(t)
 	bitm8.Set(4)
 	bitm8.Set(14)
 	bitm8.Set(16)
@@ -117,6 +136,7 @@ func TestSetUnset(t *testing.T) {
 		}
 	}
 	bitm8.checkState([]check[uint8]{{0, 0x11}, {1, 0x11}, {2, 0x11}}, t)
+	bitm8.checkRem(t)
 }
 
 func TestIsSet(t *testing.T) {
