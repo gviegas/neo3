@@ -46,3 +46,17 @@ func (m *Bitm[T]) Grow(nplus int) {
 	}
 	m.m = append(m.m, zeroes[:nplus]...)
 }
+
+// Set sets a given bit.
+func (m *Bitm[_]) Set(index int) {
+	n := m.nbit()
+	i := index / n
+	m.m[i] |= 1 << (index & (n - 1))
+}
+
+// Unset unsets a given bit.
+func (m *Bitm[_]) Unset(index int) {
+	n := m.nbit()
+	i := index / n
+	m.m[i] &^= 1 << (index & (n - 1))
+}
