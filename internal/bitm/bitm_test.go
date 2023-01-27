@@ -176,3 +176,48 @@ func TestIsSet(t *testing.T) {
 	}
 	checkSet(0, bitm64.Len())
 }
+
+// checkSearch calls m.Search and checks the expected result.
+// If want < 0, then Search must fail.
+func (m *Bitm[_]) checkSearch(want int, t *testing.T) {
+	index, ok := m.Search()
+	if want < 0 {
+		if ok {
+			t.Fatal("m.Search: ok:\nhave true\nwant false")
+		}
+	} else {
+		if !ok {
+			t.Fatal("m.Search: ok:\nhave false\nwant true")
+		}
+		if index != want {
+			t.Fatalf("m.Search: index:\nhave %d\nwant %d", index, want)
+		}
+	}
+}
+
+func TestSearch(t *testing.T) {
+	var bitm32 Bitm[uint32]
+	bitm32.checkSearch(-1, t)
+	bitm32.Grow(12)
+	bitm32.checkSearch(0, t)
+	bitm32.Set(0)
+	bitm32.checkSearch(1, t)
+	bitm32.Set(1)
+	bitm32.checkSearch(2, t)
+	bitm32.Set(3)
+	bitm32.checkSearch(2, t)
+	bitm32.Unset(1)
+	bitm32.checkSearch(1, t)
+	bitm32.Unset(0)
+	bitm32.checkSearch(0, t)
+	for i := 0; i < bitm32.nbit()*2; i++ {
+		bitm32.Set(i)
+	}
+	bitm32.checkSearch(64, t)
+	for i := 64; i < bitm32.Len(); i++ {
+		bitm32.Set(i)
+	}
+	bitm32.checkSearch(-1, t)
+	bitm32.Unset(120)
+	bitm32.checkSearch(120, t)
+}

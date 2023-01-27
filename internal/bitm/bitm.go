@@ -76,3 +76,25 @@ func (m *Bitm[T]) IsSet(index int) bool {
 	b := T(1) << (index & (n - 1))
 	return m.m[i]&b != 0
 }
+
+// Search attempts to locate an unset bit in the map.
+// If ok is true, then index is a value suitable for use in
+// a call to m.Set.
+// This method will fail only when m.Rem() == 0.
+func (m *Bitm[T]) Search() (index int, ok bool) {
+	if m.Rem() == 0 {
+		return -1, false
+	}
+	for i, x := range m.m {
+		if x == ^T(0) {
+			continue
+		}
+		b := 0
+		for ; x&(1<<b) != 0; b++ {
+		}
+		index = i*m.nbit() + b
+		ok = true
+		break
+	}
+	return
+}
