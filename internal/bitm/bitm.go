@@ -83,7 +83,7 @@ func (m *Bitm[T]) IsSet(index int) bool {
 // This method will fail only when m.Rem() == 0.
 func (m *Bitm[T]) Search() (index int, ok bool) {
 	if m.Rem() == 0 {
-		return -1, false
+		return
 	}
 	for i, x := range m.m {
 		if x == ^T(0) {
@@ -108,12 +108,10 @@ func (m *Bitm[T]) SearchRange(n int) (index int, ok bool) {
 		return m.Search()
 	}
 	if m.Rem() < n {
-		return -1, false
+		return
 	}
 	nb := m.nbit()
 	end := len(m.m) - (n-1)/nb
-	// For consistence.
-	index = -1
 loopT:
 	for i := 0; i < end; i++ {
 		if m.m[i] == ^T(0) {
@@ -127,7 +125,7 @@ loopT:
 					continue loopT
 				} else {
 					if m.Len()-k-1 < n {
-						return -1, false
+						return
 					}
 					j = k + 1
 					continue
