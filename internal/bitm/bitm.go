@@ -98,3 +98,45 @@ func (m *Bitm[T]) Search() (index int, ok bool) {
 	}
 	return
 }
+
+// SearchRange attempts to locate a contiguous range of unset bits.
+// If ok is true, then all values in the range [index, index + n)
+// are suitable for use in a call to m.Set.
+// It calls Search if n <= 1.
+func (m *Bitm[T]) SearchRange(n int) (index int, ok bool) {
+	if n <= 1 {
+		return m.Search()
+	}
+	if m.Rem() < n {
+		return -1, false
+	}
+	nb := m.nbit()
+	end := len(m.m) - (n-1)/nb
+	// For consistence.
+	index = -1
+loopT:
+	for i := 0; i < end; i++ {
+		if m.m[i] == ^T(0) {
+			continue
+		}
+		j := i * nb
+		for k := j; k < j+n; k++ {
+			if m.IsSet(k) {
+				if k-i*nb >= nb-1 {
+					i = (k - (nb - 1)) / nb
+					continue loopT
+				} else {
+					if m.Len()-k-1 < n {
+						return -1, false
+					}
+					j = k + 1
+					continue
+				}
+			}
+		}
+		index = j
+		ok = true
+		break
+	}
+	return
+}

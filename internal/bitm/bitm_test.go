@@ -221,3 +221,76 @@ func TestSearch(t *testing.T) {
 	bitm32.Unset(120)
 	bitm32.checkSearch(120, t)
 }
+
+// checkSearchRange calls m.SearchRange and checks the expected result.
+// If want < 0, then SearchRange must fail.
+func (m *Bitm[_]) checkSearchRange(n, want int, t *testing.T) {
+	index, ok := m.SearchRange(n)
+	if want < 0 {
+		if ok {
+			t.Fatal("m.SearchRange: ok:\nhave true\nwant false")
+		}
+	} else {
+		if !ok {
+			t.Fatal("m.SearchRange: ok:\nhave false\nwant true")
+		}
+		if index != want {
+			t.Fatalf("m.SearchRange: index:\nhave %d\nwant %d", index, want)
+		}
+	}
+}
+
+func TestSearchRange(t *testing.T) {
+	var bitm16 Bitm[uint16]
+	setRange := func(start, end int) {
+		for i := start; i < end; i++ {
+			bitm16.Set(i)
+		}
+	}
+	bitm16.checkSearchRange(3, -1, t)
+	bitm16.Grow(4)
+	bitm16.checkSearchRange(3, 0, t)
+	setRange(0, 3)
+	bitm16.checkSearchRange(3, 3, t)
+	setRange(3, 6)
+	bitm16.checkSearchRange(3, 6, t)
+	setRange(6, 9)
+	bitm16.checkSearchRange(1, 9, t)
+	bitm16.Set(9)
+	bitm16.checkSearchRange(2, 10, t)
+	setRange(10, 12)
+	bitm16.Unset(1)
+	bitm16.checkSearchRange(2, 12, t)
+	bitm16.checkSearchRange(1, 1, t)
+	bitm16.Unset(2)
+	bitm16.checkSearchRange(2, 1, t)
+	bitm16.checkSearchRange(1, 1, t)
+	bitm16.checkSearchRange(6, 12, t)
+	setRange(12, 18)
+	bitm16.checkSearchRange(13, 18, t)
+	setRange(19, 32)
+	bitm16.Set(35)
+	bitm16.Set(46)
+	bitm16.checkSearchRange(4, 36, t)
+	bitm16.checkSearchRange(3, 32, t)
+	bitm16.checkSearchRange(10, 36, t)
+	bitm16.checkSearchRange(11, 47, t)
+	bitm16.checkSearchRange(20, -1, t)
+	bitm16.Grow(1)
+	bitm16.checkSearchRange(20, 47, t)
+	bitm16.checkSearchRange(31, 47, t)
+	bitm16.checkSearchRange(33, 47, t)
+	bitm16.checkSearchRange(34, -1, t)
+	bitm16.Set(76)
+	bitm16.checkSearchRange(20, 47, t)
+	bitm16.checkSearchRange(31, -1, t)
+	bitm16.checkSearchRange(33, -1, t)
+	bitm16.checkSearchRange(34, -1, t)
+	bitm16.Grow(5)
+	bitm16.checkSearchRange(80, 77, t)
+	bitm16.Set(79)
+	bitm16.checkSearchRange(80, 80, t)
+	bitm16.Set(80)
+	bitm16.checkSearchRange(80, -1, t)
+	bitm16.checkSearchRange(79, 81, t)
+}
