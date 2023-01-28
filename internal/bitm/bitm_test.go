@@ -294,3 +294,43 @@ func TestSearchRange(t *testing.T) {
 	bitm16.checkSearchRange(80, -1, t)
 	bitm16.checkSearchRange(79, 81, t)
 }
+
+func TestClear(t *testing.T) {
+	var bitmu Bitm[uint]
+	checkClear := func() {
+		if bitmu.Len() != bitmu.Rem() {
+			t.Fatal("bitmu.Clear: Len == Rem\nhave false\nwant true")
+
+		}
+		for i, x := range bitmu.m {
+			if x != 0 {
+				t.Fatalf("bitmu.Clear: m[%d]\nhave %d\nwant 0", i, x)
+			}
+		}
+	}
+	checkClear()
+	bitmu.Grow(1)
+	checkClear()
+	for i := 0; i < bitmu.Len(); i++ {
+		bitmu.Set(i)
+	}
+	bitmu.Clear()
+	checkClear()
+	bitmu.Grow(9)
+	checkClear()
+	for i := 0; i < bitmu.Len(); i++ {
+		bitmu.Set(i)
+	}
+	bitmu.Clear()
+	checkClear()
+	for i := bitmu.nbit(); i < bitmu.Len(); i += 3 {
+		bitmu.Set(i)
+	}
+	bitmu.Clear()
+	checkClear()
+	for i := bitmu.nbit(); i < bitmu.Len()-bitmu.nbit(); i++ {
+		bitmu.Set(i)
+	}
+	bitmu.Clear()
+	checkClear()
+}

@@ -138,3 +138,20 @@ loopT:
 	}
 	return
 }
+
+// Clear unsets every bit in the map.
+func (m *Bitm[T]) Clear() {
+	if m.Len() == m.Rem() {
+		return
+	}
+	const n = 16
+	var zeroes [n]T
+	s := m.m[:]
+	for {
+		if copy(s, zeroes[:]) < n {
+			m.rem = m.Len()
+			return
+		}
+		s = s[n:]
+	}
+}
