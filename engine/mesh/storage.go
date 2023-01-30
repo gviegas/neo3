@@ -26,14 +26,8 @@ func SetBuffer(buf driver.Buffer) driver.Buffer {
 		return nil
 	case nil:
 		storage.prims = nil
-		storage.spans = nil
 	default:
 		storage.prims = storage.prims[:0]
-		storage.spans = storage.spans[:0]
-		storage.spans = append(storage.spans, span{
-			start: 0,
-			end:   int(buf.Cap() / blockSize),
-		})
 	}
 	prev := storage.buf
 	storage.buf = buf
@@ -45,7 +39,6 @@ type meshBuffer struct {
 	buf   driver.Buffer
 	mu    sync.Mutex
 	prims []primitive
-	spans []span
 }
 
 // primitive is an entry in a mesh buffer.
@@ -61,6 +54,7 @@ type primitive struct {
 		format driver.IndexFmt
 		offset int64
 	}
+	span
 }
 
 // span defines a buffer range in number of blocks.
