@@ -113,6 +113,17 @@ func (m *Bitm[T]) SearchRange(n int) (index int, ok bool) {
 	nb := m.nbit()
 	var cnt, idx, bit, i int
 	for {
+		// Skip Uints that have no unset bits.
+		if m.m[i] == ^T(0) {
+			cnt, bit = 0, 0
+			i++
+			for ; i < len(m.m); i++ {
+				if m.m[i] != ^T(0) {
+					break
+				}
+			}
+			idx = i
+		}
 		// Give up if there is not enough bits left.
 		if cnt+nb*(len(m.m)-i) < n {
 			return
@@ -165,6 +176,9 @@ func (m *Bitm[T]) SearchRange(n int) (index int, ok bool) {
 			}
 		}
 		i++
+		if i == len(m.m) {
+			break
+		}
 	}
 	return
 }
