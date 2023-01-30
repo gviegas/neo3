@@ -66,7 +66,7 @@ type PrimitiveData struct {
 	}
 	// Index describes the index buffer's data.
 	// It is ignored if IndexCount is less than
-	// or equal zero.
+	// or equal to zero.
 	Index struct {
 		Format driver.IndexFmt
 		Offset int64
