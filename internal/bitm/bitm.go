@@ -89,7 +89,7 @@ func (m *Bitm[T]) Search() (index int, ok bool) {
 		if x == ^T(0) {
 			continue
 		}
-		b := 0
+		var b int
 		for ; x&(1<<b) != 0; b++ {
 		}
 		index = i*m.nbit() + b
@@ -111,30 +111,60 @@ func (m *Bitm[T]) SearchRange(n int) (index int, ok bool) {
 		return
 	}
 	nb := m.nbit()
-	end := len(m.m) - (n-1)/nb
-loopT:
-	for i := 0; i < end; i++ {
-		if m.m[i] == ^T(0) {
-			continue
+	var cnt, idx, bit, i int
+	for {
+		// Give up if there is not enough bits left.
+		if cnt+nb*(len(m.m)-i) < n {
+			return
 		}
-		j := i * nb
-		for k := j; k < j+n; k++ {
-			if m.IsSet(k) {
-				if k-i*nb >= nb-1 {
-					i = (k - (nb - 1)) / nb
-					continue loopT
-				} else {
-					if m.Len()-k-1 < n {
-						return
-					}
-					j = k + 1
-					continue
+		// Iterate over whole Uints as much as possible.
+		if m.m[i] == 0 {
+			cnt += nb
+			i++
+			for j := 0; j < (n-cnt)/nb; j++ {
+				if m.m[i+j] != 0 {
+					cnt += j * nb
+					i += j
+					break
 				}
 			}
+			if cnt >= n {
+				index = idx*nb + bit
+				ok = true
+				break
+			}
 		}
-		index = j
-		ok = true
-		break
+		// Iterate over the bits of the ith Uint.
+		// There are three possibilities:
+		//
+		// 1. It completes a range (i.e., bits 0:n-cnt
+		//    are unset) or
+		// 2. There is a range of n unset bits contained
+		//    within this Uint or
+		// 3. It has a (possibly empty) subrange x:nb of
+		//    unset bits that may yet form a full range
+		//    with subsequent Uint(s).
+		//
+		for j := 0; j < nb; j++ {
+			if m.m[i]&(1<<j) == 0 {
+				cnt++
+				if cnt >= n {
+					index = idx*nb + bit
+					ok = true
+					return
+				}
+				continue
+			}
+			cnt = 0
+			if j < nb-1 {
+				idx = i
+				bit = j + 1
+			} else {
+				idx = i + 1
+				bit = 0
+			}
+		}
+		i++
 	}
 	return
 }

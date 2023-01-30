@@ -3,6 +3,7 @@
 package bitm
 
 import (
+	"strconv"
 	"testing"
 	"unsafe"
 )
@@ -183,11 +184,11 @@ func (m *Bitm[_]) checkSearch(want int, t *testing.T) {
 	index, ok := m.Search()
 	if want < 0 {
 		if ok {
-			t.Fatal("m.Search: ok:\nhave true\nwant false")
+			t.Fatalf("m.Search: \nhave %d, true\nwant _, false", index)
 		}
 	} else {
 		if !ok {
-			t.Fatal("m.Search: ok:\nhave false\nwant true")
+			t.Fatalf("m.Search: \nhave _, false\nwant %d, true", want)
 		}
 		if index != want {
 			t.Fatalf("m.Search: index:\nhave %d\nwant %d", index, want)
@@ -228,11 +229,11 @@ func (m *Bitm[_]) checkSearchRange(n, want int, t *testing.T) {
 	index, ok := m.SearchRange(n)
 	if want < 0 {
 		if ok {
-			t.Fatal("m.SearchRange: ok:\nhave true\nwant false")
+			t.Fatalf("m.SearchRange: \nhave %d, true\nwant _, false", index)
 		}
 	} else {
 		if !ok {
-			t.Fatal("m.SearchRange: ok:\nhave false\nwant true")
+			t.Fatalf("m.SearchRange: \nhave _, false\nwant %d, true", want)
 		}
 		if index != want {
 			t.Fatalf("m.SearchRange: index:\nhave %d\nwant %d", index, want)
@@ -333,4 +334,21 @@ func TestClear(t *testing.T) {
 	}
 	bitmu.Clear()
 	checkClear()
+}
+
+// printm is for debug printing of Bitm.m.
+func printm[T Uint](m *Bitm[T]) {
+	n := m.nbit()
+	s := "\n"
+	for i, x := range m.m {
+		for i := 0; i < n; i++ {
+			if x&(1<<i) != 0 {
+				s += "1 "
+			} else {
+				s += "0 "
+			}
+		}
+		s += " " + strconv.Itoa(i*n) + ":" + strconv.Itoa(i*n+n-1) + "\n"
+	}
+	print(s)
 }
