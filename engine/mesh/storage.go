@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/gviegas/scene/driver"
+	"github.com/gviegas/scene/internal/bitm"
 )
 
 // Global mesh storage.
@@ -13,8 +14,9 @@ var storage meshBuffer
 
 // SetBuffer sets the GPU buffer into which mesh data will
 // be stored.
-// The buffer must be host-visible and its usage must include
-// both driver.UVertexData and driver.UIndexData.
+// The buffer must be host-visible, its usage must include
+// both driver.UVertexData and driver.UIndexData, and its
+// capacity must be a multiple of 16384 bytes.
 // It returns the replaced buffer, if any.
 // NOTE: Calls to this function invalidate all previously
 // created meshes.
@@ -25,8 +27,16 @@ func SetBuffer(buf driver.Buffer) driver.Buffer {
 	case storage.buf:
 		return nil
 	case nil:
+		storage.spanMap = bitm.Bitm[uint32]{}
 		storage.prims = nil
 	default:
+		c := buf.Cap()
+		n := c / (blockSize * 32)
+		if n > int64(^uint(0)>>1) || c != n*(blockSize*32) {
+			panic("invalid mesh buffer capacity")
+		}
+		storage.spanMap = bitm.Bitm[uint32]{}
+		storage.spanMap.Grow(int(n))
 		storage.prims = storage.prims[:0]
 	}
 	prev := storage.buf
@@ -36,9 +46,10 @@ func SetBuffer(buf driver.Buffer) driver.Buffer {
 
 // meshBuffer manages vertex/index data of created meshes.
 type meshBuffer struct {
-	buf   driver.Buffer
-	mu    sync.Mutex
-	prims []primitive
+	buf     driver.Buffer
+	spanMap bitm.Bitm[uint32]
+	prims   []primitive
+	mu      sync.Mutex
 }
 
 // primitive is an entry in a mesh buffer.
