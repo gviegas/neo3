@@ -8,6 +8,7 @@ package driver
 
 import (
 	"errors"
+	"sync"
 )
 
 // Driver is the interface that provides methods for
@@ -61,31 +62,33 @@ var ErrFatal = errors.New("driver: fatal error")
 // not register themselves on init will not be considered
 // for selection.
 func Drivers() []Driver {
-	lock <- 1
+	mu.Lock()
+	defer mu.Unlock()
 	drv := make([]Driver, len(drivers))
 	copy(drv, drivers)
-	<-lock
 	return drv
 }
 
 // Register registers a Driver.
-// Driver implementations are expected to call this function
-// once, from init.
+// Driver implementations are expected to call Register
+// exactly once, from an init function.
+// If a driver with the same name has already been
+// registered, it will be replaced by drv.
 func Register(drv Driver) {
-	lock <- 1
+	mu.Lock()
+	defer mu.Unlock()
 	for i := range drivers {
 		if drivers[i].Name() == drv.Name() {
 			drivers[i] = drv
-			goto registered
+			return
 		}
 	}
 	drivers = append(drivers, drv)
-registered:
-	<-lock
 }
 
 // Variables used for driver registration.
 var (
-	lock    chan int = make(chan int, 1)
+	// NOTE: Currently, this mutex is unnecessary.
+	mu      sync.Mutex
 	drivers []Driver = make([]Driver, 0, 4)
 )
