@@ -105,3 +105,35 @@ func TestSetBuffer(t *testing.T) {
 		t.Fatalf("SetBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 	}
 }
+
+func TestSpan(t *testing.T) {
+	type want struct{ bstart, bend, blen int }
+	check := func(s span, w want) {
+		if x := s.byteStart(); x != w.bstart {
+			t.Fatalf("span.byteStart:\nhave %d\nwant %d", x, w.bstart)
+		}
+		if x := s.byteEnd(); x != w.bend {
+			t.Fatalf("span.byteEnd:\nhave %d\nwant %d", x, w.bend)
+		}
+		if x := s.byteLen(); x != w.blen {
+			t.Fatalf("span.byteLen:\nhave %d\nwant %d", x, w.blen)
+		}
+	}
+	var s span
+	check(s, want{})
+	s.end++
+	check(s, want{0, blockSize, blockSize})
+	s.end++
+	check(s, want{0, blockSize * 2, blockSize * 2})
+	s.start++
+	check(s, want{blockSize, blockSize * 2, blockSize})
+	var p primitive
+	for i := range p.vertex {
+		check(p.vertex[i].span, want{})
+	}
+	check(p.index.span, want{})
+	p.vertex[Normal.I()].span = s
+	p.vertex[Normal.I()].start++
+	p.vertex[Normal.I()].end += 3
+	check(p.vertex[Normal.I()].span, want{blockSize * 2, blockSize * 5, blockSize * 3})
+}
