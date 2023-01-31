@@ -59,13 +59,12 @@ type primitive struct {
 	mask     Semantic
 	vertex   [MaxSemantic]struct {
 		format driver.VertexFmt
-		offset int64
+		span
 	}
 	index struct {
 		format driver.IndexFmt
-		offset int64
+		span
 	}
-	span
 }
 
 // span defines a buffer range in number of blocks.
