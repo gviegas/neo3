@@ -1,6 +1,7 @@
-// Copyright 2022 Gustavo C. Viegas. All rights reserved.
+// Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-package engine
+// Package ctx provides the GPU driver used in the engine.
+package ctx
 
 import (
 	"errors"
@@ -14,7 +15,7 @@ var (
 	gpu driver.GPU
 )
 
-var errNoDriver = errors.New("engine: driver not found")
+var errNoDriver = errors.New("ctx: driver not found")
 
 // loadDriver attempts to load any driver whose name contains
 // the provided name string. It is case-sensitive.

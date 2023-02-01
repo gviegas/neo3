@@ -1,8 +1,8 @@
-// Copyright 2022 Gustavo C. Viegas. All rights reserved.
+// Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
 //go:build linux || windows
 
-package engine
+package ctx
 
 import (
 	_ "github.com/gviegas/scene/driver/vk"

@@ -1,6 +1,6 @@
-// Copyright 2022 Gustavo C. Viegas. All rights reserved.
+// Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-package engine
+package ctx
 
 import (
 	"testing"
