@@ -39,3 +39,9 @@ func loadDriver(name string) error {
 	}
 	return err
 }
+
+// Driver returns the driver.Driver.
+func Driver() driver.Driver { return drv }
+
+// GPU returns the driver.GPU.
+func GPU() driver.GPU { return gpu }
