@@ -8,19 +8,10 @@ import (
 
 	"github.com/gviegas/scene/driver"
 	_ "github.com/gviegas/scene/driver/vk"
+	"github.com/gviegas/scene/engine/internal/ctx"
 )
 
-var gpu driver.GPU
-
-func init() {
-	var err error
-	for _, d := range driver.Drivers() {
-		if gpu, err = d.Open(); err == nil {
-			return
-		}
-	}
-	panic("could not obtain a driver.GPU for testing")
-}
+var gpu = ctx.GPU()
 
 func TestSemantic(t *testing.T) {
 	semantics := map[Semantic]struct {
