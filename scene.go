@@ -4,13 +4,11 @@
 // rendering scene graphs.
 package scene
 
-import (
-	"github.com/gviegas/scene/node"
-)
+import ()
 
 // Scene defines a scene graph.
 type Scene struct {
-	node.Node
+	// TODO
 }
 
 // New creates an initialized scene.
@@ -18,6 +16,6 @@ func New() *Scene { return new(Scene).Init() }
 
 // Init initializes a scene.
 func (s *Scene) Init() *Scene {
-	s.Node.Init()
+	// TODO
 	return s
 }
