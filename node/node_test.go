@@ -4,6 +4,7 @@ package node
 
 import (
 	"testing"
+	"unsafe"
 
 	"github.com/gviegas/scene/linear"
 )
@@ -206,4 +207,37 @@ func TestInsertRemove(t *testing.T) {
 	g.checkRemoval(in, 1, []string{"/2"}, t)
 	w = want{Nil, 32, 32, 0}
 	g.check(w, t)
+}
+
+func TestNodesGrowth(t *testing.T) {
+	var g Graph
+
+	// Graph.nodes needs to grow by a multiple of
+	// 32 elements due to bitmap granularity.
+	// This means an extra 1KB per bitmap word
+	// when int is 64-bit.
+	g.check(want{}, t)
+	n1 := g.Insert(new(inode), Nil)
+	g.check(want{next: n1, nodeLen: 32, nodeRem: 31, dataLen: 1}, t)
+	g.checkRemoval(g.Remove(n1), 1, nil, t)
+	g.check(want{nodeLen: 32, nodeRem: 32}, t)
+	n1 = g.Insert(new(inode), Nil)
+	for g.nodeMap.Rem() > 0 {
+		g.Insert(new(inode), n1)
+	}
+	g.check(want{next: n1, nodeLen: 32, nodeRem: 0, dataLen: 32}, t)
+	g.Insert(new(inode), n1)
+	g.check(want{next: n1, nodeLen: 64, nodeRem: 31, dataLen: 33}, t)
+	g.Insert(new(inode), n1)
+	g.check(want{next: n1, nodeLen: 64, nodeRem: 30, dataLen: 34}, t)
+	for g.nodeMap.Rem() > 0 {
+		g.Insert(new(inode), n1)
+	}
+	g.check(want{next: n1, nodeLen: 64, nodeRem: 0, dataLen: 64}, t)
+	g.checkRemoval(g.Remove(n1), 64, nil, t)
+	g.check(want{nodeLen: 64, nodeRem: 64}, t)
+	g.Insert(new(inode), Nil)
+	g.check(want{next: n1, nodeLen: 64, nodeRem: 63, dataLen: 1}, t)
+
+	t.Logf("Graph.nodes granularity is 32 elements (%d bytes)", unsafe.Sizeof(node{})*32)
 }
