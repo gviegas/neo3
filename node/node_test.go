@@ -3,6 +3,7 @@
 package node
 
 import (
+	"strconv"
 	"testing"
 	"unsafe"
 
@@ -240,4 +241,26 @@ func TestNodesGrowth(t *testing.T) {
 	g.check(want{next: n1, nodeLen: 64, nodeRem: 63, dataLen: 1}, t)
 
 	t.Logf("Graph.nodes granularity is 32 elements (%d bytes)", unsafe.Sizeof(node{})*32)
+}
+
+func TestDepth(t *testing.T) {
+	var g Graph
+	var acc int
+	insert := func(prev Node) Node {
+		acc++
+		return g.Insert(&inode{strconv.Itoa(acc), linear.M4{}, true}, prev)
+	}
+	const cnt = 10000
+	n1 := insert(Nil)
+	nx := n1
+	names := make([]string, cnt)
+	names[0] = "1"
+	for i := 1; i < cnt; i++ {
+		nx = insert(nx)
+		names[i] = strconv.Itoa(i + 1)
+	}
+	const gran = (cnt + 31) &^ 31
+	g.check(want{n1, gran, gran - cnt, cnt}, t)
+	g.checkRemoval(g.Remove(n1), cnt, names, t)
+	g.check(want{nodeLen: gran, nodeRem: gran}, t)
 }
