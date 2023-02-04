@@ -302,3 +302,52 @@ func TestBreadth(t *testing.T) {
 	}
 	g.check(want{nodeLen: gran, nodeRem: gran}, t)
 }
+
+func TestGet(t *testing.T) {
+	var g Graph
+	check := func(have, want Interface) {
+		if have != want {
+			t.Fatalf("Graph.Get:\nhave %v\nwant %v", have, want)
+		}
+	}
+	check(g.Get(Nil), nil)
+
+	i1 := inode{name: "/1"}
+	n1 := g.Insert(&i1, Nil)
+	check(g.Get(n1), &i1)
+
+	i2 := inode{name: "/2"}
+	n2 := g.Insert(&i2, Nil)
+	check(g.Get(n2), &i2)
+
+	i3 := inode{name: "/3"}
+	n3 := g.Insert(&i3, Nil)
+	check(g.Get(n3), &i3)
+
+	i31 := inode{name: "/3/1"}
+	n31 := g.Insert(&i31, n3)
+	check(g.Get(n31), &i31)
+
+	g.checkRemoval(g.Remove(n2), 1, []string{i2.name}, t)
+	check(g.Get(n31), &i31)
+	check(g.Get(n3), &i3)
+	check(g.Get(n1), &i1)
+
+	i311 := inode{name: "3/1/1"}
+	n311 := g.Insert(&i311, n31)
+	check(g.Get(n311), &i311)
+
+	i11 := inode{name: "/1/1"}
+	n11 := g.Insert(&i11, n1)
+	check(g.Get(n311), &i311)
+	check(g.Get(n31), &i31)
+	check(g.Get(n3), &i3)
+	check(g.Get(n11), &i11)
+	check(g.Get(n1), &i1)
+
+	g.checkRemoval(g.Remove(n31), 2, []string{"/3/1", "3/1/1"}, t)
+	check(g.Get(n3), &i3)
+	check(g.Get(n11), &i11)
+	check(g.Get(n1), &i1)
+	check(g.Get(Nil), nil)
+}

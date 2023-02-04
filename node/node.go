@@ -175,3 +175,15 @@ func (g *Graph) Remove(n Node) []Interface {
 	}
 	return ns
 }
+
+// Get returns the Interface of a given Node.
+// It returns nil if n is the Nil Node.
+// NOTE: If n is not Nil, it must have been generated
+// from a previous call to g.Insert.
+func (g *Graph) Get(n Node) Interface {
+	if n == Nil {
+		return nil
+	}
+	data := g.nodes[n-1].data
+	return g.data[data].local
+}
