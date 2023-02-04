@@ -351,3 +351,49 @@ func TestGet(t *testing.T) {
 	check(g.Get(n1), &i1)
 	check(g.Get(Nil), nil)
 }
+
+func TestWorld(t *testing.T) {
+	var g Graph
+	if w := g.World(); w != (linear.M4{}) {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, linear.M4{})
+	}
+	if g.changed {
+		t.Fatal("Graph.changed:\nhave true\nwant false")
+	}
+
+	var m linear.M4
+	m.I()
+	g.SetWorld(m)
+	if w := g.World(); w != m {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, m)
+	}
+	if !g.changed {
+		t.Fatal("Graph.changed:\nhave false\nwant true")
+	}
+
+	m.Translate(1, 2, -3)
+	g.SetWorld(m)
+	if w := g.World(); w != m {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, m)
+	}
+	if !g.changed {
+		t.Fatal("Graph.changed:\nhave false\nwant true")
+	}
+
+	g.SetWorld(linear.M4{})
+	if w := g.World(); w != (linear.M4{}) {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, linear.M4{})
+	}
+	if !g.changed {
+		t.Fatal("Graph.changed:\nhave false\nwant true")
+	}
+
+	a := [4]linear.V4{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, -8, -7, -6}, {-5, -4, -3, -2}}
+	g.SetWorld(a)
+	if w := g.World(); w != a {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, a)
+	}
+	if !g.changed {
+		t.Fatal("Graph.changed:\nhave false\nwant true")
+	}
+}
