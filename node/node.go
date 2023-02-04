@@ -107,10 +107,21 @@ func (g *Graph) Insert(n Interface, prev Node) Node {
 }
 
 // Remove removes a node and its descendants.
+// It returns a slice containing the Interface of every
+// removed Node, or nil if n was the Nil Node.
+// The returned slice is such that, for every node x,
+// x is at a lower index than all of its descendants
+// (this means that, if n is not Nil, the Interface at
+// index 0 is that of n itself).
 // The sub-graph rooted at n becomes invalid afterwards,
 // so neither n nor the Node of any of its descendants
 // are valid for further use.
+// NOTE: If n is not Nil, it must have been generated
+// from a previous call to g.Insert.
 func (g *Graph) Remove(n Node) []Interface {
+	if n == Nil {
+		return nil
+	}
 	// Swap-removes g.data[d].
 	removeData := func(d int) {
 		last := len(g.data) - 1

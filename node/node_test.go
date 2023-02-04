@@ -168,6 +168,14 @@ func TestInsertRemove(t *testing.T) {
 	g.checkNode(n2, node{prev: n1, sub: n22, data: 0}, t)
 	g.checkNode(n1, node{next: n2, data: 2}, t)
 
+	// This is valid and does nothing.
+	in = g.Remove(Nil)
+	g.checkRemoval(in, 0, nil, t)
+	g.check(w, t)
+	g.checkNode(n22, node{prev: n2, data: 1}, t)
+	g.checkNode(n2, node{prev: n1, sub: n22, data: 0}, t)
+	g.checkNode(n1, node{next: n2, data: 2}, t)
+
 	// Insert a descendant of a descendant.
 	n221 := g.Insert(&inode{"/2/2/1", m, true}, n22)
 	w.nodeRem--
@@ -207,6 +215,11 @@ func TestInsertRemove(t *testing.T) {
 	in = g.Remove(n2)
 	g.checkRemoval(in, 1, []string{"/2"}, t)
 	w = want{Nil, 32, 32, 0}
+	g.check(w, t)
+
+	// This is valid and does nothing.
+	in = g.Remove(Nil)
+	g.checkRemoval(in, 0, nil, t)
 	g.check(w, t)
 }
 
