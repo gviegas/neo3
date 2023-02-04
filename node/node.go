@@ -9,6 +9,8 @@ import (
 )
 
 // Interface of a node.
+// Types that implement this interface can be inserted
+// into a node Graph.
 type Interface interface {
 	// Local returns the local transform of the node.
 	// It must not return nil.
@@ -25,6 +27,9 @@ type Node int
 // Nil represents an invalid Node.
 const Nil Node = 0
 
+// node is the graph's data structure.
+// Indices of nodes stored in a Graph can be derived
+// by decrementing Node values by 1.
 type node struct {
 	next Node
 	prev Node
@@ -32,6 +37,7 @@ type node struct {
 	data int
 }
 
+// data is the node's data.
 type data struct {
 	local Interface
 	world linear.M4
@@ -49,6 +55,11 @@ type Graph struct {
 }
 
 // Insert inserts a new node as descendant of prev.
+// prev can be Nil, in which case n is inserted into the
+// graph as an unconnected node.
+// It returns a Node value that identifies n in g.
+// NOTE: If prev is not Nil, it must have been generated
+// from a previous call to g.Insert.
 func (g *Graph) Insert(n Interface, prev Node) Node {
 	if g.nodeMap.Rem() == 0 {
 		// TODO: Grow exponentially.
@@ -59,11 +70,15 @@ func (g *Graph) Insert(n Interface, prev Node) Node {
 	var newn Node
 	if idx, ok := g.nodeMap.Search(); ok {
 		g.nodeMap.Set(idx)
+		// Valid Node values start at 1 so Nil
+		// can be 0.
 		newn = Node(idx + 1)
 	} else {
 		// Should never happen.
 		panic("unexpected failure from bitm.Bitm.Search")
 	}
+	// Do not assume that g.nodes[newn-1] is the
+	// zero value.
 	if prev != Nil {
 		if sub := g.nodes[prev-1].sub; sub != Nil {
 			g.nodes[newn-1].next = sub
@@ -92,6 +107,9 @@ func (g *Graph) Insert(n Interface, prev Node) Node {
 }
 
 // Remove removes a node and its descendants.
+// The sub-graph rooted at n becomes invalid afterwards,
+// so neither n nor the Node of any of its descendants
+// are valid for further use.
 func (g *Graph) Remove(n Node) []Interface {
 	// Swap-removes g.data[d].
 	removeData := func(d int) {
@@ -112,6 +130,8 @@ func (g *Graph) Remove(n Node) []Interface {
 		g.next = next
 	}
 	if prev != Nil {
+		// node.prev in the first child
+		// refers to its parent.
 		if g.nodes[prev-1].sub == n {
 			g.nodes[prev-1].sub = next
 		} else {
