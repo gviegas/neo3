@@ -264,3 +264,28 @@ func TestDepth(t *testing.T) {
 	g.checkRemoval(g.Remove(n1), cnt, names, t)
 	g.check(want{nodeLen: gran, nodeRem: gran}, t)
 }
+
+func TestBreadth(t *testing.T) {
+	var g Graph
+	const cnt = 10987
+	nodes := make([]Node, cnt)
+	for i := 0; i < cnt; i++ {
+		nodes[i] = g.Insert(&inode{strconv.Itoa(i + 1), linear.M4{}, true}, Nil)
+	}
+	const gran = (cnt + 31) &^ 31
+	g.check(want{nodes[cnt-1], gran, gran - cnt, cnt}, t)
+	var acc int64
+	for i, x := range nodes {
+		in := g.Remove(x)
+		g.checkRemoval(in, 1, []string{strconv.Itoa(i + 1)}, t)
+		if d, err := strconv.ParseInt(in[0].(*inode).name, 10, 64); err != nil {
+			t.Fatal(err)
+		} else {
+			acc += d
+		}
+	}
+	if x := int64(cnt*cnt+cnt) / 2; x != acc {
+		t.Fatalf("Graph.Remove: wrong accumulated value\nhave %d\nwant %d", acc, x)
+	}
+	g.check(want{nodeLen: gran, nodeRem: gran}, t)
+}
