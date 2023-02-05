@@ -354,8 +354,10 @@ func TestGet(t *testing.T) {
 
 func TestWorld(t *testing.T) {
 	var g Graph
-	if w := g.World(); w != (linear.M4{}) {
-		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, linear.M4{})
+
+	// Global world.
+	if w := g.World(Nil); *w != (linear.M4{}) {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", *w, linear.M4{})
 	}
 	if g.changed {
 		t.Fatal("Graph.changed:\nhave true\nwant false")
@@ -364,8 +366,8 @@ func TestWorld(t *testing.T) {
 	var m linear.M4
 	m.I()
 	g.SetWorld(m)
-	if w := g.World(); w != m {
-		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, m)
+	if w := g.World(Nil); *w != m {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", *w, m)
 	}
 	if !g.changed {
 		t.Fatal("Graph.changed:\nhave false\nwant true")
@@ -373,16 +375,16 @@ func TestWorld(t *testing.T) {
 
 	m.Translate(1, 2, -3)
 	g.SetWorld(m)
-	if w := g.World(); w != m {
-		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, m)
+	if w := g.World(Nil); *w != m {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", *w, m)
 	}
 	if !g.changed {
 		t.Fatal("Graph.changed:\nhave false\nwant true")
 	}
 
 	g.SetWorld(linear.M4{})
-	if w := g.World(); w != (linear.M4{}) {
-		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, linear.M4{})
+	if w := g.World(Nil); *w != (linear.M4{}) {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", *w, linear.M4{})
 	}
 	if !g.changed {
 		t.Fatal("Graph.changed:\nhave false\nwant true")
@@ -390,10 +392,29 @@ func TestWorld(t *testing.T) {
 
 	a := [4]linear.V4{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, -8, -7, -6}, {-5, -4, -3, -2}}
 	g.SetWorld(a)
-	if w := g.World(); w != a {
-		t.Fatalf("Graph.World:\nhave %v\nwant %v", w, a)
+	if w := g.World(Nil); *w != a {
+		t.Fatalf("Graph.World:\nhave %v\nwant %v", *w, a)
 	}
 	if !g.changed {
 		t.Fatal("Graph.changed:\nhave false\nwant true")
+	}
+
+	// Node's world.
+	var n Node
+	ns := make([]Node, 0, 4)
+	for i := 0; i < cap(ns); i++ {
+		ns = append(ns, g.Insert(new(inode), n))
+		n = ns[i]
+	}
+	m.I()
+	for _, n := range ns {
+		world := g.World(n)
+		if *world != m {
+			t.Fatalf("Graph.World(%d):\nhave %v\nwant %v", n, *world, m)
+		}
+		data := g.nodes[n-1].data
+		if w := &g.data[data].world; w != world {
+			t.Fatalf("Graph.World(%d):\nhave %p\nwant %p", n, world, w)
+		}
 	}
 }

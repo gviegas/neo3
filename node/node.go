@@ -188,16 +188,23 @@ func (g *Graph) Get(n Node) Interface {
 	return g.data[data].local
 }
 
-// World returns the global world transform.
-// This transform applies to every unconnected node,
-// and as such affects the whole graph.
+// World returns the world transform of a given Node.
+// It returns the global world if n is nil.
 // If the world transform was never set, it will be
 // equal to linear.M4{} (i.e., a zero matrix), in
 // which case it is not applied.
-func (g *Graph) World() linear.M4 { return g.world }
+func (g *Graph) World(n Node) *linear.M4 {
+	if n == Nil {
+		return &g.world
+	}
+	data := g.nodes[n-1].data
+	return &g.data[data].world
+}
 
 // SetWorld sets the global world transform.
-// It invalidates the whole world.
+// Since the global world transform applies to every
+// unconnected node, calling this method will
+// invalidate the whole world.
 func (g *Graph) SetWorld(w linear.M4) {
 	g.world = w
 	g.changed = true
