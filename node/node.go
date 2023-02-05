@@ -48,6 +48,7 @@ type data struct {
 type Graph struct {
 	next    Node
 	world   linear.M4
+	wasSet  bool
 	changed bool
 	nodes   []node
 	nodeMap bitm.Bitm[uint32]
@@ -189,10 +190,10 @@ func (g *Graph) Get(n Node) Interface {
 }
 
 // World returns the world transform of a given Node.
-// It returns the global world if n is nil.
-// If the world transform was never set, it will be
-// equal to linear.M4{} (i.e., a zero matrix), in
-// which case it is not applied.
+// When n is Nil, it returns the global world, which will
+// be equal to linear.M4{} if SetWorld was never called
+// (it is not applied in this case).
+// This matrix is not necessarily up to date.
 func (g *Graph) World(n Node) *linear.M4 {
 	if n == Nil {
 		return &g.world
@@ -207,5 +208,6 @@ func (g *Graph) World(n Node) *linear.M4 {
 // invalidate the whole world.
 func (g *Graph) SetWorld(w linear.M4) {
 	g.world = w
+	g.wasSet = true
 	g.changed = true
 }
