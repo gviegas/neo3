@@ -354,7 +354,6 @@ func TestGet(t *testing.T) {
 
 func TestWorld(t *testing.T) {
 	var g Graph
-
 	// Global world.
 	if w := g.World(Nil); *w != (linear.M4{}) {
 		t.Fatalf("Graph.World:\nhave %v\nwant %v", *w, linear.M4{})
@@ -652,5 +651,160 @@ func TestUpdate(t *testing.T) {
 			ns = append(ns, sub)
 		}
 		ns = ns[1:]
+	}
+}
+
+func TestCaching(t *testing.T) {
+	var g Graph
+	// Graph.Remove uses the Node cache
+	// when removing multiple nodes.
+	n1 := g.Insert(new(inode), Nil)
+	n2 := g.Insert(new(inode), Nil)
+	n21 := g.Insert(new(inode), n2)
+	funcs := [3]func(){
+		func() { g.Remove(n1) },
+		func() { g.Remove(n21) }, // Note the ordering.
+		func() { g.Remove(n2) },
+	}
+	for _, f := range funcs {
+		f()
+		if g.cache.nodes != nil {
+			t.Fatal("Graph.cache.nodes: unexpected non-nil slice")
+		}
+		if g.cache.data != nil {
+			t.Fatal("Graph.cache.data: unexpected non-nil slice")
+		}
+		if g.cache.changed != nil {
+			t.Fatal("Graph.cache.changed: unexpected non-nil slice")
+		}
+	}
+	n1 = g.Insert(new(inode), Nil)
+	n2 = g.Insert(new(inode), Nil)
+	n21 = g.Insert(new(inode), n2)
+	g.checkRemoval(g.Remove(n1), 1, nil, t)
+	if g.cache.nodes != nil {
+		t.Fatal("Graph.cache.nodes: unexpected non-nil slice")
+	}
+	if g.cache.data != nil {
+		t.Fatal("Graph.cache.data: unexpected non-nil slice")
+	}
+	if g.cache.changed != nil {
+		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
+	}
+	g.checkRemoval(g.Remove(n2), 2, nil, t)
+	if g.cache.nodes == nil {
+		t.Fatal("Graph.cache.nodes: unexpected nil slice")
+	}
+	if g.cache.data != nil {
+		t.Fatal("Graph.cache.data: unexpected non-nil slice")
+	}
+	if g.cache.changed != nil {
+		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
+	}
+
+	// Graph.Update uses the Node, int and
+	// bool caches when depth is greater
+	// than one (i.e., descendants exist).
+	ncap := cap(g.cache.nodes)
+	nptr := (*[0]Node)(g.cache.nodes)
+	n1 = g.Insert(new(inode), Nil)
+	n2 = g.Insert(new(inode), Nil)
+	g.Update()
+	if c := cap(g.cache.nodes); c != ncap {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant %d", c, ncap)
+	}
+	if p := (*[0]Node)(g.cache.nodes); p != nil && p != nptr {
+		t.Fatalf("&Graph.cache.nodes[0]:\nhave %p\nwant %p", p, nptr)
+	}
+	if g.cache.data != nil {
+		t.Fatal("Graph.cache.data: unexpected non-nil slice")
+	}
+	if g.cache.changed != nil {
+		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
+	}
+	n21 = g.Insert(new(inode), n2)
+	g.Update()
+	if c := cap(g.cache.nodes); c != ncap {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant %d", c, ncap)
+	}
+	if p := (*[0]Node)(g.cache.nodes); p == nil || p != nptr {
+		t.Fatalf("&Graph.cache.nodes[0]:\nhave %p\nwant %p", p, nptr)
+	}
+	if g.cache.data == nil {
+		t.Fatal("Graph.cache.data: unexpected nil slice")
+	}
+	if g.cache.changed == nil {
+		t.Fatal("Graph.cache.changed: unexpected nil slice")
+	}
+
+	// Graph.Remove and Graph.Update share
+	// the Node cache.
+	g = Graph{}
+	n := Nil
+	const cnt = 500
+	for i := 0; i < cnt; i++ {
+		n = g.Insert(new(inode), n)
+	}
+	if g.cache.nodes != nil {
+		t.Fatal("Graph.cache.nodes: unexpected non-nil slice")
+	}
+	if g.cache.data != nil {
+		t.Fatal("Graph.cache.data: unexpected non-nil slice")
+	}
+	if g.cache.changed != nil {
+		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
+	}
+	g.checkRemoval(g.Remove(g.next), cnt, nil, t)
+	ncap = cap(g.cache.nodes)
+	if ncap < cnt-1 {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant >= %d", ncap, cnt-1)
+	}
+	if g.cache.data != nil {
+		t.Fatal("Graph.cache.data: unexpected non-nil slice")
+	}
+	if g.cache.changed != nil {
+		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
+	}
+	n = Nil
+	const hcnt = cnt / 2
+	for i := 0; i < hcnt; i++ {
+		n = g.Insert(new(inode), n)
+	}
+	nptr = (*[0]Node)(g.cache.nodes)
+	g.Update()
+	dcap := cap(g.cache.data)
+	ccap := cap(g.cache.changed)
+	if ncap < cnt-1 {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant >= %d", ncap, cnt-1)
+	}
+	if p := (*[0]Node)(g.cache.nodes); p != nptr {
+		t.Fatalf("(*[0])(Graph.cache.nodes):\nhave %p\nwant %p", p, nptr)
+	}
+	if dcap > hcnt+1 {
+		t.Fatalf("cap(Graph.cache.data):\nhave %d\nwant <= %d", dcap, hcnt+1)
+	}
+	if ccap > hcnt+1 {
+		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant <= %d", ccap, hcnt+1)
+	}
+	dptr := (*[0]int)(g.cache.data)
+	cptr := (*[0]bool)(g.cache.changed)
+	g.Update()
+	if ncap < cnt-1 {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant >= %d", ncap, cnt-1)
+	}
+	if p := (*[0]Node)(g.cache.nodes); p != nptr {
+		t.Fatalf("(*[0])(Graph.cache.nodes):\nhave %p\nwant %p", p, nptr)
+	}
+	if dcap > hcnt+1 {
+		t.Fatalf("cap(Graph.cache.data):\nhave %d\nwant <= %d", dcap, hcnt+1)
+	}
+	if p := (*[0]int)(g.cache.data); p != dptr {
+		t.Fatalf("(*[0])(Graph.cache.data):\nhave %p\nwant %p", p, dptr)
+	}
+	if ccap > hcnt+1 {
+		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant <= %d", ccap, hcnt+1)
+	}
+	if p := (*[0]bool)(g.cache.changed); p != cptr {
+		t.Fatalf("(*[0])(Graph.cache.changed):\nhave %p\nwant %p", p, cptr)
 	}
 }
