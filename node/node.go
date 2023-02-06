@@ -14,10 +14,15 @@ import (
 type Interface interface {
 	// Local returns the local transform of the node.
 	// It must not return nil.
+	// Graph methods may call it multiple times.
+	// This pointer is never written to.
 	Local() *linear.M4
 
 	// Changed returns whether the local transform
 	// has changed.
+	// It is called by Graph.Update, exactly once,
+	// to decide whether the node's world transform
+	// needs to be recomputed.
 	Changed() bool
 }
 
@@ -45,6 +50,7 @@ type data struct {
 }
 
 // Graph is a node graph.
+// The zero value defines an initialized, empty graph.
 type Graph struct {
 	next    Node
 	world   linear.M4
@@ -59,8 +65,7 @@ type Graph struct {
 // prev can be Nil, in which case n is inserted into the
 // graph as an unconnected node.
 // It returns a Node value that identifies n in g.
-// NOTE: If prev is not Nil, it must have been generated
-// from a previous call to g.Insert.
+// If prev is not Nil, it must belong to g.
 func (g *Graph) Insert(n Interface, prev Node) Node {
 	if g.nodeMap.Rem() == 0 {
 		// TODO: Grow exponentially.
@@ -117,8 +122,7 @@ func (g *Graph) Insert(n Interface, prev Node) Node {
 // The sub-graph rooted at n becomes invalid afterwards,
 // so neither n nor the Node of any of its descendants
 // are valid for further use.
-// NOTE: If n is not Nil, it must have been generated
-// from a previous call to g.Insert.
+// If n is not Nil, it must belong to g.
 func (g *Graph) Remove(n Node) []Interface {
 	if n == Nil {
 		return nil
@@ -179,8 +183,7 @@ func (g *Graph) Remove(n Node) []Interface {
 
 // Get returns the Interface of a given Node.
 // It returns nil if n is the Nil Node.
-// NOTE: If n is not Nil, it must have been generated
-// from a previous call to g.Insert.
+// If n is not Nil, it must belong to g.
 func (g *Graph) Get(n Node) Interface {
 	if n == Nil {
 		return nil
