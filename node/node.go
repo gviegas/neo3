@@ -211,3 +211,80 @@ func (g *Graph) SetWorld(w linear.M4) {
 	g.wasSet = true
 	g.changed = true
 }
+
+// Update updates the graph to reflect the state of
+// its nodes' transforms.
+func (g *Graph) Update() {
+	// TODO: Node/data/changed cache on Graph.
+	var nstk []Node
+	var dstk []int
+	var cstk []bool
+
+	// Do a depth traversal of every unconnected
+	// (root) node and update any sub-graph
+	// rooted at a node that has changed.
+	for n := g.next; n != Nil; n = g.nodes[n-1].next {
+		data := g.nodes[n-1].data
+		// Evaluate Interface.Changed exactly once.
+		changed := g.data[data].local.Changed() || g.changed
+		if changed {
+			local := g.data[data].local.Local()
+			if g.wasSet {
+				g.data[data].world.Mul(&g.world, local)
+			} else {
+				g.data[data].world = *local
+			}
+		}
+		sub := g.nodes[n-1].sub
+		if sub == Nil {
+			continue
+		}
+
+		nstk = nstk[:0]
+		dstk = dstk[:0]
+		cstk = cstk[:0]
+		nstk = append(nstk, sub)
+		dstk = append(dstk, data)
+		cstk = append(cstk, changed)
+
+		for last := len(nstk) - 1; last >= 0; last = len(nstk) - 1 {
+			// Some descendant of the unconnected n.
+			nsub := nstk[last]
+			nstk = nstk[:last]
+			// Data of the immediate ancestor of nsub.
+			prevd := dstk[last]
+			dstk = dstk[:last]
+			// Whether prevd did change.
+			chgd := cstk[last]
+			cstk = cstk[:last]
+			for {
+				if next := g.nodes[nsub-1].next; next != Nil {
+					nstk = append(nstk, next)
+					dstk = append(dstk, prevd)
+					cstk = append(cstk, chgd)
+				}
+				data := g.nodes[nsub-1].data
+				// This will only affect descendants
+				// since the next sibling (if any)
+				// is already on the stack.
+				chgd = g.data[data].local.Changed() || chgd
+				if chgd {
+					prevw := &g.data[prevd].world
+					local := g.data[data].local.Local()
+					g.data[data].world.Mul(prevw, local)
+				}
+				if sub := g.nodes[nsub-1].sub; sub != Nil {
+					nsub = sub
+					prevd = data
+				} else {
+					break
+				}
+			}
+		}
+	}
+	// World is now up to date.
+	// New unconnected nodes will rely on g.wasSet
+	// (which is never unset) to decide whether
+	// they should apply g.world.
+	g.changed = false
+}

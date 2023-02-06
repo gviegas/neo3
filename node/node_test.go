@@ -418,3 +418,239 @@ func TestWorld(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdate(t *testing.T) {
+	var g Graph
+	g.Update()
+	var id linear.M4
+	id.I()
+	checkWorld := func(n Node, w linear.M4) {
+		world := g.World(n)
+		if *world != w {
+			t.Fatalf("Graph.World(%d):\nhave %v\nwant %v", n, *world, w)
+		}
+		if *world == (linear.M4{}) {
+			t.Fatalf("Graph.World(%d): unexpected zero matrix", n)
+		}
+	}
+
+	// New unconnected - global world not applied (!g.wasSet).
+	var m1 linear.M4
+	m1.Scale(2, 2, 2)
+	i1 := inode{"/1", m1, true}
+	n1 := g.Insert(&i1, Nil)
+	checkWorld(n1, id)
+	g.Update()
+	checkWorld(n1, m1)
+
+	// Global world set and thus applied.
+	g.SetWorld(linear.M4{{0: -1}, {1: -1}, {2: -1}, {3: 1}})
+	checkWorld(n1, m1)
+	g.Update()
+	m1.Mul(&g.world, &m1)
+	checkWorld(n1, m1)
+
+	// New unconnected - global world applied.
+	var m2 linear.M4
+	m2.Scale(2, 4, 8)
+	i2 := inode{"/2", m2, true}
+	n2 := g.Insert(&i2, Nil)
+	checkWorld(n2, id)
+	g.Update()
+	m2.Mul(&g.world, &m2)
+	checkWorld(n2, m2)
+
+	// Global world set and thus applied anew.
+	g.SetWorld(id)
+	checkWorld(n2, m2)
+	checkWorld(n1, m1)
+	g.Update()
+	m2[0][0] = -m2[0][0]
+	m2[1][1] = -m2[1][1]
+	m2[2][2] = -m2[2][2]
+	checkWorld(n2, m2)
+	m1[0][0] = -m1[0][0]
+	m1[1][1] = -m1[1][1]
+	m1[2][2] = -m1[2][2]
+	checkWorld(n1, m1)
+
+	// Skip update of n2 (!Changed()).
+	m1.Translate(10, 20, 30)
+	i1.local = m1
+	i2.local = m1
+	i2.changed = false
+	g.Update()
+	checkWorld(n2, m2)
+	checkWorld(n1, m1)
+
+	// Do not skip update of n2 (Changed()).
+	g.Update()
+	checkWorld(n2, m2)
+	checkWorld(n1, m1)
+	i2.changed = true
+	g.Update()
+	checkWorld(n2, m1)
+	checkWorld(n1, m1)
+	m2.Translate(60, 50, 40)
+	i2.local = m2
+	g.Update()
+	checkWorld(n2, m2)
+	checkWorld(n1, m1)
+
+	// Insert unchanged descendants.
+	var m21, m22, m211 linear.M4
+	m21.Scale(2, 2, 2)
+	m22.Scale(4, 4, 4)
+	m211.Scale(8, 8, 8)
+	i21 := inode{"/2/1", m21, false}
+	i22 := inode{"/2/2", m22, false}
+	i211 := inode{"/2/1/1", m211, false}
+	n21 := g.Insert(&i21, n2)
+	n22 := g.Insert(&i22, n2)
+	n211 := g.Insert(&i211, n21)
+	i2.changed = false
+	g.Update()
+	checkWorld(n211, id)
+	checkWorld(n22, id)
+	checkWorld(n21, id)
+	checkWorld(n2, m2)
+	checkWorld(n1, m1)
+
+	// Update one descendant.
+	var tmp linear.M4
+	tmp.Mul(g.World(n2), &m22)
+	i22.changed = true
+	i2.local.Scale(-1, -1, -1)
+	g.Update()
+	checkWorld(n211, id)
+	checkWorld(n22, tmp)
+	checkWorld(n21, id)
+	checkWorld(n2, m2)
+	checkWorld(n1, m1)
+
+	// Update n21's sub-graph.
+	i21.changed = true
+	g.Update()
+	checkWorld(n22, tmp) // Not affected.
+	tmp.Mul(g.World(n21), &m211)
+	checkWorld(n211, tmp)
+	tmp.Mul(g.World(n2), &m21)
+	checkWorld(n21, tmp)
+	checkWorld(n2, m2)
+	checkWorld(n1, m1)
+
+	// Update n2's sub-graph.
+	m2 = i2.local
+	i21.changed = false // Shouldn't matter.
+	i2.changed = true
+	g.Update()
+	tmp.Mul(g.World(n21), &m211)
+	checkWorld(n211, tmp)
+	tmp.Mul(&m2, &m22)
+	checkWorld(n22, tmp)
+	tmp.Mul(&m2, &m21)
+	checkWorld(n21, tmp)
+	checkWorld(n2, m2)
+	checkWorld(n1, m1)
+
+	// Depth update.
+	ms := [5]linear.M4{
+		{{0: 2}, {1: 1}, {2: 1}, {1, 6, 9, 1}},
+		{{0: 3}, {1: 1}, {2: 1}, {2, 7, 8, 1}},
+		{{0: 4}, {1: 1}, {2: 1}, {3, 8, 7, 1}},
+		{{0: 5}, {1: 1}, {2: 1}, {4, 9, 6, 1}},
+		{{0: 6}, {1: 1}, {2: 1}, {5, 0, 5, 1}},
+	}
+	ns := make([]Node, 0, len(ms))
+	var n Node
+	for _, m := range ms {
+		n = g.Insert(&inode{local: m}, n)
+		ns = append(ns, n)
+	}
+	g.Update()
+	for _, n := range ns {
+		checkWorld(n, id)
+	}
+	for i := 2; i < 4; i++ {
+		g.Get(ns[i]).(*inode).changed = true
+	}
+	g.Update()
+	g.Update()
+	tmp.I()
+	for i := 2; i < len(ns); i++ {
+		tmp.Mul(&tmp, g.Get(ns[i]).Local())
+		checkWorld(ns[i], tmp)
+	}
+	for i := 0; i < 2; i++ {
+		checkWorld(ns[i], id)
+		g.Get(ns[i]).(*inode).changed = true
+	}
+	g.Update()
+	tmp.I()
+	for _, n := range ns {
+		tmp.Mul(&tmp, g.Get(n).Local())
+		checkWorld(n, tmp)
+	}
+	for _, n := range ns {
+		g.Get(n).(*inode).changed = false
+	}
+	g.Update()
+	tmp.I()
+	for _, n := range ns {
+		tmp.Mul(&tmp, g.Get(n).Local())
+		checkWorld(n, tmp)
+	}
+
+	// Breadth update.
+	n = ns[len(ns)/2]
+	ns = ns[:0]
+	for _, m := range ms {
+		ns = append(ns, g.Insert(&inode{local: m}, n))
+	}
+	g.Update()
+	g.Update()
+	for _, n := range ns {
+		checkWorld(n, id)
+	}
+	g.Get(n).(*inode).changed = true
+	g.Update()
+	world := g.World(n)
+	for _, n := range ns {
+		tmp.Mul(world, g.Get(n).Local())
+		checkWorld(n, tmp)
+	}
+
+	// Recompute the whole graph.
+	for i := range g.data {
+		g.data[i].world = linear.M4{}
+	}
+	tmp.Scale(0.25, 0.25, 0.25)
+	g.SetWorld(tmp)
+	g.Update()
+	ns = ns[:0]
+	for n := g.next; n != Nil; n = g.nodes[n-1].next {
+		ns = append(ns, n)
+	}
+	for len(ns) > 0 {
+		n := ns[0]
+		for sub := g.nodes[n-1].sub; sub != Nil; sub = g.nodes[sub-1].next {
+			tmp.Mul(g.World(n), g.Get(sub).Local())
+			checkWorld(sub, tmp)
+			// Now back to top.
+			tmp.Mul(g.Get(n).Local(), g.Get(sub).Local())
+			cur := n
+			prev := g.nodes[cur-1].prev
+			for prev != Nil {
+				if psub := g.nodes[prev-1].sub; psub == cur {
+					tmp.Mul(g.Get(prev).Local(), &tmp)
+				}
+				cur = prev
+				prev = g.nodes[prev-1].prev
+			}
+			tmp.Mul(&g.world, &tmp)
+			checkWorld(sub, tmp)
+			ns = append(ns, sub)
+		}
+		ns = ns[1:]
+	}
+}
