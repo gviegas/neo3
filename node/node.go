@@ -59,6 +59,35 @@ type Graph struct {
 	nodes   []node
 	nodeMap bitm.Bitm[uint32]
 	data    []data
+	cache   struct {
+		nodes   []Node
+		data    []int
+		changed []bool
+	}
+}
+
+// nodeCache retrieves the initialized Node cache.
+func (g *Graph) nodeCache() []Node {
+	if g.cache.nodes == nil {
+		g.cache.nodes = make([]Node, 0, len(g.data)+1)
+	}
+	return g.cache.nodes[:0]
+}
+
+// dataCache retrieves the initialized int cache.
+func (g *Graph) dataCache() []int {
+	if g.cache.data == nil {
+		g.cache.data = make([]int, 0, len(g.data)+1)
+	}
+	return g.cache.data[:0]
+}
+
+// changedCache retrieves the initialized bool cache.
+func (g *Graph) changedCache() []bool {
+	if g.cache.changed == nil {
+		g.cache.changed = make([]bool, 0, len(g.data)+1)
+	}
+	return g.cache.changed[:0]
 }
 
 // Insert inserts a new node as descendant of prev.
@@ -160,8 +189,7 @@ func (g *Graph) Remove(n Node) []Interface {
 	ns := []Interface{g.data[data].local}
 	removeData(data)
 	if sub != Nil {
-		// TODO: Node cache on Graph.
-		que := []Node{n}
+		que := append(g.nodeCache(), n)
 		for len(que) > 0 {
 			cur := que[0]
 			for sub := g.nodes[cur-1].sub; sub != Nil; sub = g.nodes[sub-1].next {
@@ -218,11 +246,6 @@ func (g *Graph) SetWorld(w linear.M4) {
 // Update updates the graph to reflect the state of
 // its nodes' transforms.
 func (g *Graph) Update() {
-	// TODO: Node/data/changed cache on Graph.
-	var nstk []Node
-	var dstk []int
-	var cstk []bool
-
 	// Do a depth traversal of every unconnected
 	// (root) node and update any sub-graph
 	// rooted at a node that has changed.
@@ -242,14 +265,10 @@ func (g *Graph) Update() {
 		if sub == Nil {
 			continue
 		}
-
-		nstk = nstk[:0]
-		dstk = dstk[:0]
-		cstk = cstk[:0]
-		nstk = append(nstk, sub)
-		dstk = append(dstk, data)
-		cstk = append(cstk, changed)
-
+		// These three stacks will behave as one.
+		nstk := append(g.nodeCache(), sub)
+		dstk := append(g.dataCache(), data)
+		cstk := append(g.changedCache(), changed)
 		for last := len(nstk) - 1; last >= 0; last = len(nstk) - 1 {
 			// Some descendant of the unconnected n.
 			nsub := nstk[last]
