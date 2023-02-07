@@ -844,3 +844,43 @@ func TestCaching(t *testing.T) {
 		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant > %d", x, ncap)
 	}
 }
+
+func TestLen(t *testing.T) {
+	var g Graph
+	check := func(want int) {
+		if len := g.Len(); len != want {
+			t.Fatalf("Graph.Len:\nhave %d\nwant %d", len, want)
+		}
+	}
+	check(0)
+	n1 := g.Insert(new(inode), Nil)
+	check(1)
+	g.checkRemoval(g.Remove(n1), 1, nil, t)
+	check(0)
+	n1 = g.Insert(new(inode), Nil)
+	check(1)
+	n11 := g.Insert(new(inode), n1)
+	check(2)
+	g.checkRemoval(g.Remove(n11), 1, nil, t)
+	check(1)
+	n11 = g.Insert(new(inode), n1)
+	check(2)
+	g.checkRemoval(g.Remove(n1), 2, nil, t)
+	check(0)
+	for i := 0; i < 10; i++ {
+		g.Insert(new(inode), g.Insert(new(inode), Nil))
+	}
+	check(20)
+	for i := 1; i <= 5; i++ {
+		g.checkRemoval(g.Remove(g.next), 2, nil, t)
+		check(20 - i*2)
+	}
+	for next := g.next; g.nodes[next-1].next != Nil; next = g.next {
+		g.checkRemoval(g.Remove(next), 2, nil, t)
+	}
+	check(2)
+	g.checkRemoval(g.Remove(g.nodes[g.next-1].sub), 1, nil, t)
+	check(1)
+	g.checkRemoval(g.Remove(g.next), 1, nil, t)
+	check(0)
+}

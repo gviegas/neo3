@@ -67,6 +67,7 @@ type Graph struct {
 }
 
 // nodeCache retrieves the initialized Node cache.
+// It is re-sliced to have length 0.
 func (g *Graph) nodeCache() []Node {
 	if g.cache.nodes == nil {
 		g.cache.nodes = make([]Node, 0, 1)
@@ -75,6 +76,7 @@ func (g *Graph) nodeCache() []Node {
 }
 
 // dataCache retrieves the initialized int cache.
+// It is re-sliced to have length 0.
 func (g *Graph) dataCache() []int {
 	if g.cache.data == nil {
 		g.cache.data = make([]int, 0, 1)
@@ -83,6 +85,7 @@ func (g *Graph) dataCache() []int {
 }
 
 // changedCache retrieves the initialized bool cache.
+// It is re-sliced to have length 0.
 func (g *Graph) changedCache() []bool {
 	if g.cache.changed == nil {
 		g.cache.changed = make([]bool, 0, 1)
@@ -322,3 +325,6 @@ func (g *Graph) Update() {
 	// they should apply g.world.
 	g.changed = false
 }
+
+// Len returns the number of nodes in the graph.
+func (g *Graph) Len() int { return len(g.data) }
