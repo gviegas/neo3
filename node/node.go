@@ -194,28 +194,26 @@ func (g *Graph) Remove(n Node) []Interface {
 	}
 	ns := []Interface{g.data[data].local}
 	removeData(data)
+	g.nodes[n-1] = node{}
+	g.nodeMap.Unset(int(n - 1))
 	if sub != Nil {
-		que := append(g.nodeCache(), n)
-		var i int
-		for {
-			cur := que[i]
-			for sub := g.nodes[cur-1].sub; sub != Nil; sub = g.nodes[sub-1].next {
-				data := g.nodes[sub-1].data
-				ns = append(ns, g.data[data].local)
-				removeData(data)
-				que = append(que, sub)
+		stk := append(g.nodeCache(), sub)
+		for last := len(stk) - 1; last >= 0; last = len(stk) - 1 {
+			cur := stk[last]
+			stk = stk[:last]
+			data := g.nodes[cur-1].data
+			ns = append(ns, g.data[data].local)
+			removeData(data)
+			if next := g.nodes[cur-1].next; next != Nil {
+				stk = append(stk, next)
+			}
+			if sub := g.nodes[cur-1].sub; sub != Nil {
+				stk = append(stk, sub)
 			}
 			g.nodes[cur-1] = node{}
 			g.nodeMap.Unset(int(cur - 1))
-			i++
-			if len(que) == i {
-				g.cache.nodes = que
-				break
-			}
 		}
-	} else {
-		g.nodes[n-1] = node{}
-		g.nodeMap.Unset(int(n - 1))
+		g.cache.nodes = stk
 	}
 	return ns
 }

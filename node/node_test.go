@@ -766,19 +766,18 @@ func TestCaching(t *testing.T) {
 	for i := 0; i < cnt; i++ {
 		n = g.Insert(new(inode), n)
 	}
-	if g.cache.nodes != nil {
-		t.Fatal("Graph.cache.nodes: unexpected non-nil slice")
-	}
-	if g.cache.data != nil {
-		t.Fatal("Graph.cache.data: unexpected non-nil slice")
-	}
-	if g.cache.changed != nil {
-		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
-	}
+	// In this case, Graph.Remove can do
+	// with a single Node in the cache.
 	g.checkRemoval(g.Remove(g.next), cnt, nil, t)
-	ncap = cap(g.cache.nodes)
-	if ncap < cnt-1 {
-		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant >= %d", ncap, cnt-1)
+	if c := cap(g.cache.nodes); c != 1 {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant 1", c)
+	}
+	n = g.Insert(new(inode), Nil)
+	g.Insert(new(inode), n)
+	g.Insert(new(inode), g.Insert(new(inode), n))
+	g.checkRemoval(g.Remove(n1), 4, nil, t)
+	if c := cap(g.cache.nodes); c < 2 {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant >= 2", c)
 	}
 	if g.cache.data != nil {
 		t.Fatal("Graph.cache.data: unexpected non-nil slice")
@@ -786,20 +785,22 @@ func TestCaching(t *testing.T) {
 	if g.cache.changed != nil {
 		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
 	}
-	n = Nil
+	n = g.Insert(new(inode), Nil)
 	for i := 0; i < cnt/2; i++ {
 		g.Insert(new(inode), n)
 		n = g.Insert(new(inode), n)
 	}
 	nptr = (*[0]Node)(g.cache.nodes)
+	// This update should grow all caches.
 	g.Update()
+	ncap = cap(g.cache.nodes)
 	dcap := cap(g.cache.data)
 	ccap := cap(g.cache.changed)
-	if p := (*[0]Node)(g.cache.nodes); p != nptr {
-		t.Fatalf("(*[0])(Graph.cache.nodes):\nhave %p\nwant %p", p, nptr)
+	if (*[0]Node)(g.cache.nodes) == nptr {
+		t.Log("(*[0])(Graph.cache.nodes): underlying array should likely have changed")
 	}
-	if x := cap(g.cache.nodes); x != ncap {
-		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant %d", x, ncap)
+	if ncap < cnt/2 {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant >= %d", ncap, cnt/2)
 	}
 	if dcap < cnt/2 {
 		t.Fatalf("cap(Graph.cache.data):\nhave %d\nwant >= %d", dcap, cnt/2)
@@ -807,7 +808,20 @@ func TestCaching(t *testing.T) {
 	if ccap < cnt/2 {
 		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant >= %d", ccap, cnt/2)
 	}
+	nptr = (*[0]Node)(g.cache.nodes)
+	dptr := (*[0]int)(g.cache.data)
+	cptr := (*[0]bool)(g.cache.changed)
+	// This update should not grow the caches.
 	g.Update()
+	if p := (*[0]Node)(g.cache.nodes); p != nptr {
+		t.Fatalf("(*[0])(Graph.cache.nodes):\nhave %p\nwant %p", p, nptr)
+	}
+	if p := (*[0]int)(g.cache.data); p != dptr {
+		t.Fatalf("(*[0])(Graph.cache.data):\nhave %p\nwant %p", p, dptr)
+	}
+	if p := (*[0]bool)(g.cache.changed); p != cptr {
+		t.Fatalf("(*[0])(Graph.cache.changed):\nhave %p\nwant %p", p, cptr)
+	}
 	if x := cap(g.cache.nodes); x != ncap {
 		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant %d", x, ncap)
 	}
@@ -816,5 +830,17 @@ func TestCaching(t *testing.T) {
 	}
 	if x := cap(g.cache.changed); x != ccap {
 		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant %d", x, ccap)
+	}
+	n = g.Insert(new(inode), Nil)
+	for i := 0; i < cnt; i++ {
+		g.Insert(new(inode), n)
+		n = g.Insert(new(inode), n)
+	}
+	// In this case, Graph.Remove should need
+	// a cache that is roughly half the size
+	// of the removed sub-graph.
+	g.checkRemoval(g.Remove(g.next), 1+cnt*2, nil, t)
+	if x := cap(g.cache.nodes); x <= ncap {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant > %d", x, ncap)
 	}
 }
