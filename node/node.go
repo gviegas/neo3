@@ -94,11 +94,15 @@ func (g *Graph) changedCache() []bool {
 }
 
 // Insert inserts a new node as descendant of prev.
+// n must not be nil.
 // prev can be Nil, in which case n is inserted into the
 // graph as an unconnected node.
 // It returns a Node value that identifies n in g.
 // If prev is not Nil, it must belong to g.
 func (g *Graph) Insert(n Interface, prev Node) Node {
+	if n == nil {
+		panic("cannot insert node.Interface(nil)")
+	}
 	if g.nodeMap.Rem() == 0 {
 		switch x := g.nodeMap.Len(); {
 		case x > 0:

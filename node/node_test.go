@@ -918,3 +918,16 @@ func TestRemovalOrder(t *testing.T) {
 		}
 	}
 }
+
+func TestNilInterface(t *testing.T) {
+	var g Graph
+	defer func() {
+		const s = "cannot insert node.Interface(nil)"
+		switch recover() {
+		case s:
+		default:
+			t.Fatalf("Graph.Insert: expected to panic with:\n%#v", s)
+		}
+	}()
+	g.Insert(nil, Nil)
+}
