@@ -884,3 +884,37 @@ func TestLen(t *testing.T) {
 	g.checkRemoval(g.Remove(g.next), 1, nil, t)
 	check(0)
 }
+
+func TestRemovalOrder(t *testing.T) {
+	var g Graph
+	n := g.Insert(&inode{name: "0"}, Nil)
+
+	n3 := g.Insert(&inode{name: "11"}, n)
+	n31 := g.Insert(&inode{name: "12"}, n3)
+	g.Insert(&inode{name: "16"}, n31)
+	n311 := g.Insert(&inode{name: "13"}, n31)
+	g.Insert(&inode{name: "15"}, n311)
+	g.Insert(&inode{name: "14"}, n311)
+
+	n2 := g.Insert(&inode{name: "9"}, n)
+	g.Insert(&inode{name: "10"}, n2)
+
+	n1 := g.Insert(&inode{name: "1"}, n)
+	n12 := g.Insert(&inode{name: "4"}, n1)
+	n121 := g.Insert(&inode{name: "5"}, n12)
+	g.Insert(&inode{name: "8"}, n121)
+	g.Insert(&inode{name: "7"}, n121)
+	g.Insert(&inode{name: "6"}, n121)
+	n11 := g.Insert(&inode{name: "2"}, n1)
+	g.Insert(&inode{name: "3"}, n11)
+
+	ns := g.Remove(n)
+	for i := range ns {
+		switch x, err := strconv.Atoi(ns[i].(*inode).name); {
+		case err != nil:
+			t.Fatal(err)
+		case x != i:
+			t.Fatalf("Graph.Remove: invalid order\nhave %d\nwant %d", x, i)
+		}
+	}
+}
