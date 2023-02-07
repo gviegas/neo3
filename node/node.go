@@ -69,7 +69,7 @@ type Graph struct {
 // nodeCache retrieves the initialized Node cache.
 func (g *Graph) nodeCache() []Node {
 	if g.cache.nodes == nil {
-		g.cache.nodes = make([]Node, 0, len(g.data)+1)
+		g.cache.nodes = make([]Node, 0, 1)
 	}
 	return g.cache.nodes[:0]
 }
@@ -77,7 +77,7 @@ func (g *Graph) nodeCache() []Node {
 // dataCache retrieves the initialized int cache.
 func (g *Graph) dataCache() []int {
 	if g.cache.data == nil {
-		g.cache.data = make([]int, 0, len(g.data)+1)
+		g.cache.data = make([]int, 0, 1)
 	}
 	return g.cache.data[:0]
 }
@@ -85,7 +85,7 @@ func (g *Graph) dataCache() []int {
 // changedCache retrieves the initialized bool cache.
 func (g *Graph) changedCache() []bool {
 	if g.cache.changed == nil {
-		g.cache.changed = make([]bool, 0, len(g.data)+1)
+		g.cache.changed = make([]bool, 0, 1)
 	}
 	return g.cache.changed[:0]
 }
@@ -190,8 +190,9 @@ func (g *Graph) Remove(n Node) []Interface {
 	removeData(data)
 	if sub != Nil {
 		que := append(g.nodeCache(), n)
-		for len(que) > 0 {
-			cur := que[0]
+		var i int
+		for {
+			cur := que[i]
 			for sub := g.nodes[cur-1].sub; sub != Nil; sub = g.nodes[sub-1].next {
 				data := g.nodes[sub-1].data
 				ns = append(ns, g.data[data].local)
@@ -200,7 +201,11 @@ func (g *Graph) Remove(n Node) []Interface {
 			}
 			g.nodes[cur-1] = node{}
 			g.nodeMap.Unset(int(cur - 1))
-			que = que[1:]
+			i++
+			if len(que) == i {
+				g.cache.nodes = que
+				break
+			}
 		}
 	} else {
 		g.nodes[n-1] = node{}
@@ -303,6 +308,9 @@ func (g *Graph) Update() {
 				}
 			}
 		}
+		g.cache.nodes = nstk
+		g.cache.data = dstk
+		g.cache.changed = cstk
 	}
 	// World is now up to date.
 	// New unconnected nodes will rely on g.wasSet

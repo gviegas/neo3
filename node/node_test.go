@@ -766,45 +766,34 @@ func TestCaching(t *testing.T) {
 		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
 	}
 	n = Nil
-	const hcnt = cnt / 2
-	for i := 0; i < hcnt; i++ {
+	for i := 0; i < cnt/2; i++ {
+		g.Insert(new(inode), n)
 		n = g.Insert(new(inode), n)
 	}
 	nptr = (*[0]Node)(g.cache.nodes)
 	g.Update()
 	dcap := cap(g.cache.data)
 	ccap := cap(g.cache.changed)
-	if ncap < cnt-1 {
-		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant >= %d", ncap, cnt-1)
-	}
 	if p := (*[0]Node)(g.cache.nodes); p != nptr {
 		t.Fatalf("(*[0])(Graph.cache.nodes):\nhave %p\nwant %p", p, nptr)
 	}
-	if dcap > hcnt+1 {
-		t.Fatalf("cap(Graph.cache.data):\nhave %d\nwant <= %d", dcap, hcnt+1)
+	if x := cap(g.cache.nodes); x != ncap {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant %d", x, ncap)
 	}
-	if ccap > hcnt+1 {
-		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant <= %d", ccap, hcnt+1)
+	if dcap < cnt/2 {
+		t.Fatalf("cap(Graph.cache.data):\nhave %d\nwant >= %d", dcap, cnt/2)
 	}
-	dptr := (*[0]int)(g.cache.data)
-	cptr := (*[0]bool)(g.cache.changed)
+	if ccap < cnt/2 {
+		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant >= %d", ccap, cnt/2)
+	}
 	g.Update()
-	if ncap < cnt-1 {
-		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant >= %d", ncap, cnt-1)
+	if x := cap(g.cache.nodes); x != ncap {
+		t.Fatalf("cap(Graph.cache.nodes):\nhave %d\nwant %d", x, ncap)
 	}
-	if p := (*[0]Node)(g.cache.nodes); p != nptr {
-		t.Fatalf("(*[0])(Graph.cache.nodes):\nhave %p\nwant %p", p, nptr)
+	if x := cap(g.cache.data); x != dcap {
+		t.Fatalf("cap(Graph.cache.data):\nhave %d\nwant %d", x, dcap)
 	}
-	if dcap > hcnt+1 {
-		t.Fatalf("cap(Graph.cache.data):\nhave %d\nwant <= %d", dcap, hcnt+1)
-	}
-	if p := (*[0]int)(g.cache.data); p != dptr {
-		t.Fatalf("(*[0])(Graph.cache.data):\nhave %p\nwant %p", p, dptr)
-	}
-	if ccap > hcnt+1 {
-		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant <= %d", ccap, hcnt+1)
-	}
-	if p := (*[0]bool)(g.cache.changed); p != cptr {
-		t.Fatalf("(*[0])(Graph.cache.changed):\nhave %p\nwant %p", p, cptr)
+	if x := cap(g.cache.changed); x != ccap {
+		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant %d", x, ccap)
 	}
 }
