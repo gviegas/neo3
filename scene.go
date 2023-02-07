@@ -4,10 +4,13 @@
 // rendering scene graphs.
 package scene
 
-import ()
+import (
+	"github.com/gviegas/scene/node"
+)
 
 // Scene defines a scene graph.
 type Scene struct {
+	node.Graph
 	// TODO
 }
 
