@@ -5,7 +5,6 @@ package node
 import (
 	"strconv"
 	"testing"
-	"unsafe"
 
 	"github.com/gviegas/scene/linear"
 )
@@ -253,7 +252,21 @@ func TestNodesGrowth(t *testing.T) {
 	g.Insert(new(inode), Nil)
 	g.check(want{next: n1, nodeLen: 64, nodeRem: 63, dataLen: 1}, t)
 
-	t.Logf("Graph.nodes granularity is 32 elements (%d bytes)", unsafe.Sizeof(node{})*32)
+	// Node growth is exponential.
+	for len(g.data) < 64 {
+		n1 = g.Insert(new(inode), Nil)
+	}
+	g.check(want{next: n1, nodeLen: 64, nodeRem: 0, dataLen: 64}, t)
+	n1 = g.Insert(new(inode), Nil)
+	g.check(want{next: n1, nodeLen: 128, nodeRem: 63, dataLen: 65}, t)
+	for len(g.data) < 4096 {
+		g.Insert(new(inode), n1)
+	}
+	g.check(want{next: n1, nodeLen: 4096, nodeRem: 0, dataLen: 4096}, t)
+	g.Insert(new(inode), n1)
+	g.check(want{next: n1, nodeLen: 8192, nodeRem: 4095, dataLen: 4097}, t)
+	g.Insert(new(inode), g.Insert(new(inode), n1))
+	g.check(want{next: n1, nodeLen: 8192, nodeRem: 4093, dataLen: 4099}, t)
 }
 
 func TestDepth(t *testing.T) {
@@ -272,7 +285,10 @@ func TestDepth(t *testing.T) {
 		nx = insert(nx)
 		names[i] = strconv.Itoa(i + 1)
 	}
-	const gran = (cnt + 31) &^ 31
+	gran := 5
+	for ; 1<<gran < cnt; gran++ {
+	}
+	gran = 1 << gran
 	g.check(want{n1, gran, gran - cnt, cnt}, t)
 	g.checkRemoval(g.Remove(n1), cnt, names, t)
 	g.check(want{nodeLen: gran, nodeRem: gran}, t)
@@ -285,7 +301,10 @@ func TestBreadth(t *testing.T) {
 	for i := 0; i < cnt; i++ {
 		nodes[i] = g.Insert(&inode{strconv.Itoa(i + 1), linear.M4{}, true}, Nil)
 	}
-	const gran = (cnt + 31) &^ 31
+	gran := 5
+	for ; 1<<gran < cnt; gran++ {
+	}
+	gran = 1 << gran
 	g.check(want{nodes[cnt-1], gran, gran - cnt, cnt}, t)
 	var acc int64
 	for i, x := range nodes {
@@ -354,6 +373,7 @@ func TestGet(t *testing.T) {
 
 func TestWorld(t *testing.T) {
 	var g Graph
+
 	// Global world.
 	if w := g.World(Nil); *w != (linear.M4{}) {
 		t.Fatalf("Graph.World:\nhave %v\nwant %v", *w, linear.M4{})
@@ -656,6 +676,7 @@ func TestUpdate(t *testing.T) {
 
 func TestCaching(t *testing.T) {
 	var g Graph
+
 	// Graph.Remove uses the Node cache
 	// when removing multiple nodes.
 	n1 := g.Insert(new(inode), Nil)

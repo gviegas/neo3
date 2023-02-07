@@ -97,10 +97,16 @@ func (g *Graph) changedCache() []bool {
 // If prev is not Nil, it must belong to g.
 func (g *Graph) Insert(n Interface, prev Node) Node {
 	if g.nodeMap.Rem() == 0 {
-		// TODO: Grow exponentially.
-		var elems [32]node
-		g.nodes = append(g.nodes, elems[:]...)
-		g.nodeMap.Grow(1)
+		switch x := g.nodeMap.Len(); {
+		case x > 0:
+			cnt := 1 + (x-31)/32
+			g.nodes = append(g.nodes, g.nodes...)
+			g.nodeMap.Grow(cnt)
+		default:
+			var elems [32]node
+			g.nodes = append(g.nodes, elems[:]...)
+			g.nodeMap.Grow(1)
+		}
 	}
 	var newn Node
 	if idx, ok := g.nodeMap.Search(); ok {
