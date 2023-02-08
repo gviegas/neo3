@@ -36,3 +36,23 @@ func New2D(param *TexParam) (t *Texture, err error) {
 	}
 	return
 }
+
+// Sampler wraps a driver.Sampler.
+type Sampler struct {
+	sampler driver.Sampler
+	param   SplrParam
+}
+
+// SplrParam describes parameters of a sampler.
+type SplrParam = driver.Sampling
+
+// NewSampler creates a new sampler.
+func NewSampler(param *SplrParam) (s *Sampler, err error) {
+	// TODO: Check parameters.
+	splr, err := ctx.GPU().NewSampler(param)
+	if err == nil {
+		// TODO: Must call Sampler.Destroy when unreachable.
+		s = &Sampler{splr, *param}
+	}
+	return
+}
