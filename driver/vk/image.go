@@ -25,22 +25,38 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 	aspect := aspectOf(pf)
 
 	var typ C.VkImageType
+	var extent C.VkExtent3D
 	var flags C.VkImageCreateFlags
 	switch {
-	case size.Depth > 1:
+	case size.Depth >= 1:
 		if d.dvers >= C.VK_API_VERSION_1_1 {
 			flags |= C.VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT
 		}
 		typ = C.VK_IMAGE_TYPE_3D
-	case size.Height > 1:
+		extent = C.VkExtent3D{
+			width:  C.uint32_t(size.Width),
+			height: C.uint32_t(size.Height),
+			depth:  C.uint32_t(size.Depth),
+		}
+	case size.Height >= 1:
 		if samples == 1 {
 			if size.Width == size.Height && layers >= 6 {
 				flags |= C.VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
 			}
 		}
 		typ = C.VK_IMAGE_TYPE_2D
+		extent = C.VkExtent3D{
+			width:  C.uint32_t(size.Width),
+			height: C.uint32_t(size.Height),
+			depth:  1,
+		}
 	default:
 		typ = C.VK_IMAGE_TYPE_1D
+		extent = C.VkExtent3D{
+			width:  C.uint32_t(size.Width),
+			height: 1,
+			depth:  1,
+		}
 	}
 
 	var usage C.VkImageUsageFlags
@@ -72,29 +88,20 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 	res := C.vkGetPhysicalDeviceImageFormatProperties(d.pdev, format, typ, C.VK_IMAGE_TILING_OPTIMAL, usage, flags, &prop)
 	if err := checkResult(res); err != nil {
 		return nil, err
-	} else {
-		w := int(prop.maxExtent.width)
-		h := int(prop.maxExtent.height)
-		d := int(prop.maxExtent.depth)
-		ly := int(prop.maxArrayLayers)
-		lv := int(prop.maxMipLevels)
-		sc := C.VkSampleCountFlagBits(prop.sampleCounts)
-		if size.Width > w || size.Height > h || size.Depth > d || layers > ly || levels > lv || scount&sc == 0 {
-			// TODO: This error is a bit misleading.
-			return nil, errUnsupportedFormat
-		}
+	}
+	if extent.width > prop.maxExtent.width || extent.height > prop.maxExtent.height || extent.depth > prop.maxExtent.depth ||
+		C.uint32_t(layers) > prop.maxArrayLayers || C.uint32_t(levels) > prop.maxMipLevels ||
+		C.VkSampleCountFlags(scount)&prop.sampleCounts == 0 {
+		// TODO: This error is a bit misleading.
+		return nil, errUnsupportedFormat
 	}
 
 	info := C.VkImageCreateInfo{
-		sType:     C.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		flags:     flags,
-		imageType: typ,
-		format:    format,
-		extent: C.VkExtent3D{
-			width:  C.uint32_t(size.Width),
-			height: C.uint32_t(size.Height),
-			depth:  C.uint32_t(size.Depth),
-		},
+		sType:         C.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+		flags:         flags,
+		imageType:     typ,
+		format:        format,
+		extent:        extent,
 		mipLevels:     C.uint32_t(levels),
 		arrayLayers:   C.uint32_t(layers),
 		samples:       scount,

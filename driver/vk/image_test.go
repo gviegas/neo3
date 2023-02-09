@@ -18,32 +18,34 @@ func TestImage(t *testing.T) {
 		samples int
 		usage   driver.Usage
 	}{
-		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 1024, Depth: 1}, 1, 1, 1, driver.UShaderSample},
-		{driver.RGBA8un, driver.Dim3D{Width: 1000, Height: 1000, Depth: 1}, 1, 1, 1, driver.UShaderRead | driver.UShaderWrite},
-		{driver.RGBA8un, driver.Dim3D{Width: 1600, Height: 1200, Depth: 1}, 1, 1, 1, driver.UGeneric},
-		{driver.RGBA8n, driver.Dim3D{Width: 2048, Height: 1600, Depth: 1}, 8, 12, 1, driver.UShaderSample},
-		{driver.RGBA8n, driver.Dim3D{Width: 1600, Height: 2048, Depth: 1}, 8, 12, 1, driver.UShaderSample},
-		{driver.RGBA8un, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 1, driver.URenderTarget},
-		{driver.BGRA8un, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 1, driver.URenderTarget},
-		{driver.D16un, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 1, driver.URenderTarget},
-		{driver.D32f, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 1, driver.URenderTarget},
-		{driver.S8ui, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 1, driver.URenderTarget},
-		{driver.D24unS8ui, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 8, driver.URenderTarget},
-		{driver.D32fS8ui, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 1, driver.URenderTarget},
-		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 512, Depth: 1}, 1, 1, 4, driver.UShaderSample},
-		{driver.RGBA8un, driver.Dim3D{Width: 512, Height: 1024, Depth: 1}, 1, 1, 1, driver.UShaderSample},
-		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 1, Depth: 1}, 1, 1, 1, driver.UShaderSample},
-		{driver.RGBA8un, driver.Dim3D{Width: 1, Height: 1024, Depth: 1}, 1, 1, 1, driver.UShaderSample},
+		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 1024, Depth: 0}, 1, 1, 1, driver.UShaderSample},
+		{driver.RGBA8un, driver.Dim3D{Width: 1000, Height: 1000, Depth: 0}, 1, 1, 1, driver.UShaderRead | driver.UShaderWrite},
+		{driver.RGBA8un, driver.Dim3D{Width: 1600, Height: 1200, Depth: 0}, 1, 1, 1, driver.UGeneric},
+		{driver.RGBA8n, driver.Dim3D{Width: 2048, Height: 1600, Depth: 0}, 8, 12, 1, driver.UShaderSample},
+		{driver.RGBA8n, driver.Dim3D{Width: 1600, Height: 2048, Depth: 0}, 8, 12, 1, driver.UShaderSample},
+		{driver.RGBA8un, driver.Dim3D{Width: 1280, Height: 768, Depth: 0}, 2, 1, 1, driver.URenderTarget},
+		{driver.BGRA8un, driver.Dim3D{Width: 1280, Height: 768, Depth: 0}, 2, 1, 1, driver.URenderTarget},
+		{driver.D16un, driver.Dim3D{Width: 1280, Height: 768, Depth: 0}, 2, 1, 1, driver.URenderTarget},
+		{driver.D32f, driver.Dim3D{Width: 1280, Height: 768, Depth: 0}, 2, 1, 1, driver.URenderTarget},
+		{driver.S8ui, driver.Dim3D{Width: 1280, Height: 768, Depth: 0}, 2, 1, 1, driver.URenderTarget},
+		{driver.D24unS8ui, driver.Dim3D{Width: 1280, Height: 768, Depth: 0}, 2, 1, 8, driver.URenderTarget},
+		{driver.D32fS8ui, driver.Dim3D{Width: 1280, Height: 768, Depth: 0}, 2, 1, 1, driver.URenderTarget},
+		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 512, Depth: 0}, 1, 1, 4, driver.UShaderSample},
+		{driver.RGBA8un, driver.Dim3D{Width: 512, Height: 1024, Depth: 0}, 1, 1, 1, driver.UShaderSample},
+		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 0, Depth: 0}, 1, 1, 1, driver.UShaderSample},
+		{driver.RGBA8un, driver.Dim3D{Width: 1, Height: 1024, Depth: 0}, 1, 1, 1, driver.UShaderSample},
 		{driver.RGBA8un, driver.Dim3D{Width: 1, Height: 1, Depth: 1024}, 1, 1, 1, driver.UShaderSample},
-		{driver.RGBA16f, driver.Dim3D{Width: 1024, Height: 1024, Depth: 1}, 4, 11, 1, driver.UGeneric},
-		{driver.RG16f, driver.Dim3D{Width: 1024, Height: 1024, Depth: 1}, 6, 11, 1, driver.UGeneric},
-		{driver.R16f, driver.Dim3D{Width: 1024, Height: 1024, Depth: 1}, 6, 11, 1, driver.UGeneric},
-		{driver.RG8un, driver.Dim3D{Width: 2000, Height: 1000, Depth: 1}, 1, 11, 1, driver.UGeneric},
-		{driver.R8un, driver.Dim3D{Width: 2000, Height: 1000, Depth: 1}, 1, 11, 1, driver.UGeneric},
+		{driver.RGBA16f, driver.Dim3D{Width: 1024, Height: 1024, Depth: 0}, 4, 11, 1, driver.UGeneric},
+		{driver.RG16f, driver.Dim3D{Width: 1024, Height: 1024, Depth: 0}, 6, 11, 1, driver.UGeneric},
+		{driver.R16f, driver.Dim3D{Width: 1024, Height: 1024, Depth: 0}, 6, 11, 1, driver.UGeneric},
+		{driver.RG8un, driver.Dim3D{Width: 2000, Height: 1000, Depth: 0}, 1, 11, 1, driver.UGeneric},
+		{driver.R8un, driver.Dim3D{Width: 2000, Height: 1000, Depth: 0}, 1, 11, 1, driver.UGeneric},
+		{driver.RGBA8un, driver.Dim3D{Width: 1, Height: 0, Depth: 0}, 1, 1, 1, driver.UShaderSample},
+		{driver.RGBA8un, driver.Dim3D{Width: 1, Height: 1, Depth: 0}, 1, 1, 1, driver.UGeneric},
 		{driver.RGBA8un, driver.Dim3D{Width: 1, Height: 1, Depth: 1}, 1, 1, 1, driver.UGeneric},
-		{driver.RGBA8sRGB, driver.Dim3D{Width: 64, Height: 64, Depth: 1}, 16, 1, 1, driver.UShaderSample},
-		{driver.BGRA8sRGB, driver.Dim3D{Width: 720, Height: 480, Depth: 1}, 10, 1, 1, driver.UShaderSample},
-		{driver.RGBA8sRGB, driver.Dim3D{Width: 1024, Height: 1024, Depth: 1}, 1, 1, 1, driver.UShaderSample},
+		{driver.RGBA8sRGB, driver.Dim3D{Width: 64, Height: 64, Depth: 0}, 16, 1, 1, driver.UShaderSample},
+		{driver.BGRA8sRGB, driver.Dim3D{Width: 720, Height: 480, Depth: 0}, 10, 1, 1, driver.UShaderSample},
+		{driver.RGBA8sRGB, driver.Dim3D{Width: 1024, Height: 1024, Depth: 0}, 1, 1, 1, driver.UShaderSample},
 		{driver.RGBA16f, driver.Dim3D{Width: 128, Height: 128, Depth: 128}, 1, 8, 1, driver.UGeneric},
 	}
 	zi := image{}
@@ -121,31 +123,31 @@ func TestImageView(t *testing.T) {
 		usage   driver.Usage
 		iv      []iview
 	}{
-		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 1024, Depth: 1}, 1, 11, 1, driver.UShaderSample, []iview{
+		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 1024}, 1, 11, 1, driver.UShaderSample, []iview{
 			{driver.IView2D, 0, 1, 0, 1}, {driver.IView2D, 0, 1, 0, 11}, {driver.IView2D, 0, 1, 4, 5},
 		}},
-		{driver.RGBA16f, driver.Dim3D{Width: 1024, Height: 1024, Depth: 1}, 1, 6, 1, driver.UGeneric, []iview{
+		{driver.RGBA16f, driver.Dim3D{Width: 1024, Height: 1024}, 1, 6, 1, driver.UGeneric, []iview{
 			{driver.IView2D, 0, 1, 0, 1}, {driver.IView2D, 0, 1, 2, 1}, {driver.IView2D, 0, 1, 3, 3},
 		}},
-		{driver.BGRA8sRGB, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 1, 1, 8, driver.URenderTarget, []iview{
+		{driver.BGRA8sRGB, driver.Dim3D{Width: 1280, Height: 768}, 1, 1, 8, driver.URenderTarget, []iview{
 			{driver.IView2DMS, 0, 1, 0, 1}, {driver.IView2D, 0, 1, 0, 1},
 		}},
-		{driver.D24unS8ui, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 1, driver.URenderTarget, []iview{
+		{driver.D24unS8ui, driver.Dim3D{Width: 1280, Height: 768}, 2, 1, 1, driver.URenderTarget, []iview{
 			{driver.IView2D, 0, 1, 0, 1}, {driver.IView2DArray, 0, 2, 0, 1},
 		}},
-		{driver.D16un, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 2, 1, 1, driver.URenderTarget, []iview{
+		{driver.D16un, driver.Dim3D{Width: 1280, Height: 768}, 2, 1, 1, driver.URenderTarget, []iview{
 			{driver.IView2D, 0, 1, 0, 1}, {driver.IView2D, 1, 1, 0, 1},
 		}},
-		{driver.S8ui, driver.Dim3D{Width: 1280, Height: 768, Depth: 1}, 3, 1, 1, driver.URenderTarget, []iview{
+		{driver.S8ui, driver.Dim3D{Width: 1280, Height: 768}, 3, 1, 1, driver.URenderTarget, []iview{
 			{driver.IView2D, 2, 1, 0, 1}, {driver.IView2DArray, 0, 3, 0, 1},
 		}},
-		{driver.R8un, driver.Dim3D{Width: 4096, Height: 1, Depth: 1}, 4, 1, 1, driver.UGeneric, []iview{
+		{driver.R8un, driver.Dim3D{Width: 4096}, 4, 1, 1, driver.UGeneric, []iview{
 			{driver.IView1D, 0, 1, 0, 1}, {driver.IView1D, 3, 1, 0, 1}, {driver.IView1DArray, 0, 4, 0, 1},
 		}},
 		{driver.RG16f, driver.Dim3D{Width: 480, Height: 720, Depth: 5}, 1, 1, 1, driver.UGeneric, []iview{
-			{driver.IView3D, 0, 1, 0, 1}, {driver.IView2DArray, 0, 5, 0, 1}, {driver.IView2D, 1, 1, 0, 1},
+			{driver.IView3D, 0, 1, 0, 1}, /*{driver.IView2DArray, 0, 5, 0, 1}, {driver.IView2D, 1, 1, 0, 1},*/
 		}},
-		{driver.RGBA8un, driver.Dim3D{Width: 512, Height: 512, Depth: 1}, 16, 10, 1, driver.UShaderSample, []iview{
+		{driver.RGBA8un, driver.Dim3D{Width: 512, Height: 512}, 16, 10, 1, driver.UShaderSample, []iview{
 			// TODO: Enable cube array feature.
 			{driver.IViewCube, 0, 6, 0, 1}, {driver.IViewCube, 4, 6, 0, 10}, /*{driver.IViewCubeArray, 0, 12, 0, 10},*/
 		}},

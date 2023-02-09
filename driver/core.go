@@ -569,7 +569,7 @@ const (
 
 // VertexIn describes a vertex input.
 // Consecutive vertices are fetched Stride bytes apart.
-// Each vertex input represents a separate buffer binding,
+// Each vertex input represents a separate buffer binding;
 // interleaved inputs are not supported.
 // The meaning of the Nr and Name fields is shader-specific.
 type VertexIn struct {
@@ -902,6 +902,16 @@ const (
 )
 
 // Image is the interface that defines a GPU image.
+// The dimensionality of the image is derived from the size
+// it was created with:
+//
+//	Dim3D{Width: >= 1, Height: 0, Depth: 0} is 1D.
+//	Dim3D{Width: >= 1, Height: >= 1, Depth: 0} is 2D.
+//	Dim3D{Width: >= 1, Height: >= 1, Depth: >= 1} is 3D.
+//
+// When creating image views, the dimensionality must match
+// that of the views's type.
+//
 // Direct access to image memory is not provided, so copying
 // data from the CPU to an image resource requires the use
 // of a staging buffer.
