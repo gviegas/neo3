@@ -95,6 +95,43 @@ validParam:
 	usg := driver.UShaderSample
 	img, err := ctx.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, 1, usg)
 	if err == nil {
+		// TODO: Must call Image.Destroy when unreachable.
+		t = &Texture{img, usg, *param}
+	}
+	return
+}
+
+// NewTarget creates a new render target texture.
+func NewTarget(param *TexParam) (t *Texture, err error) {
+	limits := ctx.Limits()
+	var reason string
+	switch {
+	case param == nil:
+		reason = "nil param"
+	case param.Dim3D.Width < 1, param.Dim3D.Height < 1, param.Dim3D.Depth != 0:
+		reason = "invalid size"
+	case param.Width > limits.MaxRenderSize[0], param.Height > limits.MaxRenderSize[1]:
+		reason = "size too big"
+	case param.Layers < 1:
+		reason = "invalid layer count"
+	case param.Layers > limits.MaxRenderLayers:
+		reason = "too many layers"
+	case param.Levels < 1, param.Levels > ComputeLevels(param.Dim3D):
+		reason = "invalid level count"
+	case param.Samples < 1, param.Samples&(param.Samples-1) != 0:
+		reason = "invalid sample count"
+	case param.Levels > 1 && param.Samples != 1:
+		reason = "multi-sample mipmap"
+	default:
+		goto validParam
+	}
+	err = errors.New("texture: " + reason)
+	return
+validParam:
+	usg := driver.UShaderSample | driver.URenderTarget
+	img, err := ctx.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
+	if err == nil {
+		// TODO: Must call Image.Destroy when unreachable.
 		t = &Texture{img, usg, *param}
 	}
 	return
