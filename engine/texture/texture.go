@@ -11,6 +11,8 @@ import (
 	"github.com/gviegas/scene/engine/internal/ctx"
 )
 
+const prefix = "texture: "
+
 // Texture wraps a driver.Image.
 type Texture struct {
 	image driver.Image
@@ -51,7 +53,7 @@ func New2D(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New("texture: " + reason)
+	err = errors.New(prefix + reason)
 	return
 validParam:
 	usg := driver.UShaderSample
@@ -89,7 +91,7 @@ func NewCube(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New("texture: " + reason)
+	err = errors.New(prefix + reason)
 	return
 validParam:
 	usg := driver.UShaderSample
@@ -125,7 +127,7 @@ func NewTarget(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New("texture: " + reason)
+	err = errors.New(prefix + reason)
 	return
 validParam:
 	usg := driver.UShaderSample | driver.URenderTarget
@@ -184,7 +186,7 @@ func NewSampler(param *SplrParam) (s *Sampler, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New("texture: " + reason)
+	err = errors.New(prefix + reason)
 	return
 validParam:
 	splr, err := ctx.GPU().NewSampler(param)
