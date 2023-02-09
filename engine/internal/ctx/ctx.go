@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	drv driver.Driver
-	gpu driver.GPU
+	drv    driver.Driver
+	gpu    driver.GPU
+	limits driver.Limits
 )
 
 var errNoDriver = errors.New("ctx: driver not found")
@@ -21,7 +22,8 @@ var errNoDriver = errors.New("ctx: driver not found")
 // the provided name string. It is case-sensitive.
 // If name is the empty string, all drivers are considered.
 // It assumes that the drv and gpu vars hold invalid values
-// and replaces both on success.
+// and replaces both on success. It also updates limits with
+// a call to gpu.Limits().
 func loadDriver(name string) error {
 	drivers := driver.Drivers()
 	err := errNoDriver
@@ -35,6 +37,7 @@ func loadDriver(name string) error {
 		}
 		drv = drivers[i]
 		gpu = u
+		limits = gpu.Limits()
 		return nil
 	}
 	return err
@@ -45,3 +48,8 @@ func Driver() driver.Driver { return drv }
 
 // GPU returns the driver.GPU.
 func GPU() driver.GPU { return gpu }
+
+// Limits returns driver.Limits of the context's GPU.
+// This value is retrieved only once. It must not be
+// changed by the caller.
+func Limits() *driver.Limits { return &limits }

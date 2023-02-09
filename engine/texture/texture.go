@@ -29,8 +29,7 @@ type TexParam struct {
 
 // New2D creates a 2D texture.
 func New2D(param *TexParam) (t *Texture, err error) {
-	// TODO: This call returns the Limits struct by value.
-	limits := ctx.GPU().Limits()
+	limits := ctx.Limits()
 	var reason string
 	switch {
 	case param == nil:
@@ -50,7 +49,7 @@ func New2D(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(reason)
+	err = errors.New("texture: " + reason)
 	return
 validParam:
 	usg := driver.UShaderSample
@@ -109,7 +108,7 @@ func NewSampler(param *SplrParam) (s *Sampler, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(reason)
+	err = errors.New("texture: " + reason)
 	return
 validParam:
 	splr, err := ctx.GPU().NewSampler(param)
