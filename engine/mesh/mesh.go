@@ -5,10 +5,13 @@
 package mesh
 
 import (
+	"errors"
 	"io"
 
 	"github.com/gviegas/scene/driver"
 )
+
+const prefix = "mesh: "
 
 // Mesh is a collection of primitives.
 type Mesh struct {
@@ -79,4 +82,54 @@ type PrimitiveData struct {
 type Data struct {
 	Primitives []PrimitiveData
 	Srcs       []io.ReadSeeker
+}
+
+// New creates a new mesh.
+func New(data *Data) (m *Mesh, err error) {
+	var reason string
+	switch {
+	case data == nil:
+		reason = "nil data"
+	case len(data.Primitives) == 0:
+		reason = "no primitive data"
+	case len(data.Srcs) == 0:
+		reason = "no data source"
+	default:
+		goto validData
+	}
+	err = errors.New(prefix + reason)
+	return
+validData:
+	var prim, p Primitive
+	prim, err = newPrimitive(data, 0)
+	if err != nil {
+		return
+	}
+	for i := 1; i < len(data.Primitives); i++ {
+		// TODO: Will likely need a bitmap index
+		// here to make primitives contiguous.
+		p, err = newPrimitive(data, i)
+		if err != nil {
+			// TODO: Free primitives 0:i.
+			return
+		}
+		// These would indicate a bug in storage code.
+		if prim.bufIdx != p.bufIdx {
+			panic("unexpected mesh.Primitive buffer")
+		}
+		if prim.index+i != p.index {
+			panic("unexpected mesh.Primitive index")
+		}
+	}
+	m = &Mesh{
+		bufIdx:  prim.bufIdx,
+		primIdx: prim.index,
+		primLen: len(data.Primitives),
+	}
+	return
+}
+
+// newPrimitive creates the primitive at data[index].
+func newPrimitive(data *Data, index int) (Primitive, error) {
+	panic("not implemented")
 }
