@@ -18,6 +18,7 @@ var storage meshBuffer
 // both driver.UVertexData and driver.UIndexData, and its
 // capacity must be a multiple of 16384 bytes.
 // It returns the replaced buffer, if any.
+//
 // NOTE: Calls to this function invalidate all previously
 // created meshes.
 func SetBuffer(buf driver.Buffer) driver.Buffer {
@@ -65,6 +66,11 @@ type primitive struct {
 		format driver.IndexFmt
 		span
 	}
+	// Indices into meshBuffer.prims defining
+	// a primitive list. Only used by meshes
+	// with multiple primitives.
+	next int
+	prev int
 }
 
 // span defines a buffer range in number of blocks.
