@@ -127,5 +127,32 @@ validData:
 
 // newPrimitive creates the primitive at data.Primitives[index].
 func newPrimitive(data *Data, index int) (p Primitive, err error) {
-	panic("not implemented")
+	pdata := &data.Primitives[index]
+	var reason string
+	switch {
+	// TODO: Check topology against vertex/index count.
+	case pdata.VertexCount < 0:
+		reason = "invalid vertex count"
+	case pdata.SemanticMask&Position == 0:
+		reason = "no position semantic"
+	case pdata.IndexCount > 0 && pdata.Index.Src >= len(data.Srcs):
+		reason = "index data source out of bounds"
+	default:
+		for i := range pdata.Semantics {
+			if pdata.SemanticMask&(1<<i) == 0 {
+				continue
+			}
+			if pdata.Semantics[i].Src >= len(data.Srcs) {
+				reason = "semantic data source out of bounds"
+				goto invalidData
+			}
+		}
+		goto validData
+	}
+invalidData:
+	err = errors.New(prefix + reason)
+	return
+validData:
+	p, err = storage.newEntry(&data.Primitives[index], data.Srcs)
+	return
 }

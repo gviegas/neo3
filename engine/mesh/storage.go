@@ -3,6 +3,7 @@
 package mesh
 
 import (
+	"io"
 	"sync"
 
 	"github.com/gviegas/scene/driver"
@@ -53,6 +54,12 @@ type meshBuffer struct {
 	primMap bitm.Bitm[uint16]
 	prims   []primitive
 	mu      sync.Mutex
+}
+
+// newEntry creates a new entry in the buffer containing
+// the primitive specified by data.
+func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (Primitive, error) {
+	panic("not implemented")
 }
 
 // primitive is an entry in a mesh buffer.
