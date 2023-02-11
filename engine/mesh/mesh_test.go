@@ -51,6 +51,9 @@ func TestSetBuffer(t *testing.T) {
 	if x := storage.spanMap.Len(); x != 0 {
 		t.Fatalf("SetBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
 	}
+	if x := storage.primMap.Len(); x != 0 {
+		t.Fatalf("SetBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+	}
 	if x := len(storage.prims); x != 0 {
 		t.Fatalf("SetBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 	}
@@ -76,6 +79,9 @@ func TestSetBuffer(t *testing.T) {
 		if x := s / blockSize; int(x) != n {
 			t.Fatalf("SetBuffer: storage.spanMap.Len\nhave %d\nwant %d", n, x)
 		}
+		if x := storage.primMap.Len(); x != 0 {
+			t.Fatalf("SetBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+		}
 		if x := len(storage.prims); x != 0 {
 			t.Fatalf("SetBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 		}
@@ -91,6 +97,9 @@ func TestSetBuffer(t *testing.T) {
 	}
 	if x := storage.spanMap.Len(); x != 0 {
 		t.Fatalf("SetBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
+	}
+	if x := storage.primMap.Len(); x != 0 {
+		t.Fatalf("SetBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := len(storage.prims); x != 0 {
 		t.Fatalf("SetBuffer: len(storage.prims)\nhave %d\nwant 0", x)

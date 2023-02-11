@@ -38,6 +38,7 @@ func SetBuffer(buf driver.Buffer) driver.Buffer {
 		}
 		storage.spanMap = bitm.Bitm[uint32]{}
 		storage.spanMap.Grow(int(n))
+		storage.primMap = bitm.Bitm[uint16]{}
 		storage.prims = storage.prims[:0]
 	}
 	prev := storage.buf
@@ -49,6 +50,7 @@ func SetBuffer(buf driver.Buffer) driver.Buffer {
 type meshBuffer struct {
 	buf     driver.Buffer
 	spanMap bitm.Bitm[uint32]
+	primMap bitm.Bitm[uint16]
 	prims   []primitive
 	mu      sync.Mutex
 }
