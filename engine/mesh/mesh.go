@@ -43,7 +43,7 @@ const (
 	MaxSemantic = iota
 )
 
-// I computes log2(s).
+// I computes log₂(s).
 // This value can be used to index into PrimitiveData.Semantics.
 func (s Semantic) I() (i int) {
 	for s > 1 {
@@ -100,26 +100,22 @@ func New(data *Data) (m *Mesh, err error) {
 	err = errors.New(prefix + reason)
 	return
 validData:
-	var prim, p Primitive
+	var prim, next, prev Primitive
 	prim, err = newPrimitive(data, 0)
 	if err != nil {
 		return
 	}
+	prev = prim
 	for i := 1; i < len(data.Primitives); i++ {
-		// TODO: Will likely need a bitmap index
-		// here to make primitives contiguous.
-		p, err = newPrimitive(data, i)
+		next, err = newPrimitive(data, i)
 		if err != nil {
 			// TODO: Free primitives 0:i.
 			return
 		}
-		// These would indicate a bug in storage code.
-		if prim.bufIdx != p.bufIdx {
-			panic("unexpected mesh.Primitive buffer")
-		}
-		if prim.index+i != p.index {
-			panic("unexpected mesh.Primitive index")
-		}
+		storage.prims[prev.index].next = next.index
+		// TODO: primitive.prev probably won't
+		// have any use; consider removing it.
+		storage.prims[next.index].prev = prev.index
 	}
 	m = &Mesh{
 		bufIdx:  prim.bufIdx,
@@ -129,7 +125,7 @@ validData:
 	return
 }
 
-// newPrimitive creates the primitive at data[index].
-func newPrimitive(data *Data, index int) (Primitive, error) {
+// newPrimitive creates the primitive at data.Primitives[index].
+func newPrimitive(data *Data, index int) (p Primitive, err error) {
 	panic("not implemented")
 }
