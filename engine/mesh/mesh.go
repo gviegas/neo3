@@ -112,10 +112,7 @@ validData:
 			// TODO: Free primitives 0:i.
 			return
 		}
-		storage.prims[prev.index].next = next.index
-		// TODO: primitive.prev probably won't
-		// have any use; consider removing it.
-		storage.prims[next.index].prev = prev.index
+		storage.link(prev, next)
 	}
 	m = &Mesh{
 		bufIdx:  prim.bufIdx,

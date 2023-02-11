@@ -62,6 +62,20 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (Primit
 	panic("not implemented")
 }
 
+// link links a primitive entry to another.
+// This is only relevant for meshes that contain multiple
+// primitives.
+func (b *meshBuffer) link(prim Primitive, next Primitive) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if prim.bufIdx != next.bufIdx {
+		panic("attempt to link primitives from different buffers")
+	}
+	b.prims[prim.index].next = next.index
+	// TODO: Will primitive.prev ever be used?
+	b.prims[next.index].prev = prim.index
+}
+
 // primitive is an entry in a mesh buffer.
 type primitive struct {
 	topology driver.Topology
