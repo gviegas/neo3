@@ -1,3 +1,3 @@
 module github.com/gviegas/scene
 
-go 1.19
+go 1.20
