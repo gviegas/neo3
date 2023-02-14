@@ -26,7 +26,7 @@ func (d *Driver) NewShaderCode(data []byte) (driver.ShaderCode, error) {
 	if n == 0 || n&3 != 0 {
 		return nil, errors.New("vk: invalid shader code size")
 	}
-	if uintptr(unsafe.Pointer(&data[0]))&3 != 0 {
+	if uintptr(unsafe.Pointer(unsafe.SliceData(data)))&3 != 0 {
 		return nil, errors.New("vk: misaligned shader code data")
 	}
 	p := C.malloc(C.size_t(n))

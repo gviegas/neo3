@@ -191,7 +191,7 @@ func (s *swapchain) initSwapchain(imageCount int) error {
 		return err
 	}
 	fmts := make([]C.VkSurfaceFormatKHR, nfmt)
-	res = C.vkGetPhysicalDeviceSurfaceFormatsKHR(s.d.pdev, s.sf, &nfmt, &fmts[0])
+	res = C.vkGetPhysicalDeviceSurfaceFormatsKHR(s.d.pdev, s.sf, &nfmt, unsafe.SliceData(fmts))
 	if err := checkResult(res); err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ fmtLoop:
 		return err
 	}
 	modes := make([]C.VkPresentModeKHR, nmode)
-	res = C.vkGetPhysicalDeviceSurfacePresentModesKHR(s.d.pdev, s.sf, &nmode, &modes[0])
+	res = C.vkGetPhysicalDeviceSurfacePresentModesKHR(s.d.pdev, s.sf, &nmode, unsafe.SliceData(modes))
 	if err := checkResult(res); err != nil {
 		return err
 	}
@@ -298,7 +298,7 @@ func (s *swapchain) newViews() error {
 		return err
 	}
 	imgs := make([]C.VkImage, nimg)
-	res = C.vkGetSwapchainImagesKHR(s.d.dev, s.sc, &nimg, &imgs[0])
+	res = C.vkGetSwapchainImagesKHR(s.d.dev, s.sc, &nimg, unsafe.SliceData(imgs))
 	if err := checkResult(res); err != nil {
 		return err
 	}

@@ -478,7 +478,7 @@ func (cb *cmdBuffer) SetViewport(vp []driver.Viewport) {
 				maxDepth: C.float(vp[i].Zfar),
 			}
 		}
-		C.vkCmdSetViewport(cb.cb, 0, C.uint32_t(nvp), &vport[0])
+		C.vkCmdSetViewport(cb.cb, 0, C.uint32_t(nvp), unsafe.SliceData(vport))
 	}
 }
 
@@ -512,7 +512,7 @@ func (cb *cmdBuffer) SetScissor(sciss []driver.Scissor) {
 				},
 			}
 		}
-		C.vkCmdSetScissor(cb.cb, 0, C.uint32_t(nsciss), &rect[0])
+		C.vkCmdSetScissor(cb.cb, 0, C.uint32_t(nsciss), unsafe.SliceData(rect))
 	}
 }
 
@@ -547,7 +547,7 @@ func (cb *cmdBuffer) SetVertexBuf(start int, buf []driver.Buffer, off []int64) {
 			sbuf[i] = buf[i].(*buffer).buf
 			soff[i] = C.VkDeviceSize(off[i])
 		}
-		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(start), C.uint32_t(nbuf), &sbuf[0], &soff[0])
+		C.vkCmdBindVertexBuffers(cb.cb, C.uint32_t(start), C.uint32_t(nbuf), unsafe.SliceData(sbuf), unsafe.SliceData(soff))
 	}
 }
 
@@ -586,7 +586,7 @@ func (cb *cmdBuffer) setDescTable(table driver.DescTable, start int, heapCopy []
 		for i := range set {
 			set[i] = desc.h[start+i].sets[heapCopy[i]]
 		}
-		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), &set[0], 0, nil)
+		C.vkCmdBindDescriptorSets(cb.cb, bindPoint, desc.layout, C.uint32_t(start), C.uint32_t(ncpy), unsafe.SliceData(set), 0, nil)
 	}
 }
 
@@ -812,8 +812,8 @@ func (d *Driver) destroyCommitInfo(ci *commitInfo) {
 	if ci == nil {
 		return
 	}
-	C.free(unsafe.Pointer(&ci.cbInfo[0]))
-	C.free(unsafe.Pointer(&ci.semInfo[0]))
+	C.free(unsafe.Pointer(unsafe.SliceData(ci.cbInfo)))
+	C.free(unsafe.Pointer(unsafe.SliceData(ci.semInfo)))
 	*ci = commitInfo{}
 }
 
@@ -834,7 +834,7 @@ func (ci *commitInfo) resizeCB(cbInfoN int) {
 	default:
 		return
 	}
-	p := C.realloc(unsafe.Pointer(&ci.cbInfo[0]), C.sizeof_VkCommandBufferSubmitInfo*C.size_t(n))
+	p := C.realloc(unsafe.Pointer(unsafe.SliceData(ci.cbInfo)), C.sizeof_VkCommandBufferSubmitInfo*C.size_t(n))
 	ci.cbInfo = unsafe.Slice((*C.VkCommandBufferSubmitInfo)(p), n)
 }
 
@@ -855,7 +855,7 @@ func (ci *commitInfo) resizeSem(semInfoN int) {
 	default:
 		return
 	}
-	p := C.realloc(unsafe.Pointer(&ci.semInfo[0]), C.sizeof_VkSemaphoreSubmitInfo*C.size_t(n))
+	p := C.realloc(unsafe.Pointer(unsafe.SliceData(ci.semInfo)), C.sizeof_VkSemaphoreSubmitInfo*C.size_t(n))
 	ci.semInfo = unsafe.Slice((*C.VkSemaphoreSubmitInfo)(p), n)
 }
 
@@ -899,7 +899,7 @@ func (d *Driver) resizeCommitFence(cs *commitSync, fenceN int) error {
 // waitCommitFence waits for a number of cs.fence.
 // fenceN must be at least 1 and no greater than len(cs.fence).
 func (d *Driver) waitCommitFence(cs *commitSync, fenceN int) error {
-	res := C.vkWaitForFences(d.dev, C.uint32_t(fenceN), &cs.fence[0], C.VK_TRUE, C.UINT64_MAX)
+	res := C.vkWaitForFences(d.dev, C.uint32_t(fenceN), unsafe.SliceData(cs.fence), C.VK_TRUE, C.UINT64_MAX)
 	switch res {
 	case C.VK_SUCCESS:
 		return nil
@@ -917,7 +917,7 @@ func (d *Driver) waitCommitFence(cs *commitSync, fenceN int) error {
 // resetCommitFence resets a number of cs.fence.
 // fenceN must be at least 1 and no greater than len(cs.fence).
 func (d *Driver) resetCommitFence(cs *commitSync, fenceN int) error {
-	return checkResult(C.vkResetFences(d.dev, C.uint32_t(fenceN), &cs.fence[0]))
+	return checkResult(C.vkResetFences(d.dev, C.uint32_t(fenceN), unsafe.SliceData(cs.fence)))
 }
 
 // destroyCommitSync destroys cs.
@@ -1131,7 +1131,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 	}
 	if n := len(presAcq); n == 0 {
 		d.qmus[d.qfam].Lock()
-		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.fence[0])
+		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), unsafe.SliceData(ci.subInfo), cs.fence[0])
 		d.qmus[d.qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs
@@ -1139,7 +1139,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 		}
 	} else {
 		d.qmus[d.qfam].Lock()
-		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), &ci.subInfo[0], cs.fence[0])
+		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), unsafe.SliceData(ci.subInfo), cs.fence[0])
 		d.qmus[d.qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs

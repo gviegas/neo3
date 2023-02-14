@@ -105,7 +105,7 @@ func (h *descHeap) New(n int) error {
 		// Nothing to destroy/free.
 	default:
 		C.vkDestroyDescriptorPool(h.d.dev, h.pool, nil)
-		C.free(unsafe.Pointer(&h.sets[0]))
+		C.free(unsafe.Pointer(unsafe.SliceData(h.sets)))
 		h.sets = nil
 		if n == 0 {
 			return nil
@@ -270,7 +270,7 @@ func (h *descHeap) Destroy() {
 		// Note that h.pool is never cleared by New, just replaced.
 		if len(h.sets) != 0 {
 			C.vkDestroyDescriptorPool(h.d.dev, h.pool, nil)
-			C.free(unsafe.Pointer(&h.sets[0]))
+			C.free(unsafe.Pointer(unsafe.SliceData(h.sets)))
 		}
 	}
 	*h = descHeap{}

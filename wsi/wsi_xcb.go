@@ -328,7 +328,7 @@ func setClassXCB(class [2]string, id C.xcb_window_t) error {
 	s = append(s, class[1]...)
 	s = append(s, 0)
 	slen := C.uint32_t(len(s))
-	cookie := C.changePropertyCheckedXCB(connXCB, C.XCB_PROP_MODE_REPLACE, id, classAtomXCB, C.XCB_ATOM_STRING, 8, slen, unsafe.Pointer(&s[0]))
+	cookie := C.changePropertyCheckedXCB(connXCB, C.XCB_PROP_MODE_REPLACE, id, classAtomXCB, C.XCB_ATOM_STRING, 8, slen, unsafe.Pointer(unsafe.SliceData(s)))
 	genErr := C.requestCheckXCB(connXCB, cookie)
 	if genErr != nil {
 		C.free(unsafe.Pointer(genErr))

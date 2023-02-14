@@ -450,7 +450,7 @@ func stringToLPCWSTR(s string) C.LPCWSTR {
 	sz := C.size_t(unsafe.Sizeof(*ws) * uintptr(n))
 	ws = C.LPCWSTR(C.malloc(sz))
 	u16 := utf16.Encode([]rune(s[:n-1] + "\x00"))
-	C.memcpy(unsafe.Pointer(ws), unsafe.Pointer(&u16[0]), sz)
+	C.memcpy(unsafe.Pointer(ws), unsafe.Pointer(unsafe.SliceData(u16)), sz)
 	return ws
 }
 

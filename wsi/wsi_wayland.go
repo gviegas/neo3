@@ -233,7 +233,7 @@ func newWindowWayland(width, height int, title string) (Window, error) {
 func (w *windowWayland) Map() error {
 	if !w.mapped {
 		w.mapped = true
-		C.toplevelSetTitleXDG(w.toplevel, &w.ctitle[0])
+		C.toplevelSetTitleXDG(w.toplevel, unsafe.SliceData(w.ctitle))
 		appID := C.CString(appName)
 		C.toplevelSetAppIDXDG(w.toplevel, appID)
 		C.surfaceCommitWayland(w.wsf)
@@ -266,10 +266,10 @@ func (w *windowWayland) SetTitle(title string) error {
 		return nil
 	}
 	if n := len(title); n >= len(w.ctitle) {
-		C.free(unsafe.Pointer(&w.ctitle[0]))
+		C.free(unsafe.Pointer(unsafe.SliceData(w.ctitle)))
 		w.ctitle = unsafe.Slice(C.CString(title), n+1)
 	} else {
-		sl := unsafe.Slice((*byte)(unsafe.Pointer(&w.ctitle[0])), n+1)
+		sl := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(w.ctitle))), n+1)
 		copy(sl, title)
 		sl[n] = 0
 	}
@@ -287,7 +287,7 @@ func (w *windowWayland) Close() {
 			C.surfaceDestroyWayland(w.wsf)
 			C.displayFlushWayland(dpyWayland)
 		}
-		C.free(unsafe.Pointer(&w.ctitle[0]))
+		C.free(unsafe.Pointer(unsafe.SliceData(w.ctitle)))
 		*w = windowWayland{}
 	}
 }
