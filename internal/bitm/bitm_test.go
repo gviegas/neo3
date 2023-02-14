@@ -68,6 +68,94 @@ func TestGrow(t *testing.T) {
 	}
 }
 
+func TestShrink(t *testing.T) {
+	var bitm8 Bitm[uint8]
+	checkLenRem := func(len, rem int) {
+		if n := bitm8.Len(); n != len {
+			t.Fatalf("bitm8.Shrink: Len:\nhave %d\nwant %d", n, len)
+		}
+		if n := bitm8.Rem(); n != rem {
+			t.Fatalf("bitm8.Shrink: Rem:\nhave %d\nwant %d", n, rem)
+		}
+	}
+	for _, x := range [...]int{0, 1, -1, 2, 100} {
+		bitm8.Shrink(x)
+		checkLenRem(0, 0)
+	}
+	bitm8.Grow(1)
+	bitm8.Shrink(1)
+	checkLenRem(0, 0)
+	bitm8.Grow(1)
+	bitm8.Set(0)
+	bitm8.Shrink(1)
+	checkLenRem(0, 0)
+	bitm8.Grow(2)
+	bitm8.Shrink(1)
+	checkLenRem(8, 8)
+	bitm8.Grow(2)
+	bitm8.Shrink(1)
+	checkLenRem(16, 16)
+	bitm8.Shrink(2)
+	checkLenRem(0, 0)
+	bitm8.Grow(2)
+	bitm8.Set(0)
+	bitm8.Shrink(1)
+	checkLenRem(8, 7)
+	bitm8.Shrink(1)
+	checkLenRem(0, 0)
+	bitm8.Grow(2)
+	bitm8.Set(1)
+	bitm8.Set(7)
+	bitm8.Set(4)
+	bitm8.Set(0)
+	bitm8.Shrink(0)
+	checkLenRem(16, 12)
+	bitm8.Shrink(1)
+	checkLenRem(8, 4)
+	bitm8.Grow(2)
+	bitm8.Set(10)
+	bitm8.Set(15)
+	bitm8.Shrink(-1)
+	checkLenRem(24, 18)
+	bitm8.Shrink(1)
+	checkLenRem(16, 10)
+	bitm8.Grow(1)
+	bitm8.Set(23)
+	bitm8.Shrink(^0)
+	checkLenRem(24, 17)
+	bitm8.Shrink(2)
+	checkLenRem(8, 4)
+	bitm8.Unset(0)
+	bitm8.Grow(10)
+	bitm8.Set(79)
+	bitm8.Shrink(9)
+	checkLenRem(16, 13)
+	bitm8.Grow(8)
+	for i := 0; i < bitm8.Len(); i++ {
+		bitm8.Set(i)
+	}
+	bitm8.Shrink(0)
+	checkLenRem(80, 0)
+	for i := 72; i >= 0; i -= 8 {
+		bitm8.Shrink(1)
+		checkLenRem(i, 0)
+	}
+	bitm8.Grow(10)
+	for i := 80; i > -3; i -= 8 {
+		checkLenRem(i, i)
+		bitm8.Shrink(1)
+	}
+	bitm8.Grow(100)
+	for i := 0; i < bitm8.Len(); i += 2 {
+		bitm8.Set(i)
+	}
+	for i := 0; i <= 100; i += 2 {
+		checkLenRem(800-i*8, 400-i*4)
+		bitm8.Shrink(2)
+	}
+	checkLenRem(0, 0)
+}
+
 // check represents an expected Bitm.m[index] value.
 type check[T Uint] struct {
 	index int

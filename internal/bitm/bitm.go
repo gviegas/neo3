@@ -47,6 +47,39 @@ func (m *Bitm[T]) Grow(nplus int) {
 	m.m = append(m.m, zeroes[:nplus]...)
 }
 
+// Shrink resizes the map to contain nminus less Uints.
+// This in effect truncates the map, so the bits in the range
+//
+//	m.Len() - nminus*<number of bits in T> : m.Len()
+//
+// will be removed.
+// It is valid to call this method with any value of nminus.
+func (m *Bitm[T]) Shrink(nminus int) {
+	if nminus <= 0 {
+		return
+	}
+	n := len(m.m) - nminus
+	if n <= 0 {
+		m.m = m.m[:0]
+		m.rem = 0
+		return
+	}
+	for i := n; i < n+nminus; i++ {
+		switch m.m[i] {
+		case 0:
+			m.rem -= m.nbit()
+		case ^T(0):
+		default:
+			for x := ^m.m[i]; x != 0; x >>= 1 {
+				if x&1 == 1 {
+					m.rem--
+				}
+			}
+		}
+	}
+	m.m = m.m[:n]
+}
+
 // Set sets a given bit.
 func (m *Bitm[T]) Set(index int) {
 	n := m.nbit()
