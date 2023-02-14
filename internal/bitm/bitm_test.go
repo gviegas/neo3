@@ -53,8 +53,11 @@ func TestGrow(t *testing.T) {
 		{32, 2272},
 		{99, 5440},
 		{-1, 5440},
+		{32768, 1054016},
 	} {
-		bitm32.Grow(x.nplus)
+		if n, i := bitm32.Len(), bitm32.Grow(x.nplus); n != i {
+			t.Fatalf("bitm32.Grow:\nhave %d\nwant %d", i, n)
+		}
 		if n := bitm32.Len(); n != x.wantLen {
 			t.Fatalf("bitm32.Grow: Len:\nhave %d\nwant %d", n, x.wantLen)
 		}

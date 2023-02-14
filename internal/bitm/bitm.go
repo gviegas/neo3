@@ -30,25 +30,28 @@ func (m *Bitm[_]) Len() int { return len(m.m) * m.nbit() }
 func (m *Bitm[_]) Rem() int { return m.rem }
 
 // Grow resizes the map to contain nplus additional Uints.
-// The newly added extent will be available as a contiguous range
-// of unset bits, such that requesting a range of
+// The new extent will be appended as a contiguous range of
+// unset bits, such that requesting the range
 //
 //	nplus * <number of bits in T>
 //
 // is guaranteed to succeed.
+// It returns the value of m.Len prior to appending the new
+// extent, so if nplus is less than 1, this value will be
+// out of bounds.
 // It is valid to call this method with any value of nplus.
-func (m *Bitm[T]) Grow(nplus int) {
-	if nplus <= 0 {
-		return
+func (m *Bitm[T]) Grow(nplus int) (index int) {
+	index = m.Len()
+	if nplus > 0 {
+		m.rem += nplus * m.nbit()
+		var zeroes [16]T
+		for nplus > len(zeroes) {
+			m.m = append(m.m, zeroes[:]...)
+			nplus -= len(zeroes)
+		}
+		m.m = append(m.m, zeroes[:nplus]...)
 	}
-	m.rem += nplus * m.nbit()
-	var zeroes [16]T
-	for nplus > len(zeroes) {
-		m.m = append(m.m, zeroes[:]...)
-		nplus -= len(zeroes)
-	}
-	m.m = append(m.m, zeroes[:nplus]...)
-	//m.m = append(m.m, make([]T, nplus)...)
+	return
 }
 
 // Shrink resizes the map to contain nminus less Uints.
