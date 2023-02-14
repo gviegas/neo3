@@ -36,8 +36,11 @@ func (m *Bitm[_]) Rem() int { return m.rem }
 //	nplus * <number of bits in T>
 //
 // is guaranteed to succeed.
+// It is valid to call this method with any value of nplus.
 func (m *Bitm[T]) Grow(nplus int) {
-	//m.m = append(m.m, make([]T, nplus)...)
+	if nplus <= 0 {
+		return
+	}
 	m.rem += nplus * m.nbit()
 	var zeroes [16]T
 	for nplus > len(zeroes) {
@@ -45,6 +48,7 @@ func (m *Bitm[T]) Grow(nplus int) {
 		nplus -= len(zeroes)
 	}
 	m.m = append(m.m, zeroes[:nplus]...)
+	//m.m = append(m.m, make([]T, nplus)...)
 }
 
 // Shrink resizes the map to contain nminus less Uints.
