@@ -1,6 +1,6 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-package ctx
+package ctxt
 
 import (
 	"testing"

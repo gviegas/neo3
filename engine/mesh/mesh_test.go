@@ -8,10 +8,10 @@ import (
 
 	"github.com/gviegas/scene/driver"
 	_ "github.com/gviegas/scene/driver/vk"
-	"github.com/gviegas/scene/engine/internal/ctx"
+	"github.com/gviegas/scene/engine/internal/ctxt"
 )
 
-var gpu = ctx.GPU()
+var gpu = ctxt.GPU()
 
 func TestSemantic(t *testing.T) {
 	semantics := map[Semantic]struct {

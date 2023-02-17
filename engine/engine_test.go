@@ -5,25 +5,25 @@ package engine
 import (
 	"testing"
 
-	"github.com/gviegas/scene/engine/internal/ctx"
+	"github.com/gviegas/scene/engine/internal/ctxt"
 )
 
-func TestCtx(t *testing.T) {
-	drv := ctx.Driver()
+func TestCtxt(t *testing.T) {
+	drv := ctxt.Driver()
 	if drv == nil {
-		t.Fatal("ctx.Driver: unexpected nil driver.Driver")
+		t.Fatal("ctxt.Driver: unexpected nil driver.Driver")
 	}
-	gpu := ctx.GPU()
+	gpu := ctxt.GPU()
 	if gpu == nil {
-		t.Fatal("ctx.GPU: unexpected nil driver.GPU")
+		t.Fatal("ctxt.GPU: unexpected nil driver.GPU")
 	}
-	if d := ctx.Driver(); d != drv {
-		t.Fatalf("ctx.Driver: ctx mismatch\nhave %v\nwant %v", d, drv)
+	if d := ctxt.Driver(); d != drv {
+		t.Fatalf("ctxt.Driver: ctxt mismatch\nhave %v\nwant %v", d, drv)
 	}
-	if u := ctx.GPU(); u != gpu {
-		t.Fatalf("ctx.GPU: ctx mismatch\nhave %v\nwant %v", u, gpu)
+	if u := ctxt.GPU(); u != gpu {
+		t.Fatalf("ctxt.GPU: ctxt mismatch\nhave %v\nwant %v", u, gpu)
 	}
 	if u, err := drv.Open(); u != gpu || err != nil {
-		t.Fatalf("drv.Open: ctx mismatch\nhave %v, %v\nwant %v, nil", u, err, gpu)
+		t.Fatalf("drv.Open: ctxt mismatch\nhave %v, %v\nwant %v, nil", u, err, gpu)
 	}
 }

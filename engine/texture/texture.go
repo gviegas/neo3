@@ -8,7 +8,7 @@ import (
 	"errors"
 
 	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/engine/internal/ctx"
+	"github.com/gviegas/scene/engine/internal/ctxt"
 )
 
 const prefix = "texture: "
@@ -31,7 +31,7 @@ type TexParam struct {
 
 // New2D creates a 2D texture.
 func New2D(param *TexParam) (t *Texture, err error) {
-	limits := ctx.Limits()
+	limits := ctxt.Limits()
 	var reason string
 	switch {
 	case param == nil:
@@ -57,7 +57,7 @@ func New2D(param *TexParam) (t *Texture, err error) {
 	return
 validParam:
 	usg := driver.UShaderSample
-	img, err := ctx.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
+	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
 	if err == nil {
 		// TODO: Must call Image.Destroy when unreachable.
 		t = &Texture{img, usg, *param}
@@ -67,7 +67,7 @@ validParam:
 
 // NewCube creates a new cube texture.
 func NewCube(param *TexParam) (t *Texture, err error) {
-	limits := ctx.Limits()
+	limits := ctxt.Limits()
 	var reason string
 	switch {
 	case param == nil:
@@ -95,7 +95,7 @@ func NewCube(param *TexParam) (t *Texture, err error) {
 	return
 validParam:
 	usg := driver.UShaderSample
-	img, err := ctx.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, 1, usg)
+	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, 1, usg)
 	if err == nil {
 		// TODO: Must call Image.Destroy when unreachable.
 		t = &Texture{img, usg, *param}
@@ -105,7 +105,7 @@ validParam:
 
 // NewTarget creates a new render target texture.
 func NewTarget(param *TexParam) (t *Texture, err error) {
-	limits := ctx.Limits()
+	limits := ctxt.Limits()
 	var reason string
 	switch {
 	case param == nil:
@@ -131,7 +131,7 @@ func NewTarget(param *TexParam) (t *Texture, err error) {
 	return
 validParam:
 	usg := driver.UShaderSample | driver.URenderTarget
-	img, err := ctx.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
+	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
 	if err == nil {
 		// TODO: Must call Image.Destroy when unreachable.
 		t = &Texture{img, usg, *param}
@@ -189,7 +189,7 @@ func NewSampler(param *SplrParam) (s *Sampler, err error) {
 	err = errors.New(prefix + reason)
 	return
 validParam:
-	splr, err := ctx.GPU().NewSampler(param)
+	splr, err := ctxt.GPU().NewSampler(param)
 	if err == nil {
 		// TODO: Must call Sampler.Destroy when unreachable.
 		s = &Sampler{splr, *param}

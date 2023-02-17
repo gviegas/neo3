@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/engine/internal/ctx"
+	"github.com/gviegas/scene/engine/internal/ctxt"
 )
 
 // check checks that tex is valid.
@@ -130,7 +130,7 @@ func Test2D(t *testing.T) {
 	_, err = New2D(&TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D: driver.Dim3D{
-			Width:  1 + ctx.Limits().MaxImage2D,
+			Width:  1 + ctxt.Limits().MaxImage2D,
 			Height: 1024,
 			Depth:  0,
 		},
@@ -150,7 +150,7 @@ func Test2D(t *testing.T) {
 		PixelFmt: driver.RGBA8un,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
-			Height: 1 + ctx.Limits().MaxImage2D,
+			Height: 1 + ctxt.Limits().MaxImage2D,
 			Depth:  0,
 		},
 		Layers:  1,
@@ -172,7 +172,7 @@ func Test2D(t *testing.T) {
 			Height: 1024,
 			Depth:  0,
 		},
-		Layers:  1 + ctx.Limits().MaxLayers,
+		Layers:  1 + ctxt.Limits().MaxLayers,
 		Levels:  1,
 		Samples: 1,
 	})
@@ -331,7 +331,7 @@ func TestCube(t *testing.T) {
 	_, err = NewCube(&TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D: driver.Dim3D{
-			Width:  1 + ctx.Limits().MaxImageCube,
+			Width:  1 + ctxt.Limits().MaxImageCube,
 			Height: 1024,
 			Depth:  0,
 		},
@@ -351,7 +351,7 @@ func TestCube(t *testing.T) {
 		PixelFmt: driver.RGBA8un,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
-			Height: 1 + ctx.Limits().MaxImageCube,
+			Height: 1 + ctxt.Limits().MaxImageCube,
 			Depth:  0,
 		},
 		Layers:  6,
@@ -392,7 +392,7 @@ func TestCube(t *testing.T) {
 			Height: 1024,
 			Depth:  0,
 		},
-		Layers:  1 + ctx.Limits().MaxLayers,
+		Layers:  1 + ctxt.Limits().MaxLayers,
 		Levels:  1,
 		Samples: 1,
 	})
@@ -570,7 +570,7 @@ func TestTarget(t *testing.T) {
 	_, err = NewTarget(&TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D: driver.Dim3D{
-			Width:  1 + ctx.Limits().MaxRenderSize[0],
+			Width:  1 + ctxt.Limits().MaxRenderSize[0],
 			Height: 720,
 			Depth:  0,
 		},
@@ -590,7 +590,7 @@ func TestTarget(t *testing.T) {
 		PixelFmt: driver.RGBA8un,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
-			Height: 1 + ctx.Limits().MaxRenderSize[1],
+			Height: 1 + ctxt.Limits().MaxRenderSize[1],
 			Depth:  0,
 		},
 		Layers:  1,
@@ -612,7 +612,7 @@ func TestTarget(t *testing.T) {
 			Height: 720,
 			Depth:  0,
 		},
-		Layers:  1 + ctx.Limits().MaxRenderLayers,
+		Layers:  1 + ctxt.Limits().MaxRenderLayers,
 		Levels:  1,
 		Samples: 1,
 	})
