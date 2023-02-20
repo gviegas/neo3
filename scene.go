@@ -10,7 +10,7 @@ import (
 
 // Scene defines a scene graph.
 type Scene struct {
-	node.Graph
+	graph node.Graph
 	// TODO
 }
 
