@@ -20,7 +20,7 @@ var storage meshBuffer
 // capacity must be a multiple of 16384 bytes.
 // It returns the replaced buffer, if any.
 //
-// NOTE: Calls to this function invalidate all previously
+// Note: Calls to this function invalidate all previously
 // created meshes.
 func SetBuffer(buf driver.Buffer) driver.Buffer {
 	storage.mu.Lock()
@@ -72,8 +72,6 @@ func (b *meshBuffer) link(prim Primitive, next Primitive) {
 		panic("attempt to link primitives from different buffers")
 	}
 	b.prims[prim.index].next = next.index
-	// TODO: Will primitive.prev ever be used?
-	b.prims[next.index].prev = prim.index
 }
 
 // primitive is an entry in a mesh buffer.
@@ -89,11 +87,11 @@ type primitive struct {
 		format driver.IndexFmt
 		span
 	}
-	// Indices into meshBuffer.prims defining
-	// a primitive list. Only used by meshes
-	// with multiple primitives.
+	// Index into meshBuffer.prims identifying
+	// the next primitive of a mesh. Whether
+	// this value is meaningful or not depends
+	// on the Mesh.primLen field.
 	next int
-	prev int
 }
 
 // span defines a buffer range in number of blocks.
