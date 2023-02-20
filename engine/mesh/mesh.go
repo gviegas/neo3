@@ -127,7 +127,6 @@ func newPrimitive(data *Data, index int) (p Primitive, err error) {
 	pdata := &data.Primitives[index]
 	var reason string
 	switch {
-	// TODO: Check topology against vertex/index count.
 	case pdata.VertexCount < 0:
 		reason = "invalid vertex count"
 	case pdata.SemanticMask&Position == 0:
@@ -135,6 +134,33 @@ func newPrimitive(data *Data, index int) (p Primitive, err error) {
 	case pdata.IndexCount > 0 && pdata.Index.Src >= len(data.Srcs):
 		reason = "index data source out of bounds"
 	default:
+		var cnt = pdata.VertexCount
+		if x := pdata.IndexCount; x > 0 {
+			cnt = x
+		}
+		switch pdata.Topology {
+		case driver.TPoint:
+		case driver.TLine:
+			if cnt&1 != 0 {
+				reason = "invalid count for driver.TLine"
+				goto invalidData
+			}
+		case driver.TLnStrip:
+			if cnt < 2 {
+				reason = "invalid count for driver.TLnStrip"
+				goto invalidData
+			}
+		case driver.TTriangle:
+			if cnt%3 != 0 {
+				reason = "invalid count for driver.TTriangle"
+				goto invalidData
+			}
+		case driver.TTriStrip:
+			if cnt < 3 {
+				reason = "invalid count for driver.TTriStrip"
+				goto invalidData
+			}
+		}
 		for i := range pdata.Semantics {
 			if pdata.SemanticMask&(1<<i) == 0 {
 				continue
