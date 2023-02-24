@@ -44,9 +44,10 @@ type node struct {
 
 // data is the node's data.
 type data struct {
-	local Interface
-	world linear.M4
-	node  Node
+	local   Interface
+	world   linear.M4
+	ignored bool
+	node    Node
 }
 
 // Graph is a node graph.
@@ -150,7 +151,7 @@ func (g *Graph) Insert(n Interface, prev Node) Node {
 	g.nodes[newn-1].data = len(g.data)
 	var world linear.M4
 	world.I()
-	g.data = append(g.data, data{n, world, newn})
+	g.data = append(g.data, data{n, world, false, newn})
 	return newn
 }
 
@@ -223,6 +224,17 @@ func (g *Graph) Remove(n Node) []Interface {
 		g.cache.nodes = stk
 	}
 	return ns
+}
+
+// Ignore sets whether a node and its descendants are
+// ignored by graph updates.
+// If n is not Nil, it must belong to g.
+func (g *Graph) Ignore(n Node, ignore bool) {
+	if n == Nil {
+		return
+	}
+	data := g.nodes[n-1].data
+	g.data[data].ignored = ignore
 }
 
 // Get returns the Interface of a given Node.
