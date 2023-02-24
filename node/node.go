@@ -263,8 +263,8 @@ func (g *Graph) World(n Node) *linear.M4 {
 
 // SetWorld sets the global world transform.
 // Since the global world transform applies to every
-// unconnected node, calling this method will
-// invalidate the whole world.
+// root node, calling this method will invalidate
+// the whole world.
 func (g *Graph) SetWorld(w linear.M4) {
 	g.world = w
 	g.wasSet = true
@@ -274,11 +274,14 @@ func (g *Graph) SetWorld(w linear.M4) {
 // Update updates the graph to reflect the state of
 // its nodes' transforms.
 func (g *Graph) Update() {
-	// Do a depth traversal of every unconnected
-	// (root) node and update any sub-graph
+	// Do a depth traversal of every root node
+	// and update any non-ignored sub-graph
 	// rooted at a node that has changed.
 	for n := g.next; n != Nil; n = g.nodes[n-1].next {
 		data := g.nodes[n-1].data
+		if g.data[data].ignored {
+			continue
+		}
 		// Evaluate Interface.Changed exactly once.
 		changed := g.data[data].local.Changed() || g.changed
 		if changed {
@@ -298,7 +301,7 @@ func (g *Graph) Update() {
 		dstk := append(g.dataCache(), data)
 		cstk := append(g.changedCache(), changed)
 		for last := len(nstk) - 1; last >= 0; last = len(nstk) - 1 {
-			// Some descendant of the unconnected n.
+			// Some descendant of n.
 			nsub := nstk[last]
 			nstk = nstk[:last]
 			// Data of the immediate ancestor of nsub.
@@ -314,6 +317,9 @@ func (g *Graph) Update() {
 					cstk = append(cstk, chgd)
 				}
 				data := g.nodes[nsub-1].data
+				if g.data[data].ignored {
+					break
+				}
 				// This will only affect descendants
 				// since the next sibling (if any)
 				// is already on the stack.
