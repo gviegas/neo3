@@ -499,31 +499,31 @@ func convVertexFmt(vf driver.VertexFmt) C.VkFormat {
 	case driver.Int32x4:
 		return C.VK_FORMAT_R32G32B32A32_SINT
 
-	case driver.UInt8:
+	case driver.Uint8:
 		return C.VK_FORMAT_R8_UINT
-	case driver.UInt8x2:
+	case driver.Uint8x2:
 		return C.VK_FORMAT_R8G8_UINT
-	case driver.UInt8x3:
+	case driver.Uint8x3:
 		return C.VK_FORMAT_R8G8B8_UINT
-	case driver.UInt8x4:
+	case driver.Uint8x4:
 		return C.VK_FORMAT_R8G8B8A8_UINT
 
-	case driver.UInt16:
+	case driver.Uint16:
 		return C.VK_FORMAT_R16_UINT
-	case driver.UInt16x2:
+	case driver.Uint16x2:
 		return C.VK_FORMAT_R16G16_UINT
-	case driver.UInt16x3:
+	case driver.Uint16x3:
 		return C.VK_FORMAT_R16G16B16_UINT
-	case driver.UInt16x4:
+	case driver.Uint16x4:
 		return C.VK_FORMAT_R16G16B16A16_UINT
 
-	case driver.UInt32:
+	case driver.Uint32:
 		return C.VK_FORMAT_R32_UINT
-	case driver.UInt32x2:
+	case driver.Uint32x2:
 		return C.VK_FORMAT_R32G32_UINT
-	case driver.UInt32x3:
+	case driver.Uint32x3:
 		return C.VK_FORMAT_R32G32B32_UINT
-	case driver.UInt32x4:
+	case driver.Uint32x4:
 		return C.VK_FORMAT_R32G32B32A32_UINT
 
 	case driver.Float32:

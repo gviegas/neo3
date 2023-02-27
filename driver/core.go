@@ -531,41 +531,44 @@ type VertexFmt int
 // Vertex formats.
 const (
 	// Signed 8-bit integer, 1-4 components.
-	Int8 VertexFmt = iota
-	Int8x2
-	Int8x3
-	Int8x4
+	Int8   VertexFmt = iota | 1<<16
+	Int8x2 VertexFmt = iota | 2<<16
+	Int8x3 VertexFmt = iota | 3<<16
+	Int8x4 VertexFmt = iota | 4<<16
 	// Signed 16-bit integer, 1-4 components.
-	Int16
-	Int16x2
-	Int16x3
-	Int16x4
+	Int16   VertexFmt = iota | 2<<16
+	Int16x2 VertexFmt = iota | 4<<16
+	Int16x3 VertexFmt = iota | 6<<16
+	Int16x4 VertexFmt = iota | 8<<16
 	// Signed 32-bit integer, 1-4 components.
-	Int32
-	Int32x2
-	Int32x3
-	Int32x4
+	Int32   VertexFmt = iota | 4<<16
+	Int32x2 VertexFmt = iota | 8<<16
+	Int32x3 VertexFmt = iota | 12<<16
+	Int32x4 VertexFmt = iota | 16<<16
 	// Unsigned 8-bit integer, 1-4 components.
-	UInt8
-	UInt8x2
-	UInt8x3
-	UInt8x4
+	Uint8   VertexFmt = iota | 1<<16
+	Uint8x2 VertexFmt = iota | 2<<16
+	Uint8x3 VertexFmt = iota | 3<<16
+	Uint8x4 VertexFmt = iota | 4<<16
 	// Unsigned 16-bit integer, 1-4 components.
-	UInt16
-	UInt16x2
-	UInt16x3
-	UInt16x4
+	Uint16   VertexFmt = iota | 2<<16
+	Uint16x2 VertexFmt = iota | 4<<16
+	Uint16x3 VertexFmt = iota | 6<<16
+	Uint16x4 VertexFmt = iota | 8<<16
 	// Unsigned 32-bit integer, 1-4 components.
-	UInt32
-	UInt32x2
-	UInt32x3
-	UInt32x4
+	Uint32   VertexFmt = iota | 4<<16
+	Uint32x2 VertexFmt = iota | 8<<16
+	Uint32x3 VertexFmt = iota | 12<<16
+	Uint32x4 VertexFmt = iota | 16<<16
 	// Single precision floating-point, 1-4 components.
-	Float32
-	Float32x2
-	Float32x3
-	Float32x4
+	Float32   VertexFmt = iota | 4<<16
+	Float32x2 VertexFmt = iota | 8<<16
+	Float32x3 VertexFmt = iota | 12<<16
+	Float32x4 VertexFmt = iota | 16<<16
 )
+
+// Size returns the VertexFmt's size in bytes.
+func (f VertexFmt) Size() int { return int(f >> 16) }
 
 // VertexIn describes a vertex input.
 // Consecutive vertices are fetched Stride bytes apart.
