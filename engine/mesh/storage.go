@@ -24,8 +24,8 @@ var storage meshBuffer
 // Note: Calls to this function invalidate all previously
 // created meshes.
 func SetBuffer(buf driver.Buffer) driver.Buffer {
-	storage.mu.Lock()
-	defer storage.mu.Unlock()
+	storage.Lock()
+	defer storage.Unlock()
 	switch buf {
 	case storage.buf:
 		return nil
@@ -54,7 +54,7 @@ type meshBuffer struct {
 	spanMap bitm.Bitm[uint32]
 	primMap bitm.Bitm[uint16]
 	prims   []primitive
-	mu      sync.Mutex
+	sync.Mutex
 }
 
 const (
@@ -68,8 +68,8 @@ const (
 // It returns a span identifying the buffer range where
 // the data was stored.
 func (b *meshBuffer) store(src io.ReadSeeker, off, byteLen int) (span, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.Lock()
+	defer b.Unlock()
 	nb := (byteLen + (blockSize - 1)) &^ (blockSize - 1)
 	ns := nb / blockSize
 	is, ok := b.spanMap.SearchRange(ns)
@@ -121,8 +121,8 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (Primit
 // This is only relevant for meshes that contain multiple
 // primitives.
 func (b *meshBuffer) link(prim Primitive, next Primitive) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.Lock()
+	defer b.Unlock()
 	if prim.bufIdx != next.bufIdx {
 		panic("attempt to link primitives from different buffers")
 	}
