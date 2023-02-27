@@ -3,6 +3,7 @@
 package mesh
 
 import (
+	"errors"
 	"io"
 	"sync"
 
@@ -114,8 +115,63 @@ func (b *meshBuffer) store(src io.ReadSeeker, off int64, byteLen int) (span, err
 
 // newEntry creates a new entry in the buffer containing
 // the primitive specified by data.
-func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (Primitive, error) {
-	panic("not implemented")
+func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Primitive, err error) {
+	prim := primitive{
+		topology: data.Topology,
+		mask:     data.SemanticMask,
+		next:     -1,
+	}
+	if data.IndexCount != 0 {
+		prim.count = data.IndexCount
+		prim.index.format = data.Index.Format
+		var isz int
+		switch prim.index.format {
+		case driver.Index16:
+			isz = 2
+		case driver.Index32:
+			isz = 4
+		default:
+			err = errors.New(prefix + "invalid driver.IndexFmt value")
+		}
+		prim.index.span, err = b.store(srcs[data.Index.Src], data.Index.Offset, prim.count*isz)
+		if err != nil {
+			return
+		}
+	} else {
+		prim.count = data.VertexCount
+	}
+	for i := range data.Semantics {
+		sem := Semantic(1 << i)
+		if data.SemanticMask&sem == 0 {
+			continue
+		}
+		fmt := data.Semantics[i].Format
+		src := srcs[data.Semantics[i].Src]
+		off := data.Semantics[i].Offset
+		src, off, err = sem.conv(fmt, src, off, prim.count)
+		if err != nil {
+			panic("TODO: free spans")
+			return
+		}
+		fmt = sem.format()
+		prim.vertex[i].format = fmt
+		prim.vertex[i].span, err = b.store(src, off, prim.count*fmt.Size())
+		if err != nil {
+			panic("TODO: free spans")
+			return
+		}
+	}
+	if i, ok := b.primMap.Search(); !ok {
+		// TODO: Grow exponentially.
+		var z [primMapNBit]primitive
+		b.prims = append(b.prims, z[:]...)
+		p.index = b.primMap.Grow(1)
+	} else {
+		p.index = i
+	}
+	b.primMap.Set(p.index)
+	// Currently, p.bufIdx is always 0.
+	return
 }
 
 // link links a primitive entry to another.
