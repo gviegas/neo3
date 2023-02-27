@@ -68,7 +68,7 @@ const (
 // off is relative to io.SeekStart.
 // It returns a span identifying the buffer range where
 // the data was stored.
-func (b *meshBuffer) store(src io.ReadSeeker, off, byteLen int) (span, error) {
+func (b *meshBuffer) store(src io.ReadSeeker, off int64, byteLen int) (span, error) {
 	b.Lock()
 	defer b.Unlock()
 	nb := (byteLen + (blockSize - 1)) &^ (blockSize - 1)
@@ -94,7 +94,7 @@ func (b *meshBuffer) store(src io.ReadSeeker, off, byteLen int) (span, error) {
 		b.buf = buf
 		is = b.spanMap.Grow(nplus)
 	}
-	if _, err := src.Seek(int64(off), io.SeekStart); err != nil {
+	if _, err := src.Seek(off, io.SeekStart); err != nil {
 		return span{}, err
 	}
 	slc := b.buf.Bytes()[is*blockSize : is*blockSize+byteLen]
