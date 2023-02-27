@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gviegas/scene/driver"
+	"github.com/gviegas/scene/engine/internal/ctxt"
 	"github.com/gviegas/scene/internal/bitm"
 )
 
@@ -54,6 +55,60 @@ type meshBuffer struct {
 	primMap bitm.Bitm[uint16]
 	prims   []primitive
 	mu      sync.Mutex
+}
+
+const (
+	spanMapNBit = 32
+	primMapNBit = 16
+)
+
+// store reads byteLen bytes from src at offset off and
+// writes this data into the GPU buffer.
+// off is relative to io.SeekStart.
+// It returns a span identifying the buffer range where
+// the data was stored.
+func (b *meshBuffer) store(src io.ReadSeeker, off, byteLen int) (span, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	nb := (byteLen + (blockSize - 1)) &^ (blockSize - 1)
+	ns := nb / blockSize
+	is, ok := b.spanMap.SearchRange(ns)
+	if !ok {
+		// TODO: Reconsider the growth strategy here.
+		// Currently, it assumes that SetBuffer will
+		// be called with a sensibly sized buffer and
+		// that reallocations will not happen often,
+		// so it optimizes for space.
+		nplus := (ns + (spanMapNBit - 1)) / spanMapNBit
+		bcap := int64(b.spanMap.Len()+nplus*spanMapNBit) * blockSize
+		buf, err := ctxt.GPU().NewBuffer(bcap, true, driver.UVertexData|driver.UIndexData)
+		if err != nil {
+			return span{}, err
+		}
+		if b.buf != nil {
+			// TODO: Do this copy through the GPU.
+			copy(buf.Bytes(), b.buf.Bytes())
+			b.buf.Destroy()
+		}
+		b.buf = buf
+		is = b.spanMap.Grow(nplus)
+	}
+	if _, err := src.Seek(int64(off), io.SeekStart); err != nil {
+		return span{}, err
+	}
+	slc := b.buf.Bytes()[is*blockSize : is*blockSize+byteLen]
+	for len(slc) > 0 {
+		switch n, err := src.Read(slc); {
+		case n > 0:
+			slc = slc[n:]
+		case err != nil:
+			return span{}, err
+		}
+	}
+	for i := 0; i < ns; i++ {
+		b.spanMap.Set(is + i)
+	}
+	return span{is, is + ns}, nil
 }
 
 // newEntry creates a new entry in the buffer containing
