@@ -53,6 +53,35 @@ func (s Semantic) I() (i int) {
 	return
 }
 
+// format returns the driver.VertexFmt that the engine uses for
+// storing s's data.
+//
+// TODO: Consider allowing alternative formats if it justifies
+// the added complexity.
+func (s Semantic) format() (f driver.VertexFmt) {
+	switch s {
+	case Position:
+		f = driver.Float32x3
+	case Normal:
+		f = driver.Float32x3
+	case Tangent:
+		f = driver.Float32x4
+	case TexCoord0:
+		f = driver.Float32x2
+	case TexCoord1:
+		f = driver.Float32x2
+	case Color0:
+		f = driver.Float32x4
+	case Joints0:
+		f = driver.Uint16x4
+	case Weights0:
+		f = driver.Float32x4
+	default:
+		panic("invalid Semantic value")
+	}
+	return
+}
+
 // PrimitiveData describes the data layout of a mesh's primitive.
 type PrimitiveData struct {
 	Topology    driver.Topology
