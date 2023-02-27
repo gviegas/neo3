@@ -21,7 +21,7 @@ var storage meshBuffer
 // capacity must be a multiple of 16384 bytes.
 // It returns the replaced buffer, if any.
 //
-// Note: Calls to this function invalidate all previously
+// NOTE: Calls to this function invalidate all previously
 // created meshes.
 func SetBuffer(buf driver.Buffer) driver.Buffer {
 	storage.Lock()
@@ -31,11 +31,12 @@ func SetBuffer(buf driver.Buffer) driver.Buffer {
 		return nil
 	case nil:
 		storage.spanMap = bitm.Bitm[uint32]{}
+		storage.primMap = bitm.Bitm[uint16]{}
 		storage.prims = nil
 	default:
 		c := buf.Cap()
-		n := c / (blockSize * 32)
-		if n > int64(^uint(0)>>1) || c != n*(blockSize*32) {
+		n := c / (blockSize * spanMapNBit)
+		if n > int64(^uint(0)>>1) || c != n*(blockSize*spanMapNBit) {
 			panic("invalid mesh buffer capacity")
 		}
 		storage.spanMap = bitm.Bitm[uint32]{}
