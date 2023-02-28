@@ -198,7 +198,7 @@ func TestStore(t *testing.T) {
 		blockSize + 1,
 		blockSize - 1,
 	} {
-		s, err := b.store(newSrc(x, byte(i+1)), 0, x)
+		s, err := b.store(newSrc(x, byte(i+1)), x)
 		check(s, err, x, byte(i+1))
 		spans[i] = s
 		acc += x

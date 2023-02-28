@@ -84,12 +84,12 @@ func (s Semantic) format() (f driver.VertexFmt) {
 
 // conv converts semantic data from a given driver.VertexFmt into
 // the one which the engine expects.
-// If fmt is the expected format (i.e., s.format()), then no
-// conversion is done and it returns (src, off, nil).
-func (s Semantic) conv(fmt driver.VertexFmt, src io.ReadSeeker, off int64, cnt int) (io.ReadSeeker, int64, error) {
+// If fmt is the expected format (i.e., s.format()), then nothing
+// is done and it returns (src, nil).
+func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader, error) {
 	f := s.format()
 	if f == fmt {
-		return src, off, nil
+		return src, nil
 	}
 	panic("unfinished")
 }

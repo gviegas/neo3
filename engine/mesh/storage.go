@@ -64,12 +64,11 @@ const (
 	primMapNBit = 16
 )
 
-// store reads byteLen bytes from src at offset off and
-// writes this data into the GPU buffer.
-// off is relative to io.SeekStart.
+// store reads byteLen bytes from src and writes the data
+// into the GPU buffer.
 // It returns a span identifying the buffer range where
 // the data was stored.
-func (b *meshBuffer) store(src io.ReadSeeker, off int64, byteLen int) (span, error) {
+func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
 	b.Lock()
 	defer b.Unlock()
 	nb := (byteLen + (blockSize - 1)) &^ (blockSize - 1)
@@ -94,9 +93,6 @@ func (b *meshBuffer) store(src io.ReadSeeker, off int64, byteLen int) (span, err
 		}
 		b.buf = buf
 		is = b.spanMap.Grow(nplus)
-	}
-	if _, err := src.Seek(off, io.SeekStart); err != nil {
-		return span{}, err
 	}
 	slc := b.buf.Bytes()[is*blockSize : is*blockSize+byteLen]
 	for len(slc) > 0 {
@@ -133,8 +129,12 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Prim
 		default:
 			err = errors.New(prefix + "invalid driver.IndexFmt value")
 		}
-		prim.index.span, err = b.store(srcs[data.Index.Src], data.Index.Offset, prim.count*isz)
-		if err != nil {
+		src := srcs[data.Index.Src]
+		off := data.Index.Offset
+		if _, err = src.Seek(off, io.SeekStart); err != nil {
+			return
+		}
+		if prim.index.span, err = b.store(src, prim.count*isz); err != nil {
 			return
 		}
 	} else {
@@ -148,15 +148,18 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Prim
 		fmt := data.Semantics[i].Format
 		src := srcs[data.Semantics[i].Src]
 		off := data.Semantics[i].Offset
-		src, off, err = sem.conv(fmt, src, off, prim.count)
-		if err != nil {
+		if _, err = src.Seek(off, io.SeekStart); err != nil {
+			panic("TODO: free spans")
+			return
+		}
+		var conv io.Reader
+		if conv, err = sem.conv(fmt, src, prim.count); err != nil {
 			panic("TODO: free spans")
 			return
 		}
 		fmt = sem.format()
 		prim.vertex[i].format = fmt
-		prim.vertex[i].span, err = b.store(src, off, prim.count*fmt.Size())
-		if err != nil {
+		if prim.vertex[i].span, err = b.store(conv, prim.count*fmt.Size()); err != nil {
 			panic("TODO: free spans")
 			return
 		}
