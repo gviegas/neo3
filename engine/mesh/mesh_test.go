@@ -15,31 +15,28 @@ import (
 var gpu = ctxt.GPU()
 
 func TestSemantic(t *testing.T) {
-	semantics := map[Semantic]struct {
-		i int
-		s string
-	}{
-		Position:  {0, "Position"},
-		Normal:    {1, "Normal"},
-		Tangent:   {2, "Tangent"},
-		TexCoord0: {3, "TexCoord0"},
-		TexCoord1: {4, "TexCoord1"},
-		Color0:    {5, "Color0"},
-		Joints0:   {6, "Joints0"},
-		Weights0:  {7, "Weights0"},
+	semantics := map[Semantic]int{
+		Position:  0,
+		Normal:    1,
+		Tangent:   2,
+		TexCoord0: 3,
+		TexCoord1: 4,
+		Color0:    5,
+		Joints0:   6,
+		Weights0:  7,
 	}
 	if x := len(semantics); x != MaxSemantic {
 		t.Fatalf("MaxSemantic:\nhave %d\nwant %d", MaxSemantic, x)
 	}
 	// The I values are used in shader code.
 	for k, v := range semantics {
-		if i := k.I(); i != v.i {
-			t.Fatalf("Semantic.I: %s\nhave: %d\nwant %d", v.s, i, v.i)
+		if i := k.I(); i != v {
+			t.Fatalf("Semantic.I: %s\nhave: %d\nwant %d", k, i, v)
 		}
 	}
 	s := fmt.Sprintf("A mesh can have up to %d semantics, whose IDs are:", MaxSemantic)
-	for _, v := range semantics {
-		s += fmt.Sprintf("\n\t%s: %d", v.s, v.i)
+	for k, v := range semantics {
+		s += fmt.Sprintf("\n\t%s: %d", k, v)
 	}
 	t.Log(s)
 }

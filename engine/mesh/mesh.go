@@ -53,6 +53,30 @@ func (s Semantic) I() (i int) {
 	return
 }
 
+// String implements fmt.Stringer.
+func (s Semantic) String() string {
+	switch s {
+	case Position:
+		return "Position"
+	case Normal:
+		return "Normal"
+	case Tangent:
+		return "Tangent"
+	case TexCoord0:
+		return "TexCoord0"
+	case TexCoord1:
+		return "TexCoord1"
+	case Color0:
+		return "Color0"
+	case Joints0:
+		return "Joints0"
+	case Weights0:
+		return "Weights0"
+	default:
+		return "[!] invalid Semantic value"
+	}
+}
+
 // format returns the driver.VertexFmt that the engine uses for
 // storing s's data.
 //
