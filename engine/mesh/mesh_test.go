@@ -6,7 +6,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 	"testing"
+	"unsafe"
 
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/engine/internal/ctxt"
@@ -211,4 +213,340 @@ func TestStore(t *testing.T) {
 	t.Logf("buffer utilization: %.3f%% (%d bytes of %d are unused)", float64(acc)/float64(bcap)*100, bcap-acc, bcap)
 
 	b.buf.Destroy()
+}
+
+func TestConv(t *testing.T) {
+	const n = 4096 * 16
+	f32 := make([]float32, n)
+	u16 := make([]uint16, n)
+	u8 := make([]uint8, n)
+	for i := 0; i < n; i++ {
+		switch i % 5 {
+		case 0:
+			f32[i] = 1
+			u16[i] = 65535
+			u8[i] = 255
+		case 1:
+			f32[i] = 0.5
+			u16[i] = 32768
+			u8[i] = 128
+		case 2:
+			f32[i] = 0.25
+			u16[i] = 16384
+			u8[i] = 64
+		case 3:
+			f32[i] = 0.125
+			u16[i] = 8192
+			u8[i] = 32
+		case 4:
+			f32[i] = 0
+			u16[i] = 0
+			u8[i] = 0
+		}
+	}
+	b32 := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(f32))), n*4)
+	r32 := bytes.NewReader(b32)
+	b16 := unsafe.Slice((*byte)(unsafe.Pointer(unsafe.SliceData(u16))), n*2)
+	r16 := bytes.NewReader(b16)
+	r8 := bytes.NewReader(u8)
+
+	// No conversion needed.
+	for i := 0; i < MaxSemantic; i++ {
+		sem := Semantic(1 << i)
+		r, err := sem.conv(sem.format(), r8, n/sem.format().Size())
+		if r != r8 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+	}
+
+	// Not convertible.
+	var finval = [...]driver.VertexFmt{
+		driver.Int8, driver.Int8x2, driver.Int8x3, driver.Int8x4,
+		driver.Int16, driver.Int16x2, driver.Int16x3, driver.Int16x4,
+		driver.Int32, driver.Int32x2, driver.Int32x3, driver.Int32x4,
+		driver.Uint8,
+		driver.Uint16,
+		driver.Uint32, driver.Uint32x2, driver.Uint32x3, driver.Uint32x4,
+		driver.Float32,
+	}
+	var fmts [MaxSemantic][]driver.VertexFmt
+	fmts[Position.I()] = append(append([]driver.VertexFmt{},
+		driver.Uint8x2, driver.Uint8x3, driver.Uint8x4,
+		driver.Uint16x2, driver.Uint16x3, driver.Uint16x4,
+		driver.Float32x2, driver.Float32x4,
+	), finval[:]...)
+	fmts[Normal.I()] = append([]driver.VertexFmt{}, fmts[Position.I()]...)
+	fmts[Tangent.I()] = append(append([]driver.VertexFmt{},
+		driver.Uint8x2, driver.Uint8x3, driver.Uint8x4,
+		driver.Uint16x2, driver.Uint16x3, driver.Uint16x4,
+		driver.Float32x2, driver.Float32x3,
+	), finval[:]...)
+	fmts[TexCoord0.I()] = append(append([]driver.VertexFmt{},
+		driver.Uint8x3, driver.Uint8x4,
+		driver.Uint16x3, driver.Uint16x4,
+		driver.Float32x3, driver.Float32x4,
+	), finval[:]...)
+	fmts[TexCoord1.I()] = append([]driver.VertexFmt{}, fmts[TexCoord0.I()]...)
+	fmts[Color0.I()] = append(append([]driver.VertexFmt{},
+		driver.Uint8x2,
+		driver.Uint16x2,
+		driver.Float32x2,
+	), finval[:]...)
+	fmts[Joints0.I()] = append(append([]driver.VertexFmt{},
+		driver.Uint8x2, driver.Uint8x3,
+		driver.Uint16x2, driver.Uint16x3,
+		driver.Float32x2, driver.Float32x3, driver.Float32x4,
+	), finval[:]...)
+	fmts[Weights0.I()] = append(append([]driver.VertexFmt{},
+		driver.Uint8x2, driver.Uint8x3,
+		driver.Uint16x2, driver.Uint16x3,
+		driver.Float32x2, driver.Float32x3,
+	), finval[:]...)
+	for i := range fmts {
+		sem := Semantic(1 << i)
+		for _, f := range fmts[i] {
+			r, err := sem.conv(f, r8, n/f.Size())
+			if r != nil || err == nil {
+				t.Fatalf("%s.conv: unexpected result: (%v, nil)", sem, r)
+			}
+			if !strings.HasPrefix(err.Error(), prefix) {
+				t.Fatalf("%s.conv: unexpected error: %#v", sem, err)
+			}
+			r8.Seek(0, io.SeekStart)
+		}
+	}
+
+	var dst [16]byte
+	cnts := [...]int{1, 2, 3, 4, 6, 9, 12, 24, 36, n / 900, n / 512, n / 256, n / 128, n / 64, n / 32, n / 16}
+	convUn16 := func(x uint16) float32 { return float32(x) / 65535 }
+	convUn8 := func(x uint8) float32 { return float32(x) / 255 }
+
+	// TexCoord0 and TexCoord1.
+	for _, cnt := range cnts {
+		for _, sem := range [2]Semantic{TexCoord0, TexCoord1} {
+			r16.Seek(0, io.SeekStart)
+			r, err := sem.conv(driver.Uint16x2, r16, cnt)
+			if r == r16 || err != nil {
+				t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+			}
+			for i := 0; i < cnt; i++ {
+				if n, _ := r.Read(dst[:8]); n != 8 {
+					t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 8", sem, n)
+				}
+				u := *(*float32)(unsafe.Pointer(&dst))
+				v := *(*float32)(unsafe.Pointer(&dst[4]))
+				x := convUn16(u16[i*2])
+				y := convUn16(u16[i*2+1])
+				if x != u || y != v {
+					t.Fatalf("%s.conv: bad conversion:\nhave %f, %f\nwant %f, %f", sem, u, v, x, y)
+				}
+			}
+
+			r8.Seek(0, io.SeekStart)
+			r, err = sem.conv(driver.Uint8x2, r8, cnt)
+			if r == r8 || err != nil {
+				t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+			}
+			for i := 0; i < cnt; i++ {
+				if n, _ := r.Read(dst[:8]); n != 8 {
+					t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 8", sem, n)
+				}
+				u := *(*float32)(unsafe.Pointer(&dst))
+				v := *(*float32)(unsafe.Pointer(&dst[4]))
+				x := convUn8(u8[i*2])
+				y := convUn8(u8[i*2+1])
+				if x != u || y != v {
+					t.Fatalf("%s.conv: bad conversion:\nhave %f, %f\nwant %f, %f", sem, u, v, x, y)
+				}
+			}
+		}
+	}
+
+	// Color0.
+	for _, cnt := range cnts {
+		sem := Color0
+		r32.Seek(0, io.SeekStart)
+		r, err := sem.conv(driver.Float32x3, r32, cnt)
+		if r == r32 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+		for i := 0; i < cnt; i++ {
+			if n, _ := r.Read(dst[:]); n != 16 {
+				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
+			}
+			r := *(*float32)(unsafe.Pointer(&dst))
+			g := *(*float32)(unsafe.Pointer(&dst[4]))
+			b := *(*float32)(unsafe.Pointer(&dst[8]))
+			a := *(*float32)(unsafe.Pointer(&dst[12]))
+			x := f32[i*3]
+			y := f32[i*3+1]
+			z := f32[i*3+2]
+			w := float32(1)
+			if x != r || y != g || z != b || w != a {
+				t.Fatalf("%s.conv: bad conversion:\nhave %f, %f, %f, %f\nwant %f, %f, %f, %f", sem, r, g, b, a, x, y, z, w)
+			}
+		}
+
+		r16.Seek(0, io.SeekStart)
+		r, err = sem.conv(driver.Uint16x4, r16, cnt)
+		if r == r16 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+		for i := 0; i < cnt; i++ {
+			if n, _ := r.Read(dst[:16]); n != 16 {
+				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
+			}
+			r := *(*float32)(unsafe.Pointer(&dst))
+			g := *(*float32)(unsafe.Pointer(&dst[4]))
+			b := *(*float32)(unsafe.Pointer(&dst[8]))
+			a := *(*float32)(unsafe.Pointer(&dst[12]))
+			x := convUn16(u16[i*4])
+			y := convUn16(u16[i*4+1])
+			z := convUn16(u16[i*4+2])
+			w := convUn16(u16[i*4+3])
+			if x != r || y != g || z != b || w != a {
+				t.Fatalf("%s.conv: bad conversion:\nhave %f, %f, %f, %f\nwant %f, %f, %f, %f", sem, r, g, b, a, x, y, z, w)
+			}
+		}
+
+		r16.Seek(0, io.SeekStart)
+		r, err = sem.conv(driver.Uint16x3, r16, cnt)
+		if r == r16 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+		for i := 0; i < cnt; i++ {
+			if n, _ := r.Read(dst[:16]); n != 16 {
+				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
+			}
+			r := *(*float32)(unsafe.Pointer(&dst))
+			g := *(*float32)(unsafe.Pointer(&dst[4]))
+			b := *(*float32)(unsafe.Pointer(&dst[8]))
+			a := *(*float32)(unsafe.Pointer(&dst[12]))
+			x := convUn16(u16[i*3])
+			y := convUn16(u16[i*3+1])
+			z := convUn16(u16[i*3+2])
+			w := float32(1)
+			if x != r || y != g || z != b || w != a {
+				t.Fatalf("%s.conv: bad conversion:\nhave %f, %f, %f, %f\nwant %f, %f, %f, %f", sem, r, g, b, a, x, y, z, w)
+			}
+		}
+
+		r8.Seek(0, io.SeekStart)
+		r, err = sem.conv(driver.Uint8x4, r8, cnt)
+		if r == r8 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+		for i := 0; i < cnt; i++ {
+			if n, _ := r.Read(dst[:16]); n != 16 {
+				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
+			}
+			r := *(*float32)(unsafe.Pointer(&dst))
+			g := *(*float32)(unsafe.Pointer(&dst[4]))
+			b := *(*float32)(unsafe.Pointer(&dst[8]))
+			a := *(*float32)(unsafe.Pointer(&dst[12]))
+			x := convUn8(u8[i*4])
+			y := convUn8(u8[i*4+1])
+			z := convUn8(u8[i*4+2])
+			w := convUn8(u8[i*4+3])
+			if x != r || y != g || z != b || w != a {
+				t.Fatalf("%s.conv: bad conversion:\nhave %f, %f, %f, %f\nwant %f, %f, %f, %f", sem, r, g, b, a, x, y, z, w)
+			}
+		}
+
+		r8.Seek(0, io.SeekStart)
+		r, err = sem.conv(driver.Uint8x3, r8, cnt)
+		if r == r8 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+		for i := 0; i < cnt; i++ {
+			if n, _ := r.Read(dst[:16]); n != 16 {
+				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
+			}
+			r := *(*float32)(unsafe.Pointer(&dst))
+			g := *(*float32)(unsafe.Pointer(&dst[4]))
+			b := *(*float32)(unsafe.Pointer(&dst[8]))
+			a := *(*float32)(unsafe.Pointer(&dst[12]))
+			x := convUn8(u8[i*3])
+			y := convUn8(u8[i*3+1])
+			z := convUn8(u8[i*3+2])
+			w := float32(1)
+			if x != r || y != g || z != b || w != a {
+				t.Fatalf("%s.conv: bad conversion:\nhave %f, %f, %f, %f\nwant %f, %f, %f, %f", sem, r, g, b, a, x, y, z, w)
+			}
+		}
+	}
+
+	// Joints0.
+	for _, cnt := range cnts {
+		sem := Joints0
+		r8.Seek(0, io.SeekStart)
+		r, err := sem.conv(driver.Uint8x4, r8, cnt)
+		if r == r8 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+		for i := 0; i < cnt; i++ {
+			if n, _ := r.Read(dst[:8]); n != 8 {
+				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 8", sem, n)
+			}
+			a := *(*uint16)(unsafe.Pointer(&dst))
+			b := *(*uint16)(unsafe.Pointer(&dst[2]))
+			c := *(*uint16)(unsafe.Pointer(&dst[4]))
+			d := *(*uint16)(unsafe.Pointer(&dst[6]))
+			x := uint16(u8[i*4])
+			y := uint16(u8[i*4+1])
+			z := uint16(u8[i*4+2])
+			w := uint16(u8[i*4+3])
+			if x != a || y != b || z != c || w != d {
+				t.Fatalf("%s.conv: bad conversion:\nhave %d, %d, %d, %d\nwant %d, %d, %d, %d", sem, a, b, c, d, x, y, z, w)
+			}
+		}
+	}
+
+	// Weights0.
+	for _, cnt := range cnts {
+		sem := Weights0
+		r16.Seek(0, io.SeekStart)
+		r, err := sem.conv(driver.Uint16x4, r16, cnt)
+		if r == r16 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+		for i := 0; i < cnt; i++ {
+			if n, _ := r.Read(dst[:16]); n != 16 {
+				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
+			}
+			a := *(*float32)(unsafe.Pointer(&dst))
+			b := *(*float32)(unsafe.Pointer(&dst[4]))
+			c := *(*float32)(unsafe.Pointer(&dst[8]))
+			d := *(*float32)(unsafe.Pointer(&dst[12]))
+			x := convUn16(u16[i*4])
+			y := convUn16(u16[i*4+1])
+			z := convUn16(u16[i*4+2])
+			w := convUn16(u16[i*4+3])
+			if x != a || y != b || z != c || w != d {
+				t.Fatalf("%s.conv: bad conversion:\nhave %f, %f, %f, %f\nwant %f, %f, %f, %f", sem, a, b, c, d, x, y, z, w)
+			}
+		}
+
+		r8.Seek(0, io.SeekStart)
+		r, err = sem.conv(driver.Uint8x4, r8, cnt)
+		if r == r8 || err != nil {
+			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
+		}
+		for i := 0; i < cnt; i++ {
+			if n, _ := r.Read(dst[:16]); n != 16 {
+				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
+			}
+			a := *(*float32)(unsafe.Pointer(&dst))
+			b := *(*float32)(unsafe.Pointer(&dst[4]))
+			c := *(*float32)(unsafe.Pointer(&dst[8]))
+			d := *(*float32)(unsafe.Pointer(&dst[12]))
+			x := convUn8(u8[i*4])
+			y := convUn8(u8[i*4+1])
+			z := convUn8(u8[i*4+2])
+			w := convUn8(u8[i*4+3])
+			if x != a || y != b || z != c || w != d {
+				t.Fatalf("%s.conv: bad conversion:\nhave %f, %f, %f, %f\nwant %f, %f, %f, %f", sem, a, b, c, d, x, y, z, w)
+			}
+		}
+	}
 }

@@ -5,8 +5,12 @@
 package mesh
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"io"
+	"math"
+	"unsafe"
 
 	"github.com/gviegas/scene/driver"
 )
@@ -84,22 +88,14 @@ func (s Semantic) String() string {
 // the added complexity.
 func (s Semantic) format() (f driver.VertexFmt) {
 	switch s {
-	case Position:
+	case Position, Normal:
 		f = driver.Float32x3
-	case Normal:
-		f = driver.Float32x3
-	case Tangent:
+	case Tangent, Color0, Weights0:
 		f = driver.Float32x4
-	case TexCoord0:
+	case TexCoord0, TexCoord1:
 		f = driver.Float32x2
-	case TexCoord1:
-		f = driver.Float32x2
-	case Color0:
-		f = driver.Float32x4
 	case Joints0:
 		f = driver.Uint16x4
-	case Weights0:
-		f = driver.Float32x4
 	default:
 		panic("invalid Semantic value")
 	}
@@ -107,15 +103,213 @@ func (s Semantic) format() (f driver.VertexFmt) {
 }
 
 // conv converts semantic data from a given driver.VertexFmt into
-// the one which the engine expects.
+// the one which the engine expects. The following must hold:
+//
+//	cnt must be greater than 0 and
+//	src encoding must be little-endian and
+//	floating-point data must be IEEE-754.
+//
+// The following formats are supported:
+//
+//	Position:
+//		driver.Float32x3 (no-op)
+//	Normal:
+//		driver.Float32x3 (no-op)
+//	Tangent:
+//		driver.Float32x4 (no-op)
+//	TexCoord0,1:
+//		driver.Float32x2 (no-op)
+//		driver.Uint16x2
+//		driver.Uint8x2
+//	Color0:
+//		driver.Float32x4 (no-op)
+//		driver.Float32x3
+//		driver.Uint16x4
+//		driver.Uint16x3
+//		driver.Uint8x4
+//		driver.Uint8x3
+//	Joints0:
+//		driver.Uint16x4 (no-op)
+//		driver.Uint8x4
+//	Weights0:
+//		driver.Float32x4 (no-op)
+//		driver.Uint16x4
+//		driver.Uint8x4
+//
 // If fmt is the expected format (i.e., s.format()), then nothing
 // is done and it returns (src, nil).
 func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader, error) {
+	if cnt < 1 {
+		panic("invalid count on Semantic.conv call")
+	}
 	f := s.format()
 	if f == fmt {
 		return src, nil
 	}
-	panic("unfinished")
+
+	// Read the whole data upfront.
+	var b []byte
+	switch x := src.(type) {
+	case *bytes.Buffer:
+		b = x.Bytes()[:cnt*fmt.Size()]
+	default:
+		b = make([]byte, cnt*fmt.Size())
+	}
+	if _, err := io.ReadFull(src, b); err != nil {
+		return nil, err
+	}
+
+	// IEEE-754 binary => float32
+	nextFloat32 := func() float32 {
+		u := binary.LittleEndian.Uint32(b)
+		b = b[4:]
+		return math.Float32frombits(u)
+	}
+	// [0:65536) => [0.0:1.0]
+	nextUnorm16AsFloat32 := func() float32 {
+		u := binary.LittleEndian.Uint16(b)
+		b = b[2:]
+		return float32(u) / float32(^uint16(0))
+	}
+	// [0:256) => [0.0:1.0]
+	nextUnorm8AsFloat32 := func() float32 {
+		u := b[0]
+		b = b[1:]
+		return float32(u) / float32(^uint8(0))
+	}
+	// [0:256) => [0:256)
+	nextUint8AsUint16 := func() uint16 {
+		u := b[0]
+		b = b[1:]
+		return uint16(u)
+	}
+
+	var err = errors.New(prefix + "unsupported vertex format for " + s.String())
+	var p *byte
+
+	switch s {
+	case Position, Normal, Tangent:
+		// These must match exactly.
+		return nil, err
+
+	case TexCoord0, TexCoord1:
+		// Into driver.Float32x2.
+		v := make([]float32, cnt*2)
+		p = (*byte)(unsafe.Pointer(unsafe.SliceData(v)))
+		switch fmt {
+		case driver.Uint16x2:
+			for len(v) > 0 {
+				v[0] = nextUnorm16AsFloat32()
+				v[1] = nextUnorm16AsFloat32()
+				v = v[2:]
+			}
+		case driver.Uint8x2:
+			for len(v) > 0 {
+				v[0] = nextUnorm8AsFloat32()
+				v[1] = nextUnorm8AsFloat32()
+				v = v[2:]
+			}
+		default:
+			return nil, err
+		}
+
+	case Color0:
+		// Into driver.Float32x4.
+		v := make([]float32, cnt*4)
+		p = (*byte)(unsafe.Pointer(unsafe.SliceData(v)))
+		switch fmt {
+		case driver.Float32x3:
+			for len(v) > 0 {
+				v[0] = nextFloat32()
+				v[1] = nextFloat32()
+				v[2] = nextFloat32()
+				v[3] = 1
+				v = v[4:]
+			}
+		case driver.Uint16x4:
+			for len(v) > 0 {
+				v[0] = nextUnorm16AsFloat32()
+				v[1] = nextUnorm16AsFloat32()
+				v[2] = nextUnorm16AsFloat32()
+				v[3] = nextUnorm16AsFloat32()
+				v = v[4:]
+			}
+		case driver.Uint16x3:
+			for len(v) > 0 {
+				v[0] = nextUnorm16AsFloat32()
+				v[1] = nextUnorm16AsFloat32()
+				v[2] = nextUnorm16AsFloat32()
+				v[3] = 1
+				v = v[4:]
+			}
+		case driver.Uint8x4:
+			for len(v) > 0 {
+				v[0] = nextUnorm8AsFloat32()
+				v[1] = nextUnorm8AsFloat32()
+				v[2] = nextUnorm8AsFloat32()
+				v[3] = nextUnorm8AsFloat32()
+				v = v[4:]
+			}
+		case driver.Uint8x3:
+			for len(v) > 0 {
+				v[0] = nextUnorm8AsFloat32()
+				v[1] = nextUnorm8AsFloat32()
+				v[2] = nextUnorm8AsFloat32()
+				v[3] = 1
+				v = v[4:]
+			}
+		default:
+			return nil, err
+		}
+
+	case Joints0:
+		// Into driver.Uint16x4.
+		v := make([]uint16, cnt*4)
+		p = (*byte)(unsafe.Pointer(unsafe.SliceData(v)))
+		switch fmt {
+		case driver.Uint8x4:
+			for len(v) > 0 {
+				v[0] = nextUint8AsUint16()
+				v[1] = nextUint8AsUint16()
+				v[2] = nextUint8AsUint16()
+				v[3] = nextUint8AsUint16()
+				v = v[4:]
+			}
+		default:
+			return nil, err
+		}
+
+	case Weights0:
+		// Into driver.Float32x4.
+		v := make([]float32, cnt*4)
+		p = (*byte)(unsafe.Pointer(unsafe.SliceData(v)))
+		switch fmt {
+		case driver.Uint16x4:
+			for len(v) > 0 {
+				v[0] = nextUnorm16AsFloat32()
+				v[1] = nextUnorm16AsFloat32()
+				v[2] = nextUnorm16AsFloat32()
+				v[3] = nextUnorm16AsFloat32()
+				v = v[4:]
+			}
+		case driver.Uint8x4:
+			for len(v) > 0 {
+				v[0] = nextUnorm8AsFloat32()
+				v[1] = nextUnorm8AsFloat32()
+				v[2] = nextUnorm8AsFloat32()
+				v[3] = nextUnorm8AsFloat32()
+				v = v[4:]
+			}
+		default:
+			return nil, err
+		}
+
+	default:
+		panic("unreachable")
+	}
+
+	n := cnt * f.Size()
+	return bytes.NewReader(unsafe.Slice(p, n)), nil
 }
 
 // PrimitiveData describes the data layout of a mesh's primitive.
