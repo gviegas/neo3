@@ -173,6 +173,7 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Prim
 		p.index = i
 	}
 	b.primMap.Set(p.index)
+	b.prims[p.index] = prim
 	// Currently, p.bufIdx is always 0.
 	return
 }
