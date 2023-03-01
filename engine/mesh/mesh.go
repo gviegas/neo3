@@ -368,7 +368,15 @@ validData:
 	for i := 1; i < len(data.Primitives); i++ {
 		next, err = newPrimitive(data, i)
 		if err != nil {
-			// TODO: Free primitives 0:i.
+			prev = prim
+			for {
+				next, ok := storage.next(prev)
+				storage.freeEntry(prev)
+				if !ok {
+					break
+				}
+				prev = next
+			}
 			return
 		}
 		storage.link(prev, next)
