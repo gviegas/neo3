@@ -189,6 +189,30 @@ func (b *meshBuffer) link(prim Primitive, next Primitive) {
 	b.prims[prim.index].next = next.index
 }
 
+// freeEntry removes a primitive from the buffer.
+// Any span held by prim is made available for use when
+// creating new entries (it does not free GPU memory).
+func (b *meshBuffer) freeEntry(prim Primitive) {
+	b.primMap.Unset(prim.index)
+	b._freeEntry(&b.prims[prim.index])
+}
+
+func (b *meshBuffer) _freeEntry(prim *primitive) {
+	// This ignores the mask and checks for
+	// empty spans instead, so it is safe to
+	// call from newEntry when it fails with
+	// a partially set primitive.
+	for i := range prim.vertex {
+		for j := prim.vertex[i].start; j < prim.vertex[i].end; j++ {
+			b.spanMap.Unset(j)
+		}
+	}
+	for i := prim.index.start; i < prim.index.end; i++ {
+		b.spanMap.Unset(i)
+	}
+	*prim = primitive{}
+}
+
 // primitive is an entry in a mesh buffer.
 type primitive struct {
 	topology driver.Topology
