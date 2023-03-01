@@ -149,18 +149,18 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Prim
 		src := srcs[data.Semantics[i].Src]
 		off := data.Semantics[i].Offset
 		if _, err = src.Seek(off, io.SeekStart); err != nil {
-			panic("TODO: free spans")
+			b._freeEntry(&prim)
 			return
 		}
 		var conv io.Reader
 		if conv, err = sem.conv(fmt, src, prim.count); err != nil {
-			panic("TODO: free spans")
+			b._freeEntry(&prim)
 			return
 		}
 		fmt = sem.format()
 		prim.vertex[i].format = fmt
 		if prim.vertex[i].span, err = b.store(conv, prim.count*fmt.Size()); err != nil {
-			panic("TODO: free spans")
+			b._freeEntry(&prim)
 			return
 		}
 	}
