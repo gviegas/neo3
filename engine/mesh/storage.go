@@ -190,6 +190,19 @@ func (b *meshBuffer) link(prim Primitive, next Primitive) {
 	b.prims[prim.index].next = next.index
 }
 
+// next returns the next primitive in the list.
+// If prim has no subsequent primitive (i.e., it was not
+// linked to another primitive), then ok will be false.
+// This is only relevant for meshes that contain multiple
+// primitives.
+func (b *meshBuffer) next(prim Primitive) (p Primitive, ok bool) {
+	if i := b.prims[prim.index].next; i >= 0 {
+		p = Primitive{prim.bufIdx, i}
+		ok = true
+	}
+	return
+}
+
 // freeEntry removes a primitive from the buffer.
 // Any span held by prim is made available for use when
 // creating new entries (it does not free GPU memory).
