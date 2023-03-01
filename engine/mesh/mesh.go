@@ -359,6 +359,10 @@ func New(data *Data) (m *Mesh, err error) {
 	err = errors.New(prefix + reason)
 	return
 validData:
+	// TODO: Experiment with a more
+	// fine-grained locking.
+	storage.Lock()
+	defer storage.Unlock()
 	var prim, next, prev Primitive
 	prim, err = newPrimitive(data, 0)
 	if err != nil {

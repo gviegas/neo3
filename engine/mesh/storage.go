@@ -69,8 +69,6 @@ const (
 // It returns a span identifying the buffer range where
 // the data was stored.
 func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
-	b.Lock()
-	defer b.Unlock()
 	nb := (byteLen + (blockSize - 1)) &^ (blockSize - 1)
 	ns := nb / blockSize
 	is, ok := b.spanMap.SearchRange(ns)
@@ -182,8 +180,6 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Prim
 // This is only relevant for meshes that contain multiple
 // primitives.
 func (b *meshBuffer) link(prim Primitive, next Primitive) {
-	b.Lock()
-	defer b.Unlock()
 	if prim.bufIdx != next.bufIdx {
 		panic("attempt to link primitives from different buffers")
 	}
