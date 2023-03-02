@@ -312,7 +312,22 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 	return bytes.NewReader(unsafe.Slice(p, n)), nil
 }
 
-// PrimitiveData describes the data layout of a mesh's primitive.
+// SemanticData describes how to fetch semantic data from Data.Srcs.
+type SemanticData struct {
+	Format driver.VertexFmt
+	Offset int64
+	Src    int
+}
+
+// IndexData describes how to fetch index data from Data.Srcs.
+type IndexData struct {
+	Format driver.IndexFmt
+	Offset int64
+	Src    int
+}
+
+// PrimitiveData describes the data layout of a mesh's primitive
+// and how to fetch such data from Data.Srcs.
 type PrimitiveData struct {
 	Topology    driver.Topology
 	VertexCount int
@@ -321,19 +336,11 @@ type PrimitiveData struct {
 	// this primitive provides in the Semantics
 	// array. Unused semantics need not be set.
 	SemanticMask Semantic
-	Semantics    [MaxSemantic]struct {
-		Format driver.VertexFmt
-		Offset int64
-		Src    int
-	}
+	Semantics    [MaxSemantic]SemanticData
 	// Index describes the index buffer's data.
 	// It is ignored if IndexCount is less than
 	// or equal to zero.
-	Index struct {
-		Format driver.IndexFmt
-		Offset int64
-		Src    int
-	}
+	Index IndexData
 }
 
 // Data defines the data layout of a whole mesh and provides
