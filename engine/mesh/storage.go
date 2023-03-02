@@ -151,13 +151,13 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Prim
 			return
 		}
 		var conv io.Reader
-		if conv, err = sem.conv(fmt, src, prim.count); err != nil {
+		if conv, err = sem.conv(fmt, src, data.VertexCount); err != nil {
 			b._freeEntry(&prim)
 			return
 		}
 		fmt = sem.format()
 		prim.vertex[i].format = fmt
-		if prim.vertex[i].span, err = b.store(conv, prim.count*fmt.Size()); err != nil {
+		if prim.vertex[i].span, err = b.store(conv, data.VertexCount*fmt.Size()); err != nil {
 			b._freeEntry(&prim)
 			return
 		}
