@@ -110,7 +110,7 @@ func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
 
 // newEntry creates a new entry in the buffer containing
 // the primitive specified by data.
-func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Primitive, err error) {
+func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p int, err error) {
 	prim := primitive{
 		topology: data.Topology,
 		mask:     data.SemanticMask,
@@ -167,34 +167,28 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p Prim
 		// TODO: Grow exponentially.
 		var z [primMapNBit]primitive
 		b.prims = append(b.prims, z[:]...)
-		p.index = b.primMap.Grow(1)
+		p = b.primMap.Grow(1)
 	} else {
-		p.index = i
+		p = i
 	}
-	b.primMap.Set(p.index)
-	b.prims[p.index] = prim
-	// Currently, p.bufIdx is always 0.
+	b.primMap.Set(p)
+	b.prims[p] = prim
 	return
 }
 
 // link links a primitive entry to another.
 // This is only relevant for meshes that contain multiple
 // primitives.
-func (b *meshBuffer) link(prim Primitive, next Primitive) {
-	if prim.bufIdx != next.bufIdx {
-		panic("attempt to link primitives from different buffers")
-	}
-	b.prims[prim.index].next = next.index
-}
+func (b *meshBuffer) link(prim int, next int) { b.prims[prim].next = next }
 
 // next returns the next primitive in the list.
 // If prim has no subsequent primitive (i.e., it was not
 // linked to another primitive), then ok will be false.
 // This is only relevant for meshes that contain multiple
 // primitives.
-func (b *meshBuffer) next(prim Primitive) (p Primitive, ok bool) {
-	if i := b.prims[prim.index].next; i >= 0 {
-		p = Primitive{prim.bufIdx, i}
+func (b *meshBuffer) next(prim int) (p int, ok bool) {
+	if i := b.prims[prim].next; i >= 0 {
+		p = i
 		ok = true
 	}
 	return
@@ -203,9 +197,9 @@ func (b *meshBuffer) next(prim Primitive) (p Primitive, ok bool) {
 // freeEntry removes a primitive from the buffer.
 // Any span held by prim is made available for use when
 // creating new entries (it does not free GPU memory).
-func (b *meshBuffer) freeEntry(prim Primitive) {
-	b.primMap.Unset(prim.index)
-	b._freeEntry(&b.prims[prim.index])
+func (b *meshBuffer) freeEntry(prim int) {
+	b.primMap.Unset(prim)
+	b._freeEntry(&b.prims[prim])
 }
 
 func (b *meshBuffer) _freeEntry(prim *primitive) {

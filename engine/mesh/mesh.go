@@ -18,16 +18,11 @@ import (
 const prefix = "mesh: "
 
 // Mesh is a collection of primitives.
+// Each primitive defines the data for a draw call.
 type Mesh struct {
 	bufIdx  int
 	primIdx int
 	primLen int
-}
-
-// Primitive defines the data for a draw call.
-type Primitive struct {
-	bufIdx int
-	index  int
 }
 
 // Semantic specifies the intended use of a primitive's attribute.
@@ -370,7 +365,7 @@ validData:
 	// fine-grained locking.
 	storage.Lock()
 	defer storage.Unlock()
-	var prim, next, prev Primitive
+	var prim, next, prev int
 	prim, err = newPrimitive(data, 0)
 	if err != nil {
 		return
@@ -394,15 +389,15 @@ validData:
 		prev = next
 	}
 	m = &Mesh{
-		bufIdx:  prim.bufIdx,
-		primIdx: prim.index,
+		// Currently, Mesh.bufIdx is not used.
+		primIdx: prim,
 		primLen: len(data.Primitives),
 	}
 	return
 }
 
 // newPrimitive creates the primitive at data.Primitives[index].
-func newPrimitive(data *Data, index int) (p Primitive, err error) {
+func newPrimitive(data *Data, index int) (p int, err error) {
 	pdata := &data.Primitives[index]
 	var reason string
 	switch {
