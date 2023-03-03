@@ -347,32 +347,22 @@ type Data struct {
 
 // New creates a new mesh.
 func New(data *Data) (m *Mesh, err error) {
-	var reason string
-	switch {
-	case data == nil:
-		reason = "nil data"
-	case len(data.Primitives) == 0:
-		reason = "no primitive data"
-	case len(data.Srcs) == 0:
-		reason = "no data source"
-	default:
-		goto validData
+	err = validateData(data)
+	if err != nil {
+		return
 	}
-	err = errors.New(prefix + reason)
-	return
-validData:
-	// TODO: Experiment with a more
-	// fine-grained locking.
+	// TODO: Check whether locking/unlocking at
+	// call sites improves performance.
 	storage.Lock()
 	defer storage.Unlock()
 	var prim, next, prev int
-	prim, err = newPrimitive(data, 0)
+	prim, err = storage.newEntry(&data.Primitives[0], data.Srcs)
 	if err != nil {
 		return
 	}
 	prev = prim
 	for i := 1; i < len(data.Primitives); i++ {
-		next, err = newPrimitive(data, i)
+		next, err = storage.newEntry(&data.Primitives[i], data.Srcs)
 		if err != nil {
 			prev = prim
 			for {
@@ -396,18 +386,33 @@ validData:
 	return
 }
 
-// newPrimitive creates the primitive at data.Primitives[index].
-func newPrimitive(data *Data, index int) (p int, err error) {
-	pdata := &data.Primitives[index]
-	var reason string
+// validateData checks whether data is valid.
+func validateData(data *Data) error {
+	newErr := func(reason string) error { return errors.New(prefix + reason) }
+
 	switch {
-	case pdata.VertexCount < 0:
-		reason = "invalid vertex count"
-	case pdata.SemanticMask&Position == 0:
-		reason = "no position semantic"
-	case pdata.IndexCount > 0 && pdata.Index.Src >= len(data.Srcs):
-		reason = "index data source out of bounds"
-	default:
+	case data == nil:
+		return newErr("nil data")
+	case len(data.Primitives) == 0:
+		return newErr("no primitive data")
+	case len(data.Srcs) == 0:
+		return newErr("no data source")
+	}
+
+	for i := range data.Primitives {
+		pdata := &data.Primitives[i]
+		switch {
+		case pdata.VertexCount < 0:
+			return newErr("invalid vertex count")
+		case pdata.SemanticMask&Position == 0:
+			return newErr("no position semantic")
+		case pdata.IndexCount > 0 && uint(pdata.Index.Src) >= uint(len(data.Srcs)):
+			return newErr("index data source out of bounds")
+		}
+		// Back-ends usually can handle wrong counts
+		// (e.g., by dropping excess vertices), but
+		// this is likely a caller's mistake that
+		// should be fixed.
 		var cnt = pdata.VertexCount
 		if x := pdata.IndexCount; x > 0 {
 			cnt = x
@@ -416,40 +421,35 @@ func newPrimitive(data *Data, index int) (p int, err error) {
 		case driver.TPoint:
 		case driver.TLine:
 			if cnt&1 != 0 {
-				reason = "invalid count for driver.TLine"
-				goto invalidData
+				return newErr("invalid count for driver.TLine")
 			}
 		case driver.TLnStrip:
 			if cnt < 2 {
-				reason = "invalid count for driver.TLnStrip"
-				goto invalidData
+				return newErr("invalid count for driver.TLnStrip")
 			}
 		case driver.TTriangle:
 			if cnt%3 != 0 {
-				reason = "invalid count for driver.TTriangle"
-				goto invalidData
+				return newErr("invalid count for driver.TTriangle")
 			}
 		case driver.TTriStrip:
 			if cnt < 3 {
-				reason = "invalid count for driver.TTriStrip"
-				goto invalidData
+				return newErr("invalid count for driver.TTriStrip")
 			}
+		default:
+			return newErr("invalid driver.Topology constant")
 		}
+		// It is fairly easy to make a primitive refer
+		// to an invalid source, and we rather not
+		// panic at out of bounds indexing.
 		for i := range pdata.Semantics {
 			if pdata.SemanticMask&(1<<i) == 0 {
 				continue
 			}
-			if pdata.Semantics[i].Src >= len(data.Srcs) {
-				reason = "semantic data source out of bounds"
-				goto invalidData
+			if uint(pdata.Semantics[i].Src) >= uint(len(data.Srcs)) {
+				return newErr("semantic data source out of bounds")
 			}
 		}
-		goto validData
 	}
-invalidData:
-	err = errors.New(prefix + reason)
-	return
-validData:
-	p, err = storage.newEntry(&data.Primitives[index], data.Srcs)
-	return
+
+	return nil
 }
