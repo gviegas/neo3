@@ -81,20 +81,19 @@ func (s Semantic) String() string {
 //
 // TODO: Consider allowing alternative formats if it justifies
 // the added complexity.
-func (s Semantic) format() (f driver.VertexFmt) {
+func (s Semantic) format() driver.VertexFmt {
 	switch s {
 	case Position, Normal:
-		f = driver.Float32x3
+		return driver.Float32x3
 	case Tangent, Color0, Weights0:
-		f = driver.Float32x4
+		return driver.Float32x4
 	case TexCoord0, TexCoord1:
-		f = driver.Float32x2
+		return driver.Float32x2
 	case Joints0:
-		f = driver.Uint16x4
+		return driver.Uint16x4
 	default:
-		panic("invalid Semantic value")
+		panic("undefined Semantic constant")
 	}
-	return
 }
 
 // conv converts semantic data from a given driver.VertexFmt into
@@ -135,7 +134,7 @@ func (s Semantic) format() (f driver.VertexFmt) {
 // is done and it returns (src, nil).
 func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader, error) {
 	if cnt < 1 {
-		panic("invalid count on Semantic.conv call")
+		panic("Semantic.conv call has invalid count")
 	}
 	f := s.format()
 	if f == fmt {
@@ -300,6 +299,8 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 		}
 
 	default:
+		// It would already have panicked due to the
+		// s.format call above.
 		panic("unreachable")
 	}
 
@@ -436,7 +437,7 @@ func validateData(data *Data) error {
 				return newErr("invalid count for driver.TTriStrip")
 			}
 		default:
-			return newErr("invalid driver.Topology constant")
+			return newErr("undefined driver.Topology constant")
 		}
 		// It is fairly easy to make a primitive refer
 		// to an invalid source, and we rather not
