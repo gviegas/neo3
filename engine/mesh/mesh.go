@@ -391,6 +391,7 @@ validData:
 			return
 		}
 		storage.link(prev, next)
+		prev = next
 	}
 	m = &Mesh{
 		bufIdx:  prim.bufIdx,
