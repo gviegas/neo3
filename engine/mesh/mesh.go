@@ -44,7 +44,7 @@ const (
 	Joints0
 	Weights0
 
-	MaxSemantic = iota
+	MaxSemantic int = iota
 )
 
 // I computes log₂(s).
@@ -77,7 +77,7 @@ func (s Semantic) String() string {
 	case Weights0:
 		return "Weights0"
 	default:
-		return "[!] invalid Semantic value"
+		return "!mesh.Semantic"
 	}
 }
 
