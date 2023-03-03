@@ -4,6 +4,7 @@ package mesh
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 
@@ -260,3 +261,8 @@ func (s span) byteEnd() int { return s.end * blockSize }
 
 // byteLen computes the span's byte length.
 func (s span) byteLen() int { return (s.end - s.start) * blockSize }
+
+// String implements fmt.Stringer.
+func (s span) String() string {
+	return fmt.Sprintf("{%d(%dB) %d(%dB)}", s.start, s.byteStart(), s.end, s.byteEnd())
+}
