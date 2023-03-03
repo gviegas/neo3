@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"testing"
 	"unsafe"
 
@@ -15,6 +16,7 @@ import (
 )
 
 var gpu = ctxt.GPU()
+var mu sync.Mutex
 
 func TestSemantic(t *testing.T) {
 	semantics := map[Semantic]int{
@@ -44,6 +46,8 @@ func TestSemantic(t *testing.T) {
 }
 
 func TestSetBuffer(t *testing.T) {
+	mu.Lock()
+	defer mu.Unlock()
 	SetBuffer(nil)
 	if storage.buf != nil {
 		t.Fatalf("SetBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
@@ -548,5 +552,440 @@ func TestConv(t *testing.T) {
 				t.Fatalf("%s.conv: bad conversion:\nhave %f, %f, %f, %f\nwant %f, %f, %f, %f", sem, a, b, c, d, x, y, z, w)
 			}
 		}
+	}
+}
+
+func TestNew(t *testing.T) {
+	mu.Lock()
+	defer func() {
+		b := SetBuffer(nil)
+		if b != nil {
+			b.Destroy()
+		}
+		mu.Unlock()
+	}()
+	const n = 20 << 20
+	buf, err := gpu.NewBuffer(n, true, driver.UVertexData|driver.UIndexData)
+	if err == nil {
+		SetBuffer(buf)
+	} else {
+		t.Fatalf("gpu.NewBuffer: %#v", err)
+	}
+
+	cases := [...]struct {
+		ntris int
+		dummy func(int) Data
+		check func(*Mesh, int, *testing.T)
+	}{
+		{1, dummyData1, checkDummyData1},
+		{12, dummyData4, checkDummyData4},
+		{300, dummyData1, checkDummyData1},
+		{99, dummyData2, checkDummyData2},
+		{760, dummyData3, checkDummyData3},
+		{1024, dummyData1, checkDummyData1},
+		{4097, dummyData2, checkDummyData2},
+		{4095, dummyData2, checkDummyData2},
+		{4096, dummyData4, checkDummyData4},
+		{16000, dummyData1, checkDummyData1},
+		{1, dummyData3, checkDummyData3},
+		{256, dummyData3, checkDummyData3},
+		{12500, dummyData3, checkDummyData3},
+		{5, dummyData2, checkDummyData2},
+		{3, dummyData1, checkDummyData1},
+		{21673, dummyData2, checkDummyData2},
+		{10181, dummyData4, checkDummyData4},
+		{512, dummyData4, checkDummyData4},
+		{100, dummyData3, checkDummyData3},
+	}
+	var res [len(cases)]struct {
+		data Data
+		mesh *Mesh
+	}
+	for i := range cases {
+		res[i].data = cases[i].dummy(cases[i].ntris)
+		res[i].mesh, err = New(&res[i].data)
+		if err != nil {
+			t.Log(cases[i])
+			t.Fatalf("New: unexpected error: %#v", err)
+		}
+		cases[i].check(res[i].mesh, cases[i].ntris, t)
+	}
+	for i := range cases {
+		cases[i].check(res[i].mesh, cases[i].ntris, t)
+	}
+
+	cap := storage.buf.Cap()
+	if cap < n || cap == n && storage.buf != buf {
+		t.Fatal("New: unexpected storage.buf state")
+	}
+	t.Logf("final storage.buf.Cap() is %.2f MiB", float64(cap)/(1<<20))
+}
+
+func dummyData1(ntris int) Data {
+	p := PrimitiveData{
+		Topology:     driver.TTriangle,
+		VertexCount:  ntris * 3,
+		SemanticMask: Position | Normal | TexCoord0,
+	}
+	srcs := make([]io.ReadSeeker, 3)
+	for i, s := range [3]Semantic{Position, Normal, TexCoord0} {
+		p.Semantics[s.I()] = SemanticData{
+			Format: s.format(),
+			Offset: 0,
+			Src:    i,
+		}
+		d := make([]byte, p.VertexCount*s.format().Size())
+		fillDummySem(s, d)
+		srcs[i] = bytes.NewReader(d)
+	}
+	return Data{[]PrimitiveData{p}, srcs}
+}
+
+func checkDummyData1(m *Mesh, ntris int, t *testing.T) {
+	if x := m.primLen; x != 1 {
+		t.Fatalf("Mesh.primLen:\nhave %d\nwant 1", x)
+	}
+	p := storage.prims[m.primIdx]
+	if p.topology != driver.TTriangle {
+		t.Fatalf("storage.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
+	}
+	if x := ntris * 3; p.count != x {
+		t.Fatalf("storage.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
+	}
+	if x := Position | Normal | TexCoord0; p.mask != x {
+		t.Fatalf("storage.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
+	}
+	if p.next >= 0 {
+		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
+	}
+	b := storage.buf.Bytes()
+	for _, s := range [3]Semantic{Position, Normal, TexCoord0} {
+		n := p.vertex[s.I()].format.Size() * ntris * 3
+		spn := p.vertex[s.I()].span
+		if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+			t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
+		}
+		x := ^byte(s.I())
+		for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
+			if b[i] != x {
+				t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+			}
+		}
+	}
+}
+
+func dummyData2(ntris int) Data {
+	p := PrimitiveData{
+		Topology:     driver.TTriangle,
+		VertexCount:  ntris * 3,
+		IndexCount:   ntris * 6,
+		SemanticMask: Position | Color0,
+	}
+	srcs := make([]io.ReadSeeker, 2)
+
+	p.Semantics[Color0.I()] = SemanticData{
+		Format: driver.Float32x3,
+		Offset: 0,
+		Src:    0,
+	}
+	p.Semantics[Position.I()] = SemanticData{
+		Format: Position.format(),
+		Offset: int64(p.VertexCount * p.Semantics[Color0.I()].Format.Size()),
+		Src:    0,
+	}
+	dlen := p.VertexCount * (p.Semantics[Color0.I()].Format.Size() + p.Semantics[Position.I()].Format.Size())
+	d := make([]byte, dlen)
+	fillDummySem(Color0, d[:p.Semantics[Position.I()].Offset])
+	fillDummySem(Position, d[p.Semantics[Position.I()].Offset:])
+	srcs[0] = bytes.NewReader(d)
+
+	p.Index = IndexData{
+		Format: driver.Index16,
+		Offset: 0,
+		Src:    1,
+	}
+	dlen = p.IndexCount * 2
+	d = make([]byte, dlen)
+	fillDummyIdx(p.Index.Format, d)
+	srcs[1] = bytes.NewReader(d)
+
+	return Data{[]PrimitiveData{p}, srcs}
+}
+
+func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
+	if x := m.primLen; x != 1 {
+		t.Fatalf("Mesh.primLen:\nhave %d\nwant 1", x)
+	}
+	p := storage.prims[m.primIdx]
+	if p.topology != driver.TTriangle {
+		t.Fatalf("storage.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
+	}
+	if x := ntris * 6; p.count != x {
+		t.Fatalf("storage.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
+	}
+	if x := Position | Color0; p.mask != x {
+		t.Fatalf("storage.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
+	}
+	if p.index.format != driver.Index16 {
+		t.Fatalf("storage.prims[%d].next:\nhave %v\nwant %v", m.primIdx, p.index.format, driver.Index16)
+	}
+	if p.next >= 0 {
+		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
+	}
+	b := storage.buf.Bytes()
+
+	s := Position
+	n := p.vertex[s.I()].format.Size() * ntris * 3
+	spn := p.vertex[s.I()].span
+	if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+		t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
+	}
+	x := ^byte(s.I())
+	for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
+		if b[i] != x {
+			t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+		}
+	}
+
+	s = Color0
+	n = p.vertex[s.I()].format.Size() * ntris * 3
+	spn = p.vertex[s.I()].span
+	if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+		t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
+	}
+	x = ^byte(s.I())
+	for i := spn.byteStart(); i < spn.byteStart()+n; i += 16 {
+		for j := i; j < 12; j++ {
+			if b[j] != x {
+				t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+			}
+		}
+		if f := *(*float32)(unsafe.Pointer(unsafe.SliceData(b[i+12:]))); f != 1 {
+			t.Fatalf("storage.buf.Bytes()[%d:%d]:\nhave %f\nwant float32(1)", i+12, i+16, f)
+		}
+	}
+
+	n = 2 * ntris * 6
+	spn = p.index.span
+	if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+		t.Fatalf("storage.prims[%d].index.span: end - start\nhave %d\nwant %d", m.primIdx, x, y)
+	}
+	x = byte(p.index.format + 1)
+	for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
+		if b[i] != x {
+			t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+		}
+	}
+}
+
+func dummyData3(ntris int) Data {
+	p := PrimitiveData{
+		Topology:     driver.TTriangle,
+		VertexCount:  ntris * 3,
+		IndexCount:   ntris*6 + 15,
+		SemanticMask: Position | Normal | Tangent | TexCoord0 | TexCoord1 | Color0 | Joints0 | Weights0,
+	}
+
+	var off int64
+	for _, s := range [8]Semantic{
+		Normal,
+		Tangent,
+		Color0,
+		TexCoord1,
+		Weights0,
+		Position,
+		TexCoord0,
+		Joints0,
+	} {
+		p.Semantics[s.I()] = SemanticData{
+			Format: s.format(),
+			Offset: off,
+			Src:    0,
+		}
+		off += int64(p.VertexCount * s.format().Size())
+	}
+	p.Index = IndexData{
+		Format: driver.Index32,
+		Offset: off,
+		Src:    0,
+	}
+
+	dlen := int(off) + p.IndexCount*4
+	d := make([]byte, dlen)
+	fillDummyIdx(p.Index.Format, d[off:])
+	for i, x := range p.Semantics {
+		sz := int64(x.Format.Size() * p.VertexCount)
+		fillDummySem(Semantic(1<<i), d[x.Offset:x.Offset+sz])
+	}
+
+	return Data{[]PrimitiveData{p}, []io.ReadSeeker{bytes.NewReader(d)}}
+}
+
+func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
+	if x := m.primLen; x != 1 {
+		t.Fatalf("Mesh.primLen:\nhave %d\nwant 1", x)
+	}
+	p := storage.prims[m.primIdx]
+	if p.topology != driver.TTriangle {
+		t.Fatalf("storage.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
+	}
+	if x := ntris*6 + 15; p.count != x {
+		t.Fatalf("storage.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
+	}
+	if x := Position | Normal | Tangent | TexCoord0 | TexCoord1 | Color0 | Joints0 | Weights0; p.mask != x {
+		t.Fatalf("storage.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
+	}
+	if p.index.format != driver.Index32 {
+		t.Fatalf("storage.prims[%d].next:\nhave %v\nwant %v", m.primIdx, p.index.format, driver.Index32)
+	}
+	if p.next >= 0 {
+		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
+	}
+	b := storage.buf.Bytes()
+
+	for i := 0; i < MaxSemantic; i++ {
+		s := Semantic(1 << i)
+		n := p.vertex[s.I()].format.Size() * ntris * 3
+		spn := p.vertex[s.I()].span
+		if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+			t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
+		}
+		x := ^byte(s.I())
+		for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
+			if b[i] != x {
+				t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+			}
+		}
+	}
+
+	n := 4*ntris*6 + 60
+	spn := p.index.span
+	if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+		t.Fatalf("storage.prims[%d].index.span: end - start\nhave %d\nwant %d", m.primIdx, x, y)
+	}
+	x := byte(p.index.format + 1)
+	for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
+		if b[i] != x {
+			t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+		}
+	}
+}
+
+func dummyData4(ntris int) Data {
+	var srcs []io.ReadSeeker
+
+	p1 := PrimitiveData{
+		Topology:     driver.TTriangle,
+		VertexCount:  ntris * 3,
+		SemanticMask: Position | TexCoord1,
+	}
+	for _, s := range [2]Semantic{Position, TexCoord1} {
+		p1.Semantics[s.I()] = SemanticData{
+			Format: s.format(),
+			Offset: 0,
+			Src:    len(srcs),
+		}
+		d := make([]byte, p1.VertexCount*s.format().Size())
+		fillDummySem(s, d)
+		srcs = append(srcs, bytes.NewReader(d))
+	}
+
+	p2 := PrimitiveData{
+		Topology:     driver.TTriangle,
+		VertexCount:  ntris * 3,
+		SemanticMask: Position,
+	}
+	p2.Semantics[Position.I()] = SemanticData{
+		Format: Position.format(),
+		Offset: 0,
+		Src:    len(srcs),
+	}
+	d := make([]byte, p2.VertexCount*Position.format().Size())
+	fillDummySem(Position, d)
+	srcs = append(srcs, bytes.NewReader(d))
+
+	p3 := PrimitiveData{
+		Topology:     driver.TTriangle,
+		VertexCount:  ntris * 3,
+		SemanticMask: Position | Normal | TexCoord0 | TexCoord1,
+	}
+	for _, s := range [4]Semantic{Position, Normal, TexCoord0, TexCoord1} {
+		p3.Semantics[s.I()] = SemanticData{
+			Format: s.format(),
+			Offset: 0,
+			Src:    len(srcs),
+		}
+		d := make([]byte, p3.VertexCount*s.format().Size())
+		fillDummySem(s, d)
+		srcs = append(srcs, bytes.NewReader(d))
+	}
+
+	return Data{[]PrimitiveData{p3, p1, p2}, srcs}
+}
+
+func checkDummyData4(m *Mesh, ntris int, t *testing.T) {
+	if x := m.primLen; x != 3 {
+		t.Fatalf("Mesh.primLen:\nhave %d\nwant 3", x)
+	}
+	ps := [3]*primitive{&storage.prims[m.primIdx]}
+	if ps[0].next < 0 {
+		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant >= 0", m.primIdx, ps[0].next)
+	}
+	ps[1] = &storage.prims[ps[0].next]
+	if ps[1].next < 0 {
+		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant >= 0", ps[0].next, ps[1].next)
+	}
+	ps[2] = &storage.prims[ps[1].next]
+	if ps[2].next >= 0 {
+		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant < 0", ps[1].next, ps[2].next)
+	}
+	ss := [3][]Semantic{
+		{Position, Normal, TexCoord0, TexCoord1},
+		{Position, TexCoord1},
+		{Position},
+	}
+	is := [3]int{m.primIdx, ps[0].next, ps[1].next}
+	b := storage.buf.Bytes()
+	for i, p := range ps {
+		if p.topology != driver.TTriangle {
+			t.Fatalf("storage.prims[%d].topology:\nhave %v\nwant %v", is[i], p.topology, driver.TTriangle)
+		}
+		if x := ntris * 3; p.count != x {
+			t.Fatalf("storage.prims[%d].count:\nhave %d\nwant %d", is[i], p.count, x)
+		}
+		var mask Semantic
+		for _, s := range ss[i] {
+			mask |= s
+		}
+		if p.mask != mask {
+			t.Fatalf("storage.prims[%d].mask:\nhave %x\nwant %x", is[1], p.mask, mask)
+		}
+		for _, s := range ss[i] {
+			n := p.vertex[s.I()].format.Size() * ntris * 3
+			spn := p.vertex[s.I()].span
+			if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+				t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", is[i], s, x, y)
+			}
+			x := ^byte(s.I())
+			for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
+				if b[i] != x {
+					t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+				}
+			}
+		}
+	}
+}
+
+func fillDummySem(s Semantic, d []byte) {
+	x := ^byte(s.I())
+	for i := range d {
+		d[i] = x
+	}
+}
+
+func fillDummyIdx(i driver.IndexFmt, d []byte) {
+	x := byte(i + 1)
+	for i := range d {
+		d[i] = x
 	}
 }
