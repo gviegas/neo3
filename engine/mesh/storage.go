@@ -57,7 +57,7 @@ type meshBuffer struct {
 	spanMap bitm.Bitm[uint32]
 	primMap bitm.Bitm[uint16]
 	prims   []primitive
-	sync.Mutex
+	sync.RWMutex
 }
 
 const (
