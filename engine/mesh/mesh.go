@@ -25,6 +25,9 @@ type Mesh struct {
 	primLen int
 }
 
+// Len returns the number of primitives in m.
+func (m *Mesh) Len() int { return m.primLen }
+
 // Semantic specifies the intended use of a primitive's attribute.
 type Semantic int
 

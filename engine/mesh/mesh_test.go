@@ -642,8 +642,8 @@ func dummyData1(ntris int) Data {
 }
 
 func checkDummyData1(m *Mesh, ntris int, t *testing.T) {
-	if x := m.primLen; x != 1 {
-		t.Fatalf("Mesh.primLen:\nhave %d\nwant 1", x)
+	if x := m.Len(); x != 1 {
+		t.Fatalf("Mesh.Len:\nhave %d\nwant 1", x)
 	}
 	p := storage.prims[m.primIdx]
 	if p.topology != driver.TTriangle {
@@ -713,8 +713,8 @@ func dummyData2(ntris int) Data {
 }
 
 func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
-	if x := m.primLen; x != 1 {
-		t.Fatalf("Mesh.primLen:\nhave %d\nwant 1", x)
+	if x := m.Len(); x != 1 {
+		t.Fatalf("Mesh.Len:\nhave %d\nwant 1", x)
 	}
 	p := storage.prims[m.primIdx]
 	if p.topology != driver.TTriangle {
@@ -822,8 +822,8 @@ func dummyData3(ntris int) Data {
 }
 
 func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
-	if x := m.primLen; x != 1 {
-		t.Fatalf("Mesh.primLen:\nhave %d\nwant 1", x)
+	if x := m.Len(); x != 1 {
+		t.Fatalf("Mesh.Len:\nhave %d\nwant 1", x)
 	}
 	p := storage.prims[m.primIdx]
 	if p.topology != driver.TTriangle {
@@ -924,8 +924,8 @@ func dummyData4(ntris int) Data {
 }
 
 func checkDummyData4(m *Mesh, ntris int, t *testing.T) {
-	if x := m.primLen; x != 3 {
-		t.Fatalf("Mesh.primLen:\nhave %d\nwant 3", x)
+	if x := m.Len(); x != 3 {
+		t.Fatalf("Mesh.Len:\nhave %d\nwant 3", x)
 	}
 	ps := [3]*primitive{&storage.prims[m.primIdx]}
 	if ps[0].next < 0 {
