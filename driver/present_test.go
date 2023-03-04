@@ -398,13 +398,11 @@ func (t *T) pipelineSetup() {
 				Format: driver.Float32x3,
 				Stride: 4 * 3,
 				Nr:     0,
-				Name:   "POSITION",
 			},
 			{
 				Format: driver.Float32x2,
 				Stride: 4 * 2,
 				Nr:     1,
-				Name:   "TEXCOORD",
 			},
 		},
 		Topology: driver.TTriangle,

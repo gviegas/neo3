@@ -174,13 +174,11 @@ func Example_draw() {
 				Format: driver.Float32x3,
 				Stride: 4 * 3,
 				Nr:     0,
-				Name:   "POSITION",
 			},
 			{
 				Format: driver.Float32x4,
 				Stride: 4 * 4,
 				Nr:     1,
-				Name:   "COLOR",
 			},
 		},
 		Topology: driver.TTriangle,

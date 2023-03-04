@@ -26,13 +26,11 @@ func plTestNew(vert, frag driver.ShaderCode, desc driver.DescTable, color driver
 				Format: driver.Float32x3,
 				Stride: 4 * 3,
 				Nr:     0,
-				Name:   "position", // Ignored.
 			},
 			{
 				Format: driver.Float32x2,
 				Stride: 4 * 2,
 				Nr:     3,
-				Name:   "texcoord0", // Ignored.
 			},
 		},
 		Topology: driver.TTriangle,
@@ -98,13 +96,11 @@ func plTestNewColorOnly(vert, frag driver.ShaderCode, desc driver.DescTable, col
 				Format: driver.Float32x3,
 				Stride: 4 * 3,
 				Nr:     0,
-				Name:   "position", // Ignored.
 			},
 			{
 				Format: driver.Float32x3,
 				Stride: 4 * 3,
 				Nr:     1,
-				Name:   "normal", // Ignored.
 			},
 		},
 		Topology: driver.TTriangle,
@@ -154,7 +150,6 @@ func plTestNewDepthOnly(vert driver.ShaderCode, ds driver.PixelFmt) (driver.Pipe
 				Format: driver.Float32x3,
 				Stride: 4 * 3,
 				Nr:     0,
-				Name:   "position", // Ignored.
 			},
 		},
 		Topology: driver.TTriangle,

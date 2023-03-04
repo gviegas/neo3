@@ -574,12 +574,11 @@ func (f VertexFmt) Size() int { return int(f >> 16) }
 // Consecutive vertices are fetched Stride bytes apart.
 // Each vertex input represents a separate buffer binding;
 // interleaved inputs are not supported.
-// The meaning of the Nr and Name fields is shader-specific.
+// The meaning of the Nr field is shader-specific.
 type VertexIn struct {
 	Format VertexFmt
 	Stride int
 	Nr     int
-	Name   string
 }
 
 // Topology is the type of primitive topologies,
