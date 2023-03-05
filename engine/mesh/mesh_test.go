@@ -555,72 +555,6 @@ func TestConv(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
-	mu.Lock()
-	defer func() {
-		b := SetBuffer(nil)
-		if b != nil {
-			b.Destroy()
-		}
-		mu.Unlock()
-	}()
-	const n = 20 << 20
-	buf, err := gpu.NewBuffer(n, true, driver.UVertexData|driver.UIndexData)
-	if err == nil {
-		SetBuffer(buf)
-	} else {
-		t.Fatalf("gpu.NewBuffer: %#v", err)
-	}
-
-	cases := [...]struct {
-		ntris int
-		dummy func(int) Data
-		check func(*Mesh, int, *testing.T)
-	}{
-		{1, dummyData1, checkDummyData1},
-		{12, dummyData4, checkDummyData4},
-		{300, dummyData1, checkDummyData1},
-		{99, dummyData2, checkDummyData2},
-		{760, dummyData3, checkDummyData3},
-		{1024, dummyData1, checkDummyData1},
-		{4097, dummyData2, checkDummyData2},
-		{4095, dummyData2, checkDummyData2},
-		{4096, dummyData4, checkDummyData4},
-		{16000, dummyData1, checkDummyData1},
-		{1, dummyData3, checkDummyData3},
-		{256, dummyData3, checkDummyData3},
-		{12500, dummyData3, checkDummyData3},
-		{5, dummyData2, checkDummyData2},
-		{3, dummyData1, checkDummyData1},
-		{21673, dummyData2, checkDummyData2},
-		{10181, dummyData4, checkDummyData4},
-		{512, dummyData4, checkDummyData4},
-		{100, dummyData3, checkDummyData3},
-	}
-	var res [len(cases)]struct {
-		data Data
-		mesh *Mesh
-	}
-	for i := range cases {
-		res[i].data = cases[i].dummy(cases[i].ntris)
-		res[i].mesh, err = New(&res[i].data)
-		if err != nil {
-			t.Log(cases[i])
-			t.Fatalf("New: unexpected error: %#v", err)
-		}
-		cases[i].check(res[i].mesh, cases[i].ntris, t)
-	}
-	for i := range cases {
-		cases[i].check(res[i].mesh, cases[i].ntris, t)
-	}
-
-	cap := storage.buf.Cap()
-	if cap < n || cap == n && storage.buf != buf {
-		t.Fatal("New: unexpected storage.buf state")
-	}
-	t.Logf("final storage.buf.Cap() is %.2f MiB", float64(cap)/(1<<20))
-}
-
 func dummyData1(ntris int) Data {
 	p := PrimitiveData{
 		Topology:     driver.TTriangle,
@@ -988,4 +922,171 @@ func fillDummyIdx(i driver.IndexFmt, d []byte) {
 	for i := range d {
 		d[i] = x
 	}
+}
+
+func TestNew(t *testing.T) {
+	mu.Lock()
+	defer func() {
+		b := SetBuffer(nil)
+		if b != nil {
+			b.Destroy()
+		}
+		mu.Unlock()
+	}()
+	const n = 20 << 20
+	buf, err := gpu.NewBuffer(n, true, driver.UVertexData|driver.UIndexData)
+	if err == nil {
+		SetBuffer(buf)
+	} else {
+		t.Fatalf("gpu.NewBuffer: %#v", err)
+	}
+
+	cases := [...]struct {
+		ntris int
+		dummy func(int) Data
+		check func(*Mesh, int, *testing.T)
+	}{
+		{1, dummyData1, checkDummyData1},
+		{12, dummyData4, checkDummyData4},
+		{300, dummyData1, checkDummyData1},
+		{99, dummyData2, checkDummyData2},
+		{760, dummyData3, checkDummyData3},
+		{1024, dummyData1, checkDummyData1},
+		{4097, dummyData2, checkDummyData2},
+		{4095, dummyData2, checkDummyData2},
+		{4096, dummyData4, checkDummyData4},
+		{16000, dummyData1, checkDummyData1},
+		{1, dummyData3, checkDummyData3},
+		{256, dummyData3, checkDummyData3},
+		{12500, dummyData3, checkDummyData3},
+		{5, dummyData2, checkDummyData2},
+		{3, dummyData1, checkDummyData1},
+		{21673, dummyData2, checkDummyData2},
+		{10181, dummyData4, checkDummyData4},
+		{512, dummyData4, checkDummyData4},
+		{100, dummyData3, checkDummyData3},
+	}
+	var res [len(cases)]struct {
+		data Data
+		mesh *Mesh
+	}
+	for i := range cases {
+		res[i].data = cases[i].dummy(cases[i].ntris)
+		res[i].mesh, err = New(&res[i].data)
+		if err != nil {
+			t.Log(cases[i])
+			t.Fatalf("New: unexpected error: %#v", err)
+		}
+		cases[i].check(res[i].mesh, cases[i].ntris, t)
+	}
+	for i := range cases {
+		cases[i].check(res[i].mesh, cases[i].ntris, t)
+	}
+
+	cap := storage.buf.Cap()
+	if cap < n || cap == n && storage.buf != buf {
+		t.Fatal("New: unexpected storage.buf state")
+	}
+	t.Logf("final storage.buf.Cap() is %.2f MiB", float64(cap)/(1<<20))
+}
+
+func TestInputs(t *testing.T) {
+	mu.Lock()
+	defer func() {
+		b := SetBuffer(nil)
+		if b != nil {
+			b.Destroy()
+		}
+		mu.Unlock()
+	}()
+
+	check := func(want, have [][]driver.VertexIn) {
+		if len(want) != len(have) {
+			panic("bad check args")
+		}
+		for i := 0; i < len(want); i++ {
+			if x, y := len(want[i]), len(have[i]); x != y {
+				t.Fatalf("Mesh.Inputs: length mismatch\nhave %d\nwant %d", y, x)
+			}
+			for j := 0; j < len(want[i]); j++ {
+				if x, y := want[i][j], have[i][j]; x != y {
+					t.Fatalf("Mesh.Inputs: value mismatch\nhave %v\nwant %v", y, x)
+				}
+			}
+		}
+	}
+
+	want := [6][]driver.VertexIn{
+		{
+			{Format: Position.format(), Stride: Position.format().Size(), Nr: Position.I()},
+			{Format: Normal.format(), Stride: Normal.format().Size(), Nr: Normal.I()},
+			{Format: TexCoord0.format(), Stride: TexCoord0.format().Size(), Nr: TexCoord0.I()},
+		},
+		{
+			{Format: Position.format(), Stride: Position.format().Size(), Nr: Position.I()},
+			{Format: Color0.format(), Stride: Color0.format().Size(), Nr: Color0.I()},
+		},
+		{
+			{Format: Position.format(), Stride: Position.format().Size(), Nr: Position.I()},
+			{Format: Normal.format(), Stride: Normal.format().Size(), Nr: Normal.I()},
+			{Format: Tangent.format(), Stride: Tangent.format().Size(), Nr: Tangent.I()},
+			{Format: TexCoord0.format(), Stride: TexCoord0.format().Size(), Nr: TexCoord0.I()},
+			{Format: TexCoord1.format(), Stride: TexCoord1.format().Size(), Nr: TexCoord1.I()},
+			{Format: Color0.format(), Stride: Color0.format().Size(), Nr: Color0.I()},
+			{Format: Joints0.format(), Stride: Joints0.format().Size(), Nr: Joints0.I()},
+			{Format: Weights0.format(), Stride: Weights0.format().Size(), Nr: Weights0.I()},
+		},
+		{
+			{Format: Position.format(), Stride: Position.format().Size(), Nr: Position.I()},
+			{Format: TexCoord1.format(), Stride: TexCoord1.format().Size(), Nr: TexCoord1.I()},
+		},
+		{
+			{Format: Position.format(), Stride: Position.format().Size(), Nr: Position.I()},
+		},
+		{
+			{Format: Position.format(), Stride: Position.format().Size(), Nr: Position.I()},
+			{Format: Normal.format(), Stride: Normal.format().Size(), Nr: Normal.I()},
+			{Format: TexCoord0.format(), Stride: TexCoord0.format().Size(), Nr: TexCoord0.I()},
+			{Format: TexCoord1.format(), Stride: TexCoord1.format().Size(), Nr: TexCoord1.I()},
+		},
+	}
+
+	have := [6][]driver.VertexIn{}
+	var d Data
+	var m *Mesh
+	var err error
+
+	d = dummyData1(200)
+	m, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	have[0] = m.Inputs(0)
+	check(want[:1], have[:1])
+
+	d = dummyData2(100)
+	m, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	have[1] = m.Inputs(0)
+	check(want[:2], have[:2])
+
+	d = dummyData3(1024)
+	m, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	have[2] = m.Inputs(0)
+	check(want[:2], have[:2])
+
+	d = dummyData4(60)
+	m, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	have[3] = m.Inputs(1)
+	have[4] = m.Inputs(2)
+	have[5] = m.Inputs(0)
+	check(want[:], have[:])
 }

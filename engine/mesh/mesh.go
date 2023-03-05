@@ -28,6 +28,38 @@ type Mesh struct {
 // Len returns the number of primitives in m.
 func (m *Mesh) Len() int { return m.primLen }
 
+// Inputs returns a driver.VertexIn slice describing the
+// vertex input layout of the primitive at index prim.
+// If prim is out of bounds, it returns a nil slice.
+// Inputs are ordered by the Semantic value they represent.
+// driver.VertexIn.Nr is set to Semantic.I().
+func (m *Mesh) Inputs(prim int) []driver.VertexIn {
+	if prim >= m.primLen {
+		return nil
+	}
+	storage.RLock()
+	defer storage.RUnlock()
+	idx := m.primIdx
+	for i := 0; i < prim; i++ {
+		idx, _ = storage.next(idx)
+	}
+	p := storage.prims[idx]
+	var vins [MaxSemantic]driver.VertexIn
+	var n int
+	for i := 0; i < MaxSemantic; i++ {
+		if p.mask&(1<<i) == 0 {
+			continue
+		}
+		vins[n] = driver.VertexIn{
+			Format: p.vertex[i].format,
+			Stride: p.vertex[i].format.Size(),
+			Nr:     i,
+		}
+		n++
+	}
+	return vins[:n]
+}
+
 // Semantic specifies the intended use of a primitive's attribute.
 type Semantic int
 
