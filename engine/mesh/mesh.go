@@ -44,20 +44,65 @@ func (m *Mesh) Inputs(prim int) []driver.VertexIn {
 		idx, _ = storage.next(idx)
 	}
 	p := &storage.prims[idx]
-	var vins [MaxSemantic]driver.VertexIn
+	var vin [MaxSemantic]driver.VertexIn
 	var n int
 	for i := 0; i < MaxSemantic; i++ {
 		if p.mask&(1<<i) == 0 {
 			continue
 		}
-		vins[n] = driver.VertexIn{
+		vin[n] = driver.VertexIn{
 			Format: p.vertex[i].format,
 			Stride: p.vertex[i].format.Size(),
 			Nr:     i,
 		}
 		n++
 	}
-	return vins[:n]
+	return vin[:n]
+}
+
+// Draw sets the vertex/index buffers and draws the primitive
+// identified by prim.
+// The caller is responsible for setting up cb as to be valid
+// for drawing the primitive. In particular, it assumes that
+// cb has an active render pass and that a compatible graphics
+// pipeline has been set (a compatible pipeline is one whose
+// vertex inputs match m.Inputs(prim)).
+// If prim is out of bounds, the call is silently ignored.
+func (m *Mesh) Draw(prim int, cb driver.CmdBuffer, instCnt int) {
+	if prim >= m.primLen || prim < 0 {
+		return
+	}
+	if instCnt < 1 {
+		instCnt = 1
+	}
+	storage.RLock()
+	defer storage.RUnlock()
+	idx := prim
+	for i := 0; i < prim; i++ {
+		idx, _ = storage.next(idx)
+	}
+	p := &storage.prims[idx]
+	// TODO: Consider computing these during
+	// Mesh creation and storing alongside
+	// the primitive (probably not worth it).
+	var buf [MaxSemantic]driver.Buffer
+	var off [MaxSemantic]int64
+	var n int
+	for i := 0; i < MaxSemantic; i++ {
+		if p.mask&(1<<i) == 0 {
+			continue
+		}
+		buf[n] = storage.buf
+		off[n] = int64(p.vertex[i].byteStart())
+		n++
+	}
+	cb.SetVertexBuf(0, buf[:n], off[:n])
+	if p.index.start >= p.index.end {
+		cb.Draw(p.count, instCnt, 0, 0)
+	} else {
+		cb.SetIndexBuf(p.index.format, storage.buf, int64(p.index.byteStart()))
+		cb.DrawIndexed(p.count, instCnt, 0, 0, 0)
+	}
 }
 
 // Semantic specifies the intended use of a primitive's attribute.
