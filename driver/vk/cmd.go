@@ -591,30 +591,18 @@ func (cb *cmdBuffer) setDescTable(table driver.DescTable, start int, heapCopy []
 }
 
 // Draw draws primitives.
-func (cb *cmdBuffer) Draw(vertCount, instCount, baseVert, baseInst int) {
-	nvert := C.uint32_t(vertCount)
-	ninst := C.uint32_t(instCount)
-	bvert := C.uint32_t(baseVert)
-	binst := C.uint32_t(baseInst)
-	C.vkCmdDraw(cb.cb, nvert, ninst, bvert, binst)
+func (cb *cmdBuffer) Draw(vertCnt, instCnt, baseVert, baseInst int) {
+	C.vkCmdDraw(cb.cb, C.uint32_t(vertCnt), C.uint32_t(instCnt), C.uint32_t(baseVert), C.uint32_t(baseInst))
 }
 
 // DrawIndexed draws indexed primitives.
-func (cb *cmdBuffer) DrawIndexed(idxCount, instCount, baseIdx, vertOff, baseInst int) {
-	nidx := C.uint32_t(idxCount)
-	ninst := C.uint32_t(instCount)
-	bidx := C.uint32_t(baseIdx)
-	voff := C.int32_t(vertOff)
-	binst := C.uint32_t(baseInst)
-	C.vkCmdDrawIndexed(cb.cb, nidx, ninst, bidx, voff, binst)
+func (cb *cmdBuffer) DrawIndexed(idxCnt, instCnt, baseIdx, vertOff, baseInst int) {
+	C.vkCmdDrawIndexed(cb.cb, C.uint32_t(idxCnt), C.uint32_t(instCnt), C.uint32_t(baseIdx), C.int32_t(vertOff), C.uint32_t(baseInst))
 }
 
 // Dispatch dispatches compute thread groups.
-func (cb *cmdBuffer) Dispatch(grpCountX, grpCountY, grpCountZ int) {
-	nx := C.uint32_t(grpCountX)
-	ny := C.uint32_t(grpCountY)
-	nz := C.uint32_t(grpCountZ)
-	C.vkCmdDispatch(cb.cb, nx, ny, nz)
+func (cb *cmdBuffer) Dispatch(grpCntX, grpCntY, grpCntZ int) {
+	C.vkCmdDispatch(cb.cb, C.uint32_t(grpCntX), C.uint32_t(grpCntY), C.uint32_t(grpCntZ))
 }
 
 // CopyBuffer copies data between buffers.

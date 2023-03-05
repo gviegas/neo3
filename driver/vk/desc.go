@@ -257,8 +257,8 @@ func (h *descHeap) SetSampler(cpy, nr, start int, splr []driver.Sampler) {
 	C.vkUpdateDescriptorSets(h.d.dev, 1, &write, 0, nil)
 }
 
-// Count returns the number of heap copies created by New.
-func (h *descHeap) Count() int { return len(h.sets) }
+// Len returns the number of heap copies created by New.
+func (h *descHeap) Len() int { return len(h.sets) }
 
 // Destroy destroys the descriptor heap.
 func (h *descHeap) Destroy() {

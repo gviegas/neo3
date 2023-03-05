@@ -166,15 +166,15 @@ type CmdBuffer interface {
 
 	// Draw draws primitives.
 	// It must only be called during a render pass.
-	Draw(vertCount, instCount, baseVert, baseInst int)
+	Draw(vertCnt, instCnt, baseVert, baseInst int)
 
 	// DrawIndexed draws indexed primitives.
 	// It must only be called during a render pass.
-	DrawIndexed(idxCount, instCount, baseIdx, vertOff, baseInst int)
+	DrawIndexed(idxCnt, instCnt, baseIdx, vertOff, baseInst int)
 
 	// Dispatch dispatches compute thread groups.
 	// It must not be called during a render pass.
-	Dispatch(grpCountX, grpCountY, grpCountZ int)
+	Dispatch(grpCntX, grpCntY, grpCntZ int)
 
 	// CopyBuffer copies data between buffers.
 	// It must not be called during a render pass.
@@ -492,7 +492,7 @@ type DescHeap interface {
 	// New creates enough storage for n copies of each
 	// descriptor.
 	// All copies from a previous call to New are invalidated,
-	// unless n is the same as the current Count value, in
+	// unless n is the same as the current Len value, in
 	// which case it is a no-op.
 	// Calling New(0) frees all storage.
 	New(n int) error
@@ -513,9 +513,9 @@ type DescHeap interface {
 	// The descriptor must be of type DSampler.
 	SetSampler(cpy, nr, start int, splr []Sampler)
 
-	// Count returns the number of heap copies created
+	// Len returns the number of heap copies created
 	// by New.
-	Count() int
+	Len() int
 }
 
 // DescTable is the interface that defines the bindings

@@ -125,10 +125,10 @@ func TestDescHeap(t *testing.T) {
 			if !validDescTypeN(h, ds) {
 				t.Errorf("%s: h.n[buf|img|const|tex|splr]: count mismatch", call)
 			}
-			// Count.
-			n := h.Count()
+			// Len.
+			n := h.Len()
 			if n != 0 {
-				t.Errorf("h.Count()\nhave %v\nwant 0", n)
+				t.Errorf("h.Len()\nhave %v\nwant 0", n)
 			}
 			// Destroy.
 			h.Destroy()
