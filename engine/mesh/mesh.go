@@ -34,7 +34,7 @@ func (m *Mesh) Len() int { return m.primLen }
 // Inputs are ordered by the Semantic value they represent.
 // driver.VertexIn.Nr is set to Semantic.I().
 func (m *Mesh) Inputs(prim int) []driver.VertexIn {
-	if prim >= m.primLen {
+	if prim >= m.primLen || prim < 0 {
 		return nil
 	}
 	storage.RLock()
@@ -43,7 +43,7 @@ func (m *Mesh) Inputs(prim int) []driver.VertexIn {
 	for i := 0; i < prim; i++ {
 		idx, _ = storage.next(idx)
 	}
-	p := storage.prims[idx]
+	p := &storage.prims[idx]
 	var vins [MaxSemantic]driver.VertexIn
 	var n int
 	for i := 0; i < MaxSemantic; i++ {
