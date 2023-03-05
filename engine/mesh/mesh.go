@@ -411,7 +411,7 @@ func New(data *Data) (m *Mesh, err error) {
 			}
 			return
 		}
-		storage.link(prev, next)
+		storage.prims[prev].next = next
 		prev = next
 	}
 	m = &Mesh{

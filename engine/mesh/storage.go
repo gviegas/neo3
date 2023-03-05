@@ -176,11 +176,6 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p int,
 	return
 }
 
-// link links a primitive entry to another.
-// This is only relevant for meshes that contain multiple
-// primitives.
-func (b *meshBuffer) link(prim int, next int) { b.prims[prim].next = next }
-
 // next returns the next primitive in the list.
 // If prim has no subsequent primitive (i.e., it was not
 // linked to another primitive), then ok will be false.
