@@ -105,6 +105,26 @@ func (m *Mesh) Draw(prim int, cb driver.CmdBuffer, instCnt int) {
 	}
 }
 
+// Free invalidates m and makes the GPU memory it holds
+// available for new meshes.
+func (m *Mesh) Free() {
+	if m.primLen < 1 {
+		return
+	}
+	storage.Lock()
+	defer storage.Unlock()
+	p := m.primIdx
+	for {
+		next, ok := storage.next(p)
+		storage.freeEntry(p)
+		if !ok {
+			break
+		}
+		p = next
+	}
+	*m = Mesh{}
+}
+
 // Semantic specifies the intended use of a primitive's attribute.
 type Semantic int
 

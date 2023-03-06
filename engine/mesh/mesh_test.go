@@ -1090,3 +1090,254 @@ func TestInputs(t *testing.T) {
 	have[5] = m.Inputs(0)
 	check(want[:], have[:])
 }
+
+func TestFree(t *testing.T) {
+	mu.Lock()
+	defer func() {
+		b := SetBuffer(nil)
+		if b != nil {
+			b.Destroy()
+		}
+		mu.Unlock()
+	}()
+
+	type snapshot struct {
+		spans                      []span
+		nspan, nprim, rspan, rprim int
+	}
+	take := func(m *Mesh, s *snapshot) {
+		s.spans = s.spans[:0]
+		s.nspan, s.nprim = 0, m.primLen
+		s.rspan, s.rprim = storage.spanMap.Rem(), storage.primMap.Rem()
+		p := m.primIdx
+		for {
+			prim := &storage.prims[p]
+			for i := 0; i < MaxSemantic; i++ {
+				if prim.mask&(1<<i) != 0 {
+					s.spans = append(s.spans, prim.vertex[i].span)
+					s.nspan += prim.vertex[i].end - prim.vertex[i].start
+				}
+			}
+			if prim.index.start < prim.index.end {
+				s.spans = append(s.spans, prim.index.span)
+				s.nspan += prim.index.end - prim.index.start
+			}
+			var ok bool
+			if p, ok = storage.next(p); !ok {
+				break
+			}
+		}
+	}
+	check := func(s *snapshot) {
+		if x, y := storage.spanMap.Rem(), s.rspan+s.nspan; x != y {
+			t.Fatalf("Mesh.Free: spanMap.Rem()\nhave %d\nwant %d\n(should remove %d block(s))", x, y, s.nspan)
+		}
+		if x, y := storage.primMap.Rem(), s.rprim+s.nprim; x != y {
+			t.Fatalf("Mesh.Free: primMap.Rem()\nhave %d\nwant %d\n(should remove %d primitive(s))", x, y, s.nprim)
+		}
+		for _, x := range s.spans {
+			for i := x.start; i < x.end; i++ {
+				if storage.spanMap.IsSet(i) {
+					t.Fatalf("Mesh.Free: spanMap.IsSet(%d)\nhave true\nwant false", i)
+				}
+			}
+		}
+	}
+
+	var s snapshot
+	var d Data
+	var m *Mesh
+	var err error
+
+	d = dummyData1(500)
+	m, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m, &s)
+	m.Free()
+	check(&s)
+
+	d = dummyData2(5)
+	m, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m, &s)
+	m.Free()
+	check(&s)
+
+	d = dummyData3(1000)
+	m, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m, &s)
+	m.Free()
+	check(&s)
+
+	d = dummyData4(175)
+	m, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m, &s)
+	m.Free()
+	check(&s)
+
+	d = dummyData3(12)
+	m1, err := New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData4(50)
+	m2, err := New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData2(2000)
+	m3, err := New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData1(1023)
+	m4, err := New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m1, &s)
+	m1.Free()
+	check(&s)
+	take(m2, &s)
+	m2.Free()
+	check(&s)
+	take(m3, &s)
+	m3.Free()
+	check(&s)
+	take(m4, &s)
+	m4.Free()
+	check(&s)
+
+	d = dummyData3(12)
+	m1, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData4(50)
+	m2, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData2(2000)
+	m3, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData1(1023)
+	m4, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m4, &s)
+	m4.Free()
+	check(&s)
+	take(m3, &s)
+	m3.Free()
+	check(&s)
+	take(m2, &s)
+	m2.Free()
+	check(&s)
+	take(m1, &s)
+	m1.Free()
+	check(&s)
+
+	d = dummyData1(75)
+	m1, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData2(140)
+	m2, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m1, &s)
+	m1.Free()
+	check(&s)
+	d = dummyData3(80)
+	m3, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData4(513)
+	m4, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m3, &s)
+	m3.Free()
+	check(&s)
+	d = dummyData1(400)
+	m1, err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	take(m4, &s)
+	m4.Free()
+	check(&s)
+	take(m1, &s)
+	m1.Free()
+	check(&s)
+	take(m2, &s)
+	m2.Free()
+	check(&s)
+
+	const n = 100
+	ms := make([]*Mesh, 0, n)
+	for i := 0; i < n; i++ {
+		switch i % 10 {
+		case 1:
+			d = dummyData1(99)
+		case 2, 3, 8:
+			d = dummyData2(88)
+		case 4, 6, 7, 9:
+			d = dummyData3(77)
+		default:
+			d = dummyData4(66)
+		}
+		if m, err = New(&d); err != nil {
+			t.Fatalf("New failed: %#v", err)
+		} else {
+			ms = append(ms, m)
+		}
+	}
+	take(ms[n/2], &s)
+	ms[n/2].Free()
+	check(&s)
+	take(ms[n-1], &s)
+	ms[n-1].Free()
+	check(&s)
+	take(ms[0], &s)
+	ms[0].Free()
+	check(&s)
+	d = dummyData1(100)
+	ms[n-1], err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData3(200)
+	ms[0], err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	d = dummyData4(150)
+	ms[n/2], err = New(&d)
+	if err != nil {
+		t.Fatalf("New failed: %#v", err)
+	}
+	for i := range ms {
+		take(ms[i], &s)
+		ms[i].Free()
+		check(&s)
+	}
+}
