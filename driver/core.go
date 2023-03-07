@@ -911,8 +911,8 @@ const (
 //	Dim3D{Width: >= 1, Height: >= 1, Depth: 0} is 2D.
 //	Dim3D{Width: >= 1, Height: >= 1, Depth: >= 1} is 3D.
 //
-// When creating image views, the dimensionality must match
-// that of the views's type.
+// When creating an image view, the dimensionality must
+// match that of the view's type.
 //
 // Direct access to image memory is not provided, so copying
 // data from the CPU to an image resource requires the use
@@ -929,7 +929,7 @@ type Image interface {
 	// view of array type if the view is created from a
 	// single layer).
 	// All views created from a given image must be
-	// detroyed before the image itself is destroyed.
+	// destroyed before the image itself is destroyed.
 	NewView(typ ViewType, layer, layers, level, levels int) (ImageView, error)
 }
 
