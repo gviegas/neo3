@@ -59,7 +59,8 @@ validParam:
 	usg := driver.UShaderSample
 	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
 	if err == nil {
-		// TODO: Must call Image.Destroy when unreachable.
+		// TODO: Should call Image.Destroy when unreachable
+		// (unless Texture.Free is called first).
 		t = &Texture{img, usg, *param}
 	}
 	return
@@ -97,7 +98,8 @@ validParam:
 	usg := driver.UShaderSample
 	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, 1, usg)
 	if err == nil {
-		// TODO: Must call Image.Destroy when unreachable.
+		// TODO: Should call Image.Destroy when unreachable
+		// (unless Texture.Free is called first).
 		t = &Texture{img, usg, *param}
 	}
 	return
@@ -133,10 +135,19 @@ validParam:
 	usg := driver.UShaderSample | driver.URenderTarget
 	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
 	if err == nil {
-		// TODO: Must call Image.Destroy when unreachable.
+		// TODO: Should call Image.Destroy when unreachable
+		// (unless Texture.Free is called first).
 		t = &Texture{img, usg, *param}
 	}
 	return
+}
+
+// Free invalidates t and destroys the driver.Image.
+func (t *Texture) Free() {
+	if t.image != nil {
+		t.image.Destroy()
+	}
+	*t = Texture{}
 }
 
 // ComputeLevels returns the maximum number of mip levels
@@ -191,8 +202,17 @@ func NewSampler(param *SplrParam) (s *Sampler, err error) {
 validParam:
 	splr, err := ctxt.GPU().NewSampler(param)
 	if err == nil {
-		// TODO: Must call Sampler.Destroy when unreachable.
+		// TODO: Should call Sampler.Destroy when unreachable
+		// (unless Sampler.Free is called first).
 		s = &Sampler{splr, *param}
 	}
 	return
+}
+
+// Free invalidates s and destroys the driver.Sampler.
+func (s *Sampler) Free() {
+	if s.sampler != nil {
+		s.sampler.Destroy()
+	}
+	*s = Sampler{}
 }

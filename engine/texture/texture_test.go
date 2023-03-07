@@ -818,3 +818,138 @@ func TestSampler(t *testing.T) {
 		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
 	}
 }
+
+func TestTextureFree(t *testing.T) {
+	texs := make([]*Texture, 0, 4)
+	for i, x := range [4]TexParam{
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D: driver.Dim3D{
+				Width:  1024,
+				Height: 1024,
+				Depth:  0,
+			},
+			Layers:  1,
+			Levels:  1,
+			Samples: 1,
+		},
+		{
+			PixelFmt: driver.RGBA8sRGB,
+			Dim3D: driver.Dim3D{
+				Width:  512,
+				Height: 512,
+				Depth:  0,
+			},
+			Layers:  3,
+			Levels:  10,
+			Samples: 1,
+		},
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D: driver.Dim3D{
+				Width:  1024,
+				Height: 1024,
+				Depth:  0,
+			},
+			Layers:  6,
+			Levels:  1,
+			Samples: 1,
+		},
+		{
+			PixelFmt: driver.RGBA16f,
+			Dim3D: driver.Dim3D{
+				Width:  1920,
+				Height: 1080,
+				Depth:  0,
+			},
+			Layers:  1,
+			Levels:  1,
+			Samples: 4,
+		},
+	} {
+		var tex *Texture
+		var err error
+		switch i {
+		case 0, 1:
+			tex, err = New2D(&x)
+			if err != nil {
+				t.Fatalf("New2D failed:\n%#v", err)
+			}
+		case 2:
+			tex, err = NewCube(&x)
+			if err != nil {
+				t.Fatalf("NewCube failed:\n%#v", err)
+			}
+		default:
+			tex, err = NewTarget(&x)
+			if err != nil {
+				t.Fatalf("NewTarget failed:/%#v", err)
+			}
+		}
+		texs = append(texs, tex)
+	}
+
+	for _, x := range texs {
+		x.check(t)
+		x.Free()
+		if *x != (Texture{}) {
+			t.Fatal("Texture.Free: unexpected non-zero value:\n", *x)
+		}
+	}
+}
+
+func TestSamplerFree(t *testing.T) {
+	splrs := make([]*Sampler, 0, 3)
+	for _, x := range [3]SplrParam{
+		{
+			Min:      driver.FNearest,
+			Mag:      driver.FNearest,
+			Mipmap:   driver.FNoMipmap,
+			AddrU:    driver.AWrap,
+			AddrV:    driver.AWrap,
+			AddrW:    driver.AWrap,
+			MaxAniso: 1,
+			Cmp:      driver.CAlways,
+			MinLOD:   0,
+			MaxLOD:   0.25,
+		},
+		{
+			Min:      driver.FLinear,
+			Mag:      driver.FLinear,
+			Mipmap:   driver.FNearest,
+			AddrU:    driver.AClamp,
+			AddrV:    driver.AClamp,
+			AddrW:    driver.AClamp,
+			MaxAniso: 1,
+			Cmp:      driver.CLess,
+			MinLOD:   0,
+			MaxLOD:   0.5,
+		},
+		{
+			Min:      driver.FLinear,
+			Mag:      driver.FNearest,
+			Mipmap:   driver.FLinear,
+			AddrU:    driver.AWrap,
+			AddrV:    driver.AClamp,
+			AddrW:    driver.AMirror,
+			MaxAniso: 1,
+			Cmp:      driver.CGreater,
+			MinLOD:   0.25,
+			MaxLOD:   1.0,
+		},
+	} {
+		splr, err := NewSampler(&x)
+		if err != nil {
+			t.Fatalf("NewSampler failed:\n%#v", err)
+		}
+		splrs = append(splrs, splr)
+	}
+
+	for _, x := range splrs {
+		x.check(t)
+		x.Free()
+		if *x != (Sampler{}) {
+			t.Fatal("Sampler.Free: unexpected non-zero value:\n", *x)
+		}
+	}
+}
