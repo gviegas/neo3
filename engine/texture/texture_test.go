@@ -12,8 +12,15 @@ import (
 
 // check checks that tex is valid.
 func (tex *Texture) check(t *testing.T) {
-	if tex.image == nil {
-		t.Fatal("Texture.image: unexpected nil value")
+	if len(tex.views) < 1 {
+		t.Fatal("Texture.views: unexpected len < 1")
+	}
+	img := tex.views[0].Image()
+	for i := 1; i < len(tex.views); i++ {
+		// Should be comparable in any case.
+		if x := tex.views[i].Image(); x != img {
+			t.Fatalf("Texture.views[%d].Image: differs from [0]\nhave %v\nwant %v", i, x, img)
+		}
 	}
 	usg := ^(driver.UShaderRead | driver.UShaderWrite | driver.UShaderSample | driver.URenderTarget)
 	if tex.usage == 0 || tex.usage&usg != 0 {
@@ -892,7 +899,7 @@ func TestTextureFree(t *testing.T) {
 	for _, x := range texs {
 		x.check(t)
 		x.Free()
-		if *x != (Texture{}) {
+		if x.views != nil || x.usage != 0 || x.param != (TexParam{}) {
 			t.Fatal("Texture.Free: unexpected non-zero value:\n", *x)
 		}
 	}

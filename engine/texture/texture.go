@@ -15,7 +15,11 @@ const prefix = "texture: "
 
 // Texture wraps a driver.Image.
 type Texture struct {
-	image driver.Image
+	// One view per layer (or every 6th, in case
+	// of cube textures). If the image is arrayed,
+	// then there will be an additional view of
+	// the whole array at the end.
+	views []driver.ImageView
 	usage driver.Usage
 	param TexParam
 }
@@ -27,6 +31,91 @@ type TexParam struct {
 	Layers  int
 	Levels  int
 	Samples int
+}
+
+const (
+	tex2D = iota
+	texCube
+	texTarget
+)
+
+// makeViews creates a driver.Image from param/usage and
+// makes the driver.ImageView slice that Texture expects.
+// It assumes that the parameters are valid.
+func makeViews(param *TexParam, usage driver.Usage, texType int) (v []driver.ImageView, err error) {
+	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usage)
+	if err != nil {
+		return
+	}
+
+	var typ driver.ViewType
+	// Non-arrayed cube views take
+	// six layers.
+	var nl int
+
+	switch texType {
+	case tex2D, texTarget:
+		if param.Layers > 1 {
+			var ltyp driver.ViewType
+			if param.Samples > 1 {
+				ltyp = driver.IView2DMSArray
+				typ = driver.IView2DMS
+			} else {
+				ltyp = driver.IView2DArray
+				typ = driver.IView2D
+			}
+			view, err := img.NewView(ltyp, 0, param.Layers, 0, param.Levels)
+			if err != nil {
+				img.Destroy()
+				return nil, err
+			}
+			v = make([]driver.ImageView, param.Layers+1)
+			v[param.Layers] = view
+		} else {
+			if param.Samples > 1 {
+				typ = driver.IView2DMS
+			} else {
+				typ = driver.IView2D
+			}
+			v = []driver.ImageView{nil}
+		}
+		nl = 1
+	case texCube:
+		if param.Layers > 6 {
+			// BUG: Certain back-ends may not support
+			// views of type IViewCubeArray.
+			view, err := img.NewView(driver.IViewCubeArray, 0, param.Layers, 0, param.Levels)
+			if err != nil {
+				img.Destroy()
+				return nil, err
+			}
+			v = make([]driver.ImageView, param.Layers/6+1)
+			v[param.Layers/6] = view
+		} else {
+			typ = driver.IViewCube
+			v = []driver.ImageView{nil}
+		}
+		nl = 6
+	default:
+		panic("undefined texture type")
+	}
+
+	// Create non-arrayed views.
+	for i := 0; i < param.Layers/nl; i++ {
+		v[i], err = img.NewView(typ, i*nl, nl, 0, param.Levels)
+		if err != nil {
+			for j := 0; j < i; j++ {
+				v[j].Destroy()
+			}
+			if param.Layers > nl {
+				v[param.Layers/nl].Destroy()
+			}
+			img.Destroy()
+			v = nil
+			break
+		}
+	}
+	return
 }
 
 // New2D creates a 2D texture.
@@ -56,12 +145,13 @@ func New2D(param *TexParam) (t *Texture, err error) {
 	err = errors.New(prefix + reason)
 	return
 validParam:
-	usg := driver.UShaderSample
-	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
+	usage := driver.UShaderSample
+	views, err := makeViews(param, usage, tex2D)
 	if err == nil {
-		// TODO: Should call Image.Destroy when unreachable
-		// (unless Texture.Free is called first).
-		t = &Texture{img, usg, *param}
+		// TODO: Should destroy driver resources
+		// when unreachable (unless Texture.Free
+		// is called first).
+		t = &Texture{views, usage, *param}
 	}
 	return
 }
@@ -95,12 +185,13 @@ func NewCube(param *TexParam) (t *Texture, err error) {
 	err = errors.New(prefix + reason)
 	return
 validParam:
-	usg := driver.UShaderSample
-	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, 1, usg)
+	usage := driver.UShaderSample
+	views, err := makeViews(param, usage, texCube)
 	if err == nil {
-		// TODO: Should call Image.Destroy when unreachable
-		// (unless Texture.Free is called first).
-		t = &Texture{img, usg, *param}
+		// TODO: Should destroy driver resources
+		// when unreachable (unless Texture.Free
+		// is called first).
+		t = &Texture{views, usage, *param}
 	}
 	return
 }
@@ -132,20 +223,26 @@ func NewTarget(param *TexParam) (t *Texture, err error) {
 	err = errors.New(prefix + reason)
 	return
 validParam:
-	usg := driver.UShaderSample | driver.URenderTarget
-	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usg)
+	usage := driver.UShaderSample | driver.URenderTarget
+	views, err := makeViews(param, usage, texTarget)
 	if err == nil {
-		// TODO: Should call Image.Destroy when unreachable
-		// (unless Texture.Free is called first).
-		t = &Texture{img, usg, *param}
+		// TODO: Should destroy driver resources
+		// when unreachable (unless Texture.Free
+		// is called first).
+		t = &Texture{views, usage, *param}
 	}
 	return
 }
 
-// Free invalidates t and destroys the driver.Image.
+// Free invalidates t and destroys the driver.Image and
+// the driver.ImageView(s).
 func (t *Texture) Free() {
-	if t.image != nil {
-		t.image.Destroy()
+	if len(t.views) > 0 {
+		img := t.views[0].Image()
+		for _, v := range t.views {
+			v.Destroy()
+		}
+		img.Destroy()
 	}
 	*t = Texture{}
 }
@@ -202,8 +299,9 @@ func NewSampler(param *SplrParam) (s *Sampler, err error) {
 validParam:
 	splr, err := ctxt.GPU().NewSampler(param)
 	if err == nil {
-		// TODO: Should call Sampler.Destroy when unreachable
-		// (unless Sampler.Free is called first).
+		// TODO: Should destroy driver resource
+		// when unreachable (unless Sampler.Free
+		// is called first).
 		s = &Sampler{splr, *param}
 	}
 	return
