@@ -921,10 +921,10 @@ type Image interface {
 	// Image views represent a typed view of image storage.
 	// Its type must be valid according to the image from
 	// which it is created and the parameters given when
-	// calling this method (e.g, creating a view of 3D type
-	// from a 2D image is not allowed, and neither is a
-	// view of array type if the view is created from a
-	// single layer).
+	// calling this method (e.g., creating a view of type
+	// IView3D from a 2D image is not allowed, and neither
+	// is IView2DArray if the view will contain a single
+	// layer of the image).
 	// All views created from a given image must be
 	// destroyed before the image itself is destroyed.
 	NewView(typ ViewType, layer, layers, level, levels int) (ImageView, error)
