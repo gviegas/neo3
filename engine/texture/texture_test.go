@@ -960,3 +960,62 @@ func TestSamplerFree(t *testing.T) {
 		}
 	}
 }
+
+func TestStaging(t *testing.T) {
+	var s *stagingBuffer
+	var err error
+
+	check := func(nbuf, nbm int) {
+		if err != nil {
+			t.Fatalf("driver.NewBuffer failed:\n%#v", err)
+		}
+		if x := int(s.buf.Cap()); x != nbuf {
+			t.Fatalf("newStaging: buf.Cap\nhave %d\nwant %d", x, nbuf)
+		}
+		if x := s.bm.Len(); x != nbm {
+			t.Fatalf("newStaging: bm.Len\nhave %d\nwant %d", x, nbm)
+		}
+	}
+	checkFree := func() {
+		if s.buf != nil {
+			t.Fatalf("stagingBuffer.free: buf\nhave %v\nwant nil", s.buf)
+		}
+		if x := s.bm.Len(); x != 0 {
+			t.Fatalf("stagingBuffer.free: bm.Len\nhave %d\nwant 0", x)
+		}
+	}
+
+	const n = blockSize * nbit
+
+	s, err = newStaging(n)
+	check(n, nbit)
+	s.free()
+	checkFree()
+
+	s, err = newStaging(n - 1)
+	check(n, nbit)
+	s.free()
+	checkFree()
+
+	s, err = newStaging(n + 1)
+	check(n*2, nbit*2)
+	s.free()
+	checkFree()
+
+	s, err = newStaging(1)
+	check(n, nbit)
+	s.free()
+	checkFree()
+
+	s, err = newStaging(n + n - 1)
+	check(n*2, nbit*2)
+	s.free()
+	checkFree()
+
+	x := 2048 * 2048 * 4
+	s, err = newStaging(x)
+	x = (x + n - 1) &^ (n - 1)
+	check(x, x/blockSize)
+	s.free()
+	checkFree()
+}
