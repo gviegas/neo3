@@ -3,10 +3,27 @@
 package texture
 
 import (
+	"runtime"
+
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/engine/internal/ctxt"
 	"github.com/gviegas/scene/internal/bitm"
 )
+
+// Global staging buffer(s).
+var staging chan *stagingBuffer
+
+func init() {
+	n := runtime.GOMAXPROCS(-1)
+	staging = make(chan *stagingBuffer, n)
+	for i := 0; i < n; i++ {
+		s, err := newStaging(blockSize * nbit)
+		if err != nil {
+			s = &stagingBuffer{}
+		}
+		staging <- s
+	}
+}
 
 // stagingBuffer is used to copy image data
 // between the CPU and the GPU.

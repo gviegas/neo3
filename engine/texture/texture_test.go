@@ -1019,3 +1019,20 @@ func TestStaging(t *testing.T) {
 	s.free()
 	checkFree()
 }
+
+func TestInit(t *testing.T) {
+	var n int
+	for i := 0; i < cap(staging); i++ {
+		select {
+		case x := <-staging:
+			if x.buf != nil && x.buf.Cap() != blockSize*nbit {
+				t.Fatalf("staging: buf.Cap:\nhave %d\nwant %d", x.buf.Cap(), blockSize*nbit)
+			}
+			n++
+		default:
+		}
+	}
+	if n != cap(staging) {
+		t.Fatalf("staging: unexpected len != cap\nhave %d\n want %d", n, cap(staging))
+	}
+}
