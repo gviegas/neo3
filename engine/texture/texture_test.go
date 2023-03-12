@@ -1021,18 +1021,41 @@ func TestStaging(t *testing.T) {
 }
 
 func TestInit(t *testing.T) {
-	var n int
+	var s []*stagingBuffer
 	for i := 0; i < cap(staging); i++ {
 		select {
 		case x := <-staging:
-			if x.buf != nil && x.buf.Cap() != blockSize*nbit {
+			if x.wk == nil || x.buf == nil {
+				if x.wk != nil || x.buf != nil {
+					t.Fatal("staging: unexpected non-nil wk or buf")
+				}
+				continue
+			}
+			if cap(x.wk) != 1 {
+				t.Fatalf("staging: cap(wk)\nhave %d\nwant 1", cap(x.wk))
+			}
+			wk := <-x.wk
+			if len(wk.Work) != 1 {
+				t.Fatalf("staging: len((<-wk).Work)\nhave %d\nwant 1", len(wk.Work))
+			}
+			if wk.Work[0] == nil {
+				t.Fatal("staging: (<-wk).Work[0]\nhave nil\nwant non-nil")
+			}
+			if wk.Err != nil {
+				t.Fatalf("staging: (<-wk).Err\nhave %#v\nwant nil", wk.Err)
+			}
+			if x.buf.Cap() != blockSize*nbit {
 				t.Fatalf("staging: buf.Cap:\nhave %d\nwant %d", x.buf.Cap(), blockSize*nbit)
 			}
-			n++
+			x.wk <- wk
+			s = append(s, x)
 		default:
 		}
 	}
-	if n != cap(staging) {
-		t.Fatalf("staging: unexpected len != cap\nhave %d\n want %d", n, cap(staging))
+	if len(s) != cap(staging) {
+		t.Fatalf("staging: unexpected len != cap\nhave %d\nwant %d", len(s), cap(staging))
+	}
+	for i := range s {
+		staging <- s[i]
 	}
 }
