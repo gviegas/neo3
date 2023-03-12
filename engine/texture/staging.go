@@ -69,7 +69,27 @@ func newStaging(n int) (*stagingBuffer, error) {
 	return &stagingBuffer{wk, buf, bm}, nil
 }
 
-// free invalidates s and destroys the driver.Buffer.
+// commit commits the copy commands for execution.
+// It blocks until execution completes.
+func (s *stagingBuffer) commit() (err error) {
+	wk := <-s.wk
+	if s.bm.Len() == s.bm.Rem() {
+		s.wk <- wk
+		return
+	}
+	s.bm.Clear()
+	if err = ctxt.GPU().Commit(wk, s.wk); err != nil {
+		s.wk <- wk
+		return
+	}
+	wk = <-s.wk
+	err, wk.Err = wk.Err, nil
+	s.wk <- wk
+	return
+}
+
+// free invalidates s and destroys the driver
+// resources.
 func (s *stagingBuffer) free() {
 	if s.wk != nil {
 		wk := <-s.wk
