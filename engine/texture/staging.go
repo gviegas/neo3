@@ -69,6 +69,43 @@ func newStaging(n int) (*stagingBuffer, error) {
 	return &stagingBuffer{wk, buf, bm}, nil
 }
 
+// stage writes CPU data to s's buffer.
+// It may need to commit pending copy commands to
+// grow the buffer.
+// It returns an offset from the start of s.buf
+// identifying where data was copied to.
+func (s *stagingBuffer) stage(data []byte) (off int64, err error) {
+	n := (len(data) + blockSize - 1) / blockSize
+	if n == 0 {
+		panic("stagingBuffer.stage: len(data) == 0")
+	}
+	idx, ok := s.bm.SearchRange(n)
+	if !ok {
+		if err = s.commit(); err != nil {
+			return
+		}
+		// TODO: Consider using idx 0 instead.
+		idx = s.bm.Len()
+		n := (n + nbit - 1) / nbit
+		s.bm.Grow(n)
+		// TODO: Make buffer cap bounds configurable.
+		n = int(s.buf.Cap()) + n*blockSize*nbit
+		s.buf.Destroy()
+		if s.buf, err = ctxt.GPU().NewBuffer(int64(n), true, 0); err != nil {
+			// TODO: Try again ignoring previous
+			// s.buf.Cap() value (if not 0).
+			s.bm = bitm.Bitm[uint32]{}
+			return
+		}
+	}
+	for i := 0; i < n; i++ {
+		s.bm.Set(idx + i)
+	}
+	off = int64(idx) * blockSize
+	copy(s.buf.Bytes()[off:], data)
+	return
+}
+
 // commit commits the copy commands for execution.
 // It blocks until execution completes.
 func (s *stagingBuffer) commit() (err error) {
