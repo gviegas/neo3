@@ -115,6 +115,10 @@ func (s *stagingBuffer) commit() (err error) {
 		return
 	}
 	s.bm.Clear()
+	if err = wk.Work[0].End(); err != nil {
+		s.wk <- wk
+		return
+	}
 	if err = ctxt.GPU().Commit(wk, s.wk); err != nil {
 		s.wk <- wk
 		return
