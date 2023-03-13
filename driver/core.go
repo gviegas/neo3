@@ -220,6 +220,13 @@ type CmdBuffer interface {
 	// Reset discards all recorded commands from the
 	// command buffer.
 	Reset() error
+
+	// IsRecording returns whether the command buffer
+	// has begun recording commands.
+	// It returns true immediately after a successful
+	// call to Begin and will keep doing so until the
+	// next call to End or Reset.
+	IsRecording() bool
 }
 
 // LoadOp is the type of a render target's load operation.

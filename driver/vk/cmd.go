@@ -29,7 +29,7 @@ type cbStatus int
 
 // cbStatus constants.
 const (
-	// Yet to begun.
+	// Yet to begin.
 	// Set after creation, committing and
 	// resetting.
 	cbIdle cbStatus = iota
@@ -175,6 +175,12 @@ func (cb *cmdBuffer) Reset() error {
 		}
 		return nil
 	}
+}
+
+// IsRecording returns whether the command buffer has begun
+// recording commands.
+func (cb *cmdBuffer) IsRecording() bool {
+	return cb.status == cbBegun || cb.status == cbFailed
 }
 
 // Barrier inserts a number of global barriers in the command buffer.
