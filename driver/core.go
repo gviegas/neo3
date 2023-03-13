@@ -875,30 +875,34 @@ func (f PixelFmt) IsInternal() bool { return f < 0 }
 const (
 	FInvalid PixelFmt = iota
 	// Color, 8-bit channels.
-	RGBA8un
-	RGBA8n
-	RGBA8sRGB
-	BGRA8un
-	BGRA8sRGB
-	RG8un
-	RG8n
-	R8un
-	R8n
+	RGBA8un   PixelFmt = iota | 4<<16
+	RGBA8n    PixelFmt = iota | 4<<16
+	RGBA8sRGB PixelFmt = iota | 4<<16
+	BGRA8un   PixelFmt = iota | 4<<16
+	BGRA8sRGB PixelFmt = iota | 4<<16
+	RG8un     PixelFmt = iota | 2<<16
+	RG8n      PixelFmt = iota | 2<<16
+	R8un      PixelFmt = iota | 1<<16
+	R8n       PixelFmt = iota | 1<<16
 	// Color, 16-bit channels.
-	RGBA16f
-	RG16f
-	R16f
+	RGBA16f PixelFmt = iota | 8<<16
+	RG16f   PixelFmt = iota | 4<<16
+	R16f    PixelFmt = iota | 2<<16
 	// Color, 32-bit channels.
-	RGBA32f
-	RG32f
-	R32f
+	RGBA32f PixelFmt = iota | 16<<16
+	RG32f   PixelFmt = iota | 8<<16
+	R32f    PixelFmt = iota | 4<<16
 	// Depth/Stencil.
-	D16un
-	D32f
-	S8ui
-	D24unS8ui
-	D32fS8ui
+	D16un     PixelFmt = iota | 2<<16
+	D32f      PixelFmt = iota | 4<<16
+	S8ui      PixelFmt = iota | 1<<16
+	D24unS8ui PixelFmt = iota | 4<<16
+	D32fS8ui  PixelFmt = iota | 5<<16
 )
+
+// Size returns the PixelFmt's size in bytes.
+// f must not be an internal format.
+func (f PixelFmt) Size() int { return int(f >> 16) }
 
 // Image is the interface that defines a GPU image.
 // The dimensionality of the image is derived from the size
