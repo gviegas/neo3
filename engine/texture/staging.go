@@ -186,6 +186,33 @@ func (s *stagingBuffer) stage(data []byte) (off int64, err error) {
 	return
 }
 
+// unstage writes s.buf's data to dst.
+// off must have been returned by a previous call
+// to s.reserve (i.e., it must be a multiple of
+// blockSize).
+// It returns the number of bytes written.
+//
+// NOTE: Since stagingBuffer methods may flush
+// the command buffer and/or clear the bitmap,
+// unstage usually should be called right after a
+// copy-back command is committed and before
+// staging new copy commands.
+func (s *stagingBuffer) unstage(off int64, dst []byte) (n int) {
+	if off >= s.buf.Cap() {
+		return
+	}
+	if off%blockSize != 0 {
+		panic("stagingBuffer.unstage: misaligned off")
+	}
+	n = copy(dst, s.buf.Bytes()[off:])
+	ib := int(off) / blockSize
+	nb := (n + blockSize - 1) / blockSize
+	for i := 0; i < nb; i++ {
+		s.bm.Unset(ib + i)
+	}
+	return
+}
+
 // reserve reserves a contiguous range of n bytes
 // within s.buf.
 // It may need to commit pending copy commands to
