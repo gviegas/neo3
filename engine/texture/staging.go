@@ -3,6 +3,7 @@
 package texture
 
 import (
+	"errors"
 	"runtime"
 
 	"github.com/gviegas/scene/driver"
@@ -67,6 +68,111 @@ func newStaging(n int) (*stagingBuffer, error) {
 	var bm bitm.Bitm[uint32]
 	bm.Grow(n / blockSize / nbit)
 	return &stagingBuffer{wk, buf, bm}, nil
+}
+
+// copyView writes data to s's buffer and records a
+// copy command that updates the given view of t.
+// Only the first mip level must be provided in
+// data. If t is arrayed and view is the last view,
+// then data must contain the first level of every
+// layer, in order and tightly packed.
+func (s *stagingBuffer) copyView(t *Texture, view int, before, after driver.Layout, data []byte) (err error) {
+	if t.param.Samples != 1 {
+		return errors.New(prefix + "cannot copy data to MS texture")
+	}
+	if view < 0 || view >= len(t.views) {
+		return errors.New(prefix + "view index out of bounds")
+	}
+
+	il := view
+	nl := 1
+	if t.param.Layers > 1 {
+		switch n := len(t.views); {
+		case view == n-1:
+			il = 0
+			nl = t.param.Layers
+		case n < t.param.Layers:
+			// Cube texture.
+			il = view * 6
+			nl = 6
+		}
+	}
+	n := t.param.PixelFmt.Size() * t.param.Dim3D.Width * t.param.Dim3D.Height
+	if len(data) < n*nl {
+		return errors.New(prefix + "not enough data for copying")
+	}
+
+	wk := <-s.wk
+	if !wk.Work[0].IsRecording() {
+		if err = wk.Work[0].Begin(); err != nil {
+			s.wk <- wk
+			return
+		}
+	}
+	// s.stage may call s.commit.
+	s.wk <- wk
+	// TODO: Levels > 1.
+	var off int64
+	if off, err = s.stage(data); err != nil {
+		return
+	}
+
+	wk = <-s.wk
+	wk.Work[0].Transition([]driver.Transition{
+		{
+			Barrier: driver.Barrier{
+				SyncBefore:   driver.SAll,
+				SyncAfter:    driver.SCopy,
+				AccessBefore: driver.AAnyRead | driver.AAnyWrite,
+				AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+			},
+			LayoutBefore: before,
+			LayoutAfter:  driver.LCopyDst,
+			Img:          t.views[view].Image(),
+			Layer:        il,
+			Layers:       nl,
+			Level:        0,
+			Levels:       1, // TODO
+		},
+	})
+
+	for i := 0; i < nl; i++ {
+		wk.Work[0].CopyBufToImg(&driver.BufImgCopy{
+			Buf:    s.buf,
+			BufOff: off + int64(n*i),
+			Stride: [2]int64{int64(t.param.Dim3D.Width)},
+			Img:    t.views[view].Image(),
+			ImgOff: driver.Off3D{},
+			Layer:  il + i,
+			Level:  0,
+			Size:   t.param.Dim3D,
+			// TODO: Handle depth/stencil formats.
+		})
+	}
+	if t.param.Levels > 1 {
+		// TODO
+		panic("stagingBuffer.copyView: no mip gen yet")
+	}
+
+	wk.Work[0].Transition([]driver.Transition{
+		{
+			Barrier: driver.Barrier{
+				SyncBefore:   driver.SCopy,
+				SyncAfter:    driver.SAll,
+				AccessBefore: driver.ACopyRead | driver.ACopyWrite,
+				AccessAfter:  driver.AAnyRead | driver.AAnyWrite,
+			},
+			LayoutBefore: driver.LCopyDst,
+			LayoutAfter:  after,
+			Img:          t.views[view].Image(),
+			Layer:        il,
+			Layers:       nl,
+			Level:        0,
+			Levels:       1, // TODO
+		},
+	})
+	s.wk <- wk
+	return
 }
 
 // stage writes CPU data to s's buffer.
