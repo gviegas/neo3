@@ -181,10 +181,23 @@ func (s *stagingBuffer) copyView(t *Texture, view int, before, after driver.Layo
 // It returns an offset from the start of s.buf
 // identifying where data was copied to.
 func (s *stagingBuffer) stage(data []byte) (off int64, err error) {
-	n := (len(data) + blockSize - 1) / blockSize
-	if n == 0 {
-		panic("stagingBuffer.stage: len(data) == 0")
+	if off, err = s.reserve(len(data)); err != nil {
+		copy(s.buf.Bytes()[off:], data)
 	}
+	return
+}
+
+// reserve reserves a contiguous range of n bytes
+// within s.buf.
+// It may need to commit pending copy commands to
+// grow the buffer.
+// It returns an offset from the start of s.buf
+// identifying where the range starts.
+func (s *stagingBuffer) reserve(n int) (off int64, err error) {
+	if n <= 0 {
+		panic("stagingBuffer.reserve: n <= 0")
+	}
+	n = (n + blockSize - 1) / blockSize
 	idx, ok := s.bm.SearchRange(n)
 	if !ok {
 		if err = s.commit(); err != nil {
@@ -195,8 +208,11 @@ func (s *stagingBuffer) stage(data []byte) (off int64, err error) {
 		n := (n + nbit - 1) / nbit
 		s.bm.Grow(n)
 		// TODO: Make buffer cap bounds configurable.
-		n = int(s.buf.Cap()) + n*blockSize*nbit
-		s.buf.Destroy()
+		n = n * blockSize * nbit
+		if s.buf != nil {
+			n += int(s.buf.Cap())
+			s.buf.Destroy()
+		}
 		if s.buf, err = ctxt.GPU().NewBuffer(int64(n), true, 0); err != nil {
 			// TODO: Try again ignoring previous
 			// s.buf.Cap() value (if not 0).
@@ -208,7 +224,6 @@ func (s *stagingBuffer) stage(data []byte) (off int64, err error) {
 		s.bm.Set(idx + i)
 	}
 	off = int64(idx) * blockSize
-	copy(s.buf.Bytes()[off:], data)
 	return
 }
 
@@ -216,10 +231,12 @@ func (s *stagingBuffer) stage(data []byte) (off int64, err error) {
 // It blocks until execution completes.
 func (s *stagingBuffer) commit() (err error) {
 	wk := <-s.wk
-	if s.bm.Len() == s.bm.Rem() {
+	if !wk.Work[0].IsRecording() {
 		s.wk <- wk
 		return
 	}
+	// TODO: May have to clear the
+	// bitmap unconditionally.
 	s.bm.Clear()
 	if err = wk.Work[0].End(); err != nil {
 		s.wk <- wk
