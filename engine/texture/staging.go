@@ -70,13 +70,16 @@ func newStaging(n int) (*stagingBuffer, error) {
 	return &stagingBuffer{wk, buf, bm}, nil
 }
 
-// copyToView writes data to s's buffer and records
-// a copy command that updates the given view of t.
-// Only the first mip level must be provided in
-// data. If t is arrayed and view is the last view,
-// then data must contain the first level of every
-// layer, in order and tightly packed.
-func (s *stagingBuffer) copyToView(t *Texture, view int, before, after driver.Layout, data []byte) (err error) {
+// copyToView records a copy command that copies
+// data from s's buffer into view.
+// off must have been returned by a previous call
+// to s.reserve (i.e., it must be a multiple of
+// blockSize).
+// Only the first mip level must be provided.
+// If t is arrayed and view is the last view, then
+// the buffer must contain the first level of
+// every layer, in order and tightly packed.
+func (s *stagingBuffer) copyToView(t *Texture, view int, before, after driver.Layout, off int64) (err error) {
 	if t.param.Samples != 1 {
 		return errors.New(prefix + "cannot copy data to MS texture")
 	}
@@ -98,15 +101,10 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, before, after driver.La
 		}
 	}
 	n := t.param.PixelFmt.Size() * t.param.Dim3D.Width * t.param.Dim3D.Height
-	if len(data) < n*nl {
-		return errors.New(prefix + "not enough data for copying")
+	if off+int64(n*nl) > s.buf.Cap() {
+		return errors.New(prefix + "not enough buffer capacity for copying")
 	}
 
-	// TODO: Stage data from other mip levels.
-	var off int64
-	if off, err = s.stage(data); err != nil {
-		return
-	}
 	wk := <-s.wk
 	if !wk.Work[0].IsRecording() {
 		if err = wk.Work[0].Begin(); err != nil {
@@ -204,7 +202,7 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, before, after driver.
 	// TODO: Consider the required space for
 	// all mip levels.
 	n := t.param.PixelFmt.Size() * t.param.Dim3D.Width * t.param.Dim3D.Height
-	if off+int64(n*nl) >= s.buf.Cap() {
+	if off+int64(n*nl) > s.buf.Cap() {
 		return errors.New(prefix + "not enough buffer capacity for copying")
 	}
 
