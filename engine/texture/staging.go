@@ -102,22 +102,20 @@ func (s *stagingBuffer) copyView(t *Texture, view int, before, after driver.Layo
 		return errors.New(prefix + "not enough data for copying")
 	}
 
-	wk := <-s.wk
-	if !wk.Work[0].IsRecording() {
-		if err = wk.Work[0].Begin(); err != nil {
-			s.wk <- wk
-			return
-		}
-	}
-	// s.stage may call s.commit.
-	s.wk <- wk
-	// TODO: Levels > 1.
+	// TODO: Stage data from other mip levels.
 	var off int64
 	if off, err = s.stage(data); err != nil {
 		return
 	}
+	wk := <-s.wk
+	if !wk.Work[0].IsRecording() {
+		if err = wk.Work[0].Begin(); err != nil {
+			s.bm.Clear()
+			s.wk <- wk
+			return
+		}
+	}
 
-	wk = <-s.wk
 	wk.Work[0].Transition([]driver.Transition{
 		{
 			Barrier: driver.Barrier{
@@ -171,6 +169,7 @@ func (s *stagingBuffer) copyView(t *Texture, view int, before, after driver.Layo
 			Levels:       1, // TODO
 		},
 	})
+
 	s.wk <- wk
 	return
 }
