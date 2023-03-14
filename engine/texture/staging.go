@@ -70,13 +70,13 @@ func newStaging(n int) (*stagingBuffer, error) {
 	return &stagingBuffer{wk, buf, bm}, nil
 }
 
-// copyView writes data to s's buffer and records a
-// copy command that updates the given view of t.
+// copyToView writes data to s's buffer and records
+// a copy command that updates the given view of t.
 // Only the first mip level must be provided in
 // data. If t is arrayed and view is the last view,
 // then data must contain the first level of every
 // layer, in order and tightly packed.
-func (s *stagingBuffer) copyView(t *Texture, view int, before, after driver.Layout, data []byte) (err error) {
+func (s *stagingBuffer) copyToView(t *Texture, view int, before, after driver.Layout, data []byte) (err error) {
 	if t.param.Samples != 1 {
 		return errors.New(prefix + "cannot copy data to MS texture")
 	}
@@ -149,7 +149,7 @@ func (s *stagingBuffer) copyView(t *Texture, view int, before, after driver.Layo
 	}
 	if t.param.Levels > 1 {
 		// TODO
-		panic("stagingBuffer.copyView: no mip gen yet")
+		panic("stagingBuffer.copyToView: no mip gen yet")
 	}
 
 	wk.Work[0].Transition([]driver.Transition{
