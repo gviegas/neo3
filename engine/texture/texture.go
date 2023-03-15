@@ -250,6 +250,27 @@ func (t *Texture) CopyToView(view int, data []byte) error {
 	return err
 }
 
+// CopyFromView copies t's view to a given CPU buffer.
+// It returns the number of bytes written to dst.
+// This method does not grow the dst buffer, so data
+// may be lost.
+func (t *Texture) CopyFromView(view int, dst []byte) (int, error) {
+	s := <-staging
+	var n int
+	off, err := s.reserve(len(dst))
+	if err != nil {
+		// TODO: Track layouts.
+		if err = s.copyFromView(t, view, driver.LColorTarget, driver.LColorTarget, off); err != nil {
+			// TODO: Try to defer this call.
+			if err = s.commit(); err != nil {
+				n = s.unstage(off, dst)
+			}
+		}
+	}
+	staging <- s
+	return n, err
+}
+
 // Free invalidates t and destroys the driver.Image and
 // the driver.ImageView(s).
 func (t *Texture) Free() {
