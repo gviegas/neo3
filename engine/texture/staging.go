@@ -280,7 +280,7 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, before, after driver.
 // It returns an offset from the start of s.buf
 // identifying where data was copied to.
 func (s *stagingBuffer) stage(data []byte) (off int64, err error) {
-	if off, err = s.reserve(len(data)); err != nil {
+	if off, err = s.reserve(len(data)); err == nil {
 		copy(s.buf.Bytes()[off:], data)
 	}
 	return
