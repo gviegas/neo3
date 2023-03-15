@@ -239,12 +239,16 @@ validParam:
 // If t is arrayed and view is the last view, then
 // data must contain the first level of every layer,
 // in order and tightly packed.
-func (t *Texture) CopyToView(view int, data []byte) error {
+// Unless commit is true, the copy may be delayed.
+func (t *Texture) CopyToView(view int, data []byte, commit bool) error {
 	s := <-staging
 	off, err := s.stage(data)
 	if err != nil {
 		// TODO: Track layouts.
 		err = s.copyToView(t, view, driver.LUndefined, driver.LShaderRead, off)
+		if commit && err == nil {
+			err = s.commit()
+		}
 	}
 	staging <- s
 	return err
@@ -254,6 +258,7 @@ func (t *Texture) CopyToView(view int, data []byte) error {
 // It returns the number of bytes written to dst.
 // This method does not grow the dst buffer, so data
 // may be lost.
+// It implicitly commits the staging buffer.
 func (t *Texture) CopyFromView(view int, dst []byte) (int, error) {
 	s := <-staging
 	var n int
