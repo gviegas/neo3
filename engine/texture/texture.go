@@ -234,6 +234,22 @@ validParam:
 	return
 }
 
+// CopyToView copies CPU data to the given view of t.
+// Only the first mip level must be provided.
+// If t is arrayed and view is the last view, then
+// data must contain the first level of every layer,
+// in order and tightly packed.
+func (t *Texture) CopyToView(view int, data []byte) error {
+	s := <-staging
+	off, err := s.stage(data)
+	if err != nil {
+		// TODO: Track layouts.
+		err = s.copyToView(t, view, driver.LUndefined, driver.LShaderRead, off)
+	}
+	staging <- s
+	return err
+}
+
 // Free invalidates t and destroys the driver.Image and
 // the driver.ImageView(s).
 func (t *Texture) Free() {
