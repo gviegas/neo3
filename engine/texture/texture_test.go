@@ -1059,3 +1059,196 @@ func TestInit(t *testing.T) {
 		staging <- s[i]
 	}
 }
+
+// checkData checks that a's contents match b's.
+// Their lengths may differ.
+func checkData[T comparable](a, b []T, t *testing.T) {
+	n := len(a)
+	if x := len(b); x < n {
+		n = x
+	}
+	for i := 0; i < n; i++ {
+		if a[i] != b[i] {
+			t.Fatalf("checkData: %v != %v (at index %d)", a[i], b[i], i)
+		}
+	}
+}
+
+// TODO: Cube texture; multiple mip levels.
+func TestCopy(t *testing.T) {
+	// One layer.
+	for _, param := range [...]TexParam{
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{256, 256, 0},
+			Layers:   1,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{512, 512, 0},
+			Layers:   1,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8sRGB,
+			Dim3D:    driver.Dim3D{256, 256, 0},
+			Layers:   1,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{1024, 1024, 0},
+			Layers:   1,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{1024, 1024, 0},
+			Layers:   10,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{2048, 2048, 0},
+			Layers:   6,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{800, 600, 0},
+			Layers:   2,
+			Levels:   1,
+			Samples:  1,
+		},
+	} {
+		tex, err := New2D(&param)
+		if err != nil {
+			t.Fatalf("New2D failed:\n%#v", err)
+		}
+		view := param.Layers - 1
+		n := param.Size() * param.Width * param.Height
+
+		data := make([]byte, n)
+		for i := 0; i < param.Height; i++ {
+			for j := 0; j < param.Width; j++ {
+				px := [4]byte{byte(i * j % 256), byte(i % 256), byte(j % 256), 255}
+				copy(data[4*i*param.Width+4*j:], px[:])
+			}
+		}
+		dst := make([]byte, n)
+
+		if err = tex.CopyToView(view, data, true); err != nil {
+			t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+		}
+		if x, err := tex.CopyFromView(view, dst); x != n || err != nil {
+			t.Fatalf("Texture.CopyFromView:\nhave %d, %#v\nwant %d, nil", x, err, n)
+		}
+		checkData(data, dst, t)
+		tex.Free()
+	}
+
+	// Each layer.
+	for _, param := range [...]TexParam{
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{1024, 1024, 0},
+			Layers:   5,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8sRGB,
+			Dim3D:    driver.Dim3D{256, 256, 0},
+			Layers:   2,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{1600, 900, 0},
+			Layers:   8,
+			Levels:   1,
+			Samples:  1,
+		},
+	} {
+		tex, err := New2D(&param)
+		if err != nil {
+			t.Fatalf("New2D failed:\n%#v", err)
+		}
+		n := param.Size() * param.Width * param.Height
+
+		data := make([]byte, n*param.Layers)
+		for k := 0; k < param.Layers; k++ {
+			for i := 0; i < param.Height; i++ {
+				for j := 0; j < param.Width; j++ {
+					px := [4]byte{byte((k + 127) % 256), byte(i % 256), byte(j % 256), 255}
+					copy(data[k*n+4*i*param.Width+4*j:], px[:])
+				}
+			}
+		}
+		dst := make([]byte, n*param.Layers)
+
+		for k := 0; k < param.Layers; k++ {
+			if err = tex.CopyToView(k, data[k*n:k*n+n], true); err != nil {
+				t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+			}
+			if x, err := tex.CopyFromView(k, dst[k*n:k*n+n]); x != n || err != nil {
+				t.Fatalf("Texture.CopyFromView:\nhave %d, %#v\nwant %d, nil", x, err, n)
+			}
+		}
+		checkData(data, dst, t)
+		tex.Free()
+	}
+
+	// Layer array.
+	for _, param := range [...]TexParam{
+		{
+			PixelFmt: driver.RGBA8un,
+			Dim3D:    driver.Dim3D{1024, 1024, 0},
+			Layers:   6,
+			Levels:   1,
+			Samples:  1,
+		},
+		{
+			PixelFmt: driver.RGBA8sRGB,
+			Dim3D:    driver.Dim3D{2048, 1024, 0},
+			Layers:   3,
+			Levels:   1,
+			Samples:  1,
+		},
+	} {
+		tex, err := New2D(&param)
+		if err != nil {
+			t.Fatalf("New2D failed:\n%#v", err)
+		}
+		view := param.Layers
+		n := param.Size() * param.Width * param.Height
+
+		data := make([]byte, n*param.Layers)
+		for k := 0; k < param.Layers; k++ {
+			for i := 0; i < param.Height; i++ {
+				for j := 0; j < param.Width; j++ {
+					px := [4]byte{byte((k + 127) % 256), byte(i % 256), byte(j % 256), 255}
+					copy(data[k*n+4*i*param.Width+4*j:], px[:])
+				}
+			}
+		}
+		dst := make([]byte, n*param.Layers)
+
+		if err = tex.CopyToView(view, data, true); err != nil {
+			t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+		}
+		if x, err := tex.CopyFromView(view, dst); x != n*param.Layers || err != nil {
+			t.Fatalf("Texture.CopyFromView:\nhave %d, %#v\nwant %d, nil", x, err, n*param.Layers)
+		}
+		checkData(data, dst, t)
+		tex.Free()
+	}
+}

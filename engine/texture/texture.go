@@ -265,7 +265,8 @@ func (t *Texture) CopyFromView(view int, dst []byte) (int, error) {
 	off, err := s.reserve(len(dst))
 	if err == nil {
 		// TODO: Track layouts.
-		if err = s.copyFromView(t, view, driver.LColorTarget, driver.LColorTarget, off); err == nil {
+		//if err = s.copyFromView(t, view, driver.LColorTarget, driver.LColorTarget, off); err == nil {
+		if err = s.copyFromView(t, view, driver.LShaderRead, driver.LShaderRead, off); err == nil {
 			// TODO: Try to defer this call.
 			if err = s.commit(); err == nil {
 				n = s.unstage(off, dst)
