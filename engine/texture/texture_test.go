@@ -1252,3 +1252,87 @@ func TestCopy(t *testing.T) {
 		tex.Free()
 	}
 }
+
+func TestCopyPending(t *testing.T) {
+	param := TexParam{
+		PixelFmt: driver.RGBA8un,
+		Dim3D:    driver.Dim3D{1024, 512, 0},
+		Layers:   1,
+		Levels:   1,
+		Samples:  1,
+	}
+	for param.Size()*param.Width*param.Height > blockSize*nbit {
+		param.Width /= 2
+		param.Height /= 2
+	}
+	tex, err := NewTarget(&param)
+	if err != nil {
+		t.Fatalf("NewTarget failed:\n%#v", err)
+	}
+	data := make([]byte, param.Size()*param.Width*param.Height)
+	for i := range data {
+		data[i] = 255
+	}
+
+	// Stage uncommitted.
+	if err = tex.CopyToView(0, data, false); err != nil {
+		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+	}
+
+	defer func() {
+		if x := recover(); x != nil {
+			const want = "Texture.setPending: pending already"
+			if x != want {
+				t.Fatalf("Texture.CopyToView: recover():\nhave %v\nwant %s", x, want)
+			}
+		} else {
+			t.Fatal("Texture.CopyToView: should have panicked")
+		}
+		tex.Free()
+	}()
+
+	// Stage a second copy operation.
+	// Must panic.
+	tex.CopyToView(0, data, true)
+	t.Fatal("Texture.CopyToView: expected to be unreachable")
+}
+
+func TestCopyPendingNoPanic(t *testing.T) {
+	param := TexParam{
+		PixelFmt: driver.RGBA8un,
+		Dim3D:    driver.Dim3D{1024, 512, 0},
+		Layers:   1,
+		Levels:   1,
+		Samples:  1,
+	}
+	for param.Size()*param.Width*param.Height > blockSize*nbit {
+		param.Width /= 2
+		param.Height /= 2
+	}
+	tex, err := NewTarget(&param)
+	if err != nil {
+		t.Fatalf("NewTarget failed:\n%#v", err)
+	}
+	data := make([]byte, param.Size()*param.Width*param.Height)
+	for i := range data {
+		data[i] = 255
+	}
+
+	// Stage and commit.
+	if err = tex.CopyToView(0, data, true); err != nil {
+		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+	}
+
+	// Stage a second copy operation.
+	// Must not panic.
+	if err := tex.CopyToView(0, data, true); err != nil {
+		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+	}
+
+	// Stage a third copy operation, uncommitted.
+	// Must not panic.
+	if err := tex.CopyToView(0, data, false); err != nil {
+		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+	}
+	tex.Free()
+}
