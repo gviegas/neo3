@@ -462,5 +462,6 @@ func (s *stagingBuffer) free() {
 	if s.buf != nil {
 		s.buf.Destroy()
 	}
+	s.drainPending(true)
 	*s = stagingBuffer{}
 }
