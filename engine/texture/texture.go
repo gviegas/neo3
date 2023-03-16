@@ -310,6 +310,26 @@ func (t *Texture) Free() {
 	*t = Texture{}
 }
 
+const invalLayout = -1
+
+// setPending stores invalLayout in t.layouts[layer] and
+// returns the replaced layout.
+// It panics if the current layout is invalid.
+func (t *Texture) setPending(layer int) driver.Layout {
+	if layout := t.layouts[layer].Swap(invalLayout); layout != invalLayout {
+		return driver.Layout(layout)
+	}
+	panic("Texture.setPending: pending already")
+}
+
+// unsetPending stores layout in t.layouts[layer].
+// It panics if the current layout is valid.
+func (t *Texture) unsetPending(layer int, layout driver.Layout) {
+	if !t.layouts[layer].CompareAndSwap(invalLayout, int64(layout)) {
+		panic("Texture.unsetPending: not pending")
+	}
+}
+
 // ComputeLevels returns the maximum number of mip levels
 // for a given driver.Dim3D.
 // It assumes that size is valid (i.e., neither negative
