@@ -264,8 +264,7 @@ func (t *Texture) CopyToView(view int, data []byte, commit bool) error {
 	s := <-staging
 	off, err := s.stage(data)
 	if err == nil {
-		// TODO: Track layouts.
-		err = s.copyToView(t, view, driver.LUndefined, driver.LShaderRead, off)
+		err = s.copyToView(t, view, driver.LShaderRead, off)
 		if commit && err == nil {
 			err = s.commit()
 		}
@@ -284,9 +283,8 @@ func (t *Texture) CopyFromView(view int, dst []byte) (int, error) {
 	var n int
 	off, err := s.reserve(len(dst))
 	if err == nil {
-		// TODO: Track layouts.
-		//if err = s.copyFromView(t, view, driver.LColorTarget, driver.LColorTarget, off); err == nil {
-		if err = s.copyFromView(t, view, driver.LShaderRead, driver.LShaderRead, off); err == nil {
+		//if err = s.copyFromView(t, view, driver.LColorTarget, off); err == nil {
+		if err = s.copyFromView(t, view, driver.LShaderRead, off); err == nil {
 			// TODO: Try to defer this call.
 			if err = s.commit(); err == nil {
 				n = s.unstage(off, dst)

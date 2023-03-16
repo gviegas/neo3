@@ -90,7 +90,7 @@ func newStaging(n int) (*stagingBuffer, error) {
 // If t is arrayed and view is the last view, then
 // the buffer must contain the first level of
 // every layer, in order and tightly packed.
-func (s *stagingBuffer) copyToView(t *Texture, view int, before, after driver.Layout, off int64) (err error) {
+func (s *stagingBuffer) copyToView(t *Texture, view int, after driver.Layout, off int64) (err error) {
 	if t.param.Samples != 1 {
 		return errors.New(prefix + "cannot copy data to MS texture")
 	}
@@ -133,7 +133,7 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, before, after driver.La
 				AccessBefore: driver.AAnyRead | driver.AAnyWrite,
 				AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
 			},
-			LayoutBefore: before,
+			LayoutBefore: driver.LUndefined,
 			LayoutAfter:  driver.LCopyDst,
 			Img:          t.views[view].Image(),
 			Layer:        il,
@@ -156,6 +156,13 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, before, after driver.La
 			Size:   t.param.Dim3D,
 			// TODO: Handle depth/stencil formats.
 		})
+		// The current layout is not relevant
+		// because the whole layer is going to
+		// be overwritten by this command.
+		// TODO: Change this when adding support
+		// for sub-view copying.
+		_ = t.setPending(il + i)
+		s.pend = append(s.pend, pendingCopy{t, il + i, after})
 	}
 	if t.param.Levels > 1 {
 		// TODO
@@ -189,7 +196,7 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, before, after driver.La
 // off must have been returned by a previous call
 // to s.reserve (i.e., it must be a multiple of
 // blockSize).
-func (s *stagingBuffer) copyFromView(t *Texture, view int, before, after driver.Layout, off int64) (err error) {
+func (s *stagingBuffer) copyFromView(t *Texture, view int, after driver.Layout, off int64) (err error) {
 	if t.param.Samples != 1 {
 		return errors.New(prefix + "cannot copy data from MS texture")
 	}
@@ -216,6 +223,15 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, before, after driver.
 	if off+int64(n*nl) > s.buf.Cap() {
 		return errors.New(prefix + "not enough buffer capacity for copying")
 	}
+	// Need separate transitions if not all
+	// layers are in the same layout.
+	var differ bool
+	before := []driver.Layout{t.setPending(il)}
+	for i := 1; i < nl; i++ {
+		layout := t.setPending(il + i)
+		before = append(before, layout)
+		differ = differ || layout != before[0]
+	}
 
 	wk := <-s.wk
 	if !wk.Work[0].IsRecording() {
@@ -226,23 +242,45 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, before, after driver.
 		}
 	}
 
-	wk.Work[0].Transition([]driver.Transition{
-		{
-			Barrier: driver.Barrier{
-				SyncBefore:   driver.SAll,
-				SyncAfter:    driver.SCopy,
-				AccessBefore: driver.AAnyRead | driver.AAnyWrite,
-				AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+	if differ {
+		for i := 0; i < nl; i++ {
+			wk.Work[0].Transition([]driver.Transition{
+				{
+					Barrier: driver.Barrier{
+						SyncBefore:   driver.SAll,
+						SyncAfter:    driver.SCopy,
+						AccessBefore: driver.AAnyRead | driver.AAnyWrite,
+						AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+					},
+					LayoutBefore: before[i],
+					LayoutAfter:  driver.LCopySrc,
+					Img:          t.views[view].Image(),
+					Layer:        il + i,
+					Layers:       1,
+					Level:        0,
+					Levels:       1, // TODO
+				},
+			})
+		}
+	} else {
+		wk.Work[0].Transition([]driver.Transition{
+			{
+				Barrier: driver.Barrier{
+					SyncBefore:   driver.SAll,
+					SyncAfter:    driver.SCopy,
+					AccessBefore: driver.AAnyRead | driver.AAnyWrite,
+					AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+				},
+				LayoutBefore: before[0],
+				LayoutAfter:  driver.LCopySrc,
+				Img:          t.views[view].Image(),
+				Layer:        il,
+				Layers:       nl,
+				Level:        0,
+				Levels:       1, // TODO
 			},
-			LayoutBefore: before,
-			LayoutAfter:  driver.LCopySrc,
-			Img:          t.views[view].Image(),
-			Layer:        il,
-			Layers:       nl,
-			Level:        0,
-			Levels:       1, // TODO
-		},
-	})
+		})
+	}
 
 	for i := 0; i < nl; i++ {
 		wk.Work[0].CopyImgToBuf(&driver.BufImgCopy{
@@ -257,6 +295,7 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, before, after driver.
 			Size:   t.param.Dim3D,
 			// TODO: Handle depth/stencil formats.
 		})
+		s.pend = append(s.pend, pendingCopy{t, il + i, after})
 	}
 	if t.param.Levels > 1 {
 		// TODO
