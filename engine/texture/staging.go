@@ -408,6 +408,10 @@ func (s *stagingBuffer) reserve(n int) (off int64, err error) {
 func (s *stagingBuffer) commit() (err error) {
 	wk := <-s.wk
 	if !wk.Work[0].IsRecording() {
+		if len(s.pend) != 0 {
+			// This should never happen.
+			panic("stagingBuffer.commit: pending copies while not recording")
+		}
 		s.wk <- wk
 		return
 	}
@@ -415,17 +419,37 @@ func (s *stagingBuffer) commit() (err error) {
 	// bitmap unconditionally.
 	s.bm.Clear()
 	if err = wk.Work[0].End(); err != nil {
+		s.drainPending(true)
 		s.wk <- wk
 		return
 	}
 	if err = ctxt.GPU().Commit(wk, s.wk); err != nil {
+		s.drainPending(true)
 		s.wk <- wk
 		return
 	}
 	wk = <-s.wk
 	err, wk.Err = wk.Err, nil
+	s.drainPending(err != nil)
 	s.wk <- wk
 	return
+}
+
+// drainPending removes every element from s.pend
+// and updates the textures accordingly.
+// If failed is true, then the layouts are set to
+// driver.LUndefined instead.
+func (s *stagingBuffer) drainPending(failed bool) {
+	if failed {
+		for _, x := range s.pend {
+			x.tex.unsetPending(x.view, driver.LUndefined)
+		}
+	} else {
+		for _, x := range s.pend {
+			x.tex.unsetPending(x.view, x.layout)
+		}
+	}
+	s.pend = s.pend[:0]
 }
 
 // free invalidates s and destroys the driver
