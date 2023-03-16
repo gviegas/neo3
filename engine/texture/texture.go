@@ -6,6 +6,7 @@ package texture
 
 import (
 	"errors"
+	"sync/atomic"
 
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/engine/internal/ctxt"
@@ -22,6 +23,11 @@ type Texture struct {
 	views []driver.ImageView
 	usage driver.Usage
 	param TexParam
+	// The driver.Layout of each layer.
+	// A given layouts element will contain an
+	// invalid layout value while there is an
+	// uncommitted copy targeting the layer.
+	layouts []atomic.Int64
 }
 
 // TexParam describes parameters of a texture.
@@ -118,6 +124,20 @@ func makeViews(param *TexParam, usage driver.Usage, texType int) (v []driver.Ima
 	return
 }
 
+// makeLayouts makes the initial layouts slice that
+// Texture expects.
+// All layouts are set to driver.LUndefined.
+func makeLayouts(param *TexParam) []atomic.Int64 {
+	layouts := make([]atomic.Int64, param.Layers)
+	if driver.LUndefined != 0 {
+		// This path should never be taken.
+		for i := range layouts {
+			layouts[i].Store(int64(driver.LUndefined))
+		}
+	}
+	return layouts
+}
+
 // New2D creates a 2D texture.
 func New2D(param *TexParam) (t *Texture, err error) {
 	limits := ctxt.Limits()
@@ -151,7 +171,7 @@ validParam:
 		// TODO: Should destroy driver resources
 		// when unreachable (unless Texture.Free
 		// is called first).
-		t = &Texture{views, usage, *param}
+		t = &Texture{views, usage, *param, makeLayouts(param)}
 	}
 	return
 }
@@ -191,7 +211,7 @@ validParam:
 		// TODO: Should destroy driver resources
 		// when unreachable (unless Texture.Free
 		// is called first).
-		t = &Texture{views, usage, *param}
+		t = &Texture{views, usage, *param, makeLayouts(param)}
 	}
 	return
 }
@@ -229,7 +249,7 @@ validParam:
 		// TODO: Should destroy driver resources
 		// when unreachable (unless Texture.Free
 		// is called first).
-		t = &Texture{views, usage, *param}
+		t = &Texture{views, usage, *param, makeLayouts(param)}
 	}
 	return
 }
