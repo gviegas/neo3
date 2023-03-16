@@ -29,9 +29,20 @@ func init() {
 // stagingBuffer is used to copy image data
 // between the CPU and the GPU.
 type stagingBuffer struct {
-	wk  chan *driver.WorkItem
-	buf driver.Buffer
-	bm  bitm.Bitm[uint32]
+	wk   chan *driver.WorkItem
+	buf  driver.Buffer
+	bm   bitm.Bitm[uint32]
+	pend []pendingCopy
+}
+
+// pendingCopy is used to track Texture/view
+// pairs that have a pending copy operation.
+type pendingCopy struct {
+	tex  *Texture
+	view int
+	// The layout that will be set
+	// after the copy executes.
+	layout driver.Layout
 }
 
 // Use a large block size since textures usually
@@ -67,7 +78,7 @@ func newStaging(n int) (*stagingBuffer, error) {
 	}
 	var bm bitm.Bitm[uint32]
 	bm.Grow(n / blockSize / nbit)
-	return &stagingBuffer{wk, buf, bm}, nil
+	return &stagingBuffer{wk, buf, bm, nil}, nil
 }
 
 // copyToView records a copy command that copies
