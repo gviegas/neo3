@@ -90,7 +90,7 @@ func newStaging(n int) (*stagingBuffer, error) {
 // If t is arrayed and view is the last view, then
 // the buffer must contain the first level of
 // every layer, in order and tightly packed.
-func (s *stagingBuffer) copyToView(t *Texture, view int, after driver.Layout, off int64) (err error) {
+func (s *stagingBuffer) copyToView(t *Texture, view int, off int64) (err error) {
 	if t.param.Samples != 1 {
 		return errors.New(prefix + "cannot copy data to MS texture")
 	}
@@ -128,10 +128,10 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, after driver.Layout, of
 	wk.Work[0].Transition([]driver.Transition{
 		{
 			Barrier: driver.Barrier{
-				SyncBefore:   driver.SAll,
+				SyncBefore:   driver.SNone,
 				SyncAfter:    driver.SCopy,
-				AccessBefore: driver.AAnyRead | driver.AAnyWrite,
-				AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+				AccessBefore: driver.ANone,
+				AccessAfter:  driver.ACopyWrite,
 			},
 			LayoutBefore: driver.LUndefined,
 			LayoutAfter:  driver.LCopyDst,
@@ -162,30 +162,12 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, after driver.Layout, of
 		// TODO: Change this when adding support
 		// for sub-view copying.
 		_ = t.setPending(il + i)
-		s.pend = append(s.pend, pendingCopy{t, il + i, after})
+		s.pend = append(s.pend, pendingCopy{t, il + i, driver.LCopyDst})
 	}
 	if t.param.Levels > 1 {
 		// TODO
 		panic("stagingBuffer.copyToView: no mip gen yet")
 	}
-
-	wk.Work[0].Transition([]driver.Transition{
-		{
-			Barrier: driver.Barrier{
-				SyncBefore:   driver.SCopy,
-				SyncAfter:    driver.SAll,
-				AccessBefore: driver.ACopyRead | driver.ACopyWrite,
-				AccessAfter:  driver.AAnyRead | driver.AAnyWrite,
-			},
-			LayoutBefore: driver.LCopyDst,
-			LayoutAfter:  after,
-			Img:          t.views[view].Image(),
-			Layer:        il,
-			Layers:       nl,
-			Level:        0,
-			Levels:       1, // TODO
-		},
-	})
 
 	s.wk <- wk
 	return
@@ -196,7 +178,7 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, after driver.Layout, of
 // off must have been returned by a previous call
 // to s.reserve (i.e., it must be a multiple of
 // blockSize).
-func (s *stagingBuffer) copyFromView(t *Texture, view int, after driver.Layout, off int64) (err error) {
+func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error) {
 	if t.param.Samples != 1 {
 		return errors.New(prefix + "cannot copy data from MS texture")
 	}
@@ -247,10 +229,10 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, after driver.Layout, 
 			wk.Work[0].Transition([]driver.Transition{
 				{
 					Barrier: driver.Barrier{
-						SyncBefore:   driver.SAll,
+						SyncBefore:   driver.SNone,
 						SyncAfter:    driver.SCopy,
-						AccessBefore: driver.AAnyRead | driver.AAnyWrite,
-						AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+						AccessBefore: driver.ANone,
+						AccessAfter:  driver.ACopyRead,
 					},
 					LayoutBefore: before[i],
 					LayoutAfter:  driver.LCopySrc,
@@ -266,10 +248,10 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, after driver.Layout, 
 		wk.Work[0].Transition([]driver.Transition{
 			{
 				Barrier: driver.Barrier{
-					SyncBefore:   driver.SAll,
+					SyncBefore:   driver.SNone,
 					SyncAfter:    driver.SCopy,
-					AccessBefore: driver.AAnyRead | driver.AAnyWrite,
-					AccessAfter:  driver.ACopyRead | driver.ACopyWrite,
+					AccessBefore: driver.ANone,
+					AccessAfter:  driver.ACopyRead,
 				},
 				LayoutBefore: before[0],
 				LayoutAfter:  driver.LCopySrc,
@@ -295,30 +277,12 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, after driver.Layout, 
 			Size:   t.param.Dim3D,
 			// TODO: Handle depth/stencil formats.
 		})
-		s.pend = append(s.pend, pendingCopy{t, il + i, after})
+		s.pend = append(s.pend, pendingCopy{t, il + i, driver.LCopySrc})
 	}
 	if t.param.Levels > 1 {
 		// TODO
 		panic("stagingBuffer.copyFromView: no mip copy yet")
 	}
-
-	wk.Work[0].Transition([]driver.Transition{
-		{
-			Barrier: driver.Barrier{
-				SyncBefore:   driver.SCopy,
-				SyncAfter:    driver.SAll,
-				AccessBefore: driver.ACopyRead | driver.ACopyWrite,
-				AccessAfter:  driver.AAnyRead | driver.AAnyWrite,
-			},
-			LayoutBefore: driver.LCopySrc,
-			LayoutAfter:  after,
-			Img:          t.views[view].Image(),
-			Layer:        il,
-			Layers:       nl,
-			Level:        0,
-			Levels:       1, // TODO
-		},
-	})
 
 	s.wk <- wk
 	return
