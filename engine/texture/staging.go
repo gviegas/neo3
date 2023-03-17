@@ -5,14 +5,21 @@ package texture
 import (
 	"errors"
 	"runtime"
+	"sync"
 
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/engine/internal/ctxt"
 	"github.com/gviegas/scene/internal/bitm"
 )
 
-// Global staging buffer(s).
-var staging chan *stagingBuffer
+var (
+	// Global staging buffer(s).
+	staging chan *stagingBuffer
+	// Variables for Commit calls.
+	commitMu    sync.Mutex
+	commitCache []*stagingBuffer
+	commitWk    chan *driver.WorkItem
+)
 
 func init() {
 	n := runtime.GOMAXPROCS(-1)
@@ -24,6 +31,75 @@ func init() {
 		}
 		staging <- s
 	}
+	commitCache = make([]*stagingBuffer, 0, n)
+	commitWk = make(chan *driver.WorkItem, 1)
+	commitWk <- &driver.WorkItem{Work: make([]driver.CmdBuffer, 0, n)}
+}
+
+// Commit executes all pending Texture copies.
+// It blocks until execution completes.
+func Commit() (err error) {
+	commitMu.Lock()
+	cwk := <-commitWk
+
+	// This deferral correctly clears global
+	// state, regardless of the outcome.
+	// Code below ensures that the command
+	// buffers are reset if necessary.
+	defer func() {
+		for _, x := range commitCache {
+			x.bm.Clear()
+			x.drainPending(err != nil)
+			staging <- x
+		}
+		commitCache = commitCache[:0]
+		cwk.Work = cwk.Work[:0]
+		commitWk <- cwk
+		commitMu.Unlock()
+	}()
+
+	n := cap(staging)
+	for i := 0; i < n; i++ {
+		commitCache = append(commitCache, <-staging)
+	}
+
+	for i, x := range commitCache {
+		wk := <-x.wk
+		if !wk.Work[0].IsRecording() {
+			if len(x.pend) != 0 {
+				// This should never happen.
+				panic("texture.Commit: pending copies while not recording")
+			}
+		} else if err = wk.Work[0].End(); err != nil {
+			x.wk <- wk
+			for _, x := range cwk.Work {
+				// Need to reset these since
+				// they won't be committed.
+				x.Reset()
+			}
+			for _, x := range commitCache[i+1:] {
+				// Need to reset these since
+				// they won't be ended.
+				wk := <-x.wk
+				wk.Work[0].Reset()
+				x.wk <- wk
+			}
+			return
+		} else {
+			cwk.Work = append(cwk.Work, wk.Work[0])
+		}
+		x.wk <- wk
+	}
+
+	if len(cwk.Work) == 0 {
+		return
+	}
+	if err = ctxt.GPU().Commit(cwk, commitWk); err != nil {
+		return
+	}
+	cwk = <-commitWk
+	err, cwk.Err = cwk.Err, nil
+	return
 }
 
 // stagingBuffer is used to copy image data
