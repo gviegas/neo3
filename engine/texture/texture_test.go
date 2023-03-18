@@ -1289,6 +1289,29 @@ func TestCopyPending(t *testing.T) {
 		} else {
 			t.Fatal("Texture.CopyToView: should have panicked")
 		}
+
+		// Panicking corrupts the global state;
+		// reset it so other tests can run safely.
+		commitMu.Lock()
+		// Likely to block forever.
+		//for i := 0; i < cap(staging); i++ {
+		//	(<-staging).free()
+		//}
+		staging = make(chan *stagingBuffer, cap(staging))
+		for i := 0; i < cap(staging); i++ {
+			s, err := newStaging(blockSize * nbit)
+			if err != nil {
+				s = &stagingBuffer{}
+			}
+			staging <- s
+		}
+		commitCache = commitCache[:0]
+		wk := <-commitWk
+		wk.Work = wk.Work[:0]
+		wk.Err = nil
+		commitWk <- wk
+		commitMu.Unlock()
+
 		tex.Free()
 	}()
 
@@ -1335,7 +1358,8 @@ func TestCopyPendingNoPanic(t *testing.T) {
 	if err := tex.CopyToView(0, data, false); err != nil {
 		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
 	}
-	tex.Free()
+	// Cannot free this while pending.
+	//tex.Free()
 }
 
 func TestCommit(t *testing.T) {
