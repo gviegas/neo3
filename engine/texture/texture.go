@@ -279,6 +279,9 @@ func (t *Texture) ViewSize(view int) int {
 // in order and tightly packed.
 // Unless commit is true, the copy may be delayed.
 func (t *Texture) CopyToView(view int, data []byte, commit bool) error {
+	if x := t.ViewSize(view); x < len(data) {
+		data = data[:x]
+	}
 	s := <-staging
 	off, err := s.stage(data)
 	if err == nil {
@@ -297,6 +300,9 @@ func (t *Texture) CopyToView(view int, data []byte, commit bool) error {
 // may be lost.
 // It implicitly commits the staging buffer.
 func (t *Texture) CopyFromView(view int, dst []byte) (int, error) {
+	if x := t.ViewSize(view); x < len(dst) {
+		dst = dst[:x]
+	}
 	s := <-staging
 	var n int
 	off, err := s.reserve(len(dst))
