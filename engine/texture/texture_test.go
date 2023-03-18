@@ -5,6 +5,7 @@ package texture
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/engine/internal/ctxt"
@@ -1335,4 +1336,125 @@ func TestCopyPendingNoPanic(t *testing.T) {
 		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
 	}
 	tex.Free()
+}
+
+func TestCommit(t *testing.T) {
+	concCommit := func() {
+		const n = 8
+		errs := make(chan error, n)
+		for i := 0; i < n; i++ {
+			go func() {
+				time.Sleep(time.Nanosecond * 20)
+				errs <- Commit()
+			}()
+		}
+		for i := n; i > 0; i-- {
+			if err := <-errs; err != nil {
+				t.Fatalf("Commit failed:\n%#v", err)
+			}
+		}
+	}
+
+	concCommit()
+
+	param := TexParam{
+		PixelFmt: driver.RGBA8un,
+		Dim3D:    driver.Dim3D{1024, 1024, 0},
+		Layers:   1,
+		Levels:   1,
+		Samples:  1,
+	}
+	for param.Size()*param.Width*param.Height*2 > blockSize*nbit {
+		param.Width /= 2
+		param.Height /= 2
+	}
+
+	data := make([]byte, 10*param.Size()*param.Width*param.Height)
+	for i := 0; i < len(data); i += 4 {
+		copy(data[i:i+4], []byte{byte(i) % 255, byte(i+i) % 255, byte(i*i) % 255, 255})
+	}
+	dst := make([]byte, len(data))
+
+	tex1, err := New2D(&param)
+	if err != nil {
+		t.Fatalf("New2D failed:\n%#v", err)
+	}
+	param.Layers = 4
+	tex2, err := New2D(&param)
+	if err != nil {
+		t.Fatalf("New2D failed:\n%#v", err)
+	}
+
+	// Copy single-layer texture uncommitted
+	// and then Commit.
+	if err = tex1.CopyToView(0, data, false); err != nil {
+		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+	}
+	if tex1.layouts[0].Load() != invalLayout {
+		t.Fatalf("Texture.CopyToView: should not have committed")
+	}
+	concCommit()
+	if tex1.layouts[0].Load() == invalLayout {
+		t.Fatalf("Commit: should have set a valid layout")
+	}
+	n := tex1.ViewSize(0)
+	if x, err := tex1.CopyFromView(0, dst); err != nil || x != n {
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+	}
+	checkData(data, dst[:n], t)
+
+	// Copy different layers of different textures
+	// uncommitted and then Commit.
+	if err = tex2.CopyToView(1, data[16:], false); err != nil {
+		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+	}
+	if err = tex1.CopyToView(0, data[48:], false); err != nil {
+		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+	}
+	if tex2.layouts[1].Load() != invalLayout || tex1.layouts[0].Load() != invalLayout {
+		t.Fatalf("Texture.CopyToView: should not have committed")
+	}
+	concCommit()
+	if tex2.layouts[1].Load() == invalLayout || tex1.layouts[0].Load() == invalLayout {
+		t.Fatalf("Commit: should have set a valid layout")
+	}
+	n = tex2.ViewSize(1)
+	if x, err := tex2.CopyFromView(1, dst); err != nil || x != n {
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+	}
+	n = tex2.ViewSize(1)
+	if x, err := tex1.CopyFromView(0, dst[n:]); err != nil || x != n {
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+	}
+	checkData(data[16:], dst[:n], t)
+	checkData(data[48:], dst[n:n*2], t)
+
+	// Copy different layers of the same texture
+	// uncommitted and then Commit.
+	if err = tex2.CopyToView(0, data[256:], false); err != nil {
+		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+	}
+	if err = tex2.CopyToView(1, data[len(data)/3:], false); err != nil {
+		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+	}
+	if tex2.layouts[0].Load() != invalLayout || tex2.layouts[1].Load() != invalLayout {
+		t.Fatalf("Texture.CopyToView: should not have committed")
+	}
+	concCommit()
+	if tex2.layouts[0].Load() == invalLayout || tex2.layouts[1].Load() == invalLayout {
+		t.Fatalf("Commit: should have set a valid layout")
+	}
+	n = tex2.ViewSize(0)
+	if x, err := tex2.CopyFromView(0, dst); err != nil || x != n {
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+	}
+	n = tex2.ViewSize(1)
+	if x, err := tex2.CopyFromView(1, dst[n:]); err != nil || x != n {
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+	}
+	checkData(data[256:], dst[:n], t)
+	checkData(data[len(data)/3:], dst[n:n*2], t)
+
+	tex2.Free()
+	tex1.Free()
 }
