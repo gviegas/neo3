@@ -1099,6 +1099,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 			sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
 			commandBuffer: rend[i].cb.cb,
 		}
+		cbInfo++
 		if waitInfoN > 0 {
 			ci.subInfo[len(ci.subInfo)-1].pWaitSemaphoreInfos = &ci.semInfo[waitInfo]
 			for j := range rend[i].wait {
