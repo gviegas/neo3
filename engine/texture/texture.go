@@ -254,6 +254,24 @@ validParam:
 	return
 }
 
+// ViewSize returns the size in bytes of the given
+// view's memory.
+// It does not consider the memory consumed by
+// additional mip levels.
+func (t *Texture) ViewSize(view int) int {
+	n := t.param.Size() * t.param.Width * t.param.Height
+	if t.param.Layers > 1 {
+		if view == t.param.Layers {
+			// Entire array.
+			n *= t.param.Layers
+		} else if len(t.views) < t.param.Layers {
+			// Cube faces.
+			n *= 6
+		}
+	}
+	return n
+}
+
 // CopyToView copies CPU data to the given view of t.
 // Only the first mip level must be provided.
 // If t is arrayed and view is the last view, then
