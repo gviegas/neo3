@@ -301,25 +301,27 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error
 	}
 
 	if differ {
+		// TODO: Consider caching this on s
+		// (or t; see Texture.Transition).
+		xs := make([]driver.Transition, nl)
 		for i := 0; i < nl; i++ {
-			wk.Work[0].Transition([]driver.Transition{
-				{
-					Barrier: driver.Barrier{
-						SyncBefore:   driver.SNone,
-						SyncAfter:    driver.SCopy,
-						AccessBefore: driver.ANone,
-						AccessAfter:  driver.ACopyRead,
-					},
-					LayoutBefore: before[i],
-					LayoutAfter:  driver.LCopySrc,
-					Img:          t.views[view].Image(),
-					Layer:        il + i,
-					Layers:       1,
-					Level:        0,
-					Levels:       1, // TODO
+			xs = append(xs, driver.Transition{
+				Barrier: driver.Barrier{
+					SyncBefore:   driver.SNone,
+					SyncAfter:    driver.SCopy,
+					AccessBefore: driver.ANone,
+					AccessAfter:  driver.ACopyRead,
 				},
+				LayoutBefore: before[i],
+				LayoutAfter:  driver.LCopySrc,
+				Img:          t.views[view].Image(),
+				Layer:        il + i,
+				Layers:       1,
+				Level:        0,
+				Levels:       1, // TODO
 			})
 		}
+		wk.Work[0].Transition(xs)
 	} else {
 		wk.Work[0].Transition([]driver.Transition{
 			{
