@@ -1592,3 +1592,118 @@ func TestTransition(t *testing.T) {
 	tex2.Free()
 	tex1.Free()
 }
+
+func TestTransitionPanic(t *testing.T) {
+	tex, err := NewTarget(&TexParam{
+		PixelFmt: driver.RGBA8un,
+		Dim3D:    driver.Dim3D{1024, 768, 0},
+		Layers:   10,
+		Levels:   1,
+		Samples:  1,
+	})
+	if err != nil {
+		t.Fatalf("NewTarget failed:\n%#v", err)
+	}
+	cb, err := ctxt.GPU().NewCmdBuffer()
+	if err != nil {
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+	}
+	if err = cb.Begin(); err != nil {
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+	}
+
+	defer func() {
+		if x := recover(); x != nil {
+			const want = "Texture.setPending: pending already"
+			if x != want {
+				t.Fatalf("Texture.Transition: recover():\nhave %v\nwant %s", x, want)
+			}
+			for _, i := range [...]int{1, 0, 4} {
+				if x := tex.layouts[i].Load(); x != invalLayout {
+					t.Fatalf("Texture.Transition: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, invalLayout)
+				}
+			}
+			for _, i := range [...]int{2, 3, 5, 6, 7, 8, 9} {
+				if x := tex.layouts[i].Load(); x != int64(driver.LUndefined) {
+					t.Fatalf("Texture.Transition: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LUndefined)
+				}
+			}
+		} else {
+			t.Fatal("Texture.Transition: should have panicked")
+		}
+		cb.Destroy()
+		tex.Free()
+	}()
+
+	// Ok.
+	tex.Transition(1, cb, driver.LColorTarget, driver.Barrier{})
+	// Ok.
+	tex.Transition(0, cb, driver.LColorTarget, driver.Barrier{})
+	// Ok.
+	tex.Transition(4, cb, driver.LShaderRead, driver.Barrier{})
+	// Must panic.
+	tex.Transition(tex.param.Layers, cb, driver.LColorTarget, driver.Barrier{})
+	t.Fatal("Texture.Transition: expected to be unreachable")
+}
+
+func TestSetLayoutPanic(t *testing.T) {
+	tex, err := NewCube(&TexParam{
+		PixelFmt: driver.RGBA8un,
+		Dim3D:    driver.Dim3D{512, 512, 0},
+		Layers:   12,
+		Levels:   1,
+		Samples:  1,
+	})
+	if err != nil {
+		t.Fatalf("NewCube failed:\n%#v", err)
+	}
+	wk := make(chan *driver.WorkItem, 1)
+	cb, err := ctxt.GPU().NewCmdBuffer()
+	if err != nil {
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+	}
+	if err = cb.Begin(); err != nil {
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+	}
+
+	defer func() {
+		if x := recover(); x != nil {
+			const want = "Texture.unsetPending: not pending"
+			if x != want {
+				t.Fatalf("Texture.SetLayout: recover():\nhave %v\nwant %s", x, want)
+			}
+			for i := 6; i < 12; i++ {
+				if x := tex.layouts[i].Load(); x != int64(driver.LShaderRead) {
+					t.Fatalf("Texture.SetLayout: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LShaderRead)
+				}
+			}
+			for i := 0; i < 6; i++ {
+				if x := tex.layouts[i].Load(); x != int64(driver.LUndefined) {
+					t.Fatalf("Texture.SetLayout: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LUndefined)
+				}
+			}
+		} else {
+			t.Fatal("Texture.SetLayout: should have panicked")
+		}
+		cb.Destroy()
+		tex.Free()
+	}()
+
+	tex.Transition(1, cb, driver.LColorTarget, driver.Barrier{})
+
+	if err = cb.End(); err != nil {
+		t.Fatalf("driver.CmdBuffer.End failed:\n%#v", err)
+	}
+	if err = ctxt.GPU().Commit(&driver.WorkItem{Work: []driver.CmdBuffer{cb}}, wk); err != nil {
+		t.Fatalf("driver.GPU.Commit failed:\n%#v", err)
+	}
+	if err = (<-wk).Err; err != nil {
+		t.Fatalf("driver.GPU.Commit: (<-ch).Err\n%#v", err)
+	}
+
+	// Ok.
+	tex.SetLayout(1, driver.LShaderRead)
+	// Must panic.
+	tex.SetLayout(0, driver.LShaderRead)
+	t.Fatal("Texture.SetLayout: expected to be unreachable")
+}
