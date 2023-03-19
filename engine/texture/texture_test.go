@@ -1482,3 +1482,113 @@ func TestCommit(t *testing.T) {
 	tex2.Free()
 	tex1.Free()
 }
+
+func TestTransition(t *testing.T) {
+	tex1, err := NewTarget(&TexParam{
+		PixelFmt: driver.RGBA8un,
+		Dim3D:    driver.Dim3D{1024, 768, 0},
+		Layers:   3,
+		Levels:   1,
+		Samples:  1,
+	})
+	if err != nil {
+		t.Fatalf("NewTarget failed:\n%#v", err)
+	}
+	tex2, err := NewCube(&TexParam{
+		PixelFmt: driver.RGBA8un,
+		Dim3D:    driver.Dim3D{256, 256, 0},
+		Layers:   6,
+		Levels:   1,
+		Samples:  1,
+	})
+	if err != nil {
+		t.Fatalf("NewCube failed:\n%#v", err)
+	}
+	wk := make(chan *driver.WorkItem, 1)
+	cb, err := ctxt.GPU().NewCmdBuffer()
+	if err != nil {
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+	}
+	if err = cb.Begin(); err != nil {
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+	}
+
+	checkTex1 := func(l0, l1, l2 driver.Layout) {
+		if x := tex1.layouts[0].Load(); x != int64(l0) {
+			t.Fatalf("tex1.layouts[0]:\nhave %d\nwant %d", x, l0)
+		}
+		if x := tex1.layouts[1].Load(); x != int64(l1) {
+			t.Fatalf("tex1.layouts[1]:\nhave %d\nwant %d", x, l1)
+		}
+		if x := tex1.layouts[2].Load(); x != int64(l2) {
+			t.Fatalf("tex1.layouts[2]:\nhave %d\nwant %d", x, l2)
+		}
+	}
+	checkTex2 := func(l0, l1, l2, l3, l4, l5 driver.Layout) {
+		if x := tex2.layouts[0].Load(); x != int64(l0) {
+			t.Fatalf("tex2.layouts[0]:\nhave %d\nwant %d", x, l0)
+		}
+		if x := tex2.layouts[1].Load(); x != int64(l1) {
+			t.Fatalf("tex2.layouts[1]:\nhave %d\nwant %d", x, l1)
+		}
+		if x := tex2.layouts[2].Load(); x != int64(l2) {
+			t.Fatalf("tex2.layouts[2]:\nhave %d\nwant %d", x, l2)
+		}
+		if x := tex2.layouts[3].Load(); x != int64(l3) {
+			t.Fatalf("tex2.layouts[3]:\nhave %d\nwant %d", x, l3)
+		}
+		if x := tex2.layouts[4].Load(); x != int64(l4) {
+			t.Fatalf("tex2.layouts[4]:\nhave %d\nwant %d", x, l4)
+		}
+		if x := tex2.layouts[5].Load(); x != int64(l5) {
+			t.Fatalf("tex2.layouts[5]:\nhave %d\nwant %d", x, l5)
+		}
+	}
+
+	checkTex1(driver.LUndefined, driver.LUndefined, driver.LUndefined)
+	checkTex2(driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined)
+
+	tex1.Transition(0, cb, driver.LColorTarget, driver.Barrier{})
+	checkTex1(invalLayout, driver.LUndefined, driver.LUndefined)
+	tex1.Transition(2, cb, driver.LShaderRead, driver.Barrier{})
+	checkTex1(invalLayout, driver.LUndefined, invalLayout)
+	tex2.Transition(0, cb, driver.LShaderRead, driver.Barrier{})
+	checkTex2(invalLayout, invalLayout, invalLayout, invalLayout, invalLayout, invalLayout)
+
+	if err = cb.End(); err != nil {
+		t.Fatalf("driver.CmdBuffer.End failed:\n%#v", err)
+	}
+	if err = ctxt.GPU().Commit(&driver.WorkItem{Work: []driver.CmdBuffer{cb}}, wk); err != nil {
+		t.Fatalf("driver.GPU.Commit failed:\n%#v", err)
+	}
+	if err = (<-wk).Err; err != nil {
+		t.Fatalf("driver.GPU.Commit: (<-ch).Err\n%#v", err)
+	}
+
+	tex2.SetLayout(0, driver.LShaderRead)
+	checkTex2(driver.LShaderRead, driver.LShaderRead, driver.LShaderRead, driver.LShaderRead, driver.LShaderRead, driver.LShaderRead)
+	tex1.SetLayout(0, driver.LColorTarget)
+	checkTex1(driver.LColorTarget, driver.LUndefined, invalLayout)
+	tex1.SetLayout(2, driver.LShaderRead)
+	checkTex1(driver.LColorTarget, driver.LUndefined, driver.LShaderRead)
+
+	if err = cb.Begin(); err != nil {
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+	}
+
+	tex2.Transition(0, cb, driver.LCopyDst, driver.Barrier{})
+	checkTex2(invalLayout, invalLayout, invalLayout, invalLayout, invalLayout, invalLayout)
+	tex1.Transition(2, cb, driver.LCopyDst, driver.Barrier{})
+	checkTex1(driver.LColorTarget, driver.LUndefined, invalLayout)
+
+	cb.Reset()
+
+	tex2.SetLayout(0, driver.LUndefined)
+	checkTex2(driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined)
+	tex1.SetLayout(2, driver.LUndefined)
+	checkTex1(driver.LColorTarget, driver.LUndefined, driver.LUndefined)
+
+	cb.Destroy()
+	tex2.Free()
+	tex1.Free()
+}
