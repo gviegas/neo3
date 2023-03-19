@@ -26,7 +26,8 @@ type Texture struct {
 	// The driver.Layout of each layer.
 	// A given layouts element will contain an
 	// invalid layout value while there is an
-	// uncommitted copy targeting the layer.
+	// uncommitted copy or ongoing Transition
+	// targeting the layer.
 	layouts []atomic.Int64
 }
 
@@ -318,19 +319,6 @@ func (t *Texture) CopyFromView(view int, dst []byte) (int, error) {
 	return n, err
 }
 
-// Free invalidates t and destroys the driver.Image and
-// the driver.ImageView(s).
-func (t *Texture) Free() {
-	if len(t.views) > 0 {
-		img := t.views[0].Image()
-		for _, v := range t.views {
-			v.Destroy()
-		}
-		img.Destroy()
-	}
-	*t = Texture{}
-}
-
 const invalLayout = -1
 
 // setPending stores invalLayout in t.layouts[layer] and
@@ -349,6 +337,117 @@ func (t *Texture) unsetPending(layer int, layout driver.Layout) {
 	if !t.layouts[layer].CompareAndSwap(invalLayout, int64(layout)) {
 		panic("Texture.unsetPending: not pending")
 	}
+}
+
+// Transition records a layout transition for view in
+// the given command buffer.
+// The caller must ensure that no copies targeting
+// this particular view of t happen until the command
+// completes execution.
+// The caller is also responsible for calling
+// t.SetLayout after the transition executes to
+// update t's state. Not doing so may cause a panic.
+func (t *Texture) Transition(view int, cb driver.CmdBuffer, layout driver.Layout, barrier driver.Barrier) {
+	if !cb.IsRecording() {
+		panic("Texture.Transition: cb is not recording")
+	}
+	if layout == driver.LUndefined {
+		panic("Texture.Transition: layout is driver.LUndefined")
+	}
+
+	il := view
+	nl := 1
+	if t.param.Layers > 1 {
+		if view == t.param.Layers {
+			// Entire array.
+			il = 0
+			nl = t.param.Layers
+		} else if len(t.views) < t.param.Layers {
+			// Cube faces.
+			il = view * 6
+			nl = 6
+		}
+	}
+	// Need separate transitions if not all
+	// layers are in the same layout.
+	var differ bool
+	before := []driver.Layout{t.setPending(il)}
+	for i := 1; i < nl; i++ {
+		layout := t.setPending(il + i)
+		before = append(before, layout)
+		differ = differ || layout != before[0]
+	}
+
+	if differ {
+		// TODO: Consider caching this on t.
+		xs := make([]driver.Transition, nl)
+		for i := 0; i < nl; i++ {
+			xs = append(xs, driver.Transition{
+				Barrier:      barrier,
+				LayoutBefore: before[i],
+				LayoutAfter:  layout,
+				Img:          t.views[view].Image(),
+				Layer:        il + i,
+				Layers:       1,
+				Level:        0,
+				Levels:       t.param.Levels,
+			})
+		}
+		cb.Transition(xs)
+	} else {
+		cb.Transition([]driver.Transition{
+			{
+				Barrier:      barrier,
+				LayoutBefore: before[0],
+				LayoutAfter:  layout,
+				Img:          t.views[view].Image(),
+				Layer:        il,
+				Layers:       nl,
+				Level:        0,
+				Levels:       t.param.Levels,
+			},
+		})
+	}
+}
+
+// SetLayout sets the layout of view.
+// It must be called, exactly once, after the preceding
+// t.Transition command executes to update t's state.
+// layout must either match the transition's layout, or
+// be driver.LUndefined (in case of failure to execute
+// the layout transition command).
+// Calling this method with no preceding Transition is
+// invalid and may cause a panic.
+func (t *Texture) SetLayout(view int, layout driver.Layout) {
+	il := view
+	nl := 1
+	if t.param.Layers > 1 {
+		if view == t.param.Layers {
+			// Entire array.
+			il = 0
+			nl = t.param.Layers
+		} else if len(t.views) < t.param.Layers {
+			// Cube faces.
+			il = view * 6
+			nl = 6
+		}
+	}
+	for i := 0; i < nl; i++ {
+		t.unsetPending(il+i, layout)
+	}
+}
+
+// Free invalidates t and destroys the driver.Image and
+// the driver.ImageView(s).
+func (t *Texture) Free() {
+	if len(t.views) > 0 {
+		img := t.views[0].Image()
+		for _, v := range t.views {
+			v.Destroy()
+		}
+		img.Destroy()
+	}
+	*t = Texture{}
 }
 
 // ComputeLevels returns the maximum number of mip levels
