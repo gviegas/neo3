@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 	"testing"
 	"unsafe"
 
@@ -16,7 +15,6 @@ import (
 )
 
 var gpu = ctxt.GPU()
-var mu sync.Mutex
 
 func TestSemantic(t *testing.T) {
 	semantics := map[Semantic]int{
@@ -46,8 +44,6 @@ func TestSemantic(t *testing.T) {
 }
 
 func TestSetBuffer(t *testing.T) {
-	mu.Lock()
-	defer mu.Unlock()
 	SetBuffer(nil)
 	if storage.buf != nil {
 		t.Fatalf("SetBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
@@ -925,13 +921,11 @@ func fillDummyIdx(i driver.IndexFmt, d []byte) {
 }
 
 func TestNew(t *testing.T) {
-	mu.Lock()
 	defer func() {
 		b := SetBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
-		mu.Unlock()
 	}()
 	const n = 20 << 20
 	buf, err := gpu.NewBuffer(n, true, driver.UVertexData|driver.UIndexData)
@@ -991,13 +985,11 @@ func TestNew(t *testing.T) {
 }
 
 func TestInputs(t *testing.T) {
-	mu.Lock()
 	defer func() {
 		b := SetBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
-		mu.Unlock()
 	}()
 
 	check := func(want, have [][]driver.VertexIn) {
@@ -1092,13 +1084,11 @@ func TestInputs(t *testing.T) {
 }
 
 func TestFree(t *testing.T) {
-	mu.Lock()
 	defer func() {
 		b := SetBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
-		mu.Unlock()
 	}()
 
 	type snapshot struct {
