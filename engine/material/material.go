@@ -5,8 +5,12 @@
 package material
 
 import (
+	"errors"
+
 	"github.com/gviegas/scene/engine/texture"
 )
+
+const prefix = "material: "
 
 // Material.
 type Material struct {
@@ -95,10 +99,147 @@ type Unlit struct {
 
 // New creates a new material using the default model.
 func New(prop *PBR) (m *Material, err error) {
-	panic("not implemented")
+	if err = prop.validate(); err != nil {
+		return
+	}
+	p := new(PBR)
+	*p = *prop
+	m = &Material{p}
+	return
 }
 
 // NewUnlit creates a new material using the unlit model.
 func NewUnlit(prop *Unlit) (m *Material, err error) {
-	panic("not implemented")
+	if err = prop.validate(); err != nil {
+		return
+	}
+	p := new(Unlit)
+	*p = *prop
+	m = &Material{p}
+	return
+}
+
+// Parameter validation for New* functions.
+
+func newErr(reason string) error { return errors.New(prefix + reason) }
+
+func (p *TexRef) validate(optional bool) error {
+	// TODO: Check whether Texture type/format/view
+	// are valid (need getters in texture pkg).
+	if p.Texture == nil {
+		if optional {
+			return nil
+		}
+		return newErr("nil TexRef.Texture")
+	}
+	if p.Sampler == nil {
+		return newErr("nil TexRef.Sampler")
+	}
+	switch p.UVSet {
+	case UVSet0, UVSet1:
+	default:
+		return newErr("undefined UV set constant")
+	}
+	return nil
+}
+
+func (p *BaseColor) validate() error {
+	if err := p.TexRef.validate(true); err != nil {
+		return err
+	}
+	for _, x := range p.Factor {
+		if x < 0 || x > 1 {
+			return newErr("BaseColor.Factor outside [0.0, 1.0] interval")
+		}
+	}
+	return nil
+}
+
+func (p *MetalRough) validate() error {
+	if err := p.TexRef.validate(true); err != nil {
+		return err
+	}
+	if p.Metalness < 0 || p.Metalness > 1 {
+		return newErr("MetalRough.Metalness outside [0.0, 1.0] interval")
+	}
+	if p.Roughness < 0 || p.Roughness > 1 {
+		return newErr("MetalRough.Roughness outside [0.0, 1.0] interval")
+	}
+	return nil
+}
+
+func (p *Normal) validate() error {
+	if err := p.TexRef.validate(true); err != nil {
+		return err
+	}
+	if p.Scale < 0 {
+		return newErr("Normal.Scale less than 0.0")
+	}
+	return nil
+}
+
+func (p *Occlusion) validate() error {
+	if err := p.TexRef.validate(true); err != nil {
+		return err
+	}
+	if p.Strength < 0 || p.Strength > 1 {
+		return newErr("Occlusion.Strength outside [0.0, 1.0] interval")
+	}
+	return nil
+}
+
+func (p *Emissive) validate() error {
+	if err := p.TexRef.validate(true); err != nil {
+		return err
+	}
+	for _, x := range p.Factor {
+		if x < 0 || x > 1 {
+			return newErr("Emissive.Factor outside [0.0, 1.0] interval")
+		}
+	}
+	return nil
+}
+
+func validateAlpha(mode int, cutoff float32) error {
+	switch mode {
+	case AlphaOpaque, AlphaBlend:
+	case AlphaMask:
+		// Don't restrict cutoff values,
+		// even if they don't make sense.
+	default:
+		return newErr("undefined alpha mode constant")
+	}
+	return nil
+}
+
+func (p *PBR) validate() error {
+	if err := p.BaseColor.validate(); err != nil {
+		return err
+	}
+	if err := p.MetalRough.validate(); err != nil {
+		return err
+	}
+	if err := p.Normal.validate(); err != nil {
+		return err
+	}
+	if err := p.Occlusion.validate(); err != nil {
+		return err
+	}
+	if err := p.Emissive.validate(); err != nil {
+		return err
+	}
+	if err := validateAlpha(p.AlphaMode, p.AlphaCutoff); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *Unlit) validate() error {
+	if err := p.BaseColor.validate(); err != nil {
+		return err
+	}
+	if err := validateAlpha(p.AlphaMode, p.AlphaCutoff); err != nil {
+		return err
+	}
+	return nil
 }
