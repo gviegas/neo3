@@ -10,7 +10,11 @@ import (
 
 // Material.
 type Material struct {
-	// TODO
+	// *PBR or *Unlit.
+	// Other models may yet be added.
+	prop any
+
+	// TODO: Descriptors; const buffer.
 }
 
 // TexRef identifies a particular view of a 2D texture
@@ -68,3 +72,33 @@ const (
 	AlphaBlend
 	AlphaMask
 )
+
+// PBR defines properties of the default material model.
+type PBR struct {
+	BaseColor   BaseColor
+	MetalRough  MetalRough
+	Normal      Normal
+	Occlusion   Occlusion
+	Emissive    Emissive
+	AlphaMode   int
+	AlphaCutoff float32
+	DoubleSided bool
+}
+
+// Unlit defines properties of the unlit material model.
+type Unlit struct {
+	BaseColor   BaseColor
+	AlphaMode   int
+	AlphaCutoff float32
+	DoubleSided bool
+}
+
+// New creates a new material using the default model.
+func New(prop *PBR) (m *Material, err error) {
+	panic("not implemented")
+}
+
+// NewUnlit creates a new material using the unlit model.
+func NewUnlit(prop *Unlit) (m *Material, err error) {
+	panic("not implemented")
+}
