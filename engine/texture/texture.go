@@ -437,6 +437,24 @@ func (t *Texture) SetLayout(view int, layout driver.Layout) {
 	}
 }
 
+// PixelFmt returns the driver.PixelFmt of t.
+func (t *Texture) PixelFmt() driver.PixelFmt { return t.param.PixelFmt }
+
+// Width returns the width of t's first mip level.
+func (t *Texture) Width() int { return t.param.Width }
+
+// Height returns the height of t's first mip level.
+func (t *Texture) Height() int { return t.param.Height }
+
+// Layers returns the number of layers in t.
+func (t *Texture) Layers() int { return t.param.Layers }
+
+// Levels returns the number of levels in t.
+func (t *Texture) Levels() int { return t.param.Levels }
+
+// Samples returns the number of samples in t.
+func (t *Texture) Samples() int { return t.param.Samples }
+
 // Free invalidates t and destroys the driver.Image and
 // the driver.ImageView(s).
 func (t *Texture) Free() {
@@ -509,6 +527,42 @@ validParam:
 	}
 	return
 }
+
+// Min returns the driver.Filter of s that is used
+// for minification.
+func (s *Sampler) Min() driver.Filter { return s.param.Min }
+
+// Mag returns the driver.Filter of s that is used
+// for magnification.
+func (s *Sampler) Mag() driver.Filter { return s.param.Mag }
+
+// Mipmap returns the driver.Filter of s that is used
+// for mip level selection.
+func (s *Sampler) Mipmap() driver.Filter { return s.param.Mipmap }
+
+// AddrU returns the driver.AddrMode of s that is used
+// for u coordinate addressing.
+func (s *Sampler) AddrU() driver.AddrMode { return s.param.AddrU }
+
+// AddrV returns the driver.AddrMode of s that is used
+// for v coordinate addressing.
+func (s *Sampler) AddrV() driver.AddrMode { return s.param.AddrV }
+
+// AddrW returns the driver.AddrMode of s that is used
+// for w coordinate addressing.
+func (s *Sampler) AddrW() driver.AddrMode { return s.param.AddrW }
+
+// MaxAniso returns the maximum anisotropy of s.
+func (s *Sampler) MaxAniso() int { return s.param.MaxAniso }
+
+// Cmp returns the driver.CmpFunc of s.
+func (s *Sampler) Cmp() driver.CmpFunc { return s.param.Cmp }
+
+// MinLOD returns the minimum level of detail of s.
+func (s *Sampler) MinLOD() float32 { return s.param.MinLOD }
+
+// MaxLOD returns the maximum level of detail of s.
+func (s *Sampler) MaxLOD() float32 { return s.param.MaxLOD }
 
 // Free invalidates s and destroys the driver.Sampler.
 func (s *Sampler) Free() {
