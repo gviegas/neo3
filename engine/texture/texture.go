@@ -255,6 +255,41 @@ validParam:
 	return
 }
 
+// IsValidView checks whether view identifies a valid
+// driver.ImageView of t.
+//
+// For non-arrayed (single-layer) textures, or cube
+// textures with exactly six layers, only view 0
+// is valid. This view represents the one layer in
+// a 2D/target texture, and each of the six faces in
+// a cube texture.
+//
+// For arrayed (two layers or more) textures, or cube
+// textures with more than six layers, there is one
+// view per layer (or per six layers for cubes), each
+// representing the given layer/cube faces, and one
+// extra view encompassing the whole array.
+//
+// Non-arrayed textures:
+//
+//	2D/Target | one layer  | one view [0]
+//	Cube      | six layers | one view [0]
+//
+// Arrayed textures:
+//
+//	2D/Target | N layers   | N+1 views [0, N]
+//	Cube      | N>6 layers | N/6+1 views [0, N/6]
+//
+// In the case of non-cube textures, the arrayed view
+// is identified by t.Layers(). For cube textures,
+// it is identified by t.Layers() / 6.
+func (t *Texture) IsValidView(view int) bool {
+	if view < 0 {
+		return false
+	}
+	return view < len(t.views)
+}
+
 // ViewSize returns the size in bytes of the given
 // view's memory.
 // It does not consider the memory consumed by
