@@ -882,34 +882,62 @@ func (f PixelFmt) IsInternal() bool { return f < 0 }
 const (
 	FInvalid PixelFmt = iota
 	// Color, 8-bit channels.
-	RGBA8un   PixelFmt = iota | 4<<16
-	RGBA8n    PixelFmt = iota | 4<<16
-	RGBA8sRGB PixelFmt = iota | 4<<16
-	BGRA8un   PixelFmt = iota | 4<<16
-	BGRA8sRGB PixelFmt = iota | 4<<16
-	RG8un     PixelFmt = iota | 2<<16
-	RG8n      PixelFmt = iota | 2<<16
-	R8un      PixelFmt = iota | 1<<16
-	R8n       PixelFmt = iota | 1<<16
+	RGBA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColor
+	RGBA8n    PixelFmt = iota | 4<<12 | 4<<20 | fColor
+	RGBA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColor
+	BGRA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColor
+	BGRA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColor
+	RG8un     PixelFmt = iota | 2<<12 | 2<<20 | fColor
+	RG8n      PixelFmt = iota | 2<<12 | 2<<20 | fColor
+	R8un      PixelFmt = iota | 1<<12 | 1<<20 | fColor
+	R8n       PixelFmt = iota | 1<<12 | 1<<20 | fColor
 	// Color, 16-bit channels.
-	RGBA16f PixelFmt = iota | 8<<16
-	RG16f   PixelFmt = iota | 4<<16
-	R16f    PixelFmt = iota | 2<<16
+	RGBA16f PixelFmt = iota | 8<<12 | 4<<20 | fColor
+	RG16f   PixelFmt = iota | 4<<12 | 2<<20 | fColor
+	R16f    PixelFmt = iota | 2<<12 | 1<<20 | fColor
 	// Color, 32-bit channels.
-	RGBA32f PixelFmt = iota | 16<<16
-	RG32f   PixelFmt = iota | 8<<16
-	R32f    PixelFmt = iota | 4<<16
+	RGBA32f PixelFmt = iota | 16<<12 | 4<<20 | fColor
+	RG32f   PixelFmt = iota | 8<<12 | 2<<20 | fColor
+	R32f    PixelFmt = iota | 4<<12 | 1<<20 | fColor
 	// Depth/Stencil.
-	D16un     PixelFmt = iota | 2<<16
-	D32f      PixelFmt = iota | 4<<16
-	S8ui      PixelFmt = iota | 1<<16
-	D24unS8ui PixelFmt = iota | 4<<16
-	D32fS8ui  PixelFmt = iota | 5<<16
+	D16un     PixelFmt = iota | 2<<12 | 1<<20 | fDepth
+	D32f      PixelFmt = iota | 4<<12 | 1<<20 | fDepth
+	S8ui      PixelFmt = iota | 1<<12 | 1<<20 | fStencil
+	D24unS8ui PixelFmt = iota | 4<<12 | 2<<20 | fDS
+	D32fS8ui  PixelFmt = iota | 5<<12 | 2<<20 | fDS
+
+	fColor   = 1 << 24
+	fDepth   = 2 << 24
+	fStencil = 4 << 24
+	fDS      = fDepth | fStencil
 )
 
 // Size returns the PixelFmt's size in bytes.
 // f must not be an internal format.
-func (f PixelFmt) Size() int { return int(f >> 16) }
+func (f PixelFmt) Size() int { return int(f >> 12 & 0xff) }
+
+// Channels returns the number of channels in f.
+// f must not be an internal format.
+func (f PixelFmt) Channels() int { return int(f >> 20 & 0xf) }
+
+// IsColor returns whether f is a color format.
+// f must not be an internal format.
+func (f PixelFmt) IsColor() bool { return f&fColor != 0 }
+
+// IsDS returns whether f is a depth/stencil format.
+// f must not be an internal format.
+func (f PixelFmt) IsDS() (depth bool, stencil bool) {
+	switch f & fDS {
+	case fDS:
+		return true, true
+	case fDepth:
+		return true, false
+	case fStencil:
+		return false, true
+	default:
+		return false, false
+	}
+}
 
 // Image is the interface that defines a GPU image.
 // The dimensionality of the image is derived from the size
