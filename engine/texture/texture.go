@@ -389,6 +389,9 @@ func (t *Texture) unsetPending(layer int, layout driver.Layout) {
 // t.SetLayout after the transition executes to
 // update t's state. Not doing so may cause a panic.
 func (t *Texture) Transition(view int, cb driver.CmdBuffer, layout driver.Layout, barrier driver.Barrier) {
+	if !t.IsValidView(view) {
+		panic("not a valid view of Texture")
+	}
 	if !cb.IsRecording() {
 		panic("driver.CmdBuffer is not recording")
 	}
@@ -460,6 +463,9 @@ func (t *Texture) Transition(view int, cb driver.CmdBuffer, layout driver.Layout
 // Calling this method with no preceding Transition is
 // invalid and may cause a panic.
 func (t *Texture) SetLayout(view int, layout driver.Layout) {
+	if !t.IsValidView(view) {
+		panic("not a valid view of Texture")
+	}
 	il := view
 	nl := 1
 	if t.param.Layers > 1 {
