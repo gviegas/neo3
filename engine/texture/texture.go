@@ -283,11 +283,25 @@ validParam:
 // In the case of non-cube textures, the arrayed view
 // is identified by t.Layers(). For cube textures,
 // it is identified by t.Layers() / 6.
-func (t *Texture) IsValidView(view int) bool {
-	if view < 0 {
-		return false
+func (t *Texture) IsValidView(view int) bool { return view >= 0 && view < len(t.views) }
+
+// ViewLayers returns the number of layers in the
+// given view.
+func (t *Texture) ViewLayers(view int) int {
+	if !t.IsValidView(view) {
+		panic("not a valid view of Texture")
 	}
-	return view < len(t.views)
+	if t.param.Layers > 1 {
+		if view == t.param.Layers {
+			// Entire array.
+			return t.param.Layers
+		}
+		if len(t.views) < t.param.Layers {
+			// Cube faces.
+			return 6
+		}
+	}
+	return 1
 }
 
 // ViewSize returns the size in bytes of the given
@@ -295,17 +309,9 @@ func (t *Texture) IsValidView(view int) bool {
 // It does not consider the memory consumed by
 // additional mip levels.
 func (t *Texture) ViewSize(view int) int {
+	nl := t.ViewLayers(view)
 	n := t.param.Size() * t.param.Width * t.param.Height
-	if t.param.Layers > 1 {
-		if view == t.param.Layers {
-			// Entire array.
-			n *= t.param.Layers
-		} else if len(t.views) < t.param.Layers {
-			// Cube faces.
-			n *= 6
-		}
-	}
-	return n
+	return nl * n
 }
 
 // CopyToView copies CPU data to the given view of t.
