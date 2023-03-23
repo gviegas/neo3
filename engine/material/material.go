@@ -124,13 +124,21 @@ func NewUnlit(prop *Unlit) (m *Material, err error) {
 func newErr(reason string) error { return errors.New(prefix + reason) }
 
 func (p *TexRef) validate(optional bool) error {
-	// TODO: Check whether Texture type/format/view
-	// are valid (need getters in texture pkg).
+	// TODO: Should ensure somehow that the Texture
+	// was created by a call to texture.New2D
+	// (it is fine to ignore this for now because
+	// all textures support driver.UShaderSample).
 	if p.Texture == nil {
 		if optional {
 			return nil
 		}
 		return newErr("nil TexRef.Texture")
+	}
+	if !p.Texture.IsValidView(p.View) {
+		return newErr("invalid TexRef.View")
+	}
+	if !p.Texture.PixelFmt().IsColor() {
+		return newErr("TexRef.Texture has non-color format")
 	}
 	if p.Sampler == nil {
 		return newErr("nil TexRef.Sampler")
