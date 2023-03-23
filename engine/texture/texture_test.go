@@ -1282,7 +1282,7 @@ func TestCopyPending(t *testing.T) {
 
 	defer func() {
 		if x := recover(); x != nil {
-			const want = "Texture.setPending: pending already"
+			const want = "layout already pending"
 			if x != want {
 				t.Fatalf("Texture.CopyToView: recover():\nhave %v\nwant %s", x, want)
 			}
@@ -1614,7 +1614,7 @@ func TestTransitionPanic(t *testing.T) {
 
 	defer func() {
 		if x := recover(); x != nil {
-			const want = "Texture.setPending: pending already"
+			const want = "layout already pending"
 			if x != want {
 				t.Fatalf("Texture.Transition: recover():\nhave %v\nwant %s", x, want)
 			}
@@ -1668,7 +1668,7 @@ func TestSetLayoutPanic(t *testing.T) {
 
 	defer func() {
 		if x := recover(); x != nil {
-			const want = "Texture.unsetPending: not pending"
+			const want = "layout not pending"
 			if x != want {
 				t.Fatalf("Texture.SetLayout: recover():\nhave %v\nwant %s", x, want)
 			}

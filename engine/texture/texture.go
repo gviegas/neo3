@@ -369,14 +369,14 @@ func (t *Texture) setPending(layer int) driver.Layout {
 	if layout := t.layouts[layer].Swap(invalLayout); layout != invalLayout {
 		return driver.Layout(layout)
 	}
-	panic("Texture.setPending: pending already")
+	panic("layout already pending")
 }
 
 // unsetPending stores layout in t.layouts[layer].
 // It panics if the current layout is valid.
 func (t *Texture) unsetPending(layer int, layout driver.Layout) {
 	if !t.layouts[layer].CompareAndSwap(invalLayout, int64(layout)) {
-		panic("Texture.unsetPending: not pending")
+		panic("layout not pending")
 	}
 }
 
@@ -390,10 +390,10 @@ func (t *Texture) unsetPending(layer int, layout driver.Layout) {
 // update t's state. Not doing so may cause a panic.
 func (t *Texture) Transition(view int, cb driver.CmdBuffer, layout driver.Layout, barrier driver.Barrier) {
 	if !cb.IsRecording() {
-		panic("Texture.Transition: cb is not recording")
+		panic("driver.CmdBuffer is not recording")
 	}
 	if layout == driver.LUndefined {
-		panic("Texture.Transition: layout is driver.LUndefined")
+		panic("layout is driver.LUndefined")
 	}
 
 	il := view
