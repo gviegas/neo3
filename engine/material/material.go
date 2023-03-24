@@ -164,8 +164,13 @@ func (p *BaseColor) validate() error {
 }
 
 func (p *MetalRough) validate() error {
-	if err := p.TexRef.validate(true); err != nil {
-		return err
+	if p.Texture != nil {
+		if err := p.TexRef.validate(false); err != nil {
+			return err
+		}
+		if p.Texture.PixelFmt().Channels() < 2 {
+			return newErr("MetalRough.Texture has insufficient channels")
+		}
 	}
 	if p.Metalness < 0 || p.Metalness > 1 {
 		return newErr("MetalRough.Metalness outside [0.0, 1.0] interval")
@@ -177,8 +182,13 @@ func (p *MetalRough) validate() error {
 }
 
 func (p *Normal) validate() error {
-	if err := p.TexRef.validate(true); err != nil {
-		return err
+	if p.Texture != nil {
+		if err := p.TexRef.validate(false); err != nil {
+			return err
+		}
+		if p.Texture.PixelFmt().Channels() < 3 {
+			return newErr("Normal.Texture has insufficient channels")
+		}
 	}
 	if p.Scale < 0 {
 		return newErr("Normal.Scale less than 0.0")
@@ -197,8 +207,13 @@ func (p *Occlusion) validate() error {
 }
 
 func (p *Emissive) validate() error {
-	if err := p.TexRef.validate(true); err != nil {
-		return err
+	if p.Texture != nil {
+		if err := p.TexRef.validate(false); err != nil {
+			return err
+		}
+		if p.Texture.PixelFmt().Channels() < 3 {
+			return newErr("Emissive.Texture has insufficient channels")
+		}
 	}
 	for _, x := range p.Factor {
 		if x < 0 || x > 1 {

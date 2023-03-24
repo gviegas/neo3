@@ -55,6 +55,28 @@ func TestNew(t *testing.T) {
 		t.Fatalf("texture.New2D failed:\n%#v", err)
 	}
 
+	oneChTex, err := texture.New2D(&texture.TexParam{
+		PixelFmt: driver.R8un,
+		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
+		Layers:   1,
+		Levels:   1,
+		Samples:  1,
+	})
+	if err != nil {
+		t.Fatalf("texture.New2D failed:\n%#v", err)
+	}
+
+	twoChTex, err := texture.New2D(&texture.TexParam{
+		PixelFmt: driver.RG8un,
+		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
+		Layers:   1,
+		Levels:   1,
+		Samples:  1,
+	})
+	if err != nil {
+		t.Fatalf("texture.New2D failed:\n%#v", err)
+	}
+
 	splr, err := texture.NewSampler(&texture.SplrParam{
 		Min:      driver.FLinear,
 		Mag:      driver.FLinear,
@@ -336,6 +358,15 @@ func TestNew(t *testing.T) {
 
 		mat, err = New(&PBR{
 			MetalRough: MetalRough{
+				TexRef:    TexRef{oneChTex, 0, splr, UVSet0},
+				Metalness: 1,
+				Roughness: 0.5,
+			},
+		})
+		checkFail(mat, err, "MetalRough.Texture has insufficient channels")
+
+		mat, err = New(&PBR{
+			MetalRough: MetalRough{
 				TexRef:    TexRef{occMetal, 0, splr, UVSet0},
 				Metalness: -0.1,
 				Roughness: 0.5,
@@ -380,6 +411,14 @@ func TestNew(t *testing.T) {
 
 		mat, err = New(&PBR{
 			Normal: Normal{
+				TexRef: TexRef{twoChTex, 0, splr, UVSet0},
+				Scale:  1,
+			},
+		})
+		checkFail(mat, err, "Normal.Texture has insufficient channels")
+
+		mat, err = New(&PBR{
+			Normal: Normal{
 				TexRef: TexRef{normal, 0, splr, UVSet0},
 				Scale:  -1,
 			},
@@ -401,6 +440,14 @@ func TestNew(t *testing.T) {
 			},
 		})
 		checkFail(mat, err, "Occlusion.Strength outside [0.0, 1.0] interval")
+
+		mat, err = New(&PBR{
+			Emissive: Emissive{
+				TexRef: TexRef{twoChTex, 0, splr, UVSet0},
+				Factor: [3]float32{1, 1, 1},
+			},
+		})
+		checkFail(mat, err, "Emissive.Texture has insufficient channels")
 
 		mat, err = New(&PBR{
 			Emissive: Emissive{
