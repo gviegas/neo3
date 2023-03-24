@@ -12,7 +12,8 @@ import (
 
 const prefix = "material: "
 
-// Material.
+// Material defines the material properties to be applied
+// to geometry during rendering.
 type Material struct {
 	// *PBR or *Unlit.
 	// Other models may yet be added.
@@ -72,8 +73,13 @@ type Emissive struct {
 
 // Alpha modes.
 const (
+	// No transparency.
+	// Alpha channel is unconditionally set to 1.0.
 	AlphaOpaque = iota
+	// Composition with background.
 	AlphaBlend
+	// Either fully opaque or fully transparent,
+	// as determined by a cutoff value.
 	AlphaMask
 )
 
