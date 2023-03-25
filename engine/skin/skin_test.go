@@ -4,6 +4,7 @@ package skin
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/gviegas/scene/linear"
@@ -91,4 +92,39 @@ func TestNew(t *testing.T) {
 			t.Fatalf("New: bad Skin.joints.orig count\nhave %d\nwant %d", cnt, x)
 		}
 	}
+}
+
+func TestNewFail(t *testing.T) {
+	var sk *Skin
+	var err error
+
+	checkFail := func(reason string) {
+		if sk != nil || err == nil {
+			t.Fatalf("New:\nhave %v, %#v\nwant nil, non-nil", sk, err)
+		}
+		if x := err.Error(); !strings.HasSuffix(x, reason) {
+			t.Fatalf("New: error.Error()\nhave \"%s\"\nwant \"%s%s\"", x, prefix, reason)
+		}
+	}
+
+	sk, err = New([]Joint{})
+	checkFail("[]Joint length is 0")
+	sk, err = New(nil)
+	checkFail("[]Joint length is 0")
+
+	j1 := dummyJoints(1, 0)
+	j1[0].Parent = 1
+	sk, err = New(j1)
+	checkFail("Joint.Parent out of bounds")
+	j1[0].Parent = 0
+	sk, err = New(j1)
+	checkFail("Joint.Parent refers to itself")
+
+	j20 := dummyJoints(20, 5)
+	j20[19].Parent = 20
+	sk, err = New(j20)
+	checkFail("Joint.Parent out of bounds")
+	j20[10].Parent = 10
+	sk, err = New(j20)
+	checkFail("Joint.Parent refers to itself")
 }
