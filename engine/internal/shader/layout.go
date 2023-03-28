@@ -117,3 +117,27 @@ func (l *LightLayout) SetAngOffset(off float32) { l[11] = off }
 // SetDirection sets the direction.
 // Used for DirectLight and SpotLight.
 func (l *LightLayout) SetDirection(d *linear.V3) { l[12], l[13], l[14] = d[0], d[1], d[2] }
+
+// DrawableLayout is the layout of drawable data.
+// It is defined as follows:
+//
+//	[0:16]  | world matrix
+//	[16:32] | normal matrix
+//	[32:48] | ???
+//	[48]    | ID
+//	[49]	| ???
+//	[50]    | ???
+//	[51]    | ???
+//	[52:63] | (unused)
+//
+// NOTE: This layout is likely to change.
+type DrawableLayout [64]float32
+
+// SetWorld sets the world matrix.
+func (l *DrawableLayout) SetWorld(m *linear.M4) { copyM4(l[:16], m) }
+
+// SetNormal sets the normal matrix.
+func (l *DrawableLayout) SetNormal(m *linear.M4) { copyM4(l[16:32], m) }
+
+// SetID sets the drawable's ID.
+func (l *DrawableLayout) SetID(id uint32) { l[48] = *(*float32)(unsafe.Pointer(&id)) }

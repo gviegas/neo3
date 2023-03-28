@@ -56,7 +56,7 @@ func TestFrameLayout(t *testing.T) {
 
 	s := "FrameLayout."
 
-	checkSlicesT(l[0:16], unsafe.Slice((*float32)(unsafe.Pointer(&vp)), 16), t, s+"SetVP")
+	checkSlicesT(l[:16], unsafe.Slice((*float32)(unsafe.Pointer(&vp)), 16), t, s+"SetVP")
 	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, s+"SetV")
 	checkSlicesT(l[32:48], unsafe.Slice((*float32)(unsafe.Pointer(&p)), 16), t, s+"SetP")
 	if x := float32(tm.Seconds()); l[48] != x {
@@ -156,4 +156,31 @@ func TestLightLayout(t *testing.T) {
 		t.Fatalf("%sSetAngOffset:\nhave %f\nwant %f", s, l[11], off)
 	}
 	checkSlicesT(l[12:15], dir[:], t, s+"SetDirection")
+}
+
+func TestDrawableLayout(t *testing.T) {
+	// [0:16]
+	var wld linear.M4
+	wld.Translate(10, 20, 30)
+
+	// [16:32]
+	var norm linear.M4
+	norm.Invert(&wld)
+	norm.Transpose(&norm)
+
+	// [48]
+	id := uint32(0x1d)
+
+	var l DrawableLayout
+	l.SetWorld(&wld)
+	l.SetNormal(&norm)
+	l.SetID(id)
+
+	s := "DrawableLayout."
+
+	checkSlicesT(l[:16], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, s+"SetWorld")
+	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, s+"SetNormal")
+	if x := *(*uint32)(unsafe.Pointer(&id)); x != id {
+		t.Fatalf("%sSetID:\nhave %d\nwant %d", s, x, id)
+	}
 }
