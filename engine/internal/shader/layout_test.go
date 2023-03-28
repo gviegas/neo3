@@ -60,27 +60,100 @@ func TestFrameLayout(t *testing.T) {
 	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, s+"SetV")
 	checkSlicesT(l[32:48], unsafe.Slice((*float32)(unsafe.Pointer(&p)), 16), t, s+"SetP")
 	if x := float32(tm.Seconds()); l[48] != x {
-		t.Fatalf("%s.SetTime:\nhave %f\nwant%f", s, l[48], x)
+		t.Fatalf("%sSetTime:\nhave %f\nwant%f", s, l[48], x)
 	}
 	if l[49] != rnd {
-		t.Fatalf("%s.SetRand:\nhave %f\nwant%f", s, l[49], rnd)
+		t.Fatalf("%sSetRand:\nhave %f\nwant%f", s, l[49], rnd)
 	}
 	if l[50] != bnd.X {
-		t.Fatalf("%s.SetBounds: Viewport.X\nhave %f\nwant%f", s, l[50], bnd.X)
+		t.Fatalf("%sSetBounds: Viewport.X\nhave %f\nwant%f", s, l[50], bnd.X)
 	}
 	if l[51] != bnd.Y {
-		t.Fatalf("%s.SetBounds: Viewport.Y\nhave %f\nwant%f", s, l[51], bnd.Y)
+		t.Fatalf("%sSetBounds: Viewport.Y\nhave %f\nwant%f", s, l[51], bnd.Y)
 	}
 	if l[52] != bnd.Width {
-		t.Fatalf("%s.SetBounds: Viewport.Width\nhave %f\nwant%f", s, l[52], bnd.Width)
+		t.Fatalf("%sSetBounds: Viewport.Width\nhave %f\nwant%f", s, l[52], bnd.Width)
 	}
 	if l[53] != bnd.Height {
-		t.Fatalf("%s.SetBounds: Viewport.Height\nhave %f\nwant%f", s, l[53], bnd.Height)
+		t.Fatalf("%sSetBounds: Viewport.Height\nhave %f\nwant%f", s, l[53], bnd.Height)
 	}
 	if l[54] != bnd.Znear {
-		t.Fatalf("%s.SetBounds: Viewport.Znear\nhave %f\nwant%f", s, l[54], bnd.Znear)
+		t.Fatalf("%sSetBounds: Viewport.Znear\nhave %f\nwant%f", s, l[54], bnd.Znear)
 	}
 	if l[55] != bnd.Zfar {
-		t.Fatalf("%s.SetBounds: Viewport.Zfar\nhave %f\nwant%f", s, l[55], bnd.Zfar)
+		t.Fatalf("%sSetBounds: Viewport.Zfar\nhave %f\nwant%f", s, l[55], bnd.Zfar)
 	}
+}
+
+func TestLightLayout(t *testing.T) {
+	// [0:1]
+	unused := true
+
+	// [1:2]
+	typ := SpotLight
+
+	// [2:3]
+	intens := float32(1000)
+
+	// [3:4]
+	rng := float32(12)
+
+	// [4:7]
+	color := linear.V3{0.1, 0.2, 0.3}
+
+	// [7:8]
+	scale := float32(0.7854)
+
+	// [8:11]
+	pos := linear.V3{0.4, 0.5, 0.6}
+
+	// [11:12]
+	off := float32(1.0472)
+
+	// [12:15]
+	dir := linear.V3{0.5026, 0.5744, 0.6462}
+
+	var l LightLayout
+	l.SetUnused(unused)
+	l.SetType(typ)
+	l.SetIntensity(intens)
+	l.SetRange(rng)
+	l.SetColor(&color)
+	l.SetAngScale(scale)
+	l.SetPosition(&pos)
+	l.SetAngOffset(off)
+	l.SetDirection(&dir)
+
+	s := "LightLayout."
+
+	switch x := *(*int32)(unsafe.Pointer(&l[0])); x {
+	case 0:
+		if unused {
+			t.Fatalf("%sSetUnused:\nhave false (0) \nwant true (1)", s)
+		}
+	case 1:
+		if !unused {
+			t.Fatalf("%sSetUnused:\nhave true (1) \nwant false (0)", s)
+		}
+	default:
+		t.Fatalf("%sSetUnused: bad value\n%d", s, x)
+	}
+	if x := *(*int32)(unsafe.Pointer(&l[1])); x != typ {
+		t.Fatalf("%sSetType:\nhave %d\nwant %d", s, x, typ)
+	}
+	if l[2] != intens {
+		t.Fatalf("%sSetIntensity:\nhave %f\nwant %f", s, l[2], intens)
+	}
+	if l[3] != rng {
+		t.Fatalf("%sSetRange:\nhave %f\nwant %f", s, l[3], rng)
+	}
+	checkSlicesT(l[4:7], color[:], t, s+"SetColor")
+	if l[7] != scale {
+		t.Fatalf("%sSetAngScale:\nhave %f\nwant %f", s, l[7], scale)
+	}
+	checkSlicesT(l[8:11], pos[:], t, s+"SetPosition")
+	if l[11] != off {
+		t.Fatalf("%sSetAngOffset:\nhave %f\nwant %f", s, l[11], off)
+	}
+	checkSlicesT(l[12:15], dir[:], t, s+"SetDirection")
 }
