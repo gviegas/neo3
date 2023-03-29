@@ -340,6 +340,12 @@ func (d *Driver) NewDescTable(dh []driver.DescHeap) (driver.DescTable, error) {
 	}, nil
 }
 
+// Heap returns the descriptor heap at index idx.
+func (t *descTable) Heap(idx int) driver.DescHeap { return t.h[idx] }
+
+// Len returns the number of descriptor heaps in the table.
+func (t *descTable) Len() int { return len(t.h) }
+
 // Destroy destroys the descriptor table.
 func (t *descTable) Destroy() {
 	if t == nil {

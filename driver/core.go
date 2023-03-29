@@ -530,6 +530,16 @@ type DescHeap interface {
 // in a pipeline.
 type DescTable interface {
 	Destroyer
+
+	// Heap returns the descriptor heap at index idx.
+	// Heap indices match those of the slice that is
+	// used to create the table.
+	// It panics if idx is out of bounds.
+	Heap(idx int) DescHeap
+
+	// Len returns the number of descriptor heaps in
+	// the table.
+	Len() int
 }
 
 // VertexFmt describes the format of a vertex input.

@@ -234,6 +234,16 @@ func TestDescTable(t *testing.T) {
 			if dt.layout == zt.layout {
 				t.Errorf("%s: dt.layout\nhave %v\nwant valid handle", call, dt.layout)
 			}
+			// Heap.
+			for j := range hs[i] {
+				if x := dt.Heap(j); x != hs[i][j] {
+					t.Errorf("dt.Heap(%d)\nhave %v\nwant %v", j, x, hs[i][j])
+				}
+			}
+			// Len.
+			if n := dt.Len(); n != len(dt.h) {
+				t.Errorf("dt.Len()\nhave %d\nwant %d", n, len(dt.h))
+			}
 			// Destroy.
 			dt.Destroy()
 			if dt.d != nil {
