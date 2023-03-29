@@ -1,5 +1,20 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
+// Data as presented to shader programs.
+//
+// The data layouts defined here represent exactly what
+// will be fed to shaders as constant/uniform buffers.
+// One should use the Set* methods of a given *Layout
+// type to update constant data.
+//
+// Constants that are updated using vector and matrices
+// (i.e., linear.V*/linear.M* types) will be defined in
+// the shaders as equivalent types. These data will be
+// aligned to 16 bytes for portability.
+//
+// TODO: Consider using arrays of integers, rather than
+// floats, in the layout definitions.
+
 package shader
 
 import (
@@ -9,6 +24,10 @@ import (
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/linear"
 )
+
+func copyM4(dst []float32, m *linear.M4) {
+	copy(dst, unsafe.Slice((*float32)(unsafe.Pointer(m)), 16))
+}
 
 // FrameLayout is the layout of per-frame, global data.
 // It is defined as follows:
@@ -52,10 +71,6 @@ func (l *FrameLayout) SetBounds(b *driver.Viewport) {
 	l[53] = b.Height
 	l[54] = b.Znear
 	l[55] = b.Zfar
-}
-
-func copyM4(dst []float32, m *linear.M4) {
-	copy(dst, unsafe.Slice((*float32)(unsafe.Pointer(m)), 16))
 }
 
 // LightLayout is the layout of light data.
