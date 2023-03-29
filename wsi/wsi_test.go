@@ -16,10 +16,10 @@ func TestWSI(t *testing.T) {
 	case None:
 		win, err := NewWindow(480, 360, "Will fail")
 		if win != nil || err != errMissing {
-			t.Errorf("NewWindow: win, err\nhave %v, %v\nwant nil, %v", win, err, errMissing)
+			t.Fatalf("NewWindow: win, err\nhave %v, %v\nwant nil, %v", win, err, errMissing)
 		}
 		if n := len(Windows()); n != 0 {
-			t.Errorf("len(Windows())\nhave %v\nwant 0", n)
+			t.Fatalf("len(Windows())\nhave %v\nwant 0", n)
 		}
 		// Dummy Dispatch does nothing.
 		Dispatch()
@@ -32,11 +32,11 @@ func TestWSI(t *testing.T) {
 			return
 		}
 		if win == nil {
-			t.Errorf("NewWindow: win, err\nhave %v, nil\n want non-nil, nil", win)
+			t.Fatalf("NewWindow: win, err\nhave %v, nil\n want non-nil, nil", win)
 			return
 		}
 		if n := len(Windows()); n != 1 {
-			t.Errorf("len(Windows())\nhave %v\nwant 1", n)
+			t.Fatalf("len(Windows())\nhave %v\nwant 1", n)
 		}
 		win.Unmap()
 		win.Map()
@@ -47,18 +47,18 @@ func TestWSI(t *testing.T) {
 		win.Resize(600, 300)
 		win.SetTitle(time.Now().Format(time.RFC1123))
 		if s := AppName(); s != "" {
-			t.Errorf("AppName\nhave %s\nwant \"\"", s)
+			t.Fatalf("AppName\nhave %s\nwant \"\"", s)
 		}
 		SetAppName("My app")
 		if s := AppName(); s != "My app" {
-			t.Errorf("AppName\nhave %s\nwant My app", s)
+			t.Fatalf("AppName\nhave %s\nwant My app", s)
 		}
 		time.Sleep(time.Second * 2)
 		win.Unmap()
 		time.Sleep(time.Second + time.Second/2)
 		win.Close()
 		if n := len(Windows()); n != 0 {
-			t.Errorf("len(Windows())\nhave %v\nwant 0", n)
+			t.Fatalf("len(Windows())\nhave %v\nwant 0", n)
 		}
 	}
 }
