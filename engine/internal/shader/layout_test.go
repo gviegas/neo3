@@ -236,3 +236,23 @@ func TestMaterialLayout(t *testing.T) {
 		t.Fatalf("%sSetFlags:\nhave 0x%x\nwant 0x%x", s, x, flags)
 	}
 }
+
+func TestJointLayout(t *testing.T) {
+	// [0:16]
+	var jnt linear.M4
+	jnt.Translate(-300, -200, -100)
+
+	// [16:32]
+	var norm linear.M4
+	norm.Invert(&jnt)
+	norm.Transpose(&norm)
+
+	var l JointLayout
+	l.SetJoint(&jnt)
+	l.SetNormal(&norm)
+
+	s := "JointLayout."
+
+	checkSlicesT(l[:16], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, s+"SetJoint")
+	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, s+"SetNormal")
+}

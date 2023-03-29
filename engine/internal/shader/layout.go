@@ -193,3 +193,16 @@ func (l *MaterialLayout) SetAlphaCutoff(c float32) { l[11] = c }
 
 // SetFlags sets the material flags.
 func (l *MaterialLayout) SetFlags(flg uint32) { l[12] = *(*float32)(unsafe.Pointer(&flg)) }
+
+// JointLayout is the layout of joint data.
+// It is defined as follows:
+//
+//	[0:16]  | joint matrix
+//	[16:32] | normal matrix
+type JointLayout [32]float32
+
+// SetJoint sets the joint matrix.
+func (l *JointLayout) SetJoint(m *linear.M4) { copyM4(l[:16], m) }
+
+// SetNormal sets the normal matrix.
+func (l *JointLayout) SetNormal(m *linear.M4) { copyM4(l[16:32], m) }
