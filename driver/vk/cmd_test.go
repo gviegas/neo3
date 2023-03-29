@@ -14,50 +14,50 @@ func TestCmdBuffer(t *testing.T) {
 	// NewCmdBuffer.
 	if cb, err := tDrv.NewCmdBuffer(); err == nil {
 		if cb == nil {
-			t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
+			t.Fatalf("%s\nhave nil, nil\nwant non-nil, nil", call)
 			return
 		}
 		cb := cb.(*cmdBuffer)
 		if cb.d != &tDrv {
-			t.Errorf("%s: cb.d\nhave %p\nwant %p", call, cb.d, &tDrv)
+			t.Fatalf("%s: cb.d\nhave %p\nwant %p", call, cb.d, &tDrv)
 		}
 		if cb.pool == zcb.pool {
-			t.Errorf("%s: cb.pool\nhave %v\nwant valid handle", call, cb.pool)
+			t.Fatalf("%s: cb.pool\nhave %v\nwant valid handle", call, cb.pool)
 		}
 		if cb.cb == nil {
-			t.Errorf("%s: cb.cb\nhave nil\nwant non-nil", call)
+			t.Fatalf("%s: cb.cb\nhave nil\nwant non-nil", call)
 		}
 		// Destroy.
 		cb.Destroy()
 		if cb.d != nil || cb.pool != zcb.pool || cb.cb != nil {
-			t.Errorf("cb.Destroy(): cb\nhave %v\nwant %v", cb, cmdBuffer{})
+			t.Fatalf("cb.Destroy(): cb\nhave %v\nwant %v", cb, cmdBuffer{})
 		}
 	} else if cb != nil {
-		t.Errorf("%s\nhave %p, %v\nwant nil, %v", call, cb, err, err)
+		t.Fatalf("%s\nhave %p, %v\nwant nil, %v", call, cb, err, err)
 	}
 }
 
 func TestCmdRecording(t *testing.T) {
 	cb, err := tDrv.NewCmdBuffer()
 	if err != nil {
-		t.Error("NewCmdBuffer failed, cannot test command recording")
+		t.Fatal("NewCmdBuffer failed, cannot test command recording")
 		return
 	}
 	defer cb.Destroy()
 	src, err := tDrv.NewBuffer(1024, true, 0)
 	if err != nil {
-		t.Error("NewBuffer failed, cannot test command recording")
+		t.Fatal("NewBuffer failed, cannot test command recording")
 		return
 	}
 	defer src.Destroy()
 	dst, err := tDrv.NewBuffer(769, true, 0)
 	if err != nil {
-		t.Error("NewBuffer failed, cannot test command recording")
+		t.Fatal("NewBuffer failed, cannot test command recording")
 		return
 	}
 	defer dst.Destroy()
 	if err = cb.Begin(); err != nil {
-		t.Errorf("(error) cb.Begin(): %v", err)
+		t.Fatalf("(error) cb.Begin(): %v", err)
 		return
 	}
 	cb.Fill(src, 16, 0x2a, 256)
@@ -78,7 +78,7 @@ func TestCmdRecording(t *testing.T) {
 	})
 	err = cb.End()
 	if err != nil {
-		t.Errorf("(error) cb.End(): %v", err)
+		t.Fatalf("(error) cb.End(): %v", err)
 		return
 	}
 	wk := driver.WorkItem{
@@ -88,14 +88,14 @@ func TestCmdRecording(t *testing.T) {
 	ch := make(chan *driver.WorkItem)
 	err = tDrv.Commit(&wk, ch)
 	if err != nil {
-		t.Errorf("(error) tDrv.Commit(): %v", err)
+		t.Fatalf("(error) tDrv.Commit(): %v", err)
 		return
 	}
 	wkPtr := <-ch
 	if wk.Err != nil {
-		t.Errorf("(error) tDrv.Commit(): %v", wkPtr.Err)
+		t.Fatalf("(error) tDrv.Commit(): %v", wkPtr.Err)
 	} else if &wk != wkPtr {
-		t.Errorf("(<-ch unexpected value) tDrv.Commit(): %v instead of %v", wkPtr, &wk)
+		t.Fatalf("(<-ch unexpected value) tDrv.Commit(): %v instead of %v", wkPtr, &wk)
 	} else {
 		t.Logf("wk: %+v\n", wk)
 		t.Log(src.Bytes())

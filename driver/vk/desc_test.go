@@ -106,40 +106,40 @@ func TestDescHeap(t *testing.T) {
 		// NewDescHeap.
 		if h, err := tDrv.NewDescHeap(ds); err == nil {
 			if h == nil {
-				t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
+				t.Fatalf("%s\nhave nil, nil\nwant non-nil, nil", call)
 				continue
 			}
 			h := h.(*descHeap)
 			if h.d != &tDrv {
-				t.Errorf("%s: h.d\nhave %v\nwant %v", call, h.d, &tDrv)
+				t.Fatalf("%s: h.d\nhave %v\nwant %v", call, h.d, &tDrv)
 			}
 			if h.layout == zh.layout {
-				t.Errorf("%s: h.layout\nhave %v\nwant valid handle", call, h.layout)
+				t.Fatalf("%s: h.layout\nhave %v\nwant valid handle", call, h.layout)
 			}
 			if h.pool != zh.pool {
-				t.Errorf("%s: h.pool\nhave %v\nwant null handle", call, h.pool)
+				t.Fatalf("%s: h.pool\nhave %v\nwant null handle", call, h.pool)
 			}
 			if h.sets != nil {
-				t.Errorf("%s: h.sets\nhave %v\nwant nil", call, h.sets)
+				t.Fatalf("%s: h.sets\nhave %v\nwant nil", call, h.sets)
 			}
 			if !validDescTypeN(h, ds) {
-				t.Errorf("%s: h.n[buf|img|const|tex|splr]: count mismatch", call)
+				t.Fatalf("%s: h.n[buf|img|const|tex|splr]: count mismatch", call)
 			}
 			// Len.
 			n := h.Len()
 			if n != 0 {
-				t.Errorf("h.Len()\nhave %v\nwant 0", n)
+				t.Fatalf("h.Len()\nhave %v\nwant 0", n)
 			}
 			// Destroy.
 			h.Destroy()
 			if h.d != nil {
-				t.Errorf("h.Destroy(): h.d\nhave %v\nwant nil", h.d)
+				t.Fatalf("h.Destroy(): h.d\nhave %v\nwant nil", h.d)
 			}
 			if h.layout != zh.layout {
-				t.Errorf("h.Destroy(): h.layout\nhave %v\nwant null handle", h.layout)
+				t.Fatalf("h.Destroy(): h.layout\nhave %v\nwant null handle", h.layout)
 			}
 		} else if h != nil {
-			t.Errorf("%s\nhave %p, %v\nwant nil, %v", call, h, err, err)
+			t.Fatalf("%s\nhave %p, %v\nwant nil, %v", call, h, err, err)
 		} else {
 			t.Logf("(error) %s: %v", call, err)
 		}
@@ -152,17 +152,17 @@ func TestDescHeapNew(t *testing.T) {
 	for _, ds := range tDesc {
 		ic, err := tDrv.NewDescHeap(ds)
 		if err != nil {
-			t.Errorf("tDrv.NewDescHeap(%v) failed, cannot test New method", ds)
+			t.Fatalf("tDrv.NewDescHeap(%v) failed, cannot test New method", ds)
 			continue
 		}
 		h := ic.(*descHeap)
 		for _, n := range n {
 			if err = h.New(n); err == nil {
 				if h.pool == zh.pool {
-					t.Errorf("h.New(%d): h.pool\nhave %v\nwant valid handle", n, h.pool)
+					t.Fatalf("h.New(%d): h.pool\nhave %v\nwant valid handle", n, h.pool)
 				}
 				if len(h.sets) != n {
-					t.Errorf("h.New(%d): len(h.sets)\nhave %d\nwant %d", n, len(h.sets), n)
+					t.Fatalf("h.New(%d): len(h.sets)\nhave %d\nwant %d", n, len(h.sets), n)
 				}
 			} else {
 				t.Logf("(error) h.New(%d): %v", n, err)
@@ -173,7 +173,7 @@ func TestDescHeapNew(t *testing.T) {
 		}
 		h.Destroy()
 		if len(h.sets) != 0 {
-			t.Errorf("h.Destroy(): len(h.sets)\nhave %d\nwant 0", len(h.sets))
+			t.Fatalf("h.Destroy(): len(h.sets)\nhave %d\nwant 0", len(h.sets))
 		}
 	}
 }
@@ -191,7 +191,7 @@ func TestDescTable(t *testing.T) {
 	for i, ds := range tDesc {
 		h, err := tDrv.NewDescHeap(ds)
 		if err != nil {
-			t.Errorf("tDrv.NewDescHeap(%v) failed, cannot test New method", ds)
+			t.Fatalf("tDrv.NewDescHeap(%v) failed, cannot test New method", ds)
 			return
 		}
 		dh[i] = h
@@ -224,36 +224,36 @@ func TestDescTable(t *testing.T) {
 		// NewDescTable.
 		if dt, err := tDrv.NewDescTable(hs[i]); err == nil {
 			if t == nil {
-				t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
+				t.Fatalf("%s\nhave nil, nil\nwant non-nil, nil", call)
 				continue
 			}
 			dt := dt.(*descTable)
 			if dt.d != &tDrv {
-				t.Errorf("%s: dt.d\nhave %v\nwant %v", call, dt.d, &tDrv)
+				t.Fatalf("%s: dt.d\nhave %v\nwant %v", call, dt.d, &tDrv)
 			}
 			if dt.layout == zt.layout {
-				t.Errorf("%s: dt.layout\nhave %v\nwant valid handle", call, dt.layout)
+				t.Fatalf("%s: dt.layout\nhave %v\nwant valid handle", call, dt.layout)
 			}
 			// Heap.
 			for j := range hs[i] {
 				if x := dt.Heap(j); x != hs[i][j] {
-					t.Errorf("dt.Heap(%d)\nhave %v\nwant %v", j, x, hs[i][j])
+					t.Fatalf("dt.Heap(%d)\nhave %v\nwant %v", j, x, hs[i][j])
 				}
 			}
 			// Len.
 			if n := dt.Len(); n != len(dt.h) {
-				t.Errorf("dt.Len()\nhave %d\nwant %d", n, len(dt.h))
+				t.Fatalf("dt.Len()\nhave %d\nwant %d", n, len(dt.h))
 			}
 			// Destroy.
 			dt.Destroy()
 			if dt.d != nil {
-				t.Errorf("dt.Destroy(): dt.d\nhave %v\nwant nil", dt.d)
+				t.Fatalf("dt.Destroy(): dt.d\nhave %v\nwant nil", dt.d)
 			}
 			if dt.layout != zt.layout {
-				t.Errorf("dt.Destroy(): dt.layout\nhave %v\nwant null handle", dt.layout)
+				t.Fatalf("dt.Destroy(): dt.layout\nhave %v\nwant null handle", dt.layout)
 			}
 		} else if dt != nil {
-			t.Errorf("%s\nhave %p, %v\nwant nil, %v", call, dt, err, err)
+			t.Fatalf("%s\nhave %p, %v\nwant nil, %v", call, dt, err, err)
 		} else {
 			t.Logf("(error) %s: %v", call, err)
 		}

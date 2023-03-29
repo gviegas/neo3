@@ -199,11 +199,11 @@ func testClose() {
 func TestDriver(t *testing.T) {
 	var d *Driver
 	if x, ok := d.Driver().(*Driver); !ok || x != nil {
-		t.Errorf("d.Driver()\nhave %#v\nwant %#v", x, (*Driver)(nil))
+		t.Fatalf("d.Driver()\nhave %#v\nwant %#v", x, (*Driver)(nil))
 	}
 	d = new(Driver)
 	if x := d.Driver(); x != d {
-		t.Errorf("d.Driver()\nhave %p\nwant %p", x, d)
+		t.Fatalf("d.Driver()\nhave %p\nwant %p", x, d)
 	}
 }
 
@@ -228,27 +228,27 @@ func TestSelectExts(t *testing.T) {
 	for _, c := range cases {
 		a, f, e := selectExts(c.exts, c.from)
 		if e != c.want {
-			t.Errorf("selectExts()\nhave _, _, %v\nwant %v", e, c.want)
+			t.Fatalf("selectExts()\nhave _, _, %v\nwant %v", e, c.want)
 		}
 		if e == nil {
 			// The array should be valid only when exts is not nil/empty.
 			if a == nil && len(c.exts) > 0 {
-				t.Error("selectExts()\nhave nil, _, _\nwant non-nil")
+				t.Fatal("selectExts()\nhave nil, _, _\nwant non-nil")
 			} else if err := checkCStrings(c.exts, unsafe.Pointer(a)); err != nil {
-				t.Error(err)
+				t.Fatal(err)
 			}
 			if f == nil {
-				t.Error("selectExts()\nhave _, nil, _\nwant non-nil")
+				t.Fatal("selectExts()\nhave _, nil, _\nwant non-nil")
 			} else {
 				// It should be safe to call the closure even for nil/empty exts.
 				f()
 			}
 		} else {
 			if a != nil {
-				t.Error("selectExts()\nhave non-nil, _, _\nwant nil")
+				t.Fatal("selectExts()\nhave non-nil, _, _\nwant nil")
 			}
 			if f != nil {
-				t.Error("selectExts()\nhave _, non-nil, _\nwant nil")
+				t.Fatal("selectExts()\nhave _, non-nil, _\nwant nil")
 			}
 		}
 	}
@@ -257,31 +257,31 @@ func TestSelectExts(t *testing.T) {
 func TestExtSanity(t *testing.T) {
 	if !tDrv.exts[extSurface] {
 		if tDrv.exts[extDisplay] {
-			t.Error("tDrv.exts[extDisplay]\nhave true\nwant false")
+			t.Fatal("tDrv.exts[extDisplay]\nhave true\nwant false")
 		}
 		if tDrv.exts[extAndroidSurface] {
-			t.Error("tDrv.exts[extAndroidSurface]\nhave true\nwant false")
+			t.Fatal("tDrv.exts[extAndroidSurface]\nhave true\nwant false")
 		}
 		if tDrv.exts[extWaylandSurface] {
-			t.Error("tDrv.exts[extWaylandSurface]\nhave true\nwant false")
+			t.Fatal("tDrv.exts[extWaylandSurface]\nhave true\nwant false")
 		}
 		if tDrv.exts[extWin32Surface] {
-			t.Error("tDrv.exts[extWin32Surface]\nhave true\nwant false")
+			t.Fatal("tDrv.exts[extWin32Surface]\nhave true\nwant false")
 		}
 		if tDrv.exts[extXCBSurface] {
-			t.Error("tDrv.exts[extXCBSurface]\nhave true\nwant false")
+			t.Fatal("tDrv.exts[extXCBSurface]\nhave true\nwant false")
 		}
 		if tDrv.exts[extSwapchain] {
-			t.Error("tDrv.exts[extSwapchain]\nhave true\nwant false")
+			t.Fatal("tDrv.exts[extSwapchain]\nhave true\nwant false")
 		}
 	}
 
 	if tDrv.exts[extDisplay] {
 		if !tDrv.exts[extSwapchain] && tDrv.exts[extDisplaySwapchain] {
-			t.Error("tDrv.exts[extDisplaySwapchain]\nhave true\nwant false")
+			t.Fatal("tDrv.exts[extDisplaySwapchain]\nhave true\nwant false")
 		}
 	} else if tDrv.exts[extDisplaySwapchain] {
-		t.Error("tDrv.exts[extDisplaySwapchain]\nhave true\nwant false")
+		t.Fatal("tDrv.exts[extDisplaySwapchain]\nhave true\nwant false")
 	}
 
 	var bads []string
@@ -302,7 +302,7 @@ func TestExtSanity(t *testing.T) {
 	}
 	for i := range badi {
 		if tDrv.exts[badi[i]] {
-			t.Errorf("tDrv.exts[<%s>]\nhave true\nwant false", bads[i])
+			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", bads[i])
 		}
 	}
 }

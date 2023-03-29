@@ -13,33 +13,33 @@ func TestShaderCode(t *testing.T) {
 		if c != nil {
 			c := c.(*shaderCode)
 			if c.d != &tDrv {
-				t.Errorf("%s: c.d\nhave %p\nwant %p", call, c.d, &tDrv)
+				t.Fatalf("%s: c.d\nhave %p\nwant %p", call, c.d, &tDrv)
 			}
 			if c.mod == zc.mod {
-				t.Errorf("%s: c.mod\nhave %v\nwant valid handle", call, c.mod)
+				t.Fatalf("%s: c.mod\nhave %v\nwant valid handle", call, c.mod)
 			}
 			c.Destroy()
 			if *c != zc {
-				t.Errorf("c.Destroy(): c\nhave %v\nwant %v", c, zc)
+				t.Fatalf("c.Destroy(): c\nhave %v\nwant %v", c, zc)
 			}
 		} else {
-			t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
+			t.Fatalf("%s\nhave nil, nil\nwant non-nil, nil", call)
 		}
 	} else if c != nil {
-		t.Errorf("%s\nhave non-nil, non-nil\nwant nil, non-nil", call)
+		t.Fatalf("%s\nhave non-nil, non-nil\nwant nil, non-nil", call)
 	} else {
 		t.Logf("(error) %s: %v", call, err)
 	}
 	// Shader code data must be a multiple of four.
 	if _, err := tDrv.NewShaderCode(tShdb[1 : len(tShdb)-4]); err == nil {
-		t.Error("tDrv.NewShaderCode(tShdb[1 : len(tShdb)-4]): err\nhave nil\nwant non-nil")
+		t.Fatal("tDrv.NewShaderCode(tShdb[1 : len(tShdb)-4]): err\nhave nil\nwant non-nil")
 	}
 	// Shader code data must not be nil/empty.
 	if _, err := tDrv.NewShaderCode(tShdb[:0]); err == nil {
-		t.Error("tDrv.NewShaderCode(tShdb[:0]): err\nhave nil\nwant non-nil")
+		t.Fatal("tDrv.NewShaderCode(tShdb[:0]): err\nhave nil\nwant non-nil")
 	}
 	if _, err := tDrv.NewShaderCode(nil); err == nil {
-		t.Error("tDrv.NewShaderCode(nil): err\nhave nil\nwant non-nil")
+		t.Fatal("tDrv.NewShaderCode(nil): err\nhave nil\nwant non-nil")
 	}
 }
 

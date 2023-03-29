@@ -114,22 +114,22 @@ func TestSampler(t *testing.T) {
 		// NewSampler.
 		if s, err := tDrv.NewSampler(&cases[i]); err == nil {
 			if s == nil {
-				t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
+				t.Fatalf("%s\nhave nil, nil\nwant non-nil, nil", call)
 			}
 			s := s.(*sampler)
 			if s.d != &tDrv {
-				t.Errorf("%s: s.d\nhave %p\nwant %p", call, s, &tDrv)
+				t.Fatalf("%s: s.d\nhave %p\nwant %p", call, s, &tDrv)
 			}
 			if s.splr == zs.splr {
-				t.Errorf("%s: s.splr\nhave %v\nwant valid handle", call, s.splr)
+				t.Fatalf("%s: s.splr\nhave %v\nwant valid handle", call, s.splr)
 			}
 			// Destroy.
 			s.Destroy()
 			if *s != zs {
-				t.Errorf("s.Destroy(): s\nhave %v\nwant %v", s, zs)
+				t.Fatalf("s.Destroy(): s\nhave %v\nwant %v", s, zs)
 			}
 		} else if s != nil {
-			t.Errorf("%s\nhave %p, %v\nwant nil, %v", call, s, err, err)
+			t.Fatalf("%s\nhave %p, %v\nwant nil, %v", call, s, err, err)
 		} else {
 			t.Logf("(error) %s: %v", s, err)
 		}

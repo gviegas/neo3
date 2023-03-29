@@ -207,13 +207,13 @@ func TestPipeline(t *testing.T) {
 	}
 	heap, err := tDrv.NewDescHeap([]driver.Descriptor{dtex, dsplr})
 	if err != nil {
-		t.Error("NewDescHeap failed, cannot test NewPipeline")
+		t.Fatal("NewDescHeap failed, cannot test NewPipeline")
 		return
 	}
 	defer heap.Destroy()
 	desc, err := tDrv.NewDescTable([]driver.DescHeap{heap})
 	if err != nil {
-		t.Error("NewDescTable failed, cannot test NewPipeline")
+		t.Fatal("NewDescTable failed, cannot test NewPipeline")
 		return
 	}
 	defer desc.Destroy()
@@ -225,13 +225,13 @@ func TestPipeline(t *testing.T) {
 	}
 	heap2, err := tDrv.NewDescHeap([]driver.Descriptor{dconst})
 	if err != nil {
-		t.Error("NewDescHeap failed, cannot test NewPipeline")
+		t.Fatal("NewDescHeap failed, cannot test NewPipeline")
 		return
 	}
 	defer heap2.Destroy()
 	desc2, err := tDrv.NewDescTable([]driver.DescHeap{heap2})
 	if err != nil {
-		t.Error("NewDescHeap failed, cannot test NewPipeline")
+		t.Fatal("NewDescHeap failed, cannot test NewPipeline")
 		return
 	}
 	defer desc2.Destroy()
@@ -243,13 +243,13 @@ func TestPipeline(t *testing.T) {
 	}
 	heap3, err := tDrv.NewDescHeap([]driver.Descriptor{dbuf})
 	if err != nil {
-		t.Error("NewDescHeap failed, cannot test NewPipeline")
+		t.Fatal("NewDescHeap failed, cannot test NewPipeline")
 		return
 	}
 	defer heap3.Destroy()
 	desc3, err := tDrv.NewDescTable([]driver.DescHeap{heap3})
 	if err != nil {
-		t.Error("NewDescTable failed, cannot test NewPipeline")
+		t.Fatal("NewDescTable failed, cannot test NewPipeline")
 		return
 	}
 	defer desc3.Destroy()
@@ -257,37 +257,37 @@ func TestPipeline(t *testing.T) {
 	// Shaders.
 	vert, err := tDrv.NewShaderCode(tPlVert[:])
 	if err != nil {
-		t.Error("NewShaderCode failed, cannot test NewPipeline")
+		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
 		return
 	}
 	defer vert.Destroy()
 	frag, err := tDrv.NewShaderCode(tPlFrag[:])
 	if err != nil {
-		t.Error("NewShaderCode failed, cannot test NewPipeline")
+		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
 		return
 	}
 	defer frag.Destroy()
 	vert2, err := tDrv.NewShaderCode(tPlVert2[:])
 	if err != nil {
-		t.Error("NewShaderCode failed, cannot test NewPipeline")
+		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
 		return
 	}
 	defer vert2.Destroy()
 	frag2, err := tDrv.NewShaderCode(tPlFrag2[:])
 	if err != nil {
-		t.Error("NewShaderCode failed, cannot test NewPipeline")
+		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
 		return
 	}
 	defer frag2.Destroy()
 	vert3, err := tDrv.NewShaderCode(tPlVert3[:])
 	if err != nil {
-		t.Error("NewShaderCode failed, cannot test NewPipeline")
+		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
 		return
 	}
 	defer vert3.Destroy()
 	comp, err := tDrv.NewShaderCode(tPlComp[:])
 	if err != nil {
-		t.Error("NewShaderCode failed, cannot test NewPipeline")
+		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
 		return
 	}
 	defer comp.Destroy()
@@ -306,23 +306,23 @@ func TestPipeline(t *testing.T) {
 		call := fmt.Sprintf("tDrv.NewPipeline(state) [%d]", i)
 		if p.err != nil {
 			if p.pl != nil {
-				t.Errorf("%s\nhave %p, %v\nwant nil, %v", call, p.pl, p.err, p.err)
+				t.Fatalf("%s\nhave %p, %v\nwant nil, %v", call, p.pl, p.err, p.err)
 			} else {
-				t.Errorf("(error) %s: %v", call, p.err)
+				t.Fatalf("(error) %s: %v", call, p.err)
 			}
 		} else if p.pl == nil {
-			t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
+			t.Fatalf("%s\nhave nil, nil\nwant non-nil, nil", call)
 		} else {
 			p := p.pl.(*pipeline)
 			if p.d != &tDrv {
-				t.Errorf("%s: p.d\nhave %p\nwant %p", call, p.d, &tDrv)
+				t.Fatalf("%s: p.d\nhave %p\nwant %p", call, p.d, &tDrv)
 			}
 			if p.pl == zp.pl {
-				t.Errorf("%s: p.pl\nhave %v\nwant valid handle", call, p.pl)
+				t.Fatalf("%s: p.pl\nhave %v\nwant valid handle", call, p.pl)
 			}
 			p.Destroy()
 			if *p != zp {
-				t.Errorf("p.Destroy(): p\nhave %v\nwant %v", p, zp)
+				t.Fatalf("p.Destroy(): p\nhave %v\nwant %v", p, zp)
 			}
 		}
 	}

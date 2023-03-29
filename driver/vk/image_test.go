@@ -55,51 +55,51 @@ func TestImage(t *testing.T) {
 		// NewImage.
 		if img, err := tDrv.NewImage(c.pf, c.size, c.layers, c.levels, c.samples, c.usage); err == nil {
 			if img == nil {
-				t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
+				t.Fatalf("%s\nhave nil, nil\nwant non-nil, nil", call)
 				continue
 			}
 			img := img.(*image)
 			if img.m != nil {
 				if img.m.d != &tDrv {
-					t.Errorf("%s: img.m.d\nhave %p\nwant %p", call, img.m.d, &tDrv)
+					t.Fatalf("%s: img.m.d\nhave %p\nwant %p", call, img.m.d, &tDrv)
 				}
 				// The size can be greater than what was requested.
 				// TODO: Multiply by pixel size.
 				size := int64(c.size.Width * c.size.Height * c.size.Depth)
 				if img.m.size < size {
-					t.Errorf("%s: img.m.size\nhave %d\nwant at least %d", call, img.m.size, size)
+					t.Fatalf("%s: img.m.size\nhave %d\nwant at least %d", call, img.m.size, size)
 				}
 				if img.m.vis && int64(len(img.m.p)) != img.m.size {
-					t.Errorf("%s: len(img.m.p)\nhave %d\nwant %d", call, len(img.m.p), img.m.size)
+					t.Fatalf("%s: len(img.m.p)\nhave %d\nwant %d", call, len(img.m.p), img.m.size)
 				}
 				// NewImage should bind the memory and set this to true.
 				if !img.m.bound {
-					t.Errorf("%s: img.m.bound\nhave false\nwant true", call)
+					t.Fatalf("%s: img.m.bound\nhave false\nwant true", call)
 				}
 				if img.m.mem == zm.mem {
-					t.Errorf("%s: img.m.mem\nhave %v\nwant valid handle", call, img.m.mem)
+					t.Fatalf("%s: img.m.mem\nhave %v\nwant valid handle", call, img.m.mem)
 				}
 				if img.m.typ < 0 || img.m.typ >= int(tDrv.mprop.memoryTypeCount) {
-					t.Errorf("%s: img.m.typ\nhave %d\nwant valid index", call, img.m.typ)
+					t.Fatalf("%s: img.m.typ\nhave %d\nwant valid index", call, img.m.typ)
 				} else {
 					heap := int(tDrv.mprop.memoryTypes[img.m.typ].heapIndex)
 					if img.m.heap != heap {
-						t.Errorf("%s: img.m.heap\nhave %d\nwant %d", call, img.m.heap, heap)
+						t.Fatalf("%s: img.m.heap\nhave %d\nwant %d", call, img.m.heap, heap)
 					}
 				}
 			} else {
-				t.Errorf("%s: img.m\nhave nil\nwant non-nil", call)
+				t.Fatalf("%s: img.m\nhave nil\nwant non-nil", call)
 			}
 			if img.img == zi.img {
-				t.Errorf("%s: img.img\nhave %v\nwant valid handle", call, img.img)
+				t.Fatalf("%s: img.img\nhave %v\nwant valid handle", call, img.img)
 			}
 			// Destroy.
 			img.Destroy()
 			if *img != zi {
-				t.Errorf("img.Destroy(): img\nhave %v\nwant %v", img, zi)
+				t.Fatalf("img.Destroy(): img\nhave %v\nwant %v", img, zi)
 			}
 		} else if img != nil {
-			t.Errorf("%s\nhave %p, %v\nwant nil, %v", call, img, err, err)
+			t.Fatalf("%s\nhave %p, %v\nwant nil, %v", call, img, err, err)
 		} else {
 			t.Logf("(error) %s: %v", call, err)
 		}
@@ -157,7 +157,7 @@ func TestImageView(t *testing.T) {
 		img, err := tDrv.NewImage(c.pf, c.size, c.layers, c.levels, c.samples, c.usage)
 		if err != nil {
 			call := fmt.Sprintf("tDrv.NewImage(%v, %v, %v, %v, %v, %v)", c.pf, c.size, c.layers, c.levels, c.samples, c.usage)
-			t.Errorf("%s failed, cannot test NewView method", call)
+			t.Fatalf("%s failed, cannot test NewView method", call)
 			continue
 		}
 		for _, c := range c.iv {
@@ -165,25 +165,25 @@ func TestImageView(t *testing.T) {
 			// NewView.
 			if iv, err := img.NewView(c.typ, c.layer, c.layers, c.level, c.levels); err == nil {
 				if iv == nil {
-					t.Errorf("%s\nhave nil, nil\nwant non-nil, nil", call)
+					t.Fatalf("%s\nhave nil, nil\nwant non-nil, nil", call)
 					continue
 				}
 				iv := iv.(*imageView)
 				if iv.i != img {
-					t.Errorf("%s: iv.i\nhave %p\nwant %p", call, iv.i, img)
+					t.Fatalf("%s: iv.i\nhave %p\nwant %p", call, iv.i, img)
 				}
 				if iv.view == zv.view {
-					t.Errorf("%s: iv.view\nhave %v\nwant valid handle", call, iv.view)
+					t.Fatalf("%s: iv.view\nhave %v\nwant valid handle", call, iv.view)
 				}
 				// Destroy.
 				iv.Destroy()
 				if *iv != zv {
-					t.Errorf("iv.Destroy()\nhave %v\nwant %v", *iv, zv)
+					t.Fatalf("iv.Destroy()\nhave %v\nwant %v", *iv, zv)
 				}
 			} else if iv != nil {
-				t.Errorf("%s\nhave %p, %v\nwant nil, %v", call, iv, err, err)
+				t.Fatalf("%s\nhave %p, %v\nwant nil, %v", call, iv, err, err)
 			} else {
-				t.Errorf("(error) %s: %v", call, err)
+				t.Fatalf("(error) %s: %v", call, err)
 			}
 		}
 		img.Destroy()
