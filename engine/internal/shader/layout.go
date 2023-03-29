@@ -100,7 +100,7 @@ func (l *LightLayout) SetIntensity(i float32) { l[2] = i }
 func (l *LightLayout) SetRange(rng float32) { l[3] = rng }
 
 // SetColor sets the color.
-func (l *LightLayout) SetColor(c *linear.V3) { l[4], l[5], l[6] = c[0], c[1], c[2] }
+func (l *LightLayout) SetColor(c *linear.V3) { copy(l[4:7], c[:]) }
 
 // SetAngScale sets the angular scale.
 // Used for SpotLight.
@@ -108,7 +108,7 @@ func (l *LightLayout) SetAngScale(s float32) { l[7] = s }
 
 // SetPosition sets the position.
 // Used for PointLight and SpotLight.
-func (l *LightLayout) SetPosition(p *linear.V3) { l[8], l[9], l[10] = p[0], p[1], p[2] }
+func (l *LightLayout) SetPosition(p *linear.V3) { copy(l[8:11], p[:]) }
 
 // SetAngOffset sets the angular offset.
 // Used for SpotLight.
@@ -116,7 +116,7 @@ func (l *LightLayout) SetAngOffset(off float32) { l[11] = off }
 
 // SetDirection sets the direction.
 // Used for DirectLight and SpotLight.
-func (l *LightLayout) SetDirection(d *linear.V3) { l[12], l[13], l[14] = d[0], d[1], d[2] }
+func (l *LightLayout) SetDirection(d *linear.V3) { copy(l[12:15], d[:]) }
 
 // DrawableLayout is the layout of drawable data.
 // It is defined as follows:
@@ -141,3 +141,55 @@ func (l *DrawableLayout) SetNormal(m *linear.M4) { copyM4(l[16:32], m) }
 
 // SetID sets the drawable's ID.
 func (l *DrawableLayout) SetID(id uint32) { l[48] = *(*float32)(unsafe.Pointer(&id)) }
+
+// MaterialLayout is the layout of material data.
+// It is defined as follows:
+//
+//	[0:4]   | base color factor
+//	[4]     | metalness
+//	[5]     | roughness
+//	[6]     | normal scale
+//	[7]     | occlusion strength
+//	[8:11]  | emissive factor
+//	[11]    | alpha cutoff
+//	[12]    | flags
+//	[13:15] | (unused)
+type MaterialLayout [16]float32
+
+// Material flags.
+const (
+	// Identifies the default material model.
+	MatPBR uint32 = 1 << iota
+	// Identifies the unlit material model.
+	MatUnlit
+	// Alpha mode is material.AlphaOpaque.
+	MatAOpaque
+	// Alpha mode is material.AlphaBlend.
+	MatABlend
+	// Alpha mode is material.AlphaMask.
+	MatAMask
+	// Whether the material is double-sided.
+	MatDoubleSided
+)
+
+// SetColorFactor sets the base color factor.
+func (l *MaterialLayout) SetColorFactor(fac *linear.V4) { copy(l[:4], fac[:]) }
+
+// SetMetalRough sets the metalness and roughness.
+func (l *MaterialLayout) SetMetalRough(metal, rough float32) { l[4], l[5] = metal, rough }
+
+// SetNormScale sets the normal scale.
+func (l *MaterialLayout) SetNormScale(s float32) { l[6] = s }
+
+// SetOccStrength sets the occlusion strength.
+func (l *MaterialLayout) SetOccStrength(s float32) { l[7] = s }
+
+// SetEmisFactor sets the emissive factor.
+func (l *MaterialLayout) SetEmisFactor(fac *linear.V3) { copy(l[8:11], fac[:]) }
+
+// SetAlphaCutoff sets the alpha cutoff value.
+// Used for AlphaMask.
+func (l *MaterialLayout) SetAlphaCutoff(c float32) { l[11] = c }
+
+// SetFlags sets the material flags.
+func (l *MaterialLayout) SetFlags(flg uint32) { l[12] = *(*float32)(unsafe.Pointer(&flg)) }

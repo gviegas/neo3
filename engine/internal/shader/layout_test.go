@@ -168,7 +168,7 @@ func TestDrawableLayout(t *testing.T) {
 	norm.Invert(&wld)
 	norm.Transpose(&norm)
 
-	// [48]
+	// [48:49]
 	id := uint32(0x1d)
 
 	var l DrawableLayout
@@ -182,5 +182,57 @@ func TestDrawableLayout(t *testing.T) {
 	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, s+"SetNormal")
 	if x := *(*uint32)(unsafe.Pointer(&id)); x != id {
 		t.Fatalf("%sSetID:\nhave %d\nwant %d", s, x, id)
+	}
+}
+
+func TestMaterialLayout(t *testing.T) {
+	// [0:4]
+	color := linear.V4{0.1, 0.2, 0.3, 0.4}
+
+	// [4:5], [5:6]
+	metal, rough := float32(0.5), float32(0.6)
+
+	// [6:7]
+	scale := float32(0.7)
+
+	// [7:8]
+	strength := float32(0.8)
+
+	// [8:11]
+	emissive := linear.V3{0.9, 0.91, 0.92}
+
+	// [11:12]
+	cutoff := float32(0.93)
+
+	// [12:13]
+	flags := MatPBR | MatABlend | MatDoubleSided
+
+	var l MaterialLayout
+	l.SetColorFactor(&color)
+	l.SetMetalRough(metal, rough)
+	l.SetNormScale(scale)
+	l.SetOccStrength(strength)
+	l.SetEmisFactor(&emissive)
+	l.SetAlphaCutoff(cutoff)
+	l.SetFlags(flags)
+
+	s := "MaterialLayout."
+
+	checkSlicesT(l[:4], color[:], t, s+"SetColorFactor")
+	if l[4] != metal || l[5] != rough {
+		t.Fatalf("%sSetMetalRough:\nhave %f, %f\nwant %f, %f", s, l[4], l[5], metal, rough)
+	}
+	if l[6] != scale {
+		t.Fatalf("%sSetNormScale:\nhave %f\nwant %f", s, l[6], scale)
+	}
+	if l[7] != strength {
+		t.Fatalf("%sSetOccStrength:\nhave %f\nwant %f", s, l[7], strength)
+	}
+	checkSlicesT(l[8:11], emissive[:], t, s+"SetEmisFactor")
+	if l[11] != cutoff {
+		t.Fatalf("%sSetAlphaCutoff:\nhave %f\nwant %f", s, l[11], cutoff)
+	}
+	if x := *(*uint32)(unsafe.Pointer(&l[12])); x != flags {
+		t.Fatalf("%sSetFlags:\nhave 0x%x\nwant 0x%x", s, x, flags)
 	}
 }
