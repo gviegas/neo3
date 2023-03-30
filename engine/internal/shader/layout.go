@@ -7,7 +7,7 @@
 // One should use the Set* methods of a given *Layout
 // type to update constant data.
 //
-// Constants that are updated using vector and matrices
+// Constants that are updated using vectors or matrices
 // (i.e., linear.V*/linear.M* types) will be defined in
 // the shaders as equivalent types. These data will be
 // aligned to 16 bytes for portability.
