@@ -133,6 +133,28 @@ func (l *LightLayout) SetAngOffset(off float32) { l[11] = off }
 // Used for DirectLight and SpotLight.
 func (l *LightLayout) SetDirection(d *linear.V3) { copy(l[12:15], d[:]) }
 
+// ShadowLayout is the layout of shadow data.
+// It is defined as follows:
+//
+//	[0]     | whether the shadow is unused
+//	[1:16]  | ???
+//	[16:32] | shadow matrix
+//
+// NOTE: This layout is likely to change.
+type ShadowLayout [32]float32
+
+// SetUnused sets whether the shadow is unused.
+func (l *ShadowLayout) SetUnused(unused bool) {
+	var bool32 int32
+	if unused {
+		bool32 = 1
+	}
+	l[0] = *(*float32)(unsafe.Pointer(&bool32))
+}
+
+// SetShadow sets the shadow matrix.
+func (l *ShadowLayout) SetShadow(m *linear.M4) { copyM4(l[16:32], m) }
+
 // DrawableLayout is the layout of drawable data.
 // It is defined as follows:
 //

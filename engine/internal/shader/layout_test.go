@@ -158,6 +158,36 @@ func TestLightLayout(t *testing.T) {
 	checkSlicesT(l[12:15], dir[:], t, s+"SetDirection")
 }
 
+func TestShadowLayout(t *testing.T) {
+	// [0:1]
+	unused := true
+
+	// [16:32]
+	var shdw linear.M4
+	shdw.Ortho(-1, 1, -1, 1)
+	shdw.Mul(&linear.M4{{0.5}, {1: -0.5}, {2: 1}, {0.5, 0.5, 0, 1}}, &shdw)
+
+	var l ShadowLayout
+	l.SetUnused(unused)
+	l.SetShadow(&shdw)
+
+	s := "ShadowLayout."
+
+	switch x := *(*int32)(unsafe.Pointer(&l[0])); x {
+	case 0:
+		if unused {
+			t.Fatalf("%sSetUnused:\nhave false (0) \nwant true (1)", s)
+		}
+	case 1:
+		if !unused {
+			t.Fatalf("%sSetUnused:\nhave true (1) \nwant false (0)", s)
+		}
+	default:
+		t.Fatalf("%sSetUnused: bad value\n%d", s, x)
+	}
+	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&shdw)), 16), t, s+"SetShadow")
+}
+
 func TestDrawableLayout(t *testing.T) {
 	// [0:16]
 	var wld linear.M4
