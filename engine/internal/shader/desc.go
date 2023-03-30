@@ -48,13 +48,19 @@ func samplerDesc(nr int) driver.Descriptor {
 }
 
 // newDescHeap0 creates a new driver.DescHeap suitable for
-// frame (FrameLayout) and light (LightLayout) data.
+// frame (FrameLayout), light (LightLayout) and shadow
+// (ShadowLayout) data plus textures/samplers.
 func newDescHeap0() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
 		// Frame.
 		constantDesc(0),
 		// Light.
 		constantDesc(1),
+		// Shadow.
+		constantDesc(2),
+		// Shadow map.
+		// TODO: Texture array.
+		textureDesc(3), samplerDesc(4),
 	})
 }
 
@@ -94,7 +100,6 @@ func newDescHeap3() (driver.DescHeap, error) {
 
 // newDescTable creates a new driver.DescTable containing
 // the heaps 0-3.
-// This table is used for drawing shaded models.
 func newDescTable() (driver.DescTable, error) {
 	dh0, err := newDescHeap0()
 	if err != nil {
