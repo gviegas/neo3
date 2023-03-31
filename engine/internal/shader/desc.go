@@ -151,6 +151,13 @@ type Table struct {
 	// TODO: Buffer; bitmap.
 }
 
+const (
+	globalHeap = iota
+	drawableHeap
+	materialHeap
+	jointHeap
+)
+
 // NewTable creates a new descriptor table.
 func NewTable() (*Table, error) {
 	dt, err := newDescTable()
@@ -160,7 +167,46 @@ func NewTable() (*Table, error) {
 	return &Table{dt}, nil
 }
 
-// TODO: Heap allocation; descriptor retain/release/update.
+func (t *Table) heapAlloc(idx, n int) error {
+	// TODO: Buffer.
+	n += t.dt.Heap(idx).Len()
+	return t.dt.Heap(idx).New(n)
+}
+
+// AllocGlobal allocates n copies in the heap of
+// global data.
+// This heap stores frame, light and shadow descriptors.
+//
+// One should need exactly one global heap copy per
+// in-flight frame.
+func (t *Table) AllocGlobal(n int) error { return t.heapAlloc(globalHeap, n) }
+
+// AllocDrawable allocates n copies in the heap of
+// drawable data.
+// This heap only stores drawable descriptors.
+//
+// This data is expected to be highly dynamic. One may
+// want to retain one drawable slot per in-flight frame
+// for every drawable entity.
+func (t *Table) AllocDrawable(n int) error { return t.heapAlloc(drawableHeap, n) }
+
+// AllocMaterial allocates n copies in the heap of
+// material data.
+// This heap only stores material descriptors.
+//
+// This data is expected to remain unchanged in the
+// common case. One should attempt to share it between
+// in-flight frames as much as possible.
+func (t *Table) AllocMaterial(n int) error { return t.heapAlloc(materialHeap, n) }
+
+// AllocJoint allocates n copies in the heap of
+// joint data.
+// This heap only stores joint descriptors.
+//
+// This data may be used for more than one drawable in
+// certain cases, so it is not allocated alongside
+// drawable descriptors (for now).
+func (t *Table) AllocJoint(n int) error { return t.heapAlloc(jointHeap, n) }
 
 // Free invalidates t and destroys the driver resources.
 func (t *Table) Free() {
