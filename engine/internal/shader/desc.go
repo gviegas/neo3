@@ -143,3 +143,29 @@ func freeDescTable(dt driver.DescTable) {
 		dhs[i].Destroy()
 	}
 }
+
+// Table manages descriptor usage within a single
+// driver.DescTable.
+type Table struct {
+	dt driver.DescTable
+	// TODO: Buffer; bitmap.
+}
+
+// NewTable creates a new descriptor table.
+func NewTable() (*Table, error) {
+	dt, err := newDescTable()
+	if err != nil {
+		return nil, err
+	}
+	return &Table{dt}, nil
+}
+
+// TODO: Heap allocation; descriptor retain/release/update.
+
+// Free invalidates t and destroys the driver resources.
+func (t *Table) Free() {
+	if t.dt != nil {
+		freeDescTable(t.dt)
+	}
+	*t = Table{}
+}
