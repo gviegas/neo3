@@ -130,3 +130,16 @@ func newDescTable() (driver.DescTable, error) {
 		dh3,
 	})
 }
+
+// freeDescTable destroys a driver.DescTable and every
+// driver.DescHeap that it contains.
+func freeDescTable(dt driver.DescTable) {
+	dhs := make([]driver.DescHeap, dt.Len())
+	for i := range dhs {
+		dhs[i] = dt.Heap(i)
+	}
+	dt.Destroy()
+	for i := range dhs {
+		dhs[i].Destroy()
+	}
+}
