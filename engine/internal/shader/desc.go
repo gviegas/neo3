@@ -16,8 +16,11 @@
 package shader
 
 import (
+	"unsafe"
+
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/engine/internal/ctxt"
+	"github.com/gviegas/scene/internal/bitm"
 )
 
 func constantDesc(nr int) driver.Descriptor {
@@ -147,8 +150,9 @@ func freeDescTable(dt driver.DescTable) {
 // Table manages descriptor usage within a single
 // driver.DescTable.
 type Table struct {
-	dt driver.DescTable
-	// TODO: Buffer; bitmap.
+	dt   driver.DescTable
+	cbuf driver.Buffer
+	cmap bitm.Bitm[uint32]
 }
 
 const (
@@ -158,19 +162,92 @@ const (
 	jointHeap
 )
 
+const (
+	blockSize = 256
+	nbit      = 32
+)
+
+// These spans are given in number of blocks.
+// Each block has blockSize bytes.
+const (
+	frameSpan    = (unsafe.Sizeof(FrameLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	lightSpan    = (MaxLights*unsafe.Sizeof(LightLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	shadowSpan   = (MaxShadows*unsafe.Sizeof(ShadowLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	drawableSpan = (unsafe.Sizeof(DrawableLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	materialSpan = (unsafe.Sizeof(MaterialLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	jointSpan    = (MaxJoints*unsafe.Sizeof(JointLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+)
+
 // NewTable creates a new descriptor table.
 func NewTable() (*Table, error) {
 	dt, err := newDescTable()
 	if err != nil {
 		return nil, err
 	}
-	return &Table{dt}, nil
+	return &Table{dt, nil, bitm.Bitm[uint32]{}}, nil
 }
 
 func (t *Table) heapAlloc(idx, n int) error {
-	// TODO: Buffer.
-	n += t.dt.Heap(idx).Len()
-	return t.dt.Heap(idx).New(n)
+	switch {
+	case n == 0:
+		return nil
+	case n < 0:
+		panic("descriptor heap allocation with negative count")
+	}
+	if err := t.dt.Heap(idx).New(t.dt.Heap(idx).Len() + n); err != nil {
+		return err
+	}
+	if err := t.constAlloc(idx, n); err != nil {
+		if t.dt.Heap(idx).New(t.dt.Heap(idx).Len()-n) != nil {
+			panic("could not downsize descriptor heap")
+		}
+		return err
+	}
+	return nil
+}
+
+func (t *Table) constAlloc(idx, n int) error {
+	switch idx {
+	case globalHeap:
+		n *= int(frameSpan + lightSpan + shadowSpan)
+	case drawableHeap:
+		n *= int(drawableSpan)
+	case materialHeap:
+		n *= int(materialSpan)
+	case jointHeap:
+		n *= int(jointSpan)
+	default:
+		// Should never happen.
+		panic("not a valid heap index")
+	}
+	// TODO: Span map.
+	_, ok := t.cmap.SearchRange(n)
+	if !ok {
+		var sz int64
+		var nplus int
+		if t.cbuf != nil {
+			sz = (t.cbuf.Cap()/blockSize + int64(n) + nbit - 1) &^ (nbit - 1)
+			nplus = (int(sz) - t.cmap.Len()) / nbit
+			sz *= blockSize
+		} else {
+			nplus = (n + nbit - 1) &^ (nbit - 1)
+			sz = int64(nplus) * blockSize
+			nplus /= nbit
+		}
+		cbuf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+		if err != nil {
+			return err
+		}
+		if t.cbuf != nil {
+			// TODO: Consider doing this copy
+			// through the GPU.
+			copy(cbuf.Bytes(), t.cbuf.Bytes())
+			t.cbuf.Destroy()
+		}
+		t.cbuf = cbuf
+		_ = t.cmap.Grow(nplus)
+	}
+	return nil
 }
 
 // AllocGlobal allocates n copies in the heap of

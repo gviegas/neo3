@@ -243,3 +243,13 @@ func (l *JointLayout) SetJoint(m *linear.M4) { copyM4(l[:16], m) }
 
 // SetNormal sets the normal matrix.
 func (l *JointLayout) SetNormal(m *linear.M4) { copyM4(l[16:32], m) }
+
+// Constants defining the maximum number of elements
+// for layouts that are aggregated into static arrays.
+//
+// TODO: Make these configurable.
+const (
+	MaxLights  = 16384 / unsafe.Sizeof(LightLayout{})
+	MaxShadows = 1
+	MaxJoints  = 16384 / unsafe.Sizeof(JointLayout{})
+)
