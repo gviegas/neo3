@@ -189,24 +189,24 @@ func NewTable() (*Table, error) {
 
 func (t *Table) heapAlloc(idx, n int) error {
 	switch {
-	case n == 0:
+	// TODO: Consider deallocating when n is 0.
+	case n == 0, n == t.dt.Heap(idx).Len():
 		return nil
 	case n < 0:
 		panic("descriptor heap allocation with negative count")
 	}
-	if err := t.dt.Heap(idx).New(t.dt.Heap(idx).Len() + n); err != nil {
+	if err := t.dt.Heap(idx).New(n); err != nil {
 		return err
 	}
 	if err := t.constAlloc(idx, n); err != nil {
-		if t.dt.Heap(idx).New(t.dt.Heap(idx).Len()-n) != nil {
-			panic("could not downsize descriptor heap")
-		}
+		t.dt.Heap(idx).New(0)
 		return err
 	}
 	return nil
 }
 
 func (t *Table) constAlloc(idx, n int) error {
+	// TODO: Unset range for this heap.
 	switch idx {
 	case globalHeap:
 		n *= int(frameSpan + lightSpan + shadowSpan)
@@ -220,9 +220,15 @@ func (t *Table) constAlloc(idx, n int) error {
 		// Should never happen.
 		panic("not a valid heap index")
 	}
-	// TODO: Span map.
+	// TODO: Set range for this heap.
 	_, ok := t.cmap.SearchRange(n)
 	if !ok {
+		// TODO: This can lead to large spans
+		// of unused buffer memory (e.g., when
+		// resizing a heap that is not in the
+		// end of the buffer).
+		// Contents should be moved within the
+		// buffer when that happens.
 		var sz int64
 		var nplus int
 		if t.cbuf != nil {
@@ -250,16 +256,22 @@ func (t *Table) constAlloc(idx, n int) error {
 	return nil
 }
 
-// AllocGlobal allocates n copies in the heap of
-// global data.
+// AllocGlobal resizes the global heap to contain n
+// copies of global descriptors. It also allocates
+// buffer memory as necessary to store the constants
+// of each copy.
+//
 // This heap stores frame, light and shadow descriptors.
 //
 // One should need exactly one global heap copy per
 // in-flight frame.
 func (t *Table) AllocGlobal(n int) error { return t.heapAlloc(globalHeap, n) }
 
-// AllocDrawable allocates n copies in the heap of
-// drawable data.
+// AllocDrawable resizes the drawable heap to contain
+// n copies of drawable descriptors. It also allocates
+// buffer memory as necessary to store the constants
+// of each copy.
+//
 // This heap only stores drawable descriptors.
 //
 // This data is expected to be highly dynamic. One may
@@ -267,8 +279,11 @@ func (t *Table) AllocGlobal(n int) error { return t.heapAlloc(globalHeap, n) }
 // for every drawable entity.
 func (t *Table) AllocDrawable(n int) error { return t.heapAlloc(drawableHeap, n) }
 
-// AllocMaterial allocates n copies in the heap of
-// material data.
+// AllocMaterial resizes the material heap to contain
+// n copies of material descriptors. It also allocates
+// buffer memory as necessary to store the constants
+// of each copy.
+//
 // This heap only stores material descriptors.
 //
 // This data is expected to remain unchanged in the
@@ -276,8 +291,11 @@ func (t *Table) AllocDrawable(n int) error { return t.heapAlloc(drawableHeap, n)
 // in-flight frames as much as possible.
 func (t *Table) AllocMaterial(n int) error { return t.heapAlloc(materialHeap, n) }
 
-// AllocJoint allocates n copies in the heap of
-// joint data.
+// Allocjoint resizes the joint heap to contain n
+// copies of joint descriptors. It also allocates
+// buffer memory as necessary to store the constants
+// of each copy.
+//
 // This heap only stores joint descriptors.
 //
 // This data may be used for more than one drawable in
