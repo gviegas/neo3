@@ -290,5 +290,8 @@ func (t *Table) Free() {
 	if t.dt != nil {
 		freeDescTable(t.dt)
 	}
+	if t.cbuf != nil {
+		t.cbuf.Destroy()
+	}
 	*t = Table{}
 }
