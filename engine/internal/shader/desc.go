@@ -151,6 +151,7 @@ func freeDescTable(dt driver.DescTable) {
 type Table struct {
 	dt   driver.DescTable
 	cbuf driver.Buffer
+	coff int64
 }
 
 const (
@@ -201,7 +202,7 @@ func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
 			return nil, err
 		}
 	}
-	return &Table{dt, nil}, nil
+	return &Table{dt: dt}, nil
 }
 
 // ConstSize returns the number of bytes consumed by
@@ -214,13 +215,38 @@ func (t *Table) ConstSize() int {
 	return (spn0 + spn1 + spn2 + spn3) * blockSize
 }
 
+// SetConstBuf sets the buffer for constant descriptors.
+// This buffer must be host visible and must have been
+// created with the driver.UShaderConst usage flag.
+// The constants will consume exactly t.ConstSize()
+// bytes from buf, starting at offset off (the caller
+// must ensure that this range is within bounds).
+// off must be aligned to 256 bytes.
+// It returns the previously set buffer/offset, if any.
+func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64) {
+	switch {
+	case buf == nil:
+		off = 0
+	case off&(blockSize-1) != 0:
+		panic("misaligned constant buffer offset")
+	case buf.Cap()-off < int64(t.ConstSize()):
+		panic("constant buffer range out of bounds")
+	}
+	pbuf := t.cbuf
+	poff := t.coff
+	t.cbuf = buf
+	t.coff = off
+	return pbuf, poff
+}
+
 // Free invalidates t and destroys the driver resources.
+//
+// NOTE: The constant buffer is not destroyed by this
+// method; one can retrieve the buffer by calling
+// t.SetConstBuf(nil, _) prior to calling t.Free.
 func (t *Table) Free() {
 	if t.dt != nil {
 		freeDescTable(t.dt)
 	}
-	//if t.cbuf != nil {
-	//	t.cbuf.Destroy()
-	//}
 	*t = Table{}
 }
