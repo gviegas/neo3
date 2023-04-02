@@ -204,6 +204,16 @@ func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
 	return &Table{dt, nil}, nil
 }
 
+// ConstSize returns the number of bytes consumed by
+// all constant descriptors of t.
+func (t *Table) ConstSize() int {
+	spn0 := t.dt.Heap(globalHeap).Len() * int(frameSpan+lightSpan+shadowSpan)
+	spn1 := t.dt.Heap(drawableHeap).Len() * int(drawableSpan)
+	spn2 := t.dt.Heap(materialHeap).Len() * int(materialSpan)
+	spn3 := t.dt.Heap(jointHeap).Len() * int(jointSpan)
+	return (spn0 + spn1 + spn2 + spn3) * blockSize
+}
+
 // Free invalidates t and destroys the driver resources.
 func (t *Table) Free() {
 	if t.dt != nil {
