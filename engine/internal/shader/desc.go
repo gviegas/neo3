@@ -22,6 +22,50 @@ import (
 	"github.com/gviegas/scene/engine/internal/ctxt"
 )
 
+const (
+	globalHeap = iota
+	drawableHeap
+	materialHeap
+	jointHeap
+)
+
+const (
+	frameNr    = 0
+	lightNr    = 1
+	shadowNr   = 2
+	shdwTexNr  = 3
+	shdwSplrNr = 4
+
+	drawableNr = 0
+
+	materialNr  = 0
+	colorTexNr  = 1
+	colorSplrNr = 2
+	metalTexNr  = 3
+	metalSplrNr = 4
+	normTexNr   = 5
+	normSplrNr  = 6
+	occTexNr    = 7
+	occSplrNr   = 8
+	emisTexNr   = 9
+	emisSplrNr  = 10
+
+	jointNr = 0
+)
+
+// These spans are given in number of blocks.
+// Each block has blockSize bytes.
+const (
+	blockSize = 256
+
+	frameSpan    = (unsafe.Sizeof(FrameLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	lightSpan    = (MaxLights*unsafe.Sizeof(LightLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	shadowSpan   = (MaxShadows*unsafe.Sizeof(ShadowLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	drawableSpan = (unsafe.Sizeof(DrawableLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	materialSpan = (unsafe.Sizeof(MaterialLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	jointSpan    = (MaxJoints*unsafe.Sizeof(JointLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+)
+
 func constantDesc(nr int) driver.Descriptor {
 	return driver.Descriptor{
 		Type:   driver.DConstant,
@@ -55,14 +99,15 @@ func samplerDesc(nr int) driver.Descriptor {
 func newDescHeap0() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
 		// Frame.
-		constantDesc(0),
+		constantDesc(frameNr),
 		// Light.
-		constantDesc(1),
+		constantDesc(lightNr),
 		// Shadow.
-		constantDesc(2),
+		constantDesc(shadowNr),
 		// Shadow map.
 		// TODO: Texture array.
-		textureDesc(3), samplerDesc(4),
+		textureDesc(shdwTexNr),
+		samplerDesc(shdwSplrNr),
 	})
 }
 
@@ -70,7 +115,7 @@ func newDescHeap0() (driver.DescHeap, error) {
 // drawable (DrawableLayout) data.
 func newDescHeap1() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
-		constantDesc(0),
+		constantDesc(drawableNr),
 	})
 }
 
@@ -78,17 +123,22 @@ func newDescHeap1() (driver.DescHeap, error) {
 // material (MaterialLayout) data plus texture/samplers.
 func newDescHeap2() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
-		constantDesc(0),
+		constantDesc(materialNr),
 		// Base color.
-		textureDesc(1), samplerDesc(2),
+		textureDesc(colorTexNr),
+		samplerDesc(colorSplrNr),
 		// Metallic-roughness.
-		textureDesc(3), samplerDesc(4),
+		textureDesc(metalTexNr),
+		samplerDesc(metalSplrNr),
 		// Normal map.
-		textureDesc(5), samplerDesc(6),
+		textureDesc(normTexNr),
+		samplerDesc(normSplrNr),
 		// Occlusion map.
-		textureDesc(7), samplerDesc(8),
+		textureDesc(occTexNr),
+		samplerDesc(occSplrNr),
 		// Emissive map.
-		textureDesc(9), samplerDesc(10),
+		textureDesc(emisTexNr),
+		samplerDesc(emisSplrNr),
 	})
 }
 
@@ -96,7 +146,7 @@ func newDescHeap2() (driver.DescHeap, error) {
 // joint (JointLayout) data.
 func newDescHeap3() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
-		constantDesc(0),
+		constantDesc(jointNr),
 	})
 }
 
@@ -153,26 +203,6 @@ type Table struct {
 	cbuf driver.Buffer
 	coff int64
 }
-
-const (
-	globalHeap = iota
-	drawableHeap
-	materialHeap
-	jointHeap
-)
-
-// These spans are given in number of blocks.
-// Each block has blockSize bytes.
-const (
-	blockSize = 256
-
-	frameSpan    = (unsafe.Sizeof(FrameLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-	lightSpan    = (MaxLights*unsafe.Sizeof(LightLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-	shadowSpan   = (MaxShadows*unsafe.Sizeof(ShadowLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-	drawableSpan = (unsafe.Sizeof(DrawableLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-	materialSpan = (unsafe.Sizeof(MaterialLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-	jointSpan    = (MaxJoints*unsafe.Sizeof(JointLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-)
 
 // NewTable creates a new descriptor table.
 // Each parameter defines the number of heap copies to
@@ -247,13 +277,13 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		n = dh.Len()
 		for i := 0; i < n; i++ {
 			sz[0] = int64(frameSpan * blockSize)
-			dh.SetBuffer(i, 0, 0, buf, off, sz)
+			dh.SetBuffer(i, frameNr, 0, buf, off, sz)
 			off[0] += sz[0]
 			sz[0] = int64(lightSpan * blockSize)
-			dh.SetBuffer(i, 1, 0, buf, off, sz)
+			dh.SetBuffer(i, lightNr, 0, buf, off, sz)
 			off[0] += sz[0]
 			sz[0] = int64(shadowSpan * blockSize)
-			dh.SetBuffer(i, 2, 0, buf, off, sz)
+			dh.SetBuffer(i, shadowNr, 0, buf, off, sz)
 			off[0] += sz[0]
 		}
 
@@ -263,7 +293,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		n = dh.Len()
 		sz[0] = int64(drawableSpan * blockSize)
 		for i := 0; i < n; i++ {
-			dh.SetBuffer(i, 0, 0, buf, off, sz)
+			dh.SetBuffer(i, drawableNr, 0, buf, off, sz)
 			off[0] += sz[0]
 		}
 
@@ -273,7 +303,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		n = dh.Len()
 		sz[0] = int64(materialSpan * blockSize)
 		for i := 0; i < n; i++ {
-			dh.SetBuffer(i, 0, 0, buf, off, sz)
+			dh.SetBuffer(i, materialNr, 0, buf, off, sz)
 			off[0] += sz[0]
 		}
 
@@ -283,7 +313,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		n = dh.Len()
 		sz[0] = int64(jointSpan * blockSize)
 		for i := 0; i < n; i++ {
-			dh.SetBuffer(i, 0, 0, buf, off, sz)
+			dh.SetBuffer(i, jointNr, 0, buf, off, sz)
 			off[0] += sz[0]
 		}
 	}
