@@ -20,7 +20,6 @@ import (
 
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/engine/internal/ctxt"
-	"github.com/gviegas/scene/internal/bitm"
 )
 
 func constantDesc(nr int) driver.Descriptor {
@@ -152,7 +151,6 @@ func freeDescTable(dt driver.DescTable) {
 type Table struct {
 	dt   driver.DescTable
 	cbuf driver.Buffer
-	cmap bitm.Bitm[uint32]
 }
 
 const (
@@ -162,14 +160,11 @@ const (
 	jointHeap
 )
 
-const (
-	blockSize = 256
-	nbit      = 32
-)
-
 // These spans are given in number of blocks.
 // Each block has blockSize bytes.
 const (
+	blockSize = 256
+
 	frameSpan    = (unsafe.Sizeof(FrameLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
 	lightSpan    = (MaxLights*unsafe.Sizeof(LightLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
 	shadowSpan   = (MaxShadows*unsafe.Sizeof(ShadowLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
@@ -179,137 +174,43 @@ const (
 )
 
 // NewTable creates a new descriptor table.
-func NewTable() (*Table, error) {
+// Each parameter defines the number of heap copies to
+// allocate for a given heap. Currently, the heaps are
+// organized as follows:
+//
+//	global heap   | frame/light/shadow descriptors
+//	drawable heap | drawable descriptors
+//	material heap | material descriptors
+//	joint heap    | joint descriptors
+//
+// For constant descriptors that are defined as static
+// arrays in shaders, every heap copy will require
+// enough buffer memory to store the whole array.
+func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
 	dt, err := newDescTable()
 	if err != nil {
 		return nil, err
 	}
-	return &Table{dt, nil, bitm.Bitm[uint32]{}}, nil
-}
-
-func (t *Table) heapAlloc(idx, n int) error {
-	switch {
-	// TODO: Consider deallocating when n is 0.
-	case n == 0, n == t.dt.Heap(idx).Len():
-		return nil
-	case n < 0:
-		panic("descriptor heap allocation with negative count")
-	}
-	if err := t.dt.Heap(idx).New(n); err != nil {
-		return err
-	}
-	if err := t.constAlloc(idx, n); err != nil {
-		t.dt.Heap(idx).New(0)
-		return err
-	}
-	return nil
-}
-
-func (t *Table) constAlloc(idx, n int) error {
-	// TODO: Unset range for this heap.
-	switch idx {
-	case globalHeap:
-		n *= int(frameSpan + lightSpan + shadowSpan)
-	case drawableHeap:
-		n *= int(drawableSpan)
-	case materialHeap:
-		n *= int(materialSpan)
-	case jointHeap:
-		n *= int(jointSpan)
-	default:
-		// Should never happen.
-		panic("not a valid heap index")
-	}
-	// TODO: Set range for this heap.
-	_, ok := t.cmap.SearchRange(n)
-	if !ok {
-		// TODO: This can lead to large spans
-		// of unused buffer memory (e.g., when
-		// resizing a heap that is not in the
-		// end of the buffer).
-		// Contents should be moved within the
-		// buffer when that happens.
-		var sz int64
-		var nplus int
-		if t.cbuf != nil {
-			sz = (t.cbuf.Cap()/blockSize + int64(n) + nbit - 1) &^ (nbit - 1)
-			nplus = (int(sz) - t.cmap.Len()) / nbit
-			sz *= blockSize
-		} else {
-			nplus = (n + nbit - 1) &^ (nbit - 1)
-			sz = int64(nplus) * blockSize
-			nplus /= nbit
+	// NOTE: The order here must match the
+	// heap indices.
+	for i, n := range [4]int{globalN, drawableN, materialN, jointN} {
+		if n < 0 {
+			panic("descriptor heap allocation with negative count")
 		}
-		cbuf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
-		if err != nil {
-			return err
+		if err := dt.Heap(i).New(n); err != nil {
+			return nil, err
 		}
-		if t.cbuf != nil {
-			// TODO: Consider doing this copy
-			// through the GPU.
-			copy(cbuf.Bytes(), t.cbuf.Bytes())
-			t.cbuf.Destroy()
-		}
-		t.cbuf = cbuf
-		_ = t.cmap.Grow(nplus)
 	}
-	return nil
+	return &Table{dt, nil}, nil
 }
-
-// AllocGlobal resizes the global heap to contain n
-// copies of global descriptors. It also allocates
-// buffer memory as necessary to store the constants
-// of each copy.
-//
-// This heap stores frame, light and shadow descriptors.
-//
-// One should need exactly one global heap copy per
-// in-flight frame.
-func (t *Table) AllocGlobal(n int) error { return t.heapAlloc(globalHeap, n) }
-
-// AllocDrawable resizes the drawable heap to contain
-// n copies of drawable descriptors. It also allocates
-// buffer memory as necessary to store the constants
-// of each copy.
-//
-// This heap only stores drawable descriptors.
-//
-// This data is expected to be highly dynamic. One may
-// want to retain one drawable slot per in-flight frame
-// for every drawable entity.
-func (t *Table) AllocDrawable(n int) error { return t.heapAlloc(drawableHeap, n) }
-
-// AllocMaterial resizes the material heap to contain
-// n copies of material descriptors. It also allocates
-// buffer memory as necessary to store the constants
-// of each copy.
-//
-// This heap only stores material descriptors.
-//
-// This data is expected to remain unchanged in the
-// common case. One should attempt to share it between
-// in-flight frames as much as possible.
-func (t *Table) AllocMaterial(n int) error { return t.heapAlloc(materialHeap, n) }
-
-// Allocjoint resizes the joint heap to contain n
-// copies of joint descriptors. It also allocates
-// buffer memory as necessary to store the constants
-// of each copy.
-//
-// This heap only stores joint descriptors.
-//
-// This data may be used for more than one drawable in
-// certain cases, so it is not allocated alongside
-// drawable descriptors (for now).
-func (t *Table) AllocJoint(n int) error { return t.heapAlloc(jointHeap, n) }
 
 // Free invalidates t and destroys the driver resources.
 func (t *Table) Free() {
 	if t.dt != nil {
 		freeDescTable(t.dt)
 	}
-	if t.cbuf != nil {
-		t.cbuf.Destroy()
-	}
+	//if t.cbuf != nil {
+	//	t.cbuf.Destroy()
+	//}
 	*t = Table{}
 }
