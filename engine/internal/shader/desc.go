@@ -227,11 +227,67 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 	switch {
 	case buf == nil:
 		off = 0
+
 	case off&(blockSize-1) != 0:
 		panic("misaligned constant buffer offset")
+
 	case buf.Cap()-off < int64(t.ConstSize()):
 		panic("constant buffer range out of bounds")
+
+	default:
+		var dh driver.DescHeap
+		var n int
+		buf, off, sz := []driver.Buffer{buf}, []int64{off}, []int64{0}
+
+		// Global heap constants:
+		//	* FrameLayout
+		//	* [MaxLights]LightLayout
+		//	* [MaxShadows]ShadowLayout
+		dh = t.dt.Heap(globalHeap)
+		n = dh.Len()
+		for i := 0; i < n; i++ {
+			sz[0] = int64(frameSpan * blockSize)
+			dh.SetBuffer(i, 0, 0, buf, off, sz)
+			off[0] += sz[0]
+			sz[0] = int64(lightSpan * blockSize)
+			dh.SetBuffer(i, 1, 0, buf, off, sz)
+			off[0] += sz[0]
+			sz[0] = int64(shadowSpan * blockSize)
+			dh.SetBuffer(i, 2, 0, buf, off, sz)
+			off[0] += sz[0]
+		}
+
+		// Drawable heap constants:
+		//	* DrawableLayout
+		dh = t.dt.Heap(drawableHeap)
+		n = dh.Len()
+		sz[0] = int64(drawableSpan * blockSize)
+		for i := 0; i < n; i++ {
+			dh.SetBuffer(i, 0, 0, buf, off, sz)
+			off[0] += sz[0]
+		}
+
+		// Material heap constants:
+		//	* MaterialLayout
+		dh = t.dt.Heap(materialHeap)
+		n = dh.Len()
+		sz[0] = int64(materialSpan * blockSize)
+		for i := 0; i < n; i++ {
+			dh.SetBuffer(i, 0, 0, buf, off, sz)
+			off[0] += sz[0]
+		}
+
+		// Joint heap constants:
+		//	* [MaxJoints]JointLayout
+		dh = t.dt.Heap(jointHeap)
+		n = dh.Len()
+		sz[0] = int64(jointSpan * blockSize)
+		for i := 0; i < n; i++ {
+			dh.SetBuffer(i, 0, 0, buf, off, sz)
+			off[0] += sz[0]
+		}
 	}
+
 	pbuf := t.cbuf
 	poff := t.coff
 	t.cbuf = buf
