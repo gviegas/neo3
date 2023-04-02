@@ -4,6 +4,9 @@ package shader
 
 import (
 	"testing"
+
+	"github.com/gviegas/scene/driver"
+	"github.com/gviegas/scene/engine/internal/ctxt"
 )
 
 // check checks that tb is valid.
@@ -33,6 +36,8 @@ func (tb *Table) check(globalN, drawableN, materialN, jointN int, t *testing.T) 
 		t.Fatalf("Table.ConstSize:\nhave %d\nwant %d", x, csz)
 	} else if x%blockSize != 0 {
 		t.Fatal("Table.ConstSize: misaligned size")
+	} else if tb.cbuf != nil && tb.cbuf.Cap()-tb.coff < int64(x) {
+		t.Fatal("Table.cbuf/coff: range out of bounds")
 	}
 }
 
@@ -70,5 +75,40 @@ func TestNewTable(t *testing.T) {
 		tb, _ := NewTable(x.ng, x.nd, x.nm, x.nj)
 		tb.check(x.ng, x.nd, x.nm, x.nj, t)
 		tb.Free()
+	}
+}
+
+func TestSetConstBuf(t *testing.T) {
+	for _, x := range [...]struct{ ng, nd, nm, nj int }{
+		{ng: 1},
+		{ng: 1, nd: 1},
+		{ng: 1, nd: 1, nm: 1},
+		{ng: 1, nd: 1, nm: 1, nj: 1},
+		{ng: 2, nd: 2, nm: 0, nj: 2},
+		{ng: 3, nd: 3, nm: 3, nj: 0},
+		{ng: 1, nd: 16, nm: 15, nj: 14},
+		{ng: 2, nd: 62, nm: 63, nj: 64},
+		{ng: 3, nd: 384, nm: 384, nj: 384},
+	} {
+		tb, _ := NewTable(x.ng, x.nd, x.nm, x.nj)
+		tb.check(x.ng, x.nd, x.nm, x.nj, t)
+
+		sz := int64(tb.ConstSize() * 4)
+		buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+		if err != nil {
+			t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		}
+
+		wbuf, woff := driver.Buffer(nil), int64(0)
+		for _, x := range [3]int64{0, sz / 2, sz - int64(tb.ConstSize())} {
+			if hbuf, hoff := tb.SetConstBuf(buf, x); wbuf != hbuf || woff != hoff {
+				t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant %v, %d", hbuf, hoff, wbuf, woff)
+			}
+			wbuf = buf
+			woff = x
+		}
+
+		tb.Free()
+		buf.Destroy()
 	}
 }
