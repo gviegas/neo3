@@ -325,6 +325,54 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 	return pbuf, poff
 }
 
+// SetShadowMap sets a shadow texture/sampler pair in the
+// global heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	t.dt.Heap(globalHeap).SetImage(cpy, shdwTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(globalHeap).SetSampler(cpy, shdwSplrNr, 0, []driver.Sampler{splr})
+}
+
+// SetBaseColor sets a base color texture/sampler pair in
+// the material heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetBaseColor(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	t.dt.Heap(materialHeap).SetImage(cpy, colorTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetSampler(cpy, colorSplrNr, 0, []driver.Sampler{splr})
+}
+
+// SetMetalRough sets a metallic-roughness texture/sampler
+// pair in the material heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetMetalRough(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	t.dt.Heap(materialHeap).SetImage(cpy, metalTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetSampler(cpy, metalSplrNr, 0, []driver.Sampler{splr})
+}
+
+// SetNormalMap sets a normal texture/sampler pair in the
+// material heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetNormalMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	t.dt.Heap(materialHeap).SetImage(cpy, normTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetSampler(cpy, normSplrNr, 0, []driver.Sampler{splr})
+}
+
+// SetOcclusionMap sets an occlusion texture/sampler pair
+// in the material heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	t.dt.Heap(materialHeap).SetImage(cpy, occTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetSampler(cpy, occSplrNr, 0, []driver.Sampler{splr})
+}
+
+// SetEmissiveMap sets an emissive texture/sampler pair in
+// the material heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	t.dt.Heap(materialHeap).SetImage(cpy, emisTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetSampler(cpy, emisSplrNr, 0, []driver.Sampler{splr})
+}
+
 // Free invalidates t and destroys the driver resources.
 //
 // NOTE: The constant buffer is not destroyed by this
