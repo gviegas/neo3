@@ -249,7 +249,7 @@ func (l *JointLayout) SetNormal(m *linear.M4) { copyM4(l[16:32], m) }
 //
 // TODO: Make these configurable.
 const (
-	MaxLights  = 16384 / unsafe.Sizeof(LightLayout{})
-	MaxShadows = 1
-	MaxJoints  = 16384 / unsafe.Sizeof(JointLayout{})
+	MaxLight  = 16384 / unsafe.Sizeof(LightLayout{})
+	MaxShadow = 1
+	MaxJoint  = 16384 / unsafe.Sizeof(JointLayout{})
 )

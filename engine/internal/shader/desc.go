@@ -59,11 +59,11 @@ const (
 	blockSize = 256
 
 	frameSpan    = (unsafe.Sizeof(FrameLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-	lightSpan    = (MaxLights*unsafe.Sizeof(LightLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-	shadowSpan   = (MaxShadows*unsafe.Sizeof(ShadowLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	lightSpan    = (MaxLight*unsafe.Sizeof(LightLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	shadowSpan   = (MaxShadow*unsafe.Sizeof(ShadowLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
 	drawableSpan = (unsafe.Sizeof(DrawableLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
 	materialSpan = (unsafe.Sizeof(MaterialLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
-	jointSpan    = (MaxJoints*unsafe.Sizeof(JointLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
+	jointSpan    = (MaxJoint*unsafe.Sizeof(JointLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
 )
 
 func constantDesc(nr int) driver.Descriptor {
@@ -270,9 +270,9 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		buf, off, sz := []driver.Buffer{buf}, []int64{off}, []int64{0}
 
 		// Global heap constants:
-		//	* FrameLayout
-		//	* [MaxLights]LightLayout
-		//	* [MaxShadows]ShadowLayout
+		//	0 | FrameLayout
+		//	1 | [MaxLight]LightLayout
+		//	2 | [MaxShadow]ShadowLayout
 		dh = t.dt.Heap(globalHeap)
 		n = dh.Len()
 		for i := 0; i < n; i++ {
@@ -288,7 +288,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		}
 
 		// Drawable heap constants:
-		//	* DrawableLayout
+		//	0 | DrawableLayout
 		dh = t.dt.Heap(drawableHeap)
 		n = dh.Len()
 		sz[0] = int64(drawableSpan * blockSize)
@@ -298,7 +298,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		}
 
 		// Material heap constants:
-		//	* MaterialLayout
+		//	0 | MaterialLayout
 		dh = t.dt.Heap(materialHeap)
 		n = dh.Len()
 		sz[0] = int64(materialSpan * blockSize)
@@ -308,7 +308,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		}
 
 		// Joint heap constants:
-		//	* [MaxJoints]JointLayout
+		//	0 | [MaxJoint]JointLayout
 		dh = t.dt.Heap(jointHeap)
 		n = dh.Len()
 		sz[0] = int64(jointSpan * blockSize)
@@ -371,6 +371,87 @@ func (t *Table) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampl
 func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.dt.Heap(materialHeap).SetImage(cpy, emisTexNr, 0, []driver.ImageView{tex})
 	t.dt.Heap(materialHeap).SetSampler(cpy, emisSplrNr, 0, []driver.Sampler{splr})
+}
+
+// Frame returns a pointer to GPU memory mapping to a
+// given FrameLayout of the global heap.
+// A valid constant buffer must be set at the time this
+// method is called.
+// Calling t.SetConstBuf invalidates any pointers
+// returned by this method.
+func (t *Table) Frame(cpy int) *FrameLayout {
+	off := t.coff + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	b := t.cbuf.Bytes()[off:]
+	return (*FrameLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+}
+
+// Light returns a pointer to GPU memory mapping to a
+// given LightLayout array of the global heap.
+// A valid constant buffer must be set at the time this
+// method is called.
+// Calling t.SetConstBuf invalidates any pointers
+// returned by this method.
+func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
+	off := t.coff + int64(frameSpan)*blockSize + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	b := t.cbuf.Bytes()[off:]
+	return (*[MaxLight]LightLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+}
+
+// Shadow returns a pointer to GPU memory mapping to a
+// given ShadowLayout array of the global heap.
+// A valid constant buffer must be set at the time this
+// method is called.
+// Calling t.SetConstBuf invalidates any pointers
+// returned by this method.
+func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
+	off := t.coff + int64(frameSpan+lightSpan)*blockSize + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	b := t.cbuf.Bytes()[off:]
+	return (*[MaxShadow]ShadowLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+}
+
+// Drawable returns a pointer to GPU memory mapping to a
+// given DrawableLayout of the drawable heap.
+// A valid constant buffer must be set at the time this
+// method is called.
+// Calling t.SetConstBuf invalidates any pointers
+// returned by this method.
+func (t *Table) Drawable(cpy int) *DrawableLayout {
+	off := t.coff
+	off += int64(frameSpan+lightSpan+shadowSpan) * blockSize * int64(t.dt.Heap(globalHeap).Len())
+	off += int64(drawableSpan) * blockSize * int64(cpy)
+	b := t.cbuf.Bytes()[off:]
+	return (*DrawableLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+}
+
+// Material returns a pointer to GPU memory mapping to a
+// given MaterialLayout of the material heap.
+// A valid constant buffer must be set at the time this
+// method is called.
+// Calling t.SetConstBuf invalidates any pointers
+// returned by this method.
+func (t *Table) Material(cpy int) *MaterialLayout {
+	off := t.coff
+	off += int64(frameSpan+lightSpan+shadowSpan) * blockSize * int64(t.dt.Heap(globalHeap).Len())
+	off += int64(drawableSpan) * blockSize * int64(t.dt.Heap(drawableHeap).Len())
+	off += int64(materialSpan) * blockSize * int64(cpy)
+	b := t.cbuf.Bytes()[off:]
+	return (*MaterialLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+}
+
+// Joint returns a pointer to GPU memory mapping to a
+// given JointLayout array of the joint heap.
+// A valid constant buffer must be set at the time this
+// method is called.
+// Calling t.SetConstBuf invalidates any pointers
+// returned by this method.
+func (t *Table) Joint(cpy int) *[MaxJoint]JointLayout {
+	off := t.coff
+	off += int64(frameSpan+lightSpan+shadowSpan) * blockSize * int64(t.dt.Heap(globalHeap).Len())
+	off += int64(drawableSpan) * blockSize * int64(t.dt.Heap(drawableHeap).Len())
+	off += int64(materialSpan) * blockSize * int64(t.dt.Heap(materialHeap).Len())
+	off += int64(jointSpan) * blockSize * int64(cpy)
+	b := t.cbuf.Bytes()[off:]
+	return (*[MaxJoint]JointLayout)(unsafe.Pointer(unsafe.SliceData(b)))
 }
 
 // Free invalidates t and destroys the driver resources.
