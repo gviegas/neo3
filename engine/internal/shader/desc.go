@@ -201,8 +201,19 @@ func freeDescTable(dt driver.DescTable) {
 // Table manages descriptor usage within a single
 // driver.DescTable.
 type Table struct {
-	dt   driver.DescTable
+	dt driver.DescTable
+	// Cached heap copy counts.
+	// These counts will not change during the
+	// lifetime of the Table, so this avoids
+	// having to query the driver needlessly.
+	dcpy [maxHeap]int
 	cbuf driver.Buffer
+	// Offsets into the constant buffer.
+	// The location of heap data in the buffer
+	// is ordered by heap index, and within a
+	// heap, by heap copy index. Every copy of
+	// a lower numbered heap comes before the
+	// copies of subsequent heaps.
 	coff [maxHeap]int64
 }
 
@@ -226,7 +237,8 @@ func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
 	}
 	// NOTE: The order here must match the
 	// heap indices.
-	for i, n := range [4]int{globalN, drawableN, materialN, jointN} {
+	dcpy := [maxHeap]int{globalN, drawableN, materialN, jointN}
+	for i, n := range dcpy {
 		if n < 0 {
 			panic("descriptor heap allocation with negative count")
 		}
@@ -234,7 +246,7 @@ func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
 			return nil, err
 		}
 	}
-	return &Table{dt: dt}, nil
+	return &Table{dt: dt, dcpy: dcpy}, nil
 }
 
 // ConstSize returns the number of bytes consumed by
