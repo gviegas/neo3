@@ -37,7 +37,7 @@ func (tb *Table) check(globalN, drawableN, materialN, jointN int, t *testing.T) 
 		t.Fatalf("Table.ConstSize:\nhave %d\nwant %d", x, csz)
 	} else if x%blockSize != 0 {
 		t.Fatal("Table.ConstSize: misaligned size")
-	} else if tb.cbuf != nil && tb.cbuf.Cap()-tb.coff.globl < int64(x) {
+	} else if tb.cbuf != nil && tb.cbuf.Cap()-tb.coff[globalHeap] < int64(x) {
 		t.Fatal("Table.cbuf/coff: range out of bounds")
 	}
 }

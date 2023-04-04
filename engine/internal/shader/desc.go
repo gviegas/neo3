@@ -27,6 +27,8 @@ const (
 	drawableHeap
 	materialHeap
 	jointHeap
+
+	maxHeap
 )
 
 const (
@@ -201,12 +203,7 @@ func freeDescTable(dt driver.DescTable) {
 type Table struct {
 	dt   driver.DescTable
 	cbuf driver.Buffer
-	coff struct {
-		globl int64
-		drawb int64
-		mat   int64
-		jnt   int64
-	}
+	coff [maxHeap]int64
 }
 
 // NewTable creates a new descriptor table.
@@ -296,7 +293,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		//	0 | DrawableLayout
 		dh = t.dt.Heap(drawableHeap)
 		n = dh.Len()
-		t.coff.drawb = off[0]
+		t.coff[drawableHeap] = off[0]
 		sz[0] = int64(drawableSpan * blockSize)
 		for i := 0; i < n; i++ {
 			dh.SetBuffer(i, drawableNr, 0, buf, off, sz)
@@ -307,7 +304,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		//	0 | MaterialLayout
 		dh = t.dt.Heap(materialHeap)
 		n = dh.Len()
-		t.coff.mat = off[0]
+		t.coff[materialHeap] = off[0]
 		sz[0] = int64(materialSpan * blockSize)
 		for i := 0; i < n; i++ {
 			dh.SetBuffer(i, materialNr, 0, buf, off, sz)
@@ -318,7 +315,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		//	0 | [MaxJoint]JointLayout
 		dh = t.dt.Heap(jointHeap)
 		n = dh.Len()
-		t.coff.jnt = off[0]
+		t.coff[jointHeap] = off[0]
 		sz[0] = int64(jointSpan * blockSize)
 		for i := 0; i < n; i++ {
 			dh.SetBuffer(i, jointNr, 0, buf, off, sz)
@@ -327,9 +324,9 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 	}
 
 	pbuf := t.cbuf
-	poff := t.coff.globl
+	poff := t.coff[globalHeap]
 	t.cbuf = buf
-	t.coff.globl = off
+	t.coff[globalHeap] = off
 	return pbuf, poff
 }
 
@@ -388,7 +385,7 @@ func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sample
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Frame(cpy int) *FrameLayout {
-	off := t.coff.globl + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	b := t.cbuf.Bytes()[off:]
 	return (*FrameLayout)(unsafe.Pointer(unsafe.SliceData(b)))
 }
@@ -400,7 +397,7 @@ func (t *Table) Frame(cpy int) *FrameLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
-	off := t.coff.globl + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan) * blockSize
 	b := t.cbuf.Bytes()[off:]
 	return (*[MaxLight]LightLayout)(unsafe.Pointer(unsafe.SliceData(b)))
@@ -413,7 +410,7 @@ func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
-	off := t.coff.globl + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan+lightSpan) * blockSize
 	b := t.cbuf.Bytes()[off:]
 	return (*[MaxShadow]ShadowLayout)(unsafe.Pointer(unsafe.SliceData(b)))
@@ -426,7 +423,7 @@ func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Drawable(cpy int) *DrawableLayout {
-	off := t.coff.drawb + int64(drawableSpan)*blockSize*int64(cpy)
+	off := t.coff[drawableHeap] + int64(drawableSpan)*blockSize*int64(cpy)
 	b := t.cbuf.Bytes()[off:]
 	return (*DrawableLayout)(unsafe.Pointer(unsafe.SliceData(b)))
 }
@@ -438,7 +435,7 @@ func (t *Table) Drawable(cpy int) *DrawableLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Material(cpy int) *MaterialLayout {
-	off := t.coff.mat + int64(materialSpan)*blockSize*int64(cpy)
+	off := t.coff[materialHeap] + int64(materialSpan)*blockSize*int64(cpy)
 	b := t.cbuf.Bytes()[off:]
 	return (*MaterialLayout)(unsafe.Pointer(unsafe.SliceData(b)))
 }
@@ -450,7 +447,7 @@ func (t *Table) Material(cpy int) *MaterialLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Joint(cpy int) *[MaxJoint]JointLayout {
-	off := t.coff.jnt + int64(jointSpan)*blockSize*int64(cpy)
+	off := t.coff[jointHeap] + int64(jointSpan)*blockSize*int64(cpy)
 	b := t.cbuf.Bytes()[off:]
 	return (*[MaxJoint]JointLayout)(unsafe.Pointer(unsafe.SliceData(b)))
 }
