@@ -5,9 +5,11 @@ package shader
 import (
 	"fmt"
 	"testing"
+	"unsafe"
 
 	"github.com/gviegas/scene/driver"
 	"github.com/gviegas/scene/engine/internal/ctxt"
+	"github.com/gviegas/scene/linear"
 )
 
 // check checks that tb is valid.
@@ -277,4 +279,351 @@ func TestConstWrite(t *testing.T) {
 		tb.Free()
 		buf.Destroy()
 	}
+}
+
+func TestGlobalWrite(t *testing.T) {
+	ng, nd, nm, nj := 1, 0, 0, 0
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	sz := int64(tb.ConstSize())
+	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	var v, p linear.M4
+	v.Translate(-1, -2, -3)
+	p.Ortho(-1, 1, -1, 1)
+	rnd := float32(0.25)
+	vport := driver.Viewport{0, 0, 1920, 1080, 0.01, 1000.0}
+
+	tb.Frame(0).SetV(&v)
+	tb.Frame(0).SetP(&p)
+	tb.Frame(0).SetRand(rnd)
+	tb.Frame(0).SetBounds(&vport)
+
+	s := "Table.Frame(0)[%d:]"
+	checkSlicesT(tb.Frame(0)[16:], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, fmt.Sprintf(s, 16))
+	checkSlicesT(tb.Frame(0)[32:], unsafe.Slice((*float32)(unsafe.Pointer(&p)), 16), t, fmt.Sprintf(s, 32))
+	checkSlicesT(tb.Frame(0)[49:], []float32{rnd}, t, fmt.Sprintf(s, 49))
+	checkSlicesT(tb.Frame(0)[50:], unsafe.Slice((*float32)(unsafe.Pointer(&vport)), 6), t, fmt.Sprintf(s, 50))
+
+	rng := float32(15)
+	color := linear.V3{0.2, 0.5, 0.1}
+	dir := linear.V3{0.7071, 0, -0.7071}
+
+	tb.Light(0)[0].SetRange(rng)
+	tb.Light(0)[0].SetColor(&color)
+	tb.Light(0)[0].SetDirection(&dir)
+	tb.Light(0)[1].SetRange(-rng)
+
+	s = "Table.Light(0)[0][%d:]"
+	checkSlicesT(tb.Light(0)[0][3:], []float32{rng}, t, fmt.Sprintf(s, 3))
+	checkSlicesT(tb.Light(0)[0][4:], color[:], t, fmt.Sprintf(s, 4))
+	checkSlicesT(tb.Light(0)[0][12:], dir[:], t, fmt.Sprintf(s, 12))
+	s = "Table.Light(0)[1][%d:]"
+	checkSlicesT(tb.Light(0)[1][3:], []float32{-rng}, t, fmt.Sprintf(s, 3))
+
+	shdw := linear.M4{{0.5}, {1: 0.5}, {2: 0.5}, {0.5, 0.5, 0.5, 1}}
+	unused, unused_ := true, int32(1)
+
+	tb.Shadow(0)[0].SetUnused(unused)
+	tb.Shadow(0)[0].SetShadow(&shdw)
+
+	s = "Table.Shadow(0)[0][%d:]"
+	checkSlicesT(tb.Shadow(0)[0][:], []float32{*(*float32)(unsafe.Pointer(&unused_))}, t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Shadow(0)[0][16:], unsafe.Slice((*float32)(unsafe.Pointer(&shdw)), 16), t, fmt.Sprintf(s, 16))
+}
+
+func TestGlobalWriteN(t *testing.T) {
+	ng, nd, nm, nj := 3, 10, 10, 10
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	sz := int64(tb.ConstSize())
+	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	var v, p linear.M4
+	v.Translate(-1, -2, -3)
+	p.Ortho(-1, 1, -1, 1)
+	rnd := float32(0.25)
+	vport := driver.Viewport{0, 0, 1920, 1080, 0.01, 1000.0}
+
+	tb.Frame(0).SetV(&v)
+	tb.Frame(0).SetP(&p)
+	tb.Frame(0).SetRand(rnd)
+	tb.Frame(1).SetBounds(&vport)
+	tb.Frame(2).SetV(&v)
+	tb.Frame(0).SetP(&p)
+	tb.Frame(2).SetRand(rnd + 0.1)
+	tb.Frame(1).SetBounds(&vport)
+
+	s := "Table.Frame(0)[%d:]"
+	checkSlicesT(tb.Frame(0)[16:], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, fmt.Sprintf(s, 16))
+	checkSlicesT(tb.Frame(0)[32:], unsafe.Slice((*float32)(unsafe.Pointer(&p)), 16), t, fmt.Sprintf(s, 32))
+	checkSlicesT(tb.Frame(0)[49:], []float32{rnd}, t, fmt.Sprintf(s, 49))
+	s = "Table.Frame(1)[%d:]"
+	checkSlicesT(tb.Frame(1)[50:], unsafe.Slice((*float32)(unsafe.Pointer(&vport)), 6), t, fmt.Sprintf(s, 50))
+	s = "Table.Frame(2)[%d:]"
+	checkSlicesT(tb.Frame(2)[16:], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, fmt.Sprintf(s, 16))
+	checkSlicesT(tb.Frame(2)[49:], []float32{rnd + 0.1}, t, fmt.Sprintf(s, 49))
+
+	rng := float32(15)
+	color := linear.V3{0.2, 0.5, 0.1}
+	dir := linear.V3{0.7071, 0, -0.7071}
+
+	tb.Light(0)[0].SetRange(rng)
+	tb.Light(0)[0].SetColor(&color)
+	tb.Light(0)[0].SetDirection(&dir)
+	tb.Light(0)[1].SetRange(-rng)
+	tb.Light(1)[8].SetRange(rng)
+	tb.Light(1)[8].SetColor(&color)
+	tb.Light(2)[1].SetDirection(&dir)
+	tb.Light(2)[MaxLight-1].SetRange(-rng)
+
+	s = "Table.Light(0)[0][%d:]"
+	checkSlicesT(tb.Light(0)[0][3:], []float32{rng}, t, fmt.Sprintf(s, 3))
+	checkSlicesT(tb.Light(0)[0][4:], color[:], t, fmt.Sprintf(s, 4))
+	checkSlicesT(tb.Light(0)[0][12:], dir[:], t, fmt.Sprintf(s, 12))
+	s = "Table.Light(0)[1][%d:]"
+	checkSlicesT(tb.Light(0)[1][3:], []float32{-rng}, t, fmt.Sprintf(s, 3))
+	s = "Table.Light(1)[8][%d:]"
+	checkSlicesT(tb.Light(1)[8][3:], []float32{rng}, t, fmt.Sprintf(s, 3))
+	checkSlicesT(tb.Light(1)[8][4:], color[:], t, fmt.Sprintf(s, 4))
+	s = "Table.Light(2)[1][%d:]"
+	checkSlicesT(tb.Light(2)[1][12:], dir[:], t, fmt.Sprintf(s, 12))
+	s = fmt.Sprintf("Table.Light(2)[%d]%s", MaxLight-1, "[%d:]")
+	checkSlicesT(tb.Light(2)[MaxLight-1][3:], []float32{-rng}, t, fmt.Sprintf(s, 3))
+
+	shdw := linear.M4{{0.5}, {1: 0.5}, {2: 0.5}, {0.5, 0.5, 0.5, 1}}
+	unused, unused_ := true, int32(1)
+
+	tb.Shadow(2)[0].SetUnused(unused)
+	tb.Shadow(0)[0].SetShadow(&shdw)
+
+	s = "Table.Shadow(2)[0][%d:]"
+	checkSlicesT(tb.Shadow(2)[0][:], []float32{*(*float32)(unsafe.Pointer(&unused_))}, t, fmt.Sprintf(s, 0))
+	s = "Table.Shadow(0)[0][%d:]"
+	checkSlicesT(tb.Shadow(0)[0][16:], unsafe.Slice((*float32)(unsafe.Pointer(&shdw)), 16), t, fmt.Sprintf(s, 16))
+}
+
+func TestDrawableWrite(t *testing.T) {
+	ng, nd, nm, nj := 1, 1, 0, 0
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	sz := int64(tb.ConstSize())
+	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	var wld linear.M4
+	wld.Translate(100, 50, -25)
+	id := uint32(0x1d)
+
+	tb.Drawable(0).SetWorld(&wld)
+	tb.Drawable(0).SetID(id)
+
+	s := "Table.Drawable(0)[%d:]"
+	checkSlicesT(tb.Drawable(0)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Drawable(0)[48:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 48))
+}
+
+func TestDrawableWriteN(t *testing.T) {
+	ng, nd, nm, nj := 3, 10, 10, 10
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	sz := int64(tb.ConstSize())
+	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	var wld, norm linear.M4
+	wld.Translate(100, 50, -25)
+	norm.Invert(&wld)
+	norm.Transpose(&norm)
+	id := uint32(0x1d)
+	id1 := id << 8
+
+	tb.Drawable(0).SetWorld(&wld)
+	tb.Drawable(0).SetID(id)
+	tb.Drawable(3).SetWorld(&wld)
+	tb.Drawable(3).SetNormal(&norm)
+	tb.Drawable(9).SetID(id1)
+
+	s := "Table.Drawable(0)[%d:]"
+	checkSlicesT(tb.Drawable(0)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Drawable(0)[48:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 48))
+	s = "Table.Drawable(3)[%d:]"
+	checkSlicesT(tb.Drawable(3)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Drawable(3)[16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	s = "Table.Drawable(9)[%d:]"
+	checkSlicesT(tb.Drawable(9)[48:], unsafe.Slice((*float32)(unsafe.Pointer(&id1)), 1), t, fmt.Sprintf(s, 48))
+}
+
+func TestMaterialWrite(t *testing.T) {
+	ng, nd, nm, nj := 1, 1, 1, 0
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	sz := int64(tb.ConstSize())
+	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	color := linear.V4{0.1, 0.2, 0.3, 1.0}
+	metal := float32(1.0)
+	rough := float32(0.5)
+	cutoff := float32(0.3333)
+
+	tb.Material(0).SetColorFactor(&color)
+	tb.Material(0).SetMetalRough(metal, rough)
+	tb.Material(0).SetAlphaCutoff(cutoff)
+
+	s := "Table.Material(0)[%d:]"
+	checkSlicesT(tb.Material(0)[:], color[:], t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Material(0)[4:], []float32{metal}, t, fmt.Sprintf(s, 4))
+	checkSlicesT(tb.Material(0)[5:], []float32{rough}, t, fmt.Sprintf(s, 5))
+	checkSlicesT(tb.Material(0)[11:], []float32{cutoff}, t, fmt.Sprintf(s, 11))
+}
+
+func TestMaterialWriteN(t *testing.T) {
+	ng, nd, nm, nj := 3, 10, 10, 10
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	sz := int64(tb.ConstSize())
+	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	color := linear.V4{0.1, 0.2, 0.3, 1.0}
+	metal := float32(0.925)
+	rough := float32(0.575)
+	cutoff := float32(0.3333)
+
+	tb.Material(0).SetColorFactor(&color)
+	tb.Material(2).SetMetalRough(metal, rough)
+	tb.Material(9).SetMetalRough(1.0-metal, 1.0-rough)
+	tb.Material(0).SetAlphaCutoff(cutoff)
+	tb.Material(9).SetAlphaCutoff(1.0 - cutoff)
+
+	s := "Table.Material(0)[%d:]"
+	checkSlicesT(tb.Material(0)[:], color[:], t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Material(0)[11:], []float32{cutoff}, t, fmt.Sprintf(s, 11))
+	s = "Table.Material(2)[%d:]"
+	checkSlicesT(tb.Material(2)[4:], []float32{metal}, t, fmt.Sprintf(s, 4))
+	checkSlicesT(tb.Material(2)[5:], []float32{rough}, t, fmt.Sprintf(s, 5))
+	s = "Table.Material(9)[%d:]"
+	checkSlicesT(tb.Material(9)[4:], []float32{1.0 - metal}, t, fmt.Sprintf(s, 4))
+	checkSlicesT(tb.Material(9)[5:], []float32{1.0 - rough}, t, fmt.Sprintf(s, 5))
+	checkSlicesT(tb.Material(9)[11:], []float32{1.0 - cutoff}, t, fmt.Sprintf(s, 11))
+}
+
+func TestJointWrite(t *testing.T) {
+	ng, nd, nm, nj := 1, 1, 1, 1
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	sz := int64(tb.ConstSize())
+	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	var jnt, norm linear.M4
+	jnt.Translate(-0.5, -0.25, 0.125)
+	norm.Invert(&jnt)
+	norm.Transpose(&norm)
+
+	tb.Joint(0)[0].SetJoint(&jnt)
+	tb.Joint(0)[0].SetNormal(&norm)
+	tb.Joint(0)[MaxJoint-1].SetJoint(&jnt)
+
+	s := "Table.Joint(0)[0][%d:]"
+	checkSlicesT(tb.Joint(0)[0][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(0)[0][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	s = fmt.Sprintf("Table.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
+	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+}
+
+func TestJointWriteN(t *testing.T) {
+	ng, nd, nm, nj := 3, 10, 10, 10
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	sz := int64(tb.ConstSize())
+	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	var jnt, norm linear.M4
+	jnt.Translate(-0.5, -0.25, 0.125)
+	norm.Invert(&jnt)
+	norm.Transpose(&norm)
+
+	tb.Joint(0)[0].SetJoint(&jnt)
+	tb.Joint(0)[0].SetNormal(&norm)
+	tb.Joint(0)[MaxJoint-1].SetJoint(&jnt)
+	tb.Joint(5)[MaxJoint/2].SetJoint(&jnt)
+	tb.Joint(9)[1].SetNormal(&norm)
+	tb.Joint(9)[MaxJoint-1].SetJoint(&jnt)
+	tb.Joint(9)[MaxJoint-1].SetNormal(&norm)
+
+	s := "Table.Joint(0)[0][%d:]"
+	checkSlicesT(tb.Joint(0)[0][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(0)[0][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	s = fmt.Sprintf("Table.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
+	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+
+	s = fmt.Sprintf("Table.Joint(5)[%d]%s", MaxJoint/2, "[%d:]")
+	checkSlicesT(tb.Joint(5)[MaxJoint/2][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+
+	s = "Table.Joint(9)[1][%d:]"
+	checkSlicesT(tb.Joint(9)[1][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	s = fmt.Sprintf("Table.Joint(9)[%d]%s", MaxJoint-1, "[%d:]")
+	checkSlicesT(tb.Joint(9)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(9)[MaxJoint-1][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
 }
