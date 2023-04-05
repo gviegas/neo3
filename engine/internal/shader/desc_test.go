@@ -627,3 +627,111 @@ func TestJointWriteN(t *testing.T) {
 	checkSlicesT(tb.Joint(9)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
 	checkSlicesT(tb.Joint(9)[MaxJoint-1][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
 }
+
+func TestSetTSFail(t *testing.T) {
+	ng, nd, nm, nj := 2, 8, 6, 8
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	img, err := ctxt.GPU().NewImage(driver.RGBA8un, driver.Dim3D{256, 256, 0}, 1, 1, 1, driver.UShaderSample)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewImage failed:\n%#v", err)
+	}
+	defer img.Destroy()
+	iv, err := img.NewView(driver.IView2D, 0, 1, 0, 1)
+	if err != nil {
+		t.Fatalf("driver.Image.NewView failed:\n%#v", err)
+	}
+	defer iv.Destroy()
+	splr, err := ctxt.GPU().NewSampler(&driver.Sampling{MaxAniso: 1, MaxLOD: 1})
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer splr.Destroy()
+
+	for _, c := range [...]struct {
+		s     string
+		f     func(*Table, int, driver.ImageView, driver.Sampler)
+		wcpy  string
+		wtex  string
+		wsplr string
+	}{
+		{
+			"ShadowMap",
+			(*Table).SetShadowMap,
+			"shadow map descriptor out of bounds",
+			"nil shadow map texture",
+			"nil shadow map sampler",
+		},
+		{
+			"BaseColor",
+			(*Table).SetBaseColor,
+			"base color descriptor out of bounds",
+			"nil base color texture",
+			"nil base color sampler",
+		},
+		{
+			"MetalRough",
+			(*Table).SetMetalRough,
+			"metallic-roughness descriptor out of bounds",
+			"nil metallic-roughness texture",
+			"nil metallic-roughness sampler",
+		},
+		{
+			"NormalMap",
+			(*Table).SetNormalMap,
+			"normal map descriptor out of bounds",
+			"nil normal map texture",
+			"nil normal map sampler",
+		},
+		{
+			"OcclusionMap",
+			(*Table).SetOcclusionMap,
+			"occlusion map descriptor out of bounds",
+			"nil occlusion map texture",
+			"nil occlusion map sampler",
+		},
+		{
+			"EmissiveMap",
+			(*Table).SetEmissiveMap,
+			"emissive map descriptor out of bounds",
+			"nil emissive map texture",
+			"nil emissive map sampler",
+		},
+	} {
+		t.Run(c.s, func(t *testing.T) {
+			s := "Table.Set" + c.s + ":\nhave %#v\nwant %#v"
+			t.Run("cpy", func(t *testing.T) {
+				defer func() {
+					if x := recover(); x != c.wcpy {
+						t.Fatalf(s, x, c.wcpy)
+					}
+					defer func() {
+						if x := recover(); x != c.wcpy {
+							t.Fatalf(s, x, c.wcpy)
+						}
+					}()
+					c.f(tb, -1, iv, splr)
+				}()
+				c.f(tb, 6, iv, splr)
+			})
+			t.Run("tex", func(t *testing.T) {
+				defer func() {
+					if x := recover(); x != c.wtex {
+						t.Fatalf(s, x, c.wtex)
+					}
+				}()
+				c.f(tb, 0, nil, splr)
+			})
+			t.Run("splr", func(t *testing.T) {
+				defer func() {
+					if x := recover(); x != c.wsplr {
+						t.Fatalf(s, x, c.wsplr)
+					}
+				}()
+				c.f(tb, 0, iv, nil)
+			})
+		})
+	}
+}

@@ -346,6 +346,14 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 // global heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[globalHeap]):
+		panic("shadow map descriptor out of bounds")
+	case tex == nil:
+		panic("nil shadow map texture")
+	case splr == nil:
+		panic("nil shadow map sampler")
+	}
 	t.dt.Heap(globalHeap).SetImage(cpy, shdwTexNr, 0, []driver.ImageView{tex})
 	t.dt.Heap(globalHeap).SetSampler(cpy, shdwSplrNr, 0, []driver.Sampler{splr})
 }
@@ -354,6 +362,14 @@ func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler)
 // the material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetBaseColor(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[materialHeap]):
+		panic("base color descriptor out of bounds")
+	case tex == nil:
+		panic("nil base color texture")
+	case splr == nil:
+		panic("nil base color sampler")
+	}
 	t.dt.Heap(materialHeap).SetImage(cpy, colorTexNr, 0, []driver.ImageView{tex})
 	t.dt.Heap(materialHeap).SetSampler(cpy, colorSplrNr, 0, []driver.Sampler{splr})
 }
@@ -362,6 +378,14 @@ func (t *Table) SetBaseColor(cpy int, tex driver.ImageView, splr driver.Sampler)
 // pair in the material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetMetalRough(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[materialHeap]):
+		panic("metallic-roughness descriptor out of bounds")
+	case tex == nil:
+		panic("nil metallic-roughness texture")
+	case splr == nil:
+		panic("nil metallic-roughness sampler")
+	}
 	t.dt.Heap(materialHeap).SetImage(cpy, metalTexNr, 0, []driver.ImageView{tex})
 	t.dt.Heap(materialHeap).SetSampler(cpy, metalSplrNr, 0, []driver.Sampler{splr})
 }
@@ -370,6 +394,14 @@ func (t *Table) SetMetalRough(cpy int, tex driver.ImageView, splr driver.Sampler
 // material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetNormalMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[materialHeap]):
+		panic("normal map descriptor out of bounds")
+	case tex == nil:
+		panic("nil normal map texture")
+	case splr == nil:
+		panic("nil normal map sampler")
+	}
 	t.dt.Heap(materialHeap).SetImage(cpy, normTexNr, 0, []driver.ImageView{tex})
 	t.dt.Heap(materialHeap).SetSampler(cpy, normSplrNr, 0, []driver.Sampler{splr})
 }
@@ -378,6 +410,14 @@ func (t *Table) SetNormalMap(cpy int, tex driver.ImageView, splr driver.Sampler)
 // in the material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[materialHeap]):
+		panic("occlusion map descriptor out of bounds")
+	case tex == nil:
+		panic("nil occlusion map texture")
+	case splr == nil:
+		panic("nil occlusion map sampler")
+	}
 	t.dt.Heap(materialHeap).SetImage(cpy, occTexNr, 0, []driver.ImageView{tex})
 	t.dt.Heap(materialHeap).SetSampler(cpy, occSplrNr, 0, []driver.Sampler{splr})
 }
@@ -386,6 +426,14 @@ func (t *Table) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampl
 // the material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[materialHeap]):
+		panic("emissive map descriptor out of bounds")
+	case tex == nil:
+		panic("nil emissive map texture")
+	case splr == nil:
+		panic("nil emissive map sampler")
+	}
 	t.dt.Heap(materialHeap).SetImage(cpy, emisTexNr, 0, []driver.ImageView{tex})
 	t.dt.Heap(materialHeap).SetSampler(cpy, emisSplrNr, 0, []driver.Sampler{splr})
 }
