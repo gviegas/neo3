@@ -84,6 +84,37 @@ func TestNewTable(t *testing.T) {
 }
 
 func TestSetConstBuf(t *testing.T) {
+	ng, nd, nm, nj := 1, 1, 1, 1
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+
+	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()+blockSize), true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+
+	if buf, off := tb.SetConstBuf(nil, 0); buf != nil || off != 0 {
+		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant <nil>, 0", buf, off)
+	}
+	if tb.coff[globalHeap] != 0 {
+		t.Fatalf("Table.coff[globalHeap]:\nhave %d\nwant 0", tb.coff[globalHeap])
+	}
+	if buf, off := tb.SetConstBuf(buf, blockSize); buf != nil || off != 0 {
+		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant <nil>, 0", buf, off)
+	}
+	if tb.coff[globalHeap] != blockSize {
+		t.Fatalf("Table.coff[globalHeap]:\nhave %d\nwant %d", tb.coff[globalHeap], blockSize)
+	}
+	if buf_, off := tb.SetConstBuf(nil, blockSize*2); buf_ != buf || off != blockSize {
+		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant %v, %d", buf_, off, buf, blockSize)
+	}
+	if tb.coff[globalHeap] != 0 {
+		t.Fatalf("Table.coff[globalHeap]:\nhave %d\nwant 0", tb.coff[globalHeap])
+	}
+
+	tb.Free()
+	buf.Destroy()
+
 	for _, x := range [...]struct{ ng, nd, nm, nj int }{
 		{ng: 1},
 		{ng: 1, nd: 1},
