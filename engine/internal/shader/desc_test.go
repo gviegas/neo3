@@ -647,6 +647,35 @@ func TestJointWriteN(t *testing.T) {
 	checkSlicesT(tb.Joint(9)[MaxJoint-1][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
 }
 
+func TestSetCBFail(t *testing.T) {
+	ng, nd, nm, nj := 2, 8, 6, 8
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()), true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	defer func() {
+		s := "Table.SetConstBuf:\nhave %#v\nwant %#v"
+		want := "misaligned constant buffer offset"
+		if x := recover(); x != want {
+			t.Fatalf(s, x, want)
+		}
+		defer func() {
+			want := "constant buffer range out of bounds"
+			if x := recover(); x != want {
+				t.Fatalf(s, x, want)
+			}
+		}()
+		tb.SetConstBuf(buf, int64(tb.ConstSize()))
+	}()
+	tb.SetConstBuf(buf, 1)
+}
+
 func TestSetTSFail(t *testing.T) {
 	ng, nd, nm, nj := 2, 8, 6, 8
 	tb, _ := NewTable(ng, nd, nm, nj)
