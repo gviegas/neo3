@@ -30,6 +30,8 @@ func (tb *Table) check(globalN, drawableN, materialN, jointN int, t *testing.T) 
 	} {
 		if n := tb.dt.Heap(x.i).Len(); n != x.n {
 			t.Fatalf("Table.dt.Heap(%s).Len:\nhave %d\nwant %d", x.s, n, x.n)
+		} else if tb.dcpy[x.i] != x.n {
+			t.Fatalf("Table.dcpy[%s]:\nhave %d\nwant %d", x.s, tb.dcpy[x.i], x.n)
 		} else {
 			csz += n * int(x.spn)
 		}
@@ -102,10 +104,27 @@ func TestSetConstBuf(t *testing.T) {
 			t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
 		}
 
+		var goff, doff, moff, joff int64
+		doff = int64(frameSpan+lightSpan+shadowSpan) * blockSize * int64(x.ng)
+		moff = doff + int64(drawableSpan)*blockSize*int64(x.nd)
+		joff = moff + int64(materialSpan)*blockSize*int64(x.nm)
+
 		wbuf, woff := driver.Buffer(nil), int64(0)
 		for _, x := range [3]int64{0, sz / 2, sz - int64(tb.ConstSize())} {
 			if hbuf, hoff := tb.SetConstBuf(buf, x); wbuf != hbuf || woff != hoff {
 				t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant %v, %d", hbuf, hoff, wbuf, woff)
+			}
+			if x := goff + x; tb.coff[globalHeap] != x {
+				t.Fatalf("Table.coff[globalHeap]:\nhave %d\nwant %d", tb.coff[globalHeap], x)
+			}
+			if x := doff + x; tb.coff[drawableHeap] != x {
+				t.Fatalf("Table.coff[drawableHeap]:\nhave %d\nwant %d", tb.coff[drawableHeap], x)
+			}
+			if x := moff + x; tb.coff[materialHeap] != x {
+				t.Fatalf("Table.coff[materialHeap]:\nhave %d\nwant %d", tb.coff[materialHeap], x)
+			}
+			if x := joff + x; tb.coff[jointHeap] != x {
+				t.Fatalf("Table.coff[jointHeap]:\nhave %d\nwant %d", tb.coff[jointHeap], x)
 			}
 			wbuf = buf
 			woff = x
