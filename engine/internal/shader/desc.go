@@ -445,6 +445,9 @@ func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sample
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Frame(cpy int) *FrameLayout {
+	if uint(cpy) >= uint(t.dcpy[globalHeap]) {
+		panic("frame descriptor out of bounds")
+	}
 	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	b := t.cbuf.Bytes()[off:]
 	return (*FrameLayout)(unsafe.Pointer(unsafe.SliceData(b)))
@@ -457,6 +460,9 @@ func (t *Table) Frame(cpy int) *FrameLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
+	if uint(cpy) >= uint(t.dcpy[globalHeap]) {
+		panic("light descriptor out of bounds")
+	}
 	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan) * blockSize
 	b := t.cbuf.Bytes()[off:]
@@ -470,6 +476,9 @@ func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
+	if uint(cpy) >= uint(t.dcpy[globalHeap]) {
+		panic("shadow descriptor out of bounds")
+	}
 	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan+lightSpan) * blockSize
 	b := t.cbuf.Bytes()[off:]
@@ -483,6 +492,9 @@ func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Drawable(cpy int) *DrawableLayout {
+	if uint(cpy) >= uint(t.dcpy[drawableHeap]) {
+		panic("drawable descriptor out of bounds")
+	}
 	off := t.coff[drawableHeap] + int64(drawableSpan)*blockSize*int64(cpy)
 	b := t.cbuf.Bytes()[off:]
 	return (*DrawableLayout)(unsafe.Pointer(unsafe.SliceData(b)))
@@ -495,6 +507,9 @@ func (t *Table) Drawable(cpy int) *DrawableLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Material(cpy int) *MaterialLayout {
+	if uint(cpy) >= uint(t.dcpy[materialHeap]) {
+		panic("material descriptor out of bounds")
+	}
 	off := t.coff[materialHeap] + int64(materialSpan)*blockSize*int64(cpy)
 	b := t.cbuf.Bytes()[off:]
 	return (*MaterialLayout)(unsafe.Pointer(unsafe.SliceData(b)))
@@ -507,6 +522,9 @@ func (t *Table) Material(cpy int) *MaterialLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Joint(cpy int) *[MaxJoint]JointLayout {
+	if uint(cpy) >= uint(t.dcpy[jointHeap]) {
+		panic("joint descriptor out of bounds")
+	}
 	off := t.coff[jointHeap] + int64(jointSpan)*blockSize*int64(cpy)
 	b := t.cbuf.Bytes()[off:]
 	return (*[MaxJoint]JointLayout)(unsafe.Pointer(unsafe.SliceData(b)))

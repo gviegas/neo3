@@ -735,3 +735,71 @@ func TestSetTSFail(t *testing.T) {
 		})
 	}
 }
+
+func TestConstFail(t *testing.T) {
+	ng, nd, nm, nj := 2, 8, 6, 8
+	tb, _ := NewTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+	defer tb.Free()
+
+	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()), true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	for _, c := range [...]struct {
+		s    string
+		f    func(int)
+		want string
+	}{
+		{
+			"Frame",
+			func(cpy int) { tb.Frame(cpy) },
+			"frame descriptor out of bounds",
+		},
+		{
+			"Light",
+			func(cpy int) { tb.Light(cpy) },
+			"light descriptor out of bounds",
+		},
+		{
+			"Shadow",
+			func(cpy int) { tb.Shadow(cpy) },
+			"shadow descriptor out of bounds",
+		},
+		{
+			"Drawable",
+			func(cpy int) { tb.Drawable(cpy) },
+			"drawable descriptor out of bounds",
+		},
+		{
+			"Material",
+			func(cpy int) { tb.Material(cpy) },
+			"material descriptor out of bounds",
+		},
+		{
+			"Joint",
+			func(cpy int) { tb.Joint(cpy) },
+			"joint descriptor out of bounds",
+		},
+	} {
+		t.Run(c.s, func(t *testing.T) {
+			s := "Table." + c.s + ":\nhave %#v\nwant %#v"
+			defer func() {
+				if x := recover(); x != c.want {
+					t.Fatalf(s, x, c.want)
+				}
+				defer func() {
+					if x := recover(); x != c.want {
+						t.Fatalf(s, x, c.want)
+					}
+				}()
+				c.f(-2)
+			}()
+			c.f(8)
+		})
+	}
+}
