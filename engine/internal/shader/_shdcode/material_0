@@ -1,0 +1,84 @@
+#ifndef MATERIAL_HEAP
+# define MATERIAL_HEAP 2
+#endif
+
+#ifndef MATERIAL_NR
+# define MATERIAL_NR 0
+#endif
+
+#ifndef COLOR_TEX_NR
+# define COLOR_TEX_NR 1
+#endif
+
+#ifndef COLOR_SPLR_NR
+# define COLOR_SPLR_NR 2
+#endif
+
+#ifndef METAL_TEX_NR
+# define METAL_TEX_NR 3
+#endif
+
+#ifndef METAL_SPLR_NR
+# define METAL_SPLR_NR 4
+#endif
+
+#ifndef NORM_TEX_NR
+# define NORM_TEX_NR 5
+#endif
+
+#ifndef NORM_SPLR_NR
+# define NORM_SPLR_NR 6
+#endif
+
+#ifndef OCC_TEX_NR
+# define OCC_TEX_NR 7
+#endif
+
+#ifndef OCC_SPLR_NR
+# define OCC_SPLR_NR 8
+#endif
+
+#ifndef EMIS_TEX_NR
+# define EMIS_TEX_NR 9
+#endif
+
+#ifndef EMIS_SPLR_NR
+# define EMIS_SPLR_NR 10
+#endif
+
+const uint MatPBR = 1 << 0;
+const uint MatUnlit = 1 << 1;
+const uint MatAOpaque = 1 << 2;
+const uint MatABlend = 1 << 3;
+const uint MatAMask = 1 << 4;
+const uint MatDoubleSided = 1 << 5;
+
+layout(set=MATERIAL_HEAP, binding=MATERIAL_NR) uniform Material {
+	vec4 colorFac;
+	float metal;
+	float rough;
+	float normScale;
+	float occStr;
+	vec4 emisFac_cutoff;
+	uint flags;
+} material;
+
+layout(set=MATERIAL_HEAP, binding=COLOR_TEX_NR) uniform texture2D colorTex;
+
+layout(set=MATERIAL_HEAP, binding=COLOR_SPLR_NR) uniform sampler colorSplr;
+
+layout(set=MATERIAL_HEAP, binding=METAL_TEX_NR) uniform texture2D metalTex;
+
+layout(set=MATERIAL_HEAP, binding=METAL_SPLR_NR) uniform sampler metalSplr;
+
+layout(set=MATERIAL_HEAP, binding=NORM_TEX_NR) uniform texture2D normTex;
+
+layout(set=MATERIAL_HEAP, binding=NORM_SPLR_NR) uniform sampler normSplr;
+
+layout(set=MATERIAL_HEAP, binding=OCC_TEX_NR) uniform texture2D occTex;
+
+layout(set=MATERIAL_HEAP, binding=OCC_SPLR_NR) uniform sampler occSplr;
+
+layout(set=MATERIAL_HEAP, binding=EMIS_TEX_NR) uniform texture2D emisTex;
+
+layout(set=MATERIAL_HEAP, binding=EMIS_SPLR_NR) uniform sampler emisSplr;

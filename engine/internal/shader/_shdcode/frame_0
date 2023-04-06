@@ -1,0 +1,21 @@
+#ifndef GLOBAL_HEAP
+# define GLOBAL_HEAP 0
+#endif
+
+#ifndef FRAME_NR
+# define FRAME_NR 0
+#endif
+
+layout(set=GLOBAL_HEAP, binding=FRAME_NR) uniform Frame {
+	mat4 vp;
+	mat4 v;
+	mat4 p;
+	float time;
+	float rand;
+	float x;
+	float y;
+	float width;
+	float height;
+	float near;
+	float far;
+} frame;

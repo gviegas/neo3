@@ -1,0 +1,20 @@
+#ifndef JOINT_HEAP
+# define JOINT_HEAP 3
+#endif
+
+#ifndef JOINT_NR
+# define JOINT_NR 0
+#endif
+
+#ifndef MAX_JOINT
+# define MAX_JOINT 128
+#endif
+
+struct JointElem {
+	mat4 jnt;
+	mat4 norm;
+};
+
+layout(set=JOINT_HEAP, binding=JOINT_NR) uniform Joint {
+	JointElem j[MAX_JOINT];
+} joint;

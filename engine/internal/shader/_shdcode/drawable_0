@@ -1,0 +1,14 @@
+#ifndef DRAWABLE_HEAP
+# define DRAWABLE_HEAP 1
+#endif
+
+#ifndef DRAWABLE_NR
+# define DRAWABLE_NR 0
+#endif
+
+layout(set=DRAWABLE_HEAP, binding=DRAWABLE_NR) uniform Drawable {
+	mat4 world;
+	mat4 norm;
+	mat4 _;
+	uint id;
+} drawable;

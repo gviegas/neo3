@@ -1,0 +1,29 @@
+#ifndef GLOBAL_HEAP
+# define GLOBAL_HEAP 0
+#endif
+
+#ifndef LIGHT_NR
+# define LIGHT_NR 1
+#endif
+
+#ifndef MAX_LIGHT
+# define MAX_LIGHT 256
+#endif
+
+const int DirectLight = 0;
+const int PointLight = 1;
+const int SpotLight = 2;
+
+struct LightElem {
+	int unused;
+	int type;
+	float intens;
+	float range;
+	vec4 color_angScale;
+	vec4 pos_angOff;
+	vec3 dir;
+};
+
+layout(set=GLOBAL_HEAP, binding=LIGHT_NR) uniform Light {
+	LightElem l[MAX_LIGHT];
+} light;

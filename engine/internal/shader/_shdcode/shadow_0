@@ -1,0 +1,36 @@
+#ifndef GLOBAL_HEAP
+# define GLOBAL_HEAP 0
+#endif
+
+#ifndef SHADOW_NR
+# define SHADOW_NR 2
+#endif
+
+#ifndef SHDW_TEX_NR
+# define SHDW_TEX_NR 3
+#endif
+
+#ifndef SHDW_SPLR_NR
+# define SHDW_SPLR_NR 4
+#endif
+
+#ifndef MAX_SHADOW
+# define MAX_SHADOW 1
+#endif
+
+struct ShadowElem {
+	int unused;
+	float _a;
+	float _b;
+	float _c;
+	vec4 _d[3];
+	mat4 shdw;
+};
+
+layout(set=GLOBAL_HEAP, binding=SHADOW_NR) uniform Shadow {
+	ShadowElem s[MAX_SHADOW];
+} shadow;
+
+layout(set=GLOBAL_HEAP, binding=SHDW_TEX_NR) uniform texture2D shdwTex[MAX_SHADOW];
+
+layout(set=GLOBAL_HEAP, binding=SHDW_SPLR_NR) uniform samplerShadow shdwSplr[MAX_SHADOW];
