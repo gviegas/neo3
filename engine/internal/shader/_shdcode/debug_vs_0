@@ -1,0 +1,3 @@
+void main() {
+	gl_Position = frame.vp * drawable.world * vec4(position, 1.0);
+}
