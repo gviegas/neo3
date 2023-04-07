@@ -1,0 +1,7 @@
+const vec4 DebugColor = vec4(1.0, 0.0, 1.0, 1.0);
+
+layout(location=0) out vec4 out0;
+
+void main() {
+	out0 = DebugColor;
+}
