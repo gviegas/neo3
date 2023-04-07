@@ -1,0 +1,58 @@
+#ifndef POSITION
+# define POSITION 0
+#endif
+
+#ifndef NORMAL
+# define NORMAL 1
+#endif
+
+#ifndef TANGENT
+# define TANGENT 2
+#endif
+
+#ifndef TEX_COORD_0
+# define TEX_COORD_0 3
+#endif
+
+#ifndef TEX_COORD_1
+# define TEX_COORD_1 4
+#endif
+
+#ifndef COLOR_0
+# define COLOR_0 5
+#endif
+
+#ifndef JOINTS_0
+# define JOINTS_0 6
+#endif
+
+#ifndef WEIGHTS_0
+# define WEIGHTS_0 7
+#endif
+
+layout(location=POSITION) in vec3 position;
+
+#ifdef HAS_NORMAL
+layout(location=NORMAL) in vec3 normal;
+#endif
+
+#ifdef HAS_TANGENT
+layout(location=TANGENT) in vec4 tangent;
+#endif
+
+#ifdef HAS_TEX_COORD_0
+layout(location=TEX_COORD_0) in vec2 texCoord0;
+#endif
+
+#ifdef HAS_TEX_COORD_1
+layout(location=TEX_COORD_1) in vec2 texCoord1;
+#endif
+
+#ifdef HAS_COLOR_0
+layout(location=COLOR_0) in vec4 color0;
+#endif
+
+#ifdef HAS_SKIN_0
+layout(location=JOINTS_0) in uvec4 joints0;
+layout(location=WEIGHTS_0) in vec4 weights0;
+#endif
