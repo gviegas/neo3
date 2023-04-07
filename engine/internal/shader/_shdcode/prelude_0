@@ -1,0 +1,10 @@
+#version 460
+
+#ifndef VULKAN
+# error not supported
+#endif
+
+//layout(std140, column_major) uniform;
+//layout(std430, column_major) buffer;
+//precision highp float;
+//precision highp int;
