@@ -14,14 +14,13 @@ const prefix = "skin: "
 
 // Skin defines skinning data.
 type Skin struct {
-	// Sorted such that every parent comes
-	// before any of its descendants.
-	// The original ordering of the joints
-	// can be inferred from the orig field.
 	joints []joint
 	// Only store inverse bind matrices that
 	// are not the zero/identity matrix.
 	ibm []linear.M4
+	// Sorted such that every parent comes
+	// before any of its descendants.
+	hier []int
 
 	// TODO: Descriptors; const buffer
 	// (per-instance, most likely).
@@ -29,26 +28,11 @@ type Skin struct {
 
 // joint defines a skin's joint.
 type joint struct {
-	name string
-	jm   linear.M4
-	ibm  int
-	// The original index of the joint's
-	// parent (unchanged from Joint's).
+	name   string
+	jm     linear.M4
+	ibm    int
 	parent int
-	// The original index of the joint,
-	// i.e., what the mesh refers in
-	// its Joints* semantic(s).
-	// This is necessary because Skin
-	// sorts the joints by parent.
-	orig int
 }
-
-// jointSlice implements sort.Interface for joint slices.
-type jointSlice []joint
-
-func (c jointSlice) Len() int           { return len(c) }
-func (c jointSlice) Less(i, j int) bool { return c[i].parent < c[j].parent }
-func (c jointSlice) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
 
 // Joint describes a single joint in a skin.
 // A joint hierarchy is defined by setting the Parent
@@ -70,7 +54,7 @@ func New(joints []Joint) (*Skin, error) {
 		return nil, errors.New(prefix + "[]Joint length is 0")
 	}
 
-	js := make(jointSlice, 0, n)
+	js := make([]joint, 0, n)
 	var ibm []linear.M4
 	var zero, ident linear.M4
 	ident.I()
@@ -99,10 +83,38 @@ func New(joints []Joint) (*Skin, error) {
 			jm:     joints[i].JM,
 			ibm:    iibm,
 			parent: pnt,
-			orig:   i,
 		})
 	}
 
-	sort.Sort(js)
-	return &Skin{js, ibm}, nil
+	// Use an auxiliar stack to prevent deep,
+	// reverse-sorted hierarchies from
+	// degenerating the algorithm.
+	var stk []int
+	wgts := make([]struct{ wgt, idx int }, len(js))
+	for i := range js {
+		wgt := 1
+		pnt := js[i].parent
+		for pnt >= 0 {
+			if wgts[pnt].wgt != 0 {
+				wgt += wgts[pnt].wgt
+				break
+			}
+			stk = append(stk, pnt)
+			wgt++
+			pnt = js[pnt].parent
+		}
+		wgts[i] = struct{ wgt, idx int }{wgt, i}
+		for j := range stk {
+			wgt--
+			wgts[stk[j]] = struct{ wgt, idx int }{wgt, stk[j]}
+		}
+		stk = stk[:0]
+	}
+	sort.Slice(wgts, func(i, j int) bool { return wgts[i].wgt < wgts[j].wgt })
+	hier := make([]int, len(js))
+	for i := range wgts {
+		hier[i] = wgts[i].idx
+	}
+
+	return &Skin{js, ibm, hier}, nil
 }
