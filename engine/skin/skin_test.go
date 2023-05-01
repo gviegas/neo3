@@ -105,6 +105,7 @@ func TestNew(t *testing.T) {
 		if x := (x[0]*x[0] + x[0]) / 2; x != cnt {
 			t.Fatalf("New: bad Skin.joints.hier count\nhave %d\nwant %d", cnt, x)
 		}
+		sk.checkHier(t)
 	}
 }
 
