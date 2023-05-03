@@ -107,7 +107,7 @@ func (h *descHeap) New(n int) error {
 		C.vkDestroyDescriptorPool(h.d.dev, h.pool, nil)
 		C.free(unsafe.Pointer(unsafe.SliceData(h.sets)))
 		h.sets = nil
-		if n == 0 {
+		if n <= 0 {
 			return nil
 		}
 	}
