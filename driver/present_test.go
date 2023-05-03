@@ -24,7 +24,6 @@ const DepthFmt = driver.D16un
 var dim = driver.Dim3D{
 	Width:  480,
 	Height: 300,
-	Depth:  1,
 }
 
 var brokenSC bool
@@ -256,7 +255,6 @@ func (t *T) samplingSetup() {
 	size := driver.Dim3D{
 		Width:  decImg.Bounds().Max.X,
 		Height: decImg.Bounds().Max.Y,
-		Depth:  1,
 	}
 	img, err := gpu.NewImage(driver.RGBA8sRGB, size, 1, 1, 1, driver.UShaderSample)
 	if err != nil {

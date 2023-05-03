@@ -625,6 +625,18 @@ func (cb *cmdBuffer) CopyBuffer(param *driver.BufferCopy) {
 func (cb *cmdBuffer) CopyImage(param *driver.ImageCopy) {
 	from := param.From.(*image)
 	to := param.To.(*image)
+	width := param.Size.Width
+	height := param.Size.Height
+	depth := param.Size.Depth
+	if width < 1 {
+		width = 1
+	}
+	if height < 1 {
+		height = 1
+	}
+	if depth < 1 {
+		depth = 1
+	}
 	cpy := C.VkImageCopy{
 		srcSubresource: C.VkImageSubresourceLayers{
 			aspectMask:     from.subres.aspectMask,
@@ -649,9 +661,9 @@ func (cb *cmdBuffer) CopyImage(param *driver.ImageCopy) {
 			z: C.int32_t(param.ToOff.Z),
 		},
 		extent: C.VkExtent3D{
-			width:  C.uint32_t(param.Size.Width),
-			height: C.uint32_t(param.Size.Height),
-			depth:  C.uint32_t(param.Size.Depth),
+			width:  C.uint32_t(width),
+			height: C.uint32_t(height),
+			depth:  C.uint32_t(depth),
 		},
 	}
 	const (
@@ -675,6 +687,18 @@ func (cb *cmdBuffer) CopyBufToImg(param *driver.BufImgCopy) {
 	} else {
 		aspect = img.subres.aspectMask
 	}
+	width := param.Size.Width
+	height := param.Size.Height
+	depth := param.Size.Depth
+	if width < 1 {
+		width = 1
+	}
+	if height < 1 {
+		height = 1
+	}
+	if depth < 1 {
+		depth = 1
+	}
 	cpy := C.VkBufferImageCopy{
 		bufferOffset:      C.VkDeviceSize(param.BufOff),
 		bufferRowLength:   C.uint32_t(param.Stride[0]),
@@ -691,9 +715,9 @@ func (cb *cmdBuffer) CopyBufToImg(param *driver.BufImgCopy) {
 			z: C.int32_t(param.ImgOff.Z),
 		},
 		imageExtent: C.VkExtent3D{
-			width:  C.uint32_t(param.Size.Width),
-			height: C.uint32_t(param.Size.Height),
-			depth:  C.uint32_t(param.Size.Depth),
+			width:  C.uint32_t(width),
+			height: C.uint32_t(height),
+			depth:  C.uint32_t(depth),
 		},
 	}
 	const layout = C.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
@@ -714,6 +738,18 @@ func (cb *cmdBuffer) CopyImgToBuf(param *driver.BufImgCopy) {
 	} else {
 		aspect = img.subres.aspectMask
 	}
+	width := param.Size.Width
+	height := param.Size.Height
+	depth := param.Size.Depth
+	if width < 1 {
+		width = 1
+	}
+	if height < 1 {
+		height = 1
+	}
+	if depth < 1 {
+		depth = 1
+	}
 	cpy := C.VkBufferImageCopy{
 		bufferOffset:      C.VkDeviceSize(param.BufOff),
 		bufferRowLength:   C.uint32_t(param.Stride[0]),
@@ -730,9 +766,9 @@ func (cb *cmdBuffer) CopyImgToBuf(param *driver.BufImgCopy) {
 			z: C.int32_t(param.ImgOff.Z),
 		},
 		imageExtent: C.VkExtent3D{
-			width:  C.uint32_t(param.Size.Width),
-			height: C.uint32_t(param.Size.Height),
-			depth:  C.uint32_t(param.Size.Depth),
+			width:  C.uint32_t(width),
+			height: C.uint32_t(height),
+			depth:  C.uint32_t(depth),
 		},
 	}
 	const layout = C.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
