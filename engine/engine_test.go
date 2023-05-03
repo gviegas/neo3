@@ -5,7 +5,7 @@ package engine
 import (
 	"testing"
 
-	"github.com/gviegas/scene/engine/internal/ctxt"
+	"gviegas/neo3/engine/internal/ctxt"
 )
 
 func TestCtxt(t *testing.T) {

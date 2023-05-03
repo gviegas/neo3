@@ -7,7 +7,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/gviegas/scene/linear"
+	"gviegas/neo3/linear"
 )
 
 const prefix = "skin: "

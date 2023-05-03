@@ -10,7 +10,7 @@ import (
 	"errors"
 	"unsafe"
 
-	"github.com/gviegas/scene/driver"
+	"gviegas/neo3/driver"
 )
 
 // descHeap implements driver.DescHeap.

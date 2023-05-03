@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gviegas/scene/wsi"
+	"gviegas/neo3/wsi"
 )
 
 func TestSwapchain(t *testing.T) {

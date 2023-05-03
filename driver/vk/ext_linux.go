@@ -10,7 +10,7 @@ import "C"
 import (
 	//"os"
 
-	"github.com/gviegas/scene/wsi"
+	"gviegas/neo3/wsi"
 )
 
 func (d *Driver) setInstanceExts(info *C.VkInstanceCreateInfo) func() {

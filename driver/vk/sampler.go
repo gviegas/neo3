@@ -6,7 +6,7 @@ package vk
 import "C"
 
 import (
-	"github.com/gviegas/scene/driver"
+	"gviegas/neo3/driver"
 )
 
 // sampler implements driver.Sampler.

@@ -5,7 +5,7 @@
 package ctxt
 
 import (
-	_ "github.com/gviegas/scene/driver/vk"
+	_ "gviegas/neo3/driver/vk"
 )
 
 func init() {

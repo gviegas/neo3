@@ -8,8 +8,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/linear"
+	"gviegas/neo3/driver"
+	"gviegas/neo3/linear"
 )
 
 func checkSlicesT(x, y []float32, t *testing.T, prefix string) {

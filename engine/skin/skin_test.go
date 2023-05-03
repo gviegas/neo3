@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gviegas/scene/linear"
+	"gviegas/neo3/linear"
 )
 
 // checkHier checks that sk.hier is correctly sorted.

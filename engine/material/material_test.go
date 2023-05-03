@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/engine/texture"
+	"gviegas/neo3/driver"
+	"gviegas/neo3/engine/texture"
 )
 
 func TestNew(t *testing.T) {

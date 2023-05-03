@@ -5,7 +5,7 @@ package driver
 import (
 	"errors"
 
-	"github.com/gviegas/scene/wsi"
+	"gviegas/neo3/wsi"
 )
 
 // ErrCannotPresent means that the driver and/or device do not

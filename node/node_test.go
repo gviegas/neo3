@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/gviegas/scene/linear"
+	"gviegas/neo3/linear"
 )
 
 // inode implements Interface for testing.

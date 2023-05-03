@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/engine/internal/ctxt"
-	"github.com/gviegas/scene/internal/bitm"
+	"gviegas/neo3/driver"
+	"gviegas/neo3/engine/internal/ctxt"
+	"gviegas/neo3/internal/bitm"
 )
 
 var (

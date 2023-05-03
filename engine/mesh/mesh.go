@@ -12,7 +12,7 @@ import (
 	"math"
 	"unsafe"
 
-	"github.com/gviegas/scene/driver"
+	"gviegas/neo3/driver"
 )
 
 const prefix = "mesh: "

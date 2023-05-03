@@ -10,7 +10,7 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/gviegas/scene/driver"
+	"gviegas/neo3/driver"
 )
 
 // proc is responsible for loading and unloading the Vulkan library.

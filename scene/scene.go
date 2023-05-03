@@ -5,7 +5,7 @@
 package scene
 
 import (
-	"github.com/gviegas/scene/node"
+	"gviegas/neo3/node"
 )
 
 // Scene defines a scene graph.

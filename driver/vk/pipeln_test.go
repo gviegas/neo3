@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gviegas/scene/driver"
+	"gviegas/neo3/driver"
 )
 
 // plTestNew creates a graphics pipeline for testing.

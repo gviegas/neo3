@@ -5,7 +5,7 @@ package vk
 import (
 	"testing"
 
-	"github.com/gviegas/scene/driver"
+	"gviegas/neo3/driver"
 )
 
 func TestCmdBuffer(t *testing.T) {

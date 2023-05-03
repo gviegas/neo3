@@ -21,8 +21,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/linear"
+	"gviegas/neo3/driver"
+	"gviegas/neo3/linear"
 )
 
 func copyM4(dst []float32, m *linear.M4) {

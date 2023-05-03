@@ -7,7 +7,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/gviegas/scene/driver"
+	"gviegas/neo3/driver"
 )
 
 var (

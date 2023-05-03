@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/engine/internal/ctxt"
+	"gviegas/neo3/driver"
+	"gviegas/neo3/engine/internal/ctxt"
 )
 
 // check checks that tex is valid.

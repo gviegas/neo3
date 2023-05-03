@@ -5,8 +5,8 @@
 package vk
 
 import (
-	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/wsi"
+	"gviegas/neo3/driver"
+	"gviegas/neo3/wsi"
 )
 
 // initSurface creates a new surface from s.win.

@@ -1,3 +1,3 @@
-module github.com/gviegas/scene
+module gviegas/neo3
 
 go 1.20

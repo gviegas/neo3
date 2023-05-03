@@ -5,7 +5,7 @@ package scene
 import (
 	"testing"
 
-	"github.com/gviegas/scene/node"
+	"gviegas/neo3/node"
 )
 
 func TestNew(t *testing.T) {

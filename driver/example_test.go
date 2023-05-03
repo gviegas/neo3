@@ -11,8 +11,8 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/gviegas/scene/driver"
-	_ "github.com/gviegas/scene/driver/vk"
+	"gviegas/neo3/driver"
+	_ "gviegas/neo3/driver/vk"
 )
 
 var (

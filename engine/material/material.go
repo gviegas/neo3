@@ -7,7 +7,7 @@ package material
 import (
 	"errors"
 
-	"github.com/gviegas/scene/engine/texture"
+	"gviegas/neo3/engine/texture"
 )
 
 const prefix = "material: "

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/engine/internal/ctxt"
+	"gviegas/neo3/driver"
+	"gviegas/neo3/engine/internal/ctxt"
 )
 
 var gpu = ctxt.GPU()

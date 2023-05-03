@@ -4,8 +4,8 @@
 package node
 
 import (
-	"github.com/gviegas/scene/internal/bitm"
-	"github.com/gviegas/scene/linear"
+	"gviegas/neo3/internal/bitm"
+	"gviegas/neo3/linear"
 )
 
 // Interface of a node.

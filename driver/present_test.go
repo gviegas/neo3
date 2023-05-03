@@ -13,8 +13,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/gviegas/scene/driver"
-	"github.com/gviegas/scene/wsi"
+	"gviegas/neo3/driver"
+	"gviegas/neo3/wsi"
 )
 
 const NFrame = 3
