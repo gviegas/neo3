@@ -27,6 +27,7 @@ type (
 	}
 	Command struct {
 		XMLName xml.Name `xml:"command"`
+		API     string   `xml:"api,attr"`
 		Type    string   `xml:"proto>type"`
 		Name    string   `xml:"proto>name"`
 		Param   []Param  `xml:"param"`
@@ -36,6 +37,7 @@ type (
 	}
 	Param struct {
 		XMLName xml.Name `xml:"param"`
+		API     string   `xml:"api,attr"`
 		param   string   // Concatenation of <param>, <type> and <name> CharData.
 	}
 	Enums struct {
@@ -53,6 +55,7 @@ type (
 	}
 	Type struct {
 		XMLName  xml.Name `xml:"type"`
+		API      string   `xml:"api,attr"`
 		Name     string   `xml:"name"`
 		CharData string   `xml:",chardata"`
 	}
@@ -65,9 +68,23 @@ const (
 	Device
 )
 
+// IsValidAPI checks that the API atrribute is valid ("vulkan" or undefined).
+func IsValidAPI(api string) bool {
+	api = strings.TrimSpace(api)
+	return api == "" || api == "vulkan"
+}
+
 // UnmarshalXML implements xml.Unmarshaler for Param.
 func (p *Param) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	ctx := "param"
+	for i := range start.Attr {
+		if start.Attr[i].Name.Local == "api" {
+			p.API = start.Attr[i].Value
+			if !IsValidAPI(p.API) {
+				return d.Skip()
+			}
+		}
+	}
 tokLoop:
 	for {
 		tok, err := d.Token()
@@ -234,6 +251,13 @@ cmdLoop:
 		}
 		b := cs.Command[i].Name[len(cs.Command[i].Name)-1]
 		if b < 65 || b > 90 {
+			// Also ignore these from sc variant.
+			// TODO: Need to decode <feature api="vulkansc">.
+			for _, x := range [...]string{"vkGetFaultData", "vkGetCommandPoolMemoryConsumption"} {
+				if cs.Command[i].Name == x {
+					cs.Command[i].ignored = true
+				}
+			}
 			continue
 		}
 		for j := range want {
@@ -305,7 +329,7 @@ func (c *Command) FPName() []byte {
 
 // GenFP generates a function pointer variable.
 func (c *Command) GenFP() string {
-	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") {
+	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
 		return ""
 	}
 	var s strings.Builder
@@ -344,7 +368,7 @@ func (cs *Commands) GenFPs(decl bool) string {
 
 // GenCWrapper generates a C function wrapping a function pointer call.
 func (c *Command) GenCWrapper() string {
-	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") {
+	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
 		return ""
 	}
 	var s strings.Builder
@@ -360,11 +384,17 @@ func (c *Command) GenCWrapper() string {
 	s.WriteByte(' ')
 	s.WriteString(c.Name)
 	s.WriteByte('(')
+	var hasPrev bool
 	for i := range c.Param {
-		s.WriteString(c.Param[i].param)
-		if i+1 < len(c.Param) {
-			s.WriteString(", ")
+		if !IsValidAPI(c.Param[i].API) {
+			continue
 		}
+		if hasPrev {
+			s.WriteString(", ")
+		} else {
+			hasPrev = true
+		}
+		s.WriteString(c.Param[i].param)
 	}
 	s.WriteString(") {\n\t")
 	if c.Type != "void" {
@@ -372,16 +402,22 @@ func (c *Command) GenCWrapper() string {
 	}
 	s.Write(c.FPName())
 	s.WriteByte('(')
+	hasPrev = false
 	for i := range c.Param {
+		if !IsValidAPI(c.Param[i].API) {
+			continue
+		}
 		idx := strings.LastIndex(c.Param[i].param, " ")
 		if idx == -1 || idx+1 == len(c.Param[i].param) {
 			panic("bad Param format")
 		}
 		arg := strings.Split(c.Param[i].param[idx+1:], "[")[0]
-		s.WriteString(arg)
-		if i+1 < len(c.Param) {
+		if hasPrev {
 			s.WriteString(", ")
+		} else {
+			hasPrev = true
 		}
+		s.WriteString(arg)
 	}
 	s.WriteString(end)
 	return s.String()
@@ -405,7 +441,7 @@ func (cs *Commands) GenCWrappers() string {
 
 // GenCGetProc generates a C expression that obtains a function pointer.
 func (c *Command) GenCGetProc() string {
-	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") {
+	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
 		return ""
 	}
 	if c.Name == "vkGetInstanceProcAddr" {
@@ -472,7 +508,7 @@ func (cs *Commands) GenCGetProcs(decl bool) string {
 
 // GenCClearProc generates a C expression that sets a function pointer to NULL.
 func (c *Command) GenCClearProc() string {
-	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") {
+	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
 		return ""
 	}
 	if c.Name == "vkGetInstanceProcAddr" {
@@ -541,6 +577,9 @@ func (r *Registry) GenCMacros() string {
 func (t *Types) GenHeaderVersion() string {
 	var patch, compl string
 	for i := range t.Type {
+		if !IsValidAPI(t.Type[i].API) {
+			continue
+		}
 		switch strings.TrimSpace(t.Type[i].Name) {
 		case "VK_HEADER_VERSION":
 			patch = strings.SplitAfter(t.Type[i].CharData, "#define")[1]
