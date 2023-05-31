@@ -28,10 +28,11 @@ type (
 	Command struct {
 		XMLName xml.Name `xml:"command"`
 		API     string   `xml:"api,attr"`
+		NameA   string   `xml:"name,attr"` // Only defined for aliases.
+		Alias   string   `xml:"alias,attr"`
 		Type    string   `xml:"proto>type"`
 		Name    string   `xml:"proto>name"`
 		Param   []Param  `xml:"param"`
-		ignored bool     // Commands marked as ignored will not be loaded.
 		kind    int      // Distinguishes global, instance and device commands.
 		guard   string   // Conditional compilation of commands.
 	}
@@ -194,9 +195,19 @@ tokLoop:
 	return errors.New("ill-formed XML")
 }
 
-// Filter marks unwanted Command elements as ignored.
-func (cs *Commands) Filter() {
-	want := []string{
+// Extension commands to include.
+var (
+	ExtAny = []string{
+		// From VK_KHR_dynamic_rendering:
+		"vkCmdBeginRenderingKHR",
+		"vkCmdEndRenderingKHR",
+		// From VK_KHR_synchronization2:
+		"vkCmdPipelineBarrier2KHR",
+		"vkCmdResetEvent2KHR",
+		"vkCmdSetEvent2KHR",
+		"vkCmdWaitEvents2KHR",
+		"vkCmdWriteTimestamp2KHR",
+		"vkQueueSubmit2KHR",
 		// From VK_KHR_surface:
 		"vkDestroySurfaceKHR",
 		"vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
@@ -210,21 +221,21 @@ func (cs *Commands) Filter() {
 		"vkGetSwapchainImagesKHR",
 		"vkQueuePresentKHR",
 	}
-	wantAndroid := []string{
+	ExtAndroid = []string{
 		// From VK_KHR_android_surface:
 		"vkCreateAndroidSurfaceKHR",
 	}
-	wantLinux := []string{
+	ExtLinux = []string{
 		// From VK_KHR_wayland_surface:
 		"vkCreateWaylandSurfaceKHR",
 		"vkGetPhysicalDeviceWaylandPresentationSupportKHR",
 	}
-	wantWin32 := []string{
+	ExtWin32 = []string{
 		// From VK_KHR_win32_surface:
 		"vkCreateWin32SurfaceKHR",
 		"vkGetPhysicalDeviceWin32PresentationSupportKHR",
 	}
-	wantGeneric := []string{
+	ExtGeneric = []string{
 		// From VK_KHR_xbc_surface:
 		"vkCreateXcbSurfaceKHR",
 		"vkGetPhysicalDeviceXcbPresentationSupportKHR",
@@ -239,57 +250,99 @@ func (cs *Commands) Filter() {
 		// From VK_KHR_display_swapchain:
 		"vkCreateSharedSwapchainsKHR",
 	}
+)
 
-	// Ignore all extension commands not present in want*.
-	// Names of extension commands end with an uppercase string (a tag).
-	// As of v1.3, all core commands end with either a lowercase letter or a
-	// number, so it is not necessary to decode the tags from XML for comparison.
-cmdLoop:
+// Non-extension commands to exclude.
+var (
+	// TODO: Decode <feature api="vulkansc"> to identify these
+	// and future additions.
+	VKSC = [...]string{
+		"vkGetFaultData",
+		"vkGetCommandPoolMemoryConsumption",
+	}
+)
+
+// Filter removes unwanted commands from cs.
+func (cs *Commands) Filter() {
+	swapRemove := func(i int) {
+		last := len(cs.Command) - 1
+		cs.Command[i], cs.Command[last] = cs.Command[last], cs.Command[i]
+		cs.Command = cs.Command[:last]
+	}
+
+	// Rewrite promoted extensions (i.e., aliased commands) as to use
+	// their original name.
+	aliases := make(map[string](int))
 	for i := range cs.Command {
+		if cs.Command[i].Alias != "" {
+			aliases[cs.Command[i].Alias] = i
+		}
+	}
+	for i := range cs.Command {
+		if j, ok := aliases[cs.Command[i].Name]; ok {
+			cs.Command[i].Name = cs.Command[j].NameA
+		}
+	}
+
+	// Remove unused extension commands.
+	// Names of extension commands end with an uppercase string (a tag).
+	// As of v1.3, all core commands end with either a lowercase letter
+	// or a number, so it is not necessary to decode the tags from XML
+	// for comparison.
+	var i int
+cmdLoop:
+	for n := len(cs.Command); n > 0; n-- {
 		if len(cs.Command[i].Name) < 1 {
+			// Should be an aliasing command.
+			swapRemove(i)
 			continue
 		}
 		b := cs.Command[i].Name[len(cs.Command[i].Name)-1]
 		if b < 65 || b > 90 {
-			// Also ignore these from sc variant.
-			// TODO: Need to decode <feature api="vulkansc">.
-			for _, x := range [...]string{"vkGetFaultData", "vkGetCommandPoolMemoryConsumption"} {
-				if cs.Command[i].Name == x {
-					cs.Command[i].ignored = true
+			for j := range VKSC {
+				if cs.Command[i].Name == VKSC[j] {
+					swapRemove(i)
+					continue cmdLoop
 				}
 			}
+			i++
 			continue
 		}
-		for j := range want {
-			if cs.Command[i].Name == want[j] {
+		for j := range ExtAny {
+			if cs.Command[i].Name == ExtAny[j] {
+				i++
 				continue cmdLoop
 			}
 		}
-		for j := range wantAndroid {
-			if cs.Command[i].Name == wantAndroid[j] {
+		for j := range ExtAndroid {
+			if cs.Command[i].Name == ExtAndroid[j] {
 				cs.Command[i].guard = "#ifdef __ANDROID__\n"
+				i++
 				continue cmdLoop
 			}
 		}
-		for j := range wantLinux {
-			if cs.Command[i].Name == wantLinux[j] {
+		for j := range ExtLinux {
+			if cs.Command[i].Name == ExtLinux[j] {
 				cs.Command[i].guard = "#ifdef __linux__\n"
+				i++
 				continue cmdLoop
 			}
 		}
-		for j := range wantWin32 {
-			if cs.Command[i].Name == wantWin32[j] {
+		for j := range ExtWin32 {
+			if cs.Command[i].Name == ExtWin32[j] {
 				cs.Command[i].guard = "#ifdef _WIN32\n"
+				i++
 				continue cmdLoop
 			}
 		}
-		for j := range wantGeneric {
-			if cs.Command[i].Name == wantGeneric[j] {
+		for j := range ExtGeneric {
+			if cs.Command[i].Name == ExtGeneric[j] {
 				cs.Command[i].guard = "#if !defined(__ANDROID__) && !defined(_WIN32)\n"
+				i++
 				continue cmdLoop
 			}
 		}
-		cs.Command[i].ignored = true
+		swapRemove(i)
 	}
 }
 
@@ -329,7 +382,7 @@ func (c *Command) FPName() []byte {
 
 // GenFP generates a function pointer variable.
 func (c *Command) GenFP() string {
-	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
+	if !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
 		return ""
 	}
 	var s strings.Builder
@@ -368,7 +421,7 @@ func (cs *Commands) GenFPs(decl bool) string {
 
 // GenCWrapper generates a C function wrapping a function pointer call.
 func (c *Command) GenCWrapper() string {
-	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
+	if !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
 		return ""
 	}
 	var s strings.Builder
@@ -441,7 +494,7 @@ func (cs *Commands) GenCWrappers() string {
 
 // GenCGetProc generates a C expression that obtains a function pointer.
 func (c *Command) GenCGetProc() string {
-	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
+	if !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
 		return ""
 	}
 	if c.Name == "vkGetInstanceProcAddr" {
@@ -508,7 +561,7 @@ func (cs *Commands) GenCGetProcs(decl bool) string {
 
 // GenCClearProc generates a C expression that sets a function pointer to NULL.
 func (c *Command) GenCClearProc() string {
-	if c.ignored || c.Name == "" || !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
+	if !strings.HasPrefix(c.Name, "vk") || !IsValidAPI(c.API) {
 		return ""
 	}
 	if c.Name == "vkGetInstanceProcAddr" {
@@ -550,7 +603,13 @@ func (cs *Commands) GenCClearProcs(decl bool) string {
 
 // GenCMacros generates #define macros for certain enums.
 func (r *Registry) GenCMacros() string {
-	names := []string{"VkPipelineStageFlagBits2", "VkAccessFlagBits2"}
+	names := []string{
+		"VkPipelineStageFlagBits2",
+		"VkAccessFlagBits2",
+		"VkPipelineStageFlagBits2KHR",
+		"VkAccessFlagBits2KHR",
+	}
+	n := len(names) / 2
 	var s strings.Builder
 	for i := range r.Enums {
 		for j := range names {
@@ -566,7 +625,7 @@ func (r *Registry) GenCMacros() string {
 				break
 			}
 		}
-		if len(names) == 0 {
+		if len(names) == n {
 			break
 		}
 	}
@@ -604,7 +663,7 @@ func (t *Types) GenHeaderVersion() string {
 	return s
 }
 
-const CHeader = `// Code generated by procgen.go.
+const CHeader = `// Code generated by procgen.go. DO NOT EDIT.
 
 // [vk.xml %s]
 
@@ -631,16 +690,16 @@ const CHeader = `// Code generated by procgen.go.
 %s
 %s
 
-// Functions that wrap calls to function pointers, used by Go code.
+// Functions that wrap calls to function pointers. Used by Go code.
 %s
 
 // Macros that shadow certain values defined as static constants in
-// the API header, used by Go code.
+// the API header. Used by Go code.
 %s
 #endif // PROC_H
 `
 
-const CSource = `// Code generated by procgen.go.
+const CSource = `// Code generated by procgen.go. DO NOT EDIT.
 
 // [vk.xml %s]
 
