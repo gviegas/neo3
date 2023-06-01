@@ -81,6 +81,7 @@ func deviceExts(d C.VkPhysicalDevice) (exts []string, err error) {
 
 // checkExts returns a slice containing the index of every extension
 // in exts that is not present in set.
+// Indices in missing are sorted in increasing order.
 func checkExts(exts []string, set []string) (missing []int) {
 extLoop:
 	for i := 0; i < len(exts); i++ {
@@ -96,7 +97,7 @@ extLoop:
 
 // selectExts creates an array of C strings representing the intersection
 // between exts and from.
-// missing will contain checkExts(exts, from).
+// Indices in missing indicate which exts's elements weren't selected.
 // Call the free closure to deallocate the names array and C strings.
 func selectExts(exts []string, from []string) (names **C.char, free func(), missing []int) {
 	missing = checkExts(exts, from)
@@ -128,4 +129,78 @@ func selectExts(exts []string, from []string) (names **C.char, free func(), miss
 		C.free(unsafe.Pointer(names))
 	}
 	return
+}
+
+// extInfo describes required and optional extensions.
+// Its fields must only contain ext*/ext*S constants, all of which must be
+// paired accordingly.
+type extInfo struct {
+	required  []int
+	requiredS []string
+	optional  []int
+	optionalS []string
+}
+
+// These are platform-independent.
+var (
+	globalInstanceExts extInfo // Nothing currently.
+	globalDeviceExts   = extInfo{
+		required:  []int{extDynamicRendering, extSynchronization2},
+		requiredS: []string{extDynamicRenderingS, extSynchronization2S},
+	}
+)
+
+// setInstanceExts sets the enableExtensionCount/ppEnabledExtensionNames
+// fields of info. It also updates d.ext to reflect the selected extensions.
+// Call the free closure to deallocate the C array/strings.
+func (d *Driver) setInstanceExts(info *C.VkInstanceCreateInfo) (free func(), err error) {
+	panic("not implemented")
+}
+
+// setDeviceExts sets the enableExtensionCount/ppEnabledExtensionNames
+// fields of info. It also updates d.ext to reflect the selected extensions.
+// Call the free closure to deallocate the C array/strings.
+func (d *Driver) setDeviceExts(info *C.VkDeviceCreateInfo) (free func(), err error) {
+	panic("not implemented")
+}
+
+// setExts generalizes the set*Exts methods.
+// Do not call it directly - call d.setInstanceExts/d.setDeviceExts instead.
+func (d *Driver) setExts(global *extInfo, platform *extInfo, set []string,
+	dstCount *C.uint32_t, dstNames ***C.char) (func(), error) {
+
+	exts := append(append([]string{}, global.requiredS...), platform.requiredS...)
+	if len(checkExts(exts, set)) != 0 {
+		// TODO: Consider logging what is missing.
+		return func() {}, errNoExtension
+	}
+
+	// Let selectExts filter optional extensions.
+	off := len(exts)
+	exts = append(append(exts, global.optionalS...), platform.optionalS...)
+	names, free, missing := selectExts(exts, set)
+	*dstCount = C.uint32_t(len(exts) - len(missing))
+	*dstNames = names
+	for _, e := range global.required {
+		d.exts[e] = true
+	}
+	for _, e := range platform.required {
+		d.exts[e] = true
+	}
+
+	// We known for sure that required extensions are supported,
+	// so any missing extension has to be optional.
+	opt := append(append([]int{}, global.optional...), platform.optional...)
+	for i := range opt {
+		if len(missing) == 0 {
+			break
+		}
+		if i == missing[0]-off {
+			// TODO: Consider logging what is missing.
+			missing = missing[1:]
+		} else {
+			d.exts[opt[i]] = true
+		}
+	}
+	return free, nil
 }
