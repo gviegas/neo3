@@ -20,6 +20,8 @@ const (
 	extXCBSurface, extXCBSurfaceS         = iota, "VK_KHR_xcb_surface"
 
 	// Device extensions.
+	extDynamicRendering, extDynamicRenderingS = iota, "VK_KHR_dynamic_rendering"
+	extSynchronization2, extSynchronization2S = iota, "VK_KHR_synchronization2"
 	extSwapchain, extSwapchainS               = iota, "VK_KHR_swapchain"
 	extDisplaySwapchain, extDisplaySwapchainS = iota, "VK_KHR_display_swapchain"
 
@@ -77,24 +79,47 @@ func deviceExts(d C.VkPhysicalDevice) (exts []string, err error) {
 	return
 }
 
-// selectExts creates an array of C strings that matches the contents of exts.
-// exts must be a subset of from, otherwise errNoExtension is returned.
-// Call the free closure to deallocate the names array and C strings.
-func selectExts(exts []string, from []string) (names **C.char, free func(), err error) {
+// checkExts returns a slice containing the index of every extension
+// in exts that is not present in set.
+func checkExts(exts []string, set []string) (missing []int) {
 extLoop:
-	for _, e := range exts {
-		for _, f := range from {
-			if e == f {
+	for i := 0; i < len(exts); i++ {
+		for _, e := range set {
+			if exts[i] == e {
 				continue extLoop
 			}
 		}
-		err = errNoExtension
-		return
+		missing = append(missing, i)
 	}
-	names = (**C.char)(C.malloc(C.size_t(unsafe.Sizeof(*names)) * C.size_t(len(exts))))
-	s := unsafe.Slice(names, len(exts))
-	for i, e := range exts {
-		s[i] = C.CString(e)
+	return
+}
+
+// selectExts creates an array of C strings representing the intersection
+// between exts and from.
+// missing will contain checkExts(exts, from).
+// Call the free closure to deallocate the names array and C strings.
+func selectExts(exts []string, from []string) (names **C.char, free func(), missing []int) {
+	missing = checkExts(exts, from)
+	n := len(exts) - len(missing)
+	names = (**C.char)(C.malloc(C.size_t(unsafe.Sizeof(*names)) * C.size_t(n)))
+	s := unsafe.Slice(names, n)
+	// NOTE: This assumes that checkExts returns a sorted slice.
+	var si, ei, mi int
+	for si < n {
+		if len(missing) < mi {
+			last := missing[mi]
+			for ; ei < last; ei++ {
+				s[si] = C.CString(exts[ei])
+				si++
+			}
+			ei = last + 1
+			mi++
+		} else {
+			for ; si < n; si++ {
+				s[si] = C.CString(exts[ei])
+			}
+			break
+		}
 	}
 	free = func() {
 		for _, cs := range s {
