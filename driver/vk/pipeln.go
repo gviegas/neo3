@@ -395,9 +395,9 @@ func setGraphRendering(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateIn
 	if aspect&C.VK_IMAGE_ASPECT_STENCIL_BIT != 0 {
 		stencil = ds
 	}
-	prend := (*C.VkPipelineRenderingCreateInfo)(C.malloc(C.sizeof_VkPipelineRenderingCreateInfo))
-	*prend = C.VkPipelineRenderingCreateInfo{
-		sType:                   C.VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+	prend := (*C.VkPipelineRenderingCreateInfoKHR)(C.malloc(C.sizeof_VkPipelineRenderingCreateInfoKHR))
+	*prend = C.VkPipelineRenderingCreateInfoKHR{
+		sType:                   C.VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
 		viewMask:                0,
 		colorAttachmentCount:    C.uint32_t(ncolor),
 		pColorAttachmentFormats: pcolor,

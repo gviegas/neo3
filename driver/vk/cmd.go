@@ -186,23 +186,23 @@ func (cb *cmdBuffer) IsRecording() bool {
 // Barrier inserts a number of global barriers in the command buffer.
 func (cb *cmdBuffer) Barrier(b []driver.Barrier) {
 	nb := len(b)
-	pb := (*C.VkMemoryBarrier2)(C.malloc(C.sizeof_VkMemoryBarrier2 * C.size_t(nb)))
+	pb := (*C.VkMemoryBarrier2KHR)(C.malloc(C.sizeof_VkMemoryBarrier2KHR * C.size_t(nb)))
 	sb := unsafe.Slice(pb, nb)
 	for i := range sb {
-		sb[i] = C.VkMemoryBarrier2{
-			sType:         C.VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+		sb[i] = C.VkMemoryBarrier2KHR{
+			sType:         C.VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR,
 			srcStageMask:  convSync(b[i].SyncBefore),
 			srcAccessMask: convAccess(b[i].AccessBefore),
 			dstStageMask:  convSync(b[i].SyncAfter),
 			dstAccessMask: convAccess(b[i].AccessAfter),
 		}
 	}
-	dep := C.VkDependencyInfo{
-		sType:              C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	dep := C.VkDependencyInfoKHR{
+		sType:              C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
 		memoryBarrierCount: C.uint32_t(nb),
 		pMemoryBarriers:    pb,
 	}
-	C.vkCmdPipelineBarrier2(cb.cb, &dep)
+	C.vkCmdPipelineBarrier2KHR(cb.cb, &dep)
 	C.free(unsafe.Pointer(pb))
 }
 
@@ -210,12 +210,12 @@ func (cb *cmdBuffer) Barrier(b []driver.Barrier) {
 // command buffer.
 func (cb *cmdBuffer) Transition(t []driver.Transition) {
 	nib := len(t)
-	pib := (*C.VkImageMemoryBarrier2)(C.malloc(C.sizeof_VkImageMemoryBarrier2 * C.size_t(nib)))
+	pib := (*C.VkImageMemoryBarrier2KHR)(C.malloc(C.sizeof_VkImageMemoryBarrier2KHR * C.size_t(nib)))
 	sib := unsafe.Slice(pib, nib)
 	for i := range sib {
 		img := t[i].Img.(*image)
-		sib[i] = C.VkImageMemoryBarrier2{
-			sType:         C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+		sib[i] = C.VkImageMemoryBarrier2KHR{
+			sType:         C.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR,
 			srcStageMask:  convSync(t[i].SyncBefore),
 			srcAccessMask: convAccess(t[i].AccessBefore),
 			dstStageMask:  convSync(t[i].SyncAfter),
@@ -275,8 +275,8 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			// using different queues.
 			sib[i].srcQueueFamilyIndex = cb.qfam
 			sib[i].dstQueueFamilyIndex = sc.qfam
-			dep := C.VkDependencyInfo{
-				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			dep := C.VkDependencyInfoKHR{
+				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
@@ -286,7 +286,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 				cb.status = cbFailed
 				continue
 			}
-			C.vkCmdPipelineBarrier2(presAcq.cb, &dep)
+			C.vkCmdPipelineBarrier2KHR(presAcq.cb, &dep)
 			if err := presAcq.End(); err != nil {
 				cb.status = cbFailed
 				continue
@@ -300,8 +300,8 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			// from driver.LUndefined instead.
 			sib[i].srcQueueFamilyIndex = sc.qfam
 			sib[i].dstQueueFamilyIndex = cb.qfam
-			dep := C.VkDependencyInfo{
-				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+			dep := C.VkDependencyInfoKHR{
+				sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
@@ -311,7 +311,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 				cb.status = cbFailed
 				continue
 			}
-			C.vkCmdPipelineBarrier2(presRel.cb, &dep)
+			C.vkCmdPipelineBarrier2KHR(presRel.cb, &dep)
 			if err := presRel.End(); err != nil {
 				cb.status = cbFailed
 				continue
@@ -320,24 +320,24 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			continue
 		}
 	}
-	dep := C.VkDependencyInfo{
-		sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	dep := C.VkDependencyInfoKHR{
+		sType:                   C.VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR,
 		imageMemoryBarrierCount: C.uint32_t(nib),
 		pImageMemoryBarriers:    pib,
 	}
-	C.vkCmdPipelineBarrier2(cb.cb, &dep)
+	C.vkCmdPipelineBarrier2KHR(cb.cb, &dep)
 	C.free(unsafe.Pointer(pib))
 }
 
 // BeginPass begins a render pass.
 func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTarget, ds *driver.DSTarget) {
 	natt := len(color) + 2
-	patt := (*C.VkRenderingAttachmentInfo)(C.malloc(C.sizeof_VkRenderingAttachmentInfo * C.size_t(natt)))
+	patt := (*C.VkRenderingAttachmentInfoKHR)(C.malloc(C.sizeof_VkRenderingAttachmentInfoKHR * C.size_t(natt)))
 	satt := unsafe.Slice(patt, natt)
 	var (
-		pcolor   *C.VkRenderingAttachmentInfo
-		pdepth   *C.VkRenderingAttachmentInfo
-		pstencil *C.VkRenderingAttachmentInfo
+		pcolor   *C.VkRenderingAttachmentInfoKHR
+		pdepth   *C.VkRenderingAttachmentInfoKHR
+		pstencil *C.VkRenderingAttachmentInfoKHR
 	)
 	if natt-2 > 0 {
 		// Has color attachment(s).
@@ -347,19 +347,19 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 			if color[i].Color == nil {
 				// Implementations must ignore attachments whose imageView
 				// field is VK_NULL_HANDLE.
-				satt[i] = C.VkRenderingAttachmentInfo{
-					sType:     C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+				satt[i] = C.VkRenderingAttachmentInfoKHR{
+					sType:     C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
 					imageView: cview,
 				}
 				continue
 			}
 			cview = color[i].Color.(*imageView).view
 			var rview C.VkImageView
-			rmode := C.VkResolveModeFlagBits(C.VK_RESOLVE_MODE_NONE)
+			rmode := C.VkResolveModeFlagBitsKHR(C.VK_RESOLVE_MODE_NONE_KHR)
 			if color[i].Resolve != nil {
 				rview = color[i].Resolve.(*imageView).view
 				// NOTE: Color formats are all fp currently.
-				rmode = C.VK_RESOLVE_MODE_AVERAGE_BIT
+				rmode = C.VK_RESOLVE_MODE_AVERAGE_BIT_KHR
 			}
 			var clear C.VkClearValue
 			fvalue := [4]C.float{
@@ -370,8 +370,8 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 			}
 			bclear := (*byte)(unsafe.Pointer(&fvalue[0]))
 			copy(clear[:], unsafe.Slice(bclear, unsafe.Sizeof(color[i].Clear)))
-			satt[i] = C.VkRenderingAttachmentInfo{
-				sType:              C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+			satt[i] = C.VkRenderingAttachmentInfoKHR{
+				sType:              C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
 				imageView:          cview,
 				imageLayout:        C.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 				resolveMode:        rmode,
@@ -388,8 +388,8 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 		pdepth = &satt[natt-2]
 		pstencil = &satt[natt-1]
 		var dsview C.VkImageView
-		*pdepth = C.VkRenderingAttachmentInfo{
-			sType:              C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+		*pdepth = C.VkRenderingAttachmentInfoKHR{
+			sType:              C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
 			imageView:          dsview, // VK_NULL_HANDLE
 			imageLayout:        C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 			resolveImageLayout: C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -398,12 +398,12 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 		if ds.DS != nil {
 			dsview = ds.DS.(*imageView).view
 			var rview C.VkImageView
-			rmode := C.VkResolveModeFlagBits(C.VK_RESOLVE_MODE_NONE)
+			rmode := C.VkResolveModeFlagBitsKHR(C.VK_RESOLVE_MODE_NONE_KHR)
 			if ds.Resolve != nil {
 				rview = ds.Resolve.(*imageView).view
 				// Implementations must support this mode
 				// (assuming the format itself supports MS).
-				rmode = C.VK_RESOLVE_MODE_SAMPLE_ZERO_BIT
+				rmode = C.VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR
 			}
 			var clear C.VkClearDepthStencilValue
 			sclear := unsafe.Slice((*byte)(unsafe.Pointer(&clear)), unsafe.Sizeof(clear))
@@ -428,8 +428,8 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 			}
 		}
 	}
-	info := C.VkRenderingInfo{
-		sType: C.VK_STRUCTURE_TYPE_RENDERING_INFO,
+	info := C.VkRenderingInfoKHR{
+		sType: C.VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
 		renderArea: C.VkRect2D{
 			extent: C.VkExtent2D{
 				width:  C.uint32_t(width),
@@ -443,13 +443,13 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 		pDepthAttachment:     pdepth,
 		pStencilAttachment:   pstencil,
 	}
-	C.vkCmdBeginRendering(cb.cb, &info)
+	C.vkCmdBeginRenderingKHR(cb.cb, &info)
 	C.free(unsafe.Pointer(patt))
 }
 
 // EndPass ends the current render pass.
 func (cb *cmdBuffer) EndPass() {
-	C.vkCmdEndRendering(cb.cb)
+	C.vkCmdEndRenderingKHR(cb.cb)
 }
 
 // SetPipeline sets the pipeline.
@@ -813,9 +813,9 @@ func (cb *cmdBuffer) Destroy() {
 // It is only safe to reuse these data after the Commit
 // call returns.
 type commitInfo struct {
-	subInfo []C.VkSubmitInfo2             // Go memory.
-	cbInfo  []C.VkCommandBufferSubmitInfo // C memory.
-	semInfo []C.VkSemaphoreSubmitInfo     // C memory.
+	subInfo []C.VkSubmitInfo2KHR             // Go memory.
+	cbInfo  []C.VkCommandBufferSubmitInfoKHR // C memory.
+	semInfo []C.VkSemaphoreSubmitInfoKHR     // C memory.
 }
 
 // newCommitInfo creates new commitInfo data.
@@ -826,12 +826,12 @@ func (d *Driver) newCommitInfo() (*commitInfo, error) {
 		nsem = ncb * 2
 	)
 	var p unsafe.Pointer
-	p = C.malloc(C.sizeof_VkCommandBufferSubmitInfo * ncb)
-	cbInfo := unsafe.Slice((*C.VkCommandBufferSubmitInfo)(p), ncb)
-	p = C.malloc(C.sizeof_VkSemaphoreSubmitInfo * nsem)
-	semInfo := unsafe.Slice((*C.VkSemaphoreSubmitInfo)(p), nsem)
+	p = C.malloc(C.sizeof_VkCommandBufferSubmitInfoKHR * ncb)
+	cbInfo := unsafe.Slice((*C.VkCommandBufferSubmitInfoKHR)(p), ncb)
+	p = C.malloc(C.sizeof_VkSemaphoreSubmitInfoKHR * nsem)
+	semInfo := unsafe.Slice((*C.VkSemaphoreSubmitInfoKHR)(p), nsem)
 	return &commitInfo{
-		subInfo: make([]C.VkSubmitInfo2, nsub),
+		subInfo: make([]C.VkSubmitInfo2KHR, nsub),
 		cbInfo:  cbInfo,
 		semInfo: semInfo,
 	}, nil
@@ -864,8 +864,8 @@ func (ci *commitInfo) resizeCB(cbInfoN int) {
 	default:
 		return
 	}
-	p := C.realloc(unsafe.Pointer(unsafe.SliceData(ci.cbInfo)), C.sizeof_VkCommandBufferSubmitInfo*C.size_t(n))
-	ci.cbInfo = unsafe.Slice((*C.VkCommandBufferSubmitInfo)(p), n)
+	p := C.realloc(unsafe.Pointer(unsafe.SliceData(ci.cbInfo)), C.sizeof_VkCommandBufferSubmitInfoKHR*C.size_t(n))
+	ci.cbInfo = unsafe.Slice((*C.VkCommandBufferSubmitInfoKHR)(p), n)
 }
 
 // resizeSem resizes ci.semInfo.
@@ -885,8 +885,8 @@ func (ci *commitInfo) resizeSem(semInfoN int) {
 	default:
 		return
 	}
-	p := C.realloc(unsafe.Pointer(unsafe.SliceData(ci.semInfo)), C.sizeof_VkSemaphoreSubmitInfo*C.size_t(n))
-	ci.semInfo = unsafe.Slice((*C.VkSemaphoreSubmitInfo)(p), n)
+	p := C.realloc(unsafe.Pointer(unsafe.SliceData(ci.semInfo)), C.sizeof_VkSemaphoreSubmitInfoKHR*C.size_t(n))
+	ci.semInfo = unsafe.Slice((*C.VkSemaphoreSubmitInfoKHR)(p), n)
 }
 
 // commitSync contains common synchronization data used
@@ -1067,8 +1067,8 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 			presQF  = presRel[0].cb.qfam
 		)
 		for i := 0; i < n; i++ {
-			ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
-				sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2KHR{
+				sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR,
 				waitSemaphoreInfoCount:   1,
 				pWaitSemaphoreInfos:      &ci.semInfo[2*i],
 				commandBufferInfoCount:   1,
@@ -1076,25 +1076,25 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 				signalSemaphoreInfoCount: 1,
 				pSignalSemaphoreInfos:    &ci.semInfo[2*i+1],
 			})
-			ci.cbInfo[i] = C.VkCommandBufferSubmitInfo{
-				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+			ci.cbInfo[i] = C.VkCommandBufferSubmitInfoKHR{
+				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR,
 				commandBuffer: presRel[i].cb.cb,
 			}
-			ci.semInfo[2*i] = C.VkSemaphoreSubmitInfo{
-				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+			ci.semInfo[2*i] = C.VkSemaphoreSubmitInfoKHR{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR,
 				semaphore: presRel[i].wait[0],
-				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
 			}
-			ci.semInfo[2*i+1] = C.VkSemaphoreSubmitInfo{
-				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+			ci.semInfo[2*i+1] = C.VkSemaphoreSubmitInfoKHR{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR,
 				semaphore: presRel[i].signal[0],
-				stageMask: C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+				stageMask: C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR,
 			}
 			if i == n-1 || presQF != presRel[i+1].cb.qfam {
 				var null C.VkFence
 				subN := C.uint32_t(1 + i - subInfo)
 				d.qmus[presQF].Lock()
-				res := C.vkQueueSubmit2(d.ques[presQF], subN, &ci.subInfo[subInfo], null)
+				res := C.vkQueueSubmit2KHR(d.ques[presQF], subN, &ci.subInfo[subInfo], null)
 				d.qmus[presQF].Unlock()
 				if err := checkResult(res); err != nil {
 					d.csync <- cs
@@ -1124,25 +1124,25 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 			waitInfo  = semInfo
 			sigInfo   = waitInfo + waitInfoN
 		)
-		ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
-			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+		ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2KHR{
+			sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR,
 			waitSemaphoreInfoCount:   C.uint32_t(waitInfoN),
 			commandBufferInfoCount:   1,
 			pCommandBufferInfos:      &ci.cbInfo[cbInfo],
 			signalSemaphoreInfoCount: C.uint32_t(sigInfoN),
 		})
-		ci.cbInfo[cbInfo] = C.VkCommandBufferSubmitInfo{
-			sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+		ci.cbInfo[cbInfo] = C.VkCommandBufferSubmitInfoKHR{
+			sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR,
 			commandBuffer: rend[i].cb.cb,
 		}
 		cbInfo++
 		if waitInfoN > 0 {
 			ci.subInfo[len(ci.subInfo)-1].pWaitSemaphoreInfos = &ci.semInfo[waitInfo]
 			for j := range rend[i].wait {
-				ci.semInfo[waitInfo] = C.VkSemaphoreSubmitInfo{
-					sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				ci.semInfo[waitInfo] = C.VkSemaphoreSubmitInfoKHR{
+					sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR,
 					semaphore: rend[i].wait[j],
-					stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+					stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
 				}
 				waitInfo++
 			}
@@ -1150,10 +1150,10 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 		if sigInfoN > 0 {
 			ci.subInfo[len(ci.subInfo)-1].pSignalSemaphoreInfos = &ci.semInfo[sigInfo]
 			for j := range rend[i].signal {
-				ci.semInfo[sigInfo] = C.VkSemaphoreSubmitInfo{
-					sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+				ci.semInfo[sigInfo] = C.VkSemaphoreSubmitInfoKHR{
+					sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR,
 					semaphore: rend[i].signal[j],
-					stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+					stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
 				}
 				sigInfo++
 			}
@@ -1162,7 +1162,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 	}
 	if n := len(presAcq); n == 0 {
 		d.qmus[d.qfam].Lock()
-		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), unsafe.SliceData(ci.subInfo), cs.fence[0])
+		res := C.vkQueueSubmit2KHR(d.ques[d.qfam], C.uint32_t(len(rend)), unsafe.SliceData(ci.subInfo), cs.fence[0])
 		d.qmus[d.qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs
@@ -1170,7 +1170,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 		}
 	} else {
 		d.qmus[d.qfam].Lock()
-		res := C.vkQueueSubmit2(d.ques[d.qfam], C.uint32_t(len(rend)), unsafe.SliceData(ci.subInfo), cs.fence[0])
+		res := C.vkQueueSubmit2KHR(d.ques[d.qfam], C.uint32_t(len(rend)), unsafe.SliceData(ci.subInfo), cs.fence[0])
 		d.qmus[d.qfam].Unlock()
 		if err := checkResult(res); err != nil {
 			d.csync <- cs
@@ -1184,8 +1184,8 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 			presQF  = presAcq[0].cb.qfam
 		)
 		for i := 0; i < n; i++ {
-			ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2{
-				sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+			ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2KHR{
+				sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR,
 				waitSemaphoreInfoCount:   1,
 				pWaitSemaphoreInfos:      &ci.semInfo[2*i],
 				commandBufferInfoCount:   1,
@@ -1193,19 +1193,19 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 				signalSemaphoreInfoCount: 1,
 				pSignalSemaphoreInfos:    &ci.semInfo[2*i+1],
 			})
-			ci.cbInfo[i] = C.VkCommandBufferSubmitInfo{
-				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+			ci.cbInfo[i] = C.VkCommandBufferSubmitInfoKHR{
+				sType:         C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO_KHR,
 				commandBuffer: presAcq[i].cb.cb,
 			}
-			ci.semInfo[2*i] = C.VkSemaphoreSubmitInfo{
-				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+			ci.semInfo[2*i] = C.VkSemaphoreSubmitInfoKHR{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR,
 				semaphore: presAcq[i].wait[0],
-				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
 			}
-			ci.semInfo[2*i+1] = C.VkSemaphoreSubmitInfo{
-				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+			ci.semInfo[2*i+1] = C.VkSemaphoreSubmitInfoKHR{
+				sType:     C.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR,
 				semaphore: presAcq[i].signal[0],
-				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+				stageMask: C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
 			}
 			if i == n-1 || presQF != presAcq[i+1].cb.qfam {
 				if err := d.resizeCommitFence(cs, fenceN+1); err != nil {
@@ -1215,7 +1215,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 				}
 				subN := C.uint32_t(1 + i - subInfo)
 				d.qmus[presQF].Lock()
-				res = C.vkQueueSubmit2(d.ques[presQF], subN, &ci.subInfo[subInfo], cs.fence[fenceN])
+				res = C.vkQueueSubmit2KHR(d.ques[presQF], subN, &ci.subInfo[subInfo], cs.fence[fenceN])
 				d.qmus[presQF].Unlock()
 				if err := checkResult(res); err != nil {
 					d.waitCommitFence(cs, fenceN)
@@ -1250,89 +1250,89 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 	return nil
 }
 
-// convSync converts a driver.Sync to a VkPipelineStageFlags2.
-func convSync(sync driver.Sync) C.VkPipelineStageFlags2 {
+// convSync converts a driver.Sync to a VkPipelineStageFlags2KHR.
+func convSync(sync driver.Sync) C.VkPipelineStageFlags2KHR {
 	if sync == driver.SNone {
-		return C.VK_PIPELINE_STAGE_2_NONE // 0
+		return C.VK_PIPELINE_STAGE_2_NONE_KHR // 0
 	}
 	if sync&driver.SAll != 0 {
-		return C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT
+		return C.VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR
 	}
 
-	var flags C.VkPipelineStageFlags2
+	var flags C.VkPipelineStageFlags2KHR
 	if sync&driver.SGraphics != 0 {
-		flags |= C.VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT
+		flags |= C.VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT_KHR
 	} else {
 		if sync&driver.SVertexInput != 0 {
-			flags |= C.VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR
 		}
 		if sync&driver.SVertexShading != 0 {
-			flags |= C.VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR
 		}
 		if sync&driver.SFragmentShading != 0 {
-			flags |= C.VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR
 		}
 		if sync&driver.SDSOutput != 0 {
-			flags |= C.VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
-			flags |= C.VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR
+			flags |= C.VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR
 		}
 		if sync&driver.SColorOutput != 0 {
-			flags |= C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+			flags |= C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
 		}
 	}
 	if sync&driver.SComputeShading != 0 {
-		flags |= C.VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT
+		flags |= C.VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR
 	}
 	if sync&driver.SCopy != 0 {
-		flags |= C.VK_PIPELINE_STAGE_2_TRANSFER_BIT
+		flags |= C.VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR
 	}
 	return flags
 }
 
-// convAccess converts a driver.Access to a VkAccessFlags2.
-func convAccess(acc driver.Access) C.VkAccessFlags2 {
+// convAccess converts a driver.Access to a VkAccessFlags2KHR.
+func convAccess(acc driver.Access) C.VkAccessFlags2KHR {
 	if acc == driver.ANone {
-		return C.VK_ACCESS_2_NONE // 0
+		return C.VK_ACCESS_2_NONE_KHR // 0
 	}
 
-	var flags C.VkAccessFlags2
+	var flags C.VkAccessFlags2KHR
 	if acc&driver.AAnyRead != 0 {
-		flags |= C.VK_ACCESS_2_MEMORY_READ_BIT
+		flags |= C.VK_ACCESS_2_MEMORY_READ_BIT_KHR
 	} else {
 		if acc&driver.AVertexBufRead != 0 {
-			flags |= C.VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT
+			flags |= C.VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT_KHR
 		}
 		if acc&driver.AIndexBufRead != 0 {
-			flags |= C.VK_ACCESS_2_INDEX_READ_BIT
+			flags |= C.VK_ACCESS_2_INDEX_READ_BIT_KHR
 		}
 		if acc&driver.AShaderRead != 0 {
-			flags |= C.VK_ACCESS_2_SHADER_READ_BIT
+			flags |= C.VK_ACCESS_2_SHADER_READ_BIT_KHR
 		}
 		if acc&driver.AColorRead != 0 {
-			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT
+			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR
 		}
 		if acc&driver.ADSRead != 0 {
-			flags |= C.VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT
+			flags |= C.VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT_KHR
 		}
 		if acc&driver.ACopyRead != 0 {
-			flags |= C.VK_ACCESS_2_TRANSFER_READ_BIT
+			flags |= C.VK_ACCESS_2_TRANSFER_READ_BIT_KHR
 		}
 	}
 
 	if acc&driver.AAnyWrite != 0 {
-		flags |= C.VK_ACCESS_2_MEMORY_WRITE_BIT
+		flags |= C.VK_ACCESS_2_MEMORY_WRITE_BIT_KHR
 	} else {
 		if acc&driver.AShaderWrite != 0 {
-			flags |= C.VK_ACCESS_2_SHADER_WRITE_BIT
+			flags |= C.VK_ACCESS_2_SHADER_WRITE_BIT_KHR
 		}
 		if acc&driver.AColorWrite != 0 {
-			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
+			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR
 		}
 		if acc&driver.ADSWrite != 0 {
-			flags |= C.VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+			flags |= C.VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT_KHR
 		}
 		if acc&driver.ACopyWrite != 0 {
-			flags |= C.VK_ACCESS_2_TRANSFER_WRITE_BIT
+			flags |= C.VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR
 		}
 	}
 	return flags

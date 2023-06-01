@@ -277,14 +277,14 @@ func (d *Driver) setFeatures(info *C.VkDeviceCreateInfo) (free func()) {
 	info.pEnabledFeatures = feat
 
 	// The following are mandatory for v1.3.
-	dynr := (*C.VkPhysicalDeviceDynamicRenderingFeatures)(C.malloc(C.sizeof_VkPhysicalDeviceDynamicRenderingFeatures))
-	sync2 := (*C.VkPhysicalDeviceSynchronization2Features)(C.malloc(C.sizeof_VkPhysicalDeviceSynchronization2Features))
-	*sync2 = C.VkPhysicalDeviceSynchronization2Features{
-		sType:            C.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+	dynr := (*C.VkPhysicalDeviceDynamicRenderingFeaturesKHR)(C.malloc(C.sizeof_VkPhysicalDeviceDynamicRenderingFeaturesKHR))
+	sync2 := (*C.VkPhysicalDeviceSynchronization2FeaturesKHR)(C.malloc(C.sizeof_VkPhysicalDeviceSynchronization2FeaturesKHR))
+	*sync2 = C.VkPhysicalDeviceSynchronization2FeaturesKHR{
+		sType:            C.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
 		synchronization2: C.VK_TRUE,
 	}
-	*dynr = C.VkPhysicalDeviceDynamicRenderingFeatures{
-		sType:            C.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+	*dynr = C.VkPhysicalDeviceDynamicRenderingFeaturesKHR{
+		sType:            C.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
 		pNext:            unsafe.Pointer(sync2),
 		dynamicRendering: C.VK_TRUE,
 	}
