@@ -4,78 +4,32 @@
 
 package vk
 
-// #include <proc.h>
-import "C"
-
 import (
-	//"os"
-
 	"gviegas/neo3/wsi"
 )
 
-func (d *Driver) setInstanceExts(info *C.VkInstanceCreateInfo) func() {
-	var exts []string
-	var inds []int
-	var names **C.char
-	free := func() {}
-
-	if from, err := instanceExts(); err == nil {
-		//if os.Getenv("WAYLAND_DISPLAY") != "" {
-		if wsi.PlatformInUse() == wsi.Wayland {
-			exts = []string{extSurfaceS, extWaylandSurfaceS}
-			if names, free, err = selectExts(exts, from); err == nil {
-				inds = []int{extSurface, extWaylandSurface}
-				goto valueSet
-			}
+func platformInstanceExts() extInfo {
+	switch wsi.PlatformInUse() {
+	case wsi.Wayland:
+		return extInfo{
+			optional:  []int{extSurface, extWaylandSurface},
+			optionalS: []string{extSurfaceS, extWaylandSurfaceS},
 		}
-		//if os.Getenv("DISPLAY") != "" {
-		if wsi.PlatformInUse() == wsi.XCB {
-			exts = []string{extSurfaceS, extXCBSurfaceS}
-			if names, free, err = selectExts(exts, from); err == nil {
-				inds = []int{extSurface, extXCBSurface}
-				goto valueSet
-			}
+	case wsi.XCB:
+		return extInfo{
+			optional:  []int{extSurface, extXCBSurface},
+			optionalS: []string{extSurfaceS, extXCBSurfaceS},
 		}
-		exts = []string{extSurfaceS, extDisplayS}
-		if names, free, err = selectExts(exts, from); err == nil {
-			inds = []int{extSurface, extDisplay}
-			goto valueSet
-		}
-		exts = nil
 	}
-
-valueSet:
-	for _, e := range inds {
-		d.exts[e] = true
-	}
-	info.enabledExtensionCount = C.uint32_t(len(exts))
-	info.ppEnabledExtensionNames = names
-	return free
+	return extInfo{}
 }
 
-func (d *Driver) setDeviceExts(info *C.VkDeviceCreateInfo) func() {
-	if d.exts[extSurface] {
-		if from, err := deviceExts(d.pdev); err == nil {
-			exts := []string{extSwapchainS}
-			inds := []int{extSwapchain}
-			if d.exts[extDisplay] {
-				exts = append(exts, extDisplaySwapchainS)
-				inds = append(inds, extDisplaySwapchain)
-			}
-			for len(exts) > 0 {
-				if names, free, err := selectExts(exts, from); err == nil {
-					for i := range exts {
-						d.exts[inds[i]] = true
-					}
-					info.enabledExtensionCount = C.uint32_t(len(exts))
-					info.ppEnabledExtensionNames = names
-					return free
-				}
-				exts = exts[:len(exts)-1]
-			}
+func platformDeviceExts(d *Driver) extInfo {
+	if d.exts[extSurface] && (d.exts[extWaylandSurface] || d.exts[extXCBSurface]) {
+		return extInfo{
+			optional:  []int{extSwapchain},
+			optionalS: []string{extSwapchainS},
 		}
 	}
-	info.enabledExtensionCount = 0
-	info.ppEnabledExtensionNames = nil
-	return func() {}
+	return extInfo{}
 }
