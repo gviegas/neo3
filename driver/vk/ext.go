@@ -154,14 +154,28 @@ var (
 // fields of info. It also updates d.ext to reflect the selected extensions.
 // Call the free closure to deallocate the C array/strings.
 func (d *Driver) setInstanceExts(info *C.VkInstanceCreateInfo) (free func(), err error) {
-	panic("not implemented")
+	var set []string
+	if set, err = instanceExts(); err != nil {
+		free = func() {}
+		return
+	}
+	platform := platformInstanceExts()
+	return d.setExts(&globalInstanceExts, &platform, set,
+		&info.enabledExtensionCount, &info.ppEnabledExtensionNames)
 }
 
 // setDeviceExts sets the enableExtensionCount/ppEnabledExtensionNames
 // fields of info. It also updates d.ext to reflect the selected extensions.
 // Call the free closure to deallocate the C array/strings.
 func (d *Driver) setDeviceExts(info *C.VkDeviceCreateInfo) (free func(), err error) {
-	panic("not implemented")
+	var set []string
+	if set, err = deviceExts(d.pdev); err != nil {
+		free = func() {}
+		return
+	}
+	platform := platformDeviceExts(d)
+	return d.setExts(&globalDeviceExts, &platform, set,
+		&info.enabledExtensionCount, &info.ppEnabledExtensionNames)
 }
 
 // setExts generalizes the set*Exts methods.
