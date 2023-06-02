@@ -31,6 +31,9 @@ const (
 // instanceExts returns a list containing the names of all instance extensions
 // advertised by the Vulkan implementation.
 func instanceExts() (exts []string, err error) {
+	if C.enumerateInstanceExtensionProperties == nil {
+		panic("vk.instanceExts called with invalid global procedures")
+	}
 	var n C.uint32_t
 	if err = checkResult(C.vkEnumerateInstanceExtensionProperties(nil, &n, nil)); err != nil {
 		return
@@ -56,7 +59,7 @@ func instanceExts() (exts []string, err error) {
 // advertised by the Vulkan implementation.
 func deviceExts(d C.VkPhysicalDevice) (exts []string, err error) {
 	if d == nil {
-		panic("vk.deviceExts called with nil physical device")
+		panic("vk.deviceExts called with invalid physical device")
 	}
 	var n C.uint32_t
 	if err = checkResult(C.vkEnumerateDeviceExtensionProperties(d, nil, &n, nil)); err != nil {
