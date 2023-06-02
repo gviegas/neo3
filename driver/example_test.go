@@ -26,7 +26,7 @@ func init() {
 drvLoop:
 	for i := range drivers {
 		switch drivers[i].Name() {
-		case "vulkan1.3":
+		case "vulkan":
 			drv = drivers[i]
 			break drvLoop
 		}

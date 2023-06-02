@@ -16,7 +16,8 @@ import (
 	"gviegas/neo3/driver"
 )
 
-const driverName = "vulkan1.3"
+const driverName = "vulkan"
+const preferredAPIVersion = C.VK_API_VERSION_1_3
 
 // Driver implements driver.Driver and driver.GPU.
 type Driver struct {
@@ -61,16 +62,8 @@ func init() {
 // initInstance initializes the Vulkan instance.
 func (d *Driver) initInstance() error {
 	C.getGlobalProcs()
-	if C.enumerateInstanceVersion == nil {
-		// Version 1.0. We need 1.1 or newer.
-		return driver.ErrNoDevice
-	}
-	if err := checkResult(C.vkEnumerateInstanceVersion(&d.ivers)); err != nil {
-		return err
-	}
-	if d.ivers < C.VK_API_VERSION_1_1 {
-		// Should never happen since we have vkEnumerateInstanceVersion.
-		return driver.ErrNoDevice
+	if C.enumerateInstanceVersion == nil || checkResult(C.vkEnumerateInstanceVersion(&d.ivers)) != nil {
+		d.ivers = C.VK_API_VERSION_1_0
 	}
 	if isVariant(d.ivers) {
 		// Do not support variants.
@@ -78,9 +71,16 @@ func (d *Driver) initInstance() error {
 	}
 	appInfo := (*C.VkApplicationInfo)(C.malloc(C.sizeof_VkApplicationInfo))
 	defer C.free(unsafe.Pointer(appInfo))
-	*appInfo = C.VkApplicationInfo{
-		sType:      C.VK_STRUCTURE_TYPE_APPLICATION_INFO,
-		apiVersion: C.VK_API_VERSION_1_3,
+	if d.ivers == C.VK_API_VERSION_1_0 {
+		*appInfo = C.VkApplicationInfo{
+			sType:      C.VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			apiVersion: C.VK_API_VERSION_1_0,
+		}
+	} else {
+		*appInfo = C.VkApplicationInfo{
+			sType:      C.VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			apiVersion: preferredAPIVersion,
+		}
 	}
 	info := C.VkInstanceCreateInfo{
 		sType:            C.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -134,10 +134,6 @@ func (d *Driver) initDevice() error {
 	// be hardware-accelerated.
 	weight := 0
 	for i, dev := range devs {
-		if devProps[i].apiVersion < C.VK_API_VERSION_1_3 {
-			// Core version 1.3 is required.
-			continue
-		}
 		if isVariant(devProps[i].apiVersion) {
 			// Do not support variants.
 			continue
@@ -284,7 +280,8 @@ func (d *Driver) setFeatures(info *C.VkDeviceCreateInfo) (free func()) {
 	}
 	info.pEnabledFeatures = feat
 
-	// The following are mandatory for v1.3.
+	// Currently, the extDynamicRendering/extSynchronization2
+	// extensions are required (see ext.go).
 	dynr := (*C.VkPhysicalDeviceDynamicRenderingFeaturesKHR)(C.malloc(C.sizeof_VkPhysicalDeviceDynamicRenderingFeaturesKHR))
 	sync2 := (*C.VkPhysicalDeviceSynchronization2FeaturesKHR)(C.malloc(C.sizeof_VkPhysicalDeviceSynchronization2FeaturesKHR))
 	*sync2 = C.VkPhysicalDeviceSynchronization2FeaturesKHR{
