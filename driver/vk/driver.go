@@ -86,7 +86,11 @@ func (d *Driver) initInstance() error {
 		sType:            C.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 		pApplicationInfo: appInfo,
 	}
-	defer d.setInstanceExts(&info)()
+	free, err := d.setInstanceExts(&info)
+	defer free()
+	if err != nil {
+		return err
+	}
 	if err := checkResult(C.vkCreateInstance(&info, nil, &d.inst)); err != nil {
 		return err
 	}
@@ -203,7 +207,11 @@ func (d *Driver) initDevice() error {
 		queueCreateInfoCount: C.uint32_t(len(d.ques)),
 		pQueueCreateInfos:    queInfos,
 	}
-	defer d.setDeviceExts(&info)()
+	free, err := d.setDeviceExts(&info)
+	defer free()
+	if err != nil {
+		return err
+	}
 	defer d.setFeatures(&info)()
 	if err := checkResult(C.vkCreateDevice(d.pdev, &info, nil, &d.dev)); err != nil {
 		return err
