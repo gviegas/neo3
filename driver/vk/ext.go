@@ -118,6 +118,7 @@ func selectExts(exts []string, from []string) (names **C.char, free func(), miss
 		} else {
 			for ; si < n; si++ {
 				s[si] = C.CString(exts[ei])
+				ei++
 			}
 			break
 		}
@@ -207,6 +208,9 @@ func (d *Driver) setExts(global *extInfo, platform *extInfo, set []string,
 	opt := append(append([]int{}, global.optional...), platform.optional...)
 	for i := range opt {
 		if len(missing) == 0 {
+			for _, e := range opt[i:] {
+				d.exts[e] = true
+			}
 			break
 		}
 		if i == missing[0]-off {
