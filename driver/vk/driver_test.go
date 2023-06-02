@@ -208,49 +208,62 @@ func TestDriver(t *testing.T) {
 }
 
 func TestSelectExts(t *testing.T) {
-	cases := [...]struct {
+	type Case struct {
 		exts, from []string
-		want       error
-	}{
-		{nil, nil, nil},
-		{[]string{}, []string{}, nil},
-		{nil, []string{}, nil},
-		{[]string{}, nil, nil},
-		{[]string{extSurfaceS}, []string{extSurfaceS}, nil},
-		{[]string{extSurfaceS}, []string{extSurfaceS, extDisplayS}, nil},
-		{[]string{extDisplayS, extSurfaceS}, []string{extSurfaceS, extDisplayS}, nil},
-		{[]string{extDisplayS}, []string{extSurfaceS, extDisplayS}, nil},
-		{[]string{extSurfaceS}, nil, errNoExtension},
-		{[]string{extDisplayS}, []string{extSurfaceS}, errNoExtension},
-		{[]string{extSurfaceS, extDisplayS}, []string{extSurfaceS}, errNoExtension},
-		{[]string{extSurfaceS, extDisplayS}, []string{}, errNoExtension},
+		want       []int
+	}
+	ok := func(c Case) bool {
+		have := []int{}
+	extLoop:
+		for i := range c.exts {
+			for j := range c.from {
+				if c.exts[i] == c.from[j] {
+					continue extLoop
+				}
+			}
+			have = append(have, i)
+		}
+		if len(c.want) != len(have) {
+			return false
+		}
+		// Callers may assume that this slice is sorted.
+		for i := range c.want {
+			if c.want[i] != have[i] {
+				return false
+			}
+		}
+		return true
+	}
+	cases := [...]Case{
+		{nil, nil, []int{}},
+		{[]string{}, []string{}, []int{}},
+		{nil, []string{}, []int{}},
+		{[]string{}, nil, []int{}},
+		{[]string{extSurfaceS}, []string{extSurfaceS}, []int{}},
+		{[]string{extSurfaceS}, []string{extSurfaceS, extDisplayS}, []int{}},
+		{[]string{extDisplayS, extSurfaceS}, []string{extSurfaceS, extDisplayS}, []int{}},
+		{[]string{extDisplayS}, []string{extSurfaceS, extDisplayS}, []int{}},
+		{[]string{extSurfaceS}, nil, []int{0}},
+		{[]string{extDisplayS}, []string{extSurfaceS}, []int{0}},
+		{[]string{extSurfaceS, extDisplayS}, []string{extSurfaceS}, []int{1}},
+		{[]string{extSurfaceS, extDisplayS}, []string{}, []int{0, 1}},
 	}
 	for _, c := range cases {
-		a, f, e := selectExts(c.exts, c.from)
-		if e != c.want {
-			t.Fatalf("selectExts()\nhave _, _, %v\nwant %v", e, c.want)
+		a, f, m := selectExts(c.exts, c.from)
+		if !ok(c) {
+			t.Fatalf("selectExts()\nhave _, _, %v\nwant %v", m, c.want)
 		}
-		if e == nil {
-			// The array should be valid only when exts is not nil/empty.
+		if len(c.want) == 0 {
 			if a == nil && len(c.exts) > 0 {
 				t.Fatal("selectExts()\nhave nil, _, _\nwant non-nil")
 			} else if err := checkCStrings(c.exts, unsafe.Pointer(a)); err != nil {
 				t.Fatal(err)
 			}
-			if f == nil {
-				t.Fatal("selectExts()\nhave _, nil, _\nwant non-nil")
-			} else {
-				// It should be safe to call the closure even for nil/empty exts.
-				f()
-			}
-		} else {
-			if a != nil {
-				t.Fatal("selectExts()\nhave non-nil, _, _\nwant nil")
-			}
-			if f != nil {
-				t.Fatal("selectExts()\nhave _, non-nil, _\nwant nil")
-			}
 		}
+		if f == nil {
+			t.Fatal("selectExts()\nhave _, nil, _\nwant non-nil")
+		}
+		f()
 	}
 }
 
