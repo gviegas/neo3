@@ -586,16 +586,16 @@ func toplevelConfigureXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t, st
 	}
 	win.width = int(width)
 	win.height = int(height)
-	if windowHandler != nil {
-		windowHandler.WindowResize(win, win.width, win.height)
+	if windowResizeHandler != nil {
+		windowResizeHandler.WindowResize(win, win.width, win.height)
 	}
 }
 
 //export toplevelCloseXDG
 func toplevelCloseXDG(tl *C.struct_xdg_toplevel) {
-	if windowHandler != nil {
+	if windowCloseHandler != nil {
 		if win := windowFromToplevel(tl); win != nil {
-			windowHandler.WindowClose(win)
+			windowCloseHandler.WindowClose(win)
 		}
 	}
 }

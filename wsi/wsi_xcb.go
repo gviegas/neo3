@@ -537,19 +537,19 @@ func configureEventXCB(event *C.xcb_generic_event_t) {
 		win.width = newWidth
 		win.height = newHeight
 	}
-	if windowHandler != nil {
-		windowHandler.WindowResize(win, newWidth, newHeight)
+	if windowResizeHandler != nil {
+		windowResizeHandler.WindowResize(win, newWidth, newHeight)
 	}
 }
 
 // clientEventXCB handles client message events.
 func clientEventXCB(event *C.xcb_generic_event_t) {
-	if windowHandler != nil {
+	if windowCloseHandler != nil {
 		evt := (*C.xcb_client_message_event_t)(unsafe.Pointer(event))
 		data := *(*C.uint32_t)(unsafe.Pointer(&evt.data))
 		if evt._type == protoAtomXCB && data == delAtomXCB {
 			win := windowFromXCB(evt.window)
-			windowHandler.WindowClose(win)
+			windowCloseHandler.WindowClose(win)
 		}
 	}
 }

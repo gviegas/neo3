@@ -9,7 +9,8 @@ import (
 )
 
 func TestWSI(t *testing.T) {
-	SetWindowHandler(E{})
+	SetWindowCloseHandler(E{})
+	SetWindowResizeHandler(E{})
 	SetKeyboardHandler(E{})
 	SetPointerHandler(E{})
 	switch PlatformInUse() {

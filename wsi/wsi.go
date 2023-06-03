@@ -249,22 +249,28 @@ const (
 	BtnBackward
 )
 
-// WindowHandler is the interface that defines the methods
-// for handling window events.
-type WindowHandler interface {
+// WindowCloseHandler is a callback for window close events.
+type WindowCloseHandler interface {
 	// WindowClose is called when a window is closed.
 	WindowClose(win Window)
+}
 
+// WindowResizeHandler is a callback for window resize events.
+type WindowResizeHandler interface {
 	// WindowResize is called when a window is resized.
 	WindowResize(win Window, newWidth, newHeight int)
 }
 
-// SetWindowHandler sets the global WindowHandler.
-func SetWindowHandler(wh WindowHandler) {
-	windowHandler = wh
-}
+// SetWindowCloseHandler sets the window close handler.
+func SetWindowCloseHandler(wh WindowCloseHandler) { windowCloseHandler = wh }
 
-var windowHandler WindowHandler
+// SetWindowResizeHandler sets the window resize handler.
+func SetWindowResizeHandler(wh WindowResizeHandler) { windowResizeHandler = wh }
+
+var (
+	windowCloseHandler  WindowCloseHandler
+	windowResizeHandler WindowResizeHandler
+)
 
 // KeyboardHandler is the interface that defines the methods
 // for handling keyboard events.

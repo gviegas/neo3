@@ -284,8 +284,8 @@ func windowFromWin32(hwnd C.HWND) Window {
 // closeMsgWin32 handles WM_CLOSE messages.
 func closeMsgWin32(hwnd C.HWND) {
 	if win := windowFromWin32(hwnd); win != nil {
-		if windowHandler != nil {
-			windowHandler.WindowClose(win)
+		if windowCloseHandler != nil {
+			windowCloseHandler.WindowClose(win)
 		}
 		win.Close()
 	}
@@ -297,8 +297,8 @@ func sizeMsgWin32(hwnd C.HWND, lprm C.LPARAM) {
 		win := win.(*windowWin32)
 		win.width = int(lprm & 0xffff)
 		win.height = int(lprm >> 16 & 0xffff)
-		if windowHandler != nil {
-			windowHandler.WindowResize(win, win.width, win.height)
+		if windowResizeHandler != nil {
+			windowResizeHandler.WindowResize(win, win.width, win.height)
 		}
 	}
 }
