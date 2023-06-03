@@ -709,28 +709,28 @@ func keyboardKeymapWayland(format C.uint32_t, fd C.int32_t, size C.uint32_t) {
 //export keyboardEnterWayland
 func keyboardEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, keys *C.struct_wl_array) {
 	// TODO: Check keys.
-	if keyboardHandler != nil {
+	if keyboardEnterHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
-			keyboardHandler.KeyboardEnter(win)
+			keyboardEnterHandler.KeyboardEnter(win)
 		}
 	}
 }
 
 //export keyboardLeaveWayland
 func keyboardLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
-	if keyboardHandler != nil {
+	if keyboardLeaveHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
-			keyboardHandler.KeyboardLeave(win)
+			keyboardLeaveHandler.KeyboardLeave(win)
 		}
 	}
 }
 
 //export keyboardKeyWayland
 func keyboardKeyWayland(serial, millis, key, state C.uint32_t) {
-	if keyboardHandler != nil {
+	if keyboardKeyHandler != nil {
 		key := keyFrom(int(key))
 		pressed := state == C.WL_KEYBOARD_KEY_STATE_PRESSED
-		keyboardHandler.KeyboardKey(key, pressed)
+		keyboardKeyHandler.KeyboardKey(key, pressed)
 	}
 }
 
@@ -743,7 +743,7 @@ func keyboardModifiersWayland(serial, depressed, latched, locked, group C.uint32
 		ctrl
 		alt
 	)
-	if keyboardHandler != nil {
+	if keyboardModifierHandler != nil {
 		// TODO: Track previous state to avoid
 		// needless notifications.
 		var modMask Modifier
@@ -759,7 +759,7 @@ func keyboardModifiersWayland(serial, depressed, latched, locked, group C.uint32
 		if locked&capsLock != 0 {
 			modMask |= ModCapsLock
 		}
-		keyboardHandler.KeyboardModifiers(modMask)
+		keyboardModifierHandler.KeyboardModifier(modMask)
 	}
 }
 

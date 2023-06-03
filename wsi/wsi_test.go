@@ -11,7 +11,10 @@ import (
 func TestWSI(t *testing.T) {
 	SetWindowCloseHandler(E{})
 	SetWindowResizeHandler(E{})
-	SetKeyboardHandler(E{})
+	SetKeyboardEnterHandler(E{})
+	SetKeyboardLeaveHandler(E{})
+	SetKeyboardKeyHandler(E{})
+	SetKeyboardModifierHandler(E{})
 	SetPointerHandler(E{})
 	switch PlatformInUse() {
 	case None:
@@ -86,8 +89,8 @@ func (E) KeyboardKey(key Key, pressed bool) {
 	fmt.Printf("E.KeyboardKey: %d, %t\n", key, pressed)
 }
 
-func (E) KeyboardModifiers(modMask Modifier) {
-	fmt.Printf("E.KeyboardModifiers: %x\n", modMask)
+func (E) KeyboardModifier(modMask Modifier) {
+	fmt.Printf("E.KeyboardModifier: %x\n", modMask)
 }
 
 func (E) PointerEnter(win Window, x, y int) {

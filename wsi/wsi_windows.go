@@ -327,7 +327,7 @@ func keyMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
 	if C.GetKeyState(C.VK_MENU)&high != 0 {
 		modMaskWin32 |= ModAlt
 	}
-	if keyboardHandler != nil {
+	if keyboardKeyHandler != nil {
 		key := keyFrom(int(wprm))
 		if key == KeyUnknown {
 			scan := C.UINT(lprm >> 16 & 255)
@@ -353,27 +353,27 @@ func keyMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
 			}
 		}
 		pressed := lprm&(1<<31) == 0
-		keyboardHandler.KeyboardKey(key, pressed)
-		if modMaskWin32 != prevModMask {
-			keyboardHandler.KeyboardModifiers(modMaskWin32)
-		}
+		keyboardKeyHandler.KeyboardKey(key, pressed)
+	}
+	if modMaskWin32 != prevModMask && KeyboardModifierHandler != nil {
+		keyboardModifierHandler.KeyboardModifier(modMaskWin32)
 	}
 }
 
 // setFocusMsgWin32 handles WM_SETFOCUS messages.
 func setFocusMsgWin32(hwnd C.HWND) {
-	if keyboardHandler != nil {
+	if keyboardEnterHandler != nil {
 		if win := windowFromWin32(hwnd); win != nil {
-			keyboardHandler.KeyboardEnter(win)
+			keyboardEnterHandler.KeyboardEnter(win)
 		}
 	}
 }
 
 // killFocusMsgWin32 handles WM_KILLFOCUS messages.
 func killFocusMsgWin32(hwnd C.HWND) {
-	if keyboardHandler != nil {
+	if keyboardLeaveHandler != nil {
 		if win := windowFromWin32(hwnd); win != nil {
-			keyboardHandler.KeyboardLeave(win)
+			keyboardLeaveHandler.KeyboardLeave(win)
 		}
 	}
 }

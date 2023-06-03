@@ -449,12 +449,12 @@ func keyEventXCB(event *C.xcb_generic_event_t) {
 			modRightXCB &^= ModAlt
 		}
 	}
-	if keyboardHandler != nil {
-		modMask := modCapsXCB | modLeftXCB | modRightXCB
-		keyboardHandler.KeyboardKey(key, pressed)
-		if modMask != prevModMask {
-			keyboardHandler.KeyboardModifiers(modMask)
-		}
+	if keyboardKeyHandler != nil {
+		keyboardKeyHandler.KeyboardKey(key, pressed)
+	}
+	modMask := modCapsXCB | modLeftXCB | modRightXCB
+	if modMask != prevModMask && keyboardModifierHandler != nil {
+		keyboardModifierHandler.KeyboardModifier(modMask)
 	}
 }
 
@@ -510,19 +510,19 @@ func leaveEventXCB(event *C.xcb_generic_event_t) {
 
 // focusInXCB handles focus in events.
 func focusInEventXCB(event *C.xcb_generic_event_t) {
-	if keyboardHandler != nil {
+	if keyboardEnterHandler != nil {
 		evt := (*C.xcb_focus_in_event_t)(unsafe.Pointer(event))
 		win := windowFromXCB(evt.event)
-		keyboardHandler.KeyboardEnter(win)
+		keyboardEnterHandler.KeyboardEnter(win)
 	}
 }
 
 // focusOutXCB handles focus out events.
 func focusOutXCB(event *C.xcb_generic_event_t) {
-	if keyboardHandler != nil {
+	if keyboardLeaveHandler != nil {
 		evt := (*C.xcb_focus_out_event_t)(unsafe.Pointer(event))
 		win := windowFromXCB(evt.event)
-		keyboardHandler.KeyboardLeave(win)
+		keyboardLeaveHandler.KeyboardLeave(win)
 	}
 }
 

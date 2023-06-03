@@ -272,28 +272,48 @@ var (
 	windowResizeHandler WindowResizeHandler
 )
 
-// KeyboardHandler is the interface that defines the methods
-// for handling keyboard events.
-type KeyboardHandler interface {
+// KeyboardEnterHandler is a callback for keyboard enter events.
+type KeyboardEnterHandler interface {
 	// KeyboardEnter is called when focus is gained.
 	KeyboardEnter(win Window)
+}
 
+// KeyboardLeaveHandler is a callback for keyboard leave events.
+type KeyboardLeaveHandler interface {
 	// KeyboardLeave is called when focus is lost.
 	KeyboardLeave(win Window)
+}
 
+// KeyboardKeyHandler is a callback for keyboard key events.
+type KeyboardKeyHandler interface {
 	// KeyboardKey is called when a key is pressed/released.
 	KeyboardKey(key Key, pressed bool)
-
-	// KeyboardModifiers is called when modifier state changes.
-	KeyboardModifiers(modMask Modifier)
 }
 
-// SetKeyboardHandler sets the global KeyboardHandler.
-func SetKeyboardHandler(kh KeyboardHandler) {
-	keyboardHandler = kh
+// KeyboardModifierHandler is a callback for keyboard modifier events.
+type KeyboardModifierHandler interface {
+	// KeyboardModifier is called when modifier state changes.
+	KeyboardModifier(modMask Modifier)
 }
 
-var keyboardHandler KeyboardHandler
+// SetKeyboardEnterHandler sets the keyboard enter handler.
+func SetKeyboardEnterHandler(kh KeyboardEnterHandler) { keyboardEnterHandler = kh }
+
+// SetKeyboardLeaveHandler sets the keyboard leave handler.
+func SetKeyboardLeaveHandler(kh KeyboardLeaveHandler) { keyboardLeaveHandler = kh }
+
+// SetKeyboardKeyHandler sets the keyboard key handler.
+func SetKeyboardKeyHandler(kh KeyboardKeyHandler) { keyboardKeyHandler = kh }
+
+// SetKeyboardModifierHandler sets the keyboard modifier handler.
+func SetKeyboardModifierHandler(kh KeyboardModifierHandler) { keyboardModifierHandler = kh }
+
+var (
+	keyboardEnterHandler    KeyboardEnterHandler
+	keyboardLeaveHandler    KeyboardLeaveHandler
+	keyboardKeyHandler      KeyboardKeyHandler
+	keyboardModifierHandler KeyboardModifierHandler
+)
 
 // PointerHandler is the interface that defines the methods
 // for handling pointer events.
