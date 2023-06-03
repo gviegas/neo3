@@ -87,8 +87,9 @@ func Example_present() {
 		Width:  dim.Width,
 		Height: dim.Height,
 	}
-	wsi.SetWindowHandler(&t)
-	wsi.SetKeyboardHandler(&t)
+	wsi.SetWindowCloseHandler(&t)
+	wsi.SetWindowResizeHandler(&t)
+	wsi.SetKeyboardKeyHandler(&t)
 	wsi.SetAppName("driver.example")
 	t.renderLoop()
 	t.destroy()
@@ -837,15 +838,14 @@ func (t *T) WindowClose(win wsi.Window) {
 		t.quit = true
 	}
 }
+
 func (*T) WindowResize(wsi.Window, int, int) { brokenSC = true }
-func (*T) KeyboardEnter(wsi.Window)          {}
-func (*T) KeyboardLeave(wsi.Window)          {}
+
 func (t *T) KeyboardKey(key wsi.Key, pressed bool) {
 	if pressed && key == wsi.KeyEsc {
 		t.quit = true
 	}
 }
-func (*T) KeyboardModifiers(wsi.Modifier) {}
 
 // recreateSwapchain recreates the swapchain and all
 // framebuffers.
