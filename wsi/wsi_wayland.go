@@ -624,32 +624,32 @@ func pointerEnterWayland(serial C.uint32_t, sf *C.struct_wl_surface, x, y C.wl_f
 	} else {
 		fmt.Fprint(os.Stderr, "[!] wsi: undefined cursor image\n")
 	}
-	if pointerHandler != nil {
+	if pointerEnterHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
-			pointerHandler.PointerEnter(win, int(x/256), int(y/256))
+			pointerEnterHandler.PointerEnter(win, int(x/256), int(y/256))
 		}
 	}
 }
 
 //export pointerLeaveWayland
 func pointerLeaveWayland(serial C.uint32_t, sf *C.struct_wl_surface) {
-	if pointerHandler != nil {
+	if pointerLeaveHandler != nil {
 		if win := windowFromWayland(sf); win != nil {
-			pointerHandler.PointerLeave(win)
+			pointerLeaveHandler.PointerLeave(win)
 		}
 	}
 }
 
 //export pointerMotionWayland
 func pointerMotionWayland(millis C.uint32_t, x, y C.wl_fixed_t) {
-	if pointerHandler != nil {
-		pointerHandler.PointerMotion(int(x/256), int(y/256))
+	if pointerMotionHandler != nil {
+		pointerMotionHandler.PointerMotion(int(x/256), int(y/256))
 	}
 }
 
 //export pointerButtonWayland
 func pointerButtonWayland(serial, millis, button, state C.uint32_t) {
-	if pointerHandler != nil {
+	if pointerButtonHandler != nil {
 		btn := BtnUnknown
 		switch button {
 		case 0x110:
@@ -666,7 +666,7 @@ func pointerButtonWayland(serial, millis, button, state C.uint32_t) {
 			btn = BtnBackward
 		}
 		pressed := state == C.WL_POINTER_BUTTON_STATE_PRESSED
-		pointerHandler.PointerButton(btn, pressed)
+		pointerButtonHandler.PointerButton(btn, pressed)
 	}
 }
 

@@ -380,10 +380,10 @@ func killFocusMsgWin32(hwnd C.HWND) {
 
 // buttonMsgWin32 handles WM_{L,M,R,X}BUTTON{DOWN,DBLCLK,UP} messages.
 func buttonMsgWin32(lprm C.LPARAM, btn Button, pressed bool) {
-	if pointerHandler != nil {
+	if pointerButtonHandler != nil {
 		//x := int(C.SHORT(lprm & 0xffff))
 		//y := int(C.SHORT(lprm >> 16 & 0xffff))
-		pointerHandler.PointerButton(btn, pressed)
+		pointerButtonHandler.PointerButton(btn, pressed)
 	}
 }
 
@@ -392,25 +392,29 @@ var hwndMouse C.HWND
 
 // mouseMoveMsgWin32 handles WM_MOUSEMOVE messages.
 func mouseMoveMsgWin32(hwnd C.HWND, lprm C.LPARAM) {
-	if pointerHandler != nil {
-		newX := int(C.SHORT(lprm & 0xffff))
-		newY := int(C.SHORT(lprm >> 16 & 0xffff))
-		if hwndMouse != hwnd {
-			tme := C.TRACKMOUSEEVENT{
-				cbSize:    C.sizeof_TRACKMOUSEEVENT,
-				dwFlags:   C.TME_LEAVE,
-				hwndTrack: hwnd,
-				//dwHoverTime: C.HOVER_DEFAULT,
-			}
-			if C.TrackMouseEvent(&tme) == C.FALSE {
-				// ?
-			}
-			hwndMouse = hwnd
+	newX := int(C.SHORT(lprm & 0xffff))
+	newY := int(C.SHORT(lprm >> 16 & 0xffff))
+	// TODO: May want to skip this if an enter handler
+	// is not installed.
+	if hwndMouse != hwnd {
+		tme := C.TRACKMOUSEEVENT{
+			cbSize:    C.sizeof_TRACKMOUSEEVENT,
+			dwFlags:   C.TME_LEAVE,
+			hwndTrack: hwnd,
+			//dwHoverTime: C.HOVER_DEFAULT,
+		}
+		if C.TrackMouseEvent(&tme) == C.FALSE {
+			// ?
+		}
+		hwndMouse = hwnd
+		if pointerEnterHandler != nil {
 			if win := windowFromWin32(hwnd); win != nil {
-				pointerHandler.PointerEnter(win, newX, newY)
+				pointerEnterHandler.PointerEnter(win, newX, newY)
 			}
 		}
-		pointerHandler.PointerMotion(newX, newY)
+	}
+	if pointerMotionHandler != nil {
+		pointerMotionHandler.PointerMotion(newX, newY)
 	}
 }
 
@@ -419,9 +423,9 @@ func mouseLeaveMsgWin32(hwnd C.HWND) {
 	if hwndMouse == hwnd {
 		hwndMouse = nil
 	}
-	if pointerHandler != nil {
+	if pointerLeaveHandler != nil {
 		if win := windowFromWin32(hwnd); win != nil {
-			pointerHandler.PointerLeave(win)
+			pointerLeaveHandler.PointerLeave(win)
 		}
 	}
 }

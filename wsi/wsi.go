@@ -315,28 +315,48 @@ var (
 	keyboardModifierHandler KeyboardModifierHandler
 )
 
-// PointerHandler is the interface that defines the methods
-// for handling pointer events.
-type PointerHandler interface {
+// PointerEnterHandler is a callback for pointer enter events.
+type PointerEnterHandler interface {
 	// PointerEnter is called when the pointer enters a window.
 	PointerEnter(win Window, x, y int)
+}
 
+// PointerLeaveHandler is a callback for pointer leave events.
+type PointerLeaveHandler interface {
 	// PointerLeave is called when the pointer leaves a window.
 	PointerLeave(win Window)
+}
 
+// PointerMotionHandler is a callback for pointer motion events.
+type PointerMotionHandler interface {
 	// PointerMotion is called when the pointer changes position.
 	PointerMotion(newX, newY int)
+}
 
+// PointerButtonHandler is a callback for pointer button events.
+type PointerButtonHandler interface {
 	// PointerButton is called when a button is pressed/released.
 	PointerButton(btn Button, pressed bool)
 }
 
-// SetPointerHandler sets the global PointerHandler.
-func SetPointerHandler(ph PointerHandler) {
-	pointerHandler = ph
-}
+// SetPointerEnterHandler sets the pointer enter handler.
+func SetPointerEnterHandler(ph PointerEnterHandler) { pointerEnterHandler = ph }
 
-var pointerHandler PointerHandler
+// SetPointerLeaveHandler sets the pointer leave handler.
+func SetPointerLeaveHandler(ph PointerLeaveHandler) { pointerLeaveHandler = ph }
+
+// SetPointerMotionHandler sets the pointer motion handler.
+func SetPointerMotionHandler(ph PointerMotionHandler) { pointerMotionHandler = ph }
+
+// SetPointerButtonHandler sets the pointer button handler.
+func SetPointerButtonHandler(ph PointerButtonHandler) { pointerButtonHandler = ph }
+
+var (
+	pointerEnterHandler  PointerEnterHandler
+	pointerLeaveHandler  PointerLeaveHandler
+	pointerMotionHandler PointerMotionHandler
+	pointerButtonHandler PointerButtonHandler
+)
 
 // Dispatch dispatches queued events.
 func Dispatch() {
@@ -344,6 +364,8 @@ func Dispatch() {
 }
 
 var dispatch func()
+
+// TODO: Add a Wait function with timeout.
 
 // AppName returns the string used to identify the application.
 // Its use is platform-specific.

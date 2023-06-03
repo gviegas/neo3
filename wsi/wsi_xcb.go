@@ -460,7 +460,7 @@ func keyEventXCB(event *C.xcb_generic_event_t) {
 
 // buttonEventXCB handles button press/release events.
 func buttonEventXCB(event *C.xcb_generic_event_t) {
-	if pointerHandler != nil {
+	if pointerButtonHandler != nil {
 		evt := (*C.xcb_button_press_event_t)(unsafe.Pointer(event))
 		btn := BtnUnknown
 		switch evt.detail {
@@ -474,37 +474,37 @@ func buttonEventXCB(event *C.xcb_generic_event_t) {
 			// TODO: Scroll.
 		}
 		pressed := evt.response_type&127 == C.XCB_BUTTON_PRESS
-		pointerHandler.PointerButton(btn, pressed)
+		pointerButtonHandler.PointerButton(btn, pressed)
 	}
 }
 
 // motionEventXCB handles motion notify events.
 func motionEventXCB(event *C.xcb_generic_event_t) {
-	if pointerHandler != nil {
+	if pointerMotionHandler != nil {
 		evt := (*C.xcb_motion_notify_event_t)(unsafe.Pointer(event))
 		newX := int(evt.event_x)
 		newY := int(evt.event_y)
-		pointerHandler.PointerMotion(newX, newY)
+		pointerMotionHandler.PointerMotion(newX, newY)
 	}
 }
 
 // enterEventXCB handles enter notify events.
 func enterEventXCB(event *C.xcb_generic_event_t) {
-	if pointerHandler != nil {
+	if pointerEnterHandler != nil {
 		evt := (*C.xcb_enter_notify_event_t)(unsafe.Pointer(event))
 		win := windowFromXCB(evt.event)
 		x := int(evt.event_x)
 		y := int(evt.event_y)
-		pointerHandler.PointerEnter(win, x, y)
+		pointerEnterHandler.PointerEnter(win, x, y)
 	}
 }
 
 // leaveEventXCB handles leave notify events.
 func leaveEventXCB(event *C.xcb_generic_event_t) {
-	if pointerHandler != nil {
+	if pointerLeaveHandler != nil {
 		evt := (*C.xcb_leave_notify_event_t)(unsafe.Pointer(event))
 		win := windowFromXCB(evt.event)
-		pointerHandler.PointerLeave(win)
+		pointerLeaveHandler.PointerLeave(win)
 	}
 }
 

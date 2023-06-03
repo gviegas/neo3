@@ -15,7 +15,10 @@ func TestWSI(t *testing.T) {
 	SetKeyboardLeaveHandler(E{})
 	SetKeyboardKeyHandler(E{})
 	SetKeyboardModifierHandler(E{})
-	SetPointerHandler(E{})
+	SetPointerEnterHandler(E{})
+	SetPointerLeaveHandler(E{})
+	SetPointerMotionHandler(E{})
+	SetPointerButtonHandler(E{})
 	switch PlatformInUse() {
 	case None:
 		win, err := NewWindow(480, 360, "Will fail")
