@@ -141,18 +141,14 @@ extern PFN_vkCmdDispatch cmdDispatch;
 extern PFN_vkCmdDispatchIndirect cmdDispatchIndirect;
 extern PFN_vkCmdResetEvent2KHR cmdResetEvent2KHR;
 extern PFN_vkCmdSetEvent2KHR cmdSetEvent2KHR;
-extern PFN_vkGetDeviceQueue2 getDeviceQueue2;
+extern PFN_vkCmdEndRenderPass2KHR cmdEndRenderPass2KHR;
 extern PFN_vkCmdCopyBuffer cmdCopyBuffer;
 extern PFN_vkCmdCopyImage cmdCopyImage;
 extern PFN_vkCmdBlitImage cmdBlitImage;
 extern PFN_vkCmdCopyBufferToImage cmdCopyBufferToImage;
 extern PFN_vkCmdCopyImageToBuffer cmdCopyImageToBuffer;
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR getPhysicalDeviceXcbPresentationSupportKHR;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkCreateXcbSurfaceKHR createXcbSurfaceKHR;
-#endif
+extern PFN_vkCmdNextSubpass2KHR cmdNextSubpass2KHR;
+extern PFN_vkCmdBeginRenderPass2KHR cmdBeginRenderPass2KHR;
 extern PFN_vkCmdUpdateBuffer cmdUpdateBuffer;
 extern PFN_vkCmdFillBuffer cmdFillBuffer;
 extern PFN_vkCmdClearColorImage cmdClearColorImage;
@@ -165,12 +161,8 @@ extern PFN_vkCmdWaitEvents cmdWaitEvents;
 extern PFN_vkCmdPipelineBarrier cmdPipelineBarrier;
 extern PFN_vkCmdBeginQuery cmdBeginQuery;
 extern PFN_vkCmdEndQuery cmdEndQuery;
-#ifdef _WIN32
-extern PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR getPhysicalDeviceWin32PresentationSupportKHR;
-#endif
-#ifdef _WIN32
-extern PFN_vkCreateWin32SurfaceKHR createWin32SurfaceKHR;
-#endif
+extern PFN_vkCreateRenderPass2KHR createRenderPass2KHR;
+extern PFN_vkGetDeviceQueue2 getDeviceQueue2;
 extern PFN_vkCmdResetQueryPool cmdResetQueryPool;
 extern PFN_vkCmdWriteTimestamp cmdWriteTimestamp;
 extern PFN_vkCmdCopyQueryPoolResults cmdCopyQueryPoolResults;
@@ -182,22 +174,41 @@ extern PFN_vkCmdExecuteCommands cmdExecuteCommands;
 #ifdef __ANDROID__
 extern PFN_vkCreateAndroidSurfaceKHR createAndroidSurfaceKHR;
 #endif
-#ifdef __linux__
-extern PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR getPhysicalDeviceWaylandPresentationSupportKHR;
+extern PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR getPhysicalDeviceSparseImageFormatProperties2KHR;
+extern PFN_vkGetPhysicalDeviceMemoryProperties2KHR getPhysicalDeviceMemoryProperties2KHR;
+extern PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR getPhysicalDeviceQueueFamilyProperties2KHR;
+extern PFN_vkGetPhysicalDeviceImageFormatProperties2KHR getPhysicalDeviceImageFormatProperties2KHR;
+extern PFN_vkGetPhysicalDeviceFormatProperties2KHR getPhysicalDeviceFormatProperties2KHR;
+extern PFN_vkGetPhysicalDeviceProperties2KHR getPhysicalDeviceProperties2KHR;
+extern PFN_vkGetPhysicalDeviceFeatures2KHR getPhysicalDeviceFeatures2KHR;
+#if !defined(__ANDROID__) && !defined(_WIN32)
+extern PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR getPhysicalDeviceXcbPresentationSupportKHR;
 #endif
-#ifdef __linux__
-extern PFN_vkCreateWaylandSurfaceKHR createWaylandSurfaceKHR;
-#endif
-extern PFN_vkQueuePresentKHR queuePresentKHR;
-extern PFN_vkAcquireNextImageKHR acquireNextImageKHR;
-extern PFN_vkGetSwapchainImagesKHR getSwapchainImagesKHR;
-extern PFN_vkDestroySwapchainKHR destroySwapchainKHR;
-extern PFN_vkCreateSwapchainKHR createSwapchainKHR;
-extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getPhysicalDeviceSurfacePresentModesKHR;
 extern PFN_vkDestroySurfaceKHR destroySurfaceKHR;
 extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR getPhysicalDeviceSurfaceSupportKHR;
 extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getPhysicalDeviceSurfaceCapabilitiesKHR;
 extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getPhysicalDeviceSurfaceFormatsKHR;
+extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getPhysicalDeviceSurfacePresentModesKHR;
+extern PFN_vkCreateSwapchainKHR createSwapchainKHR;
+extern PFN_vkDestroySwapchainKHR destroySwapchainKHR;
+extern PFN_vkGetSwapchainImagesKHR getSwapchainImagesKHR;
+extern PFN_vkAcquireNextImageKHR acquireNextImageKHR;
+extern PFN_vkQueuePresentKHR queuePresentKHR;
+#if !defined(__ANDROID__) && !defined(_WIN32)
+extern PFN_vkCreateXcbSurfaceKHR createXcbSurfaceKHR;
+#endif
+#ifdef __linux__
+extern PFN_vkCreateWaylandSurfaceKHR createWaylandSurfaceKHR;
+#endif
+#ifdef __linux__
+extern PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR getPhysicalDeviceWaylandPresentationSupportKHR;
+#endif
+#ifdef _WIN32
+extern PFN_vkCreateWin32SurfaceKHR createWin32SurfaceKHR;
+#endif
+#ifdef _WIN32
+extern PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR getPhysicalDeviceWin32PresentationSupportKHR;
+#endif
 
 // Functions that obtain the function pointers.
 // The process of obtaining the procedures for use is as follows:
@@ -821,9 +832,9 @@ static inline void vkCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent even
 	cmdSetEvent2KHR(commandBuffer, event, pDependencyInfo);
 }
 
-// vkGetDeviceQueue2
-static inline void vkGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue) {
-	getDeviceQueue2(device, pQueueInfo, pQueue);
+// vkCmdEndRenderPass2KHR
+static inline void vkCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo) {
+	cmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
 }
 
 // vkCmdCopyBuffer
@@ -851,19 +862,15 @@ static inline void vkCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage
 	cmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
 }
 
-// vkGetPhysicalDeviceXcbPresentationSupportKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkBool32 vkGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, xcb_connection_t* connection, xcb_visualid_t visual_id) {
-	return getPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id);
+// vkCmdNextSubpass2KHR
+static inline void vkCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo, const VkSubpassEndInfo* pSubpassEndInfo) {
+	cmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
 }
-#endif
 
-// vkCreateXcbSurfaceKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-	return createXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+// vkCmdBeginRenderPass2KHR
+static inline void vkCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin, const VkSubpassBeginInfo* pSubpassBeginInfo) {
+	cmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
 }
-#endif
 
 // vkCmdUpdateBuffer
 static inline void vkCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, const void* pData) {
@@ -925,19 +932,15 @@ static inline void vkCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool quer
 	cmdEndQuery(commandBuffer, queryPool, query);
 }
 
-// vkGetPhysicalDeviceWin32PresentationSupportKHR
-#ifdef _WIN32
-static inline VkBool32 vkGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
-	return getPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
+// vkCreateRenderPass2KHR
+static inline VkResult vkCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) {
+	return createRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
 }
-#endif
 
-// vkCreateWin32SurfaceKHR
-#ifdef _WIN32
-static inline VkResult vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-	return createWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+// vkGetDeviceQueue2
+static inline void vkGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue) {
+	getDeviceQueue2(device, pQueueInfo, pQueue);
 }
-#endif
 
 // vkCmdResetQueryPool
 static inline void vkCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
@@ -986,49 +989,47 @@ static inline VkResult vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAn
 }
 #endif
 
-// vkGetPhysicalDeviceWaylandPresentationSupportKHR
-#ifdef __linux__
-static inline VkBool32 vkGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct wl_display* display) {
-	return getPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
+// vkGetPhysicalDeviceSparseImageFormatProperties2KHR
+static inline void vkGetPhysicalDeviceSparseImageFormatProperties2KHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount, VkSparseImageFormatProperties2* pProperties) {
+	getPhysicalDeviceSparseImageFormatProperties2KHR(physicalDevice, pFormatInfo, pPropertyCount, pProperties);
+}
+
+// vkGetPhysicalDeviceMemoryProperties2KHR
+static inline void vkGetPhysicalDeviceMemoryProperties2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
+	getPhysicalDeviceMemoryProperties2KHR(physicalDevice, pMemoryProperties);
+}
+
+// vkGetPhysicalDeviceQueueFamilyProperties2KHR
+static inline void vkGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount, VkQueueFamilyProperties2* pQueueFamilyProperties) {
+	getPhysicalDeviceQueueFamilyProperties2KHR(physicalDevice, pQueueFamilyPropertyCount, pQueueFamilyProperties);
+}
+
+// vkGetPhysicalDeviceImageFormatProperties2KHR
+static inline VkResult vkGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo, VkImageFormatProperties2* pImageFormatProperties) {
+	return getPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
+}
+
+// vkGetPhysicalDeviceFormatProperties2KHR
+static inline void vkGetPhysicalDeviceFormatProperties2KHR(VkPhysicalDevice physicalDevice, VkFormat format, VkFormatProperties2* pFormatProperties) {
+	getPhysicalDeviceFormatProperties2KHR(physicalDevice, format, pFormatProperties);
+}
+
+// vkGetPhysicalDeviceProperties2KHR
+static inline void vkGetPhysicalDeviceProperties2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) {
+	getPhysicalDeviceProperties2KHR(physicalDevice, pProperties);
+}
+
+// vkGetPhysicalDeviceFeatures2KHR
+static inline void vkGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures) {
+	getPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
+}
+
+// vkGetPhysicalDeviceXcbPresentationSupportKHR
+#if !defined(__ANDROID__) && !defined(_WIN32)
+static inline VkBool32 vkGetPhysicalDeviceXcbPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, xcb_connection_t* connection, xcb_visualid_t visual_id) {
+	return getPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id);
 }
 #endif
-
-// vkCreateWaylandSurfaceKHR
-#ifdef __linux__
-static inline VkResult vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-	return createWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-}
-#endif
-
-// vkQueuePresentKHR
-static inline VkResult vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
-	return queuePresentKHR(queue, pPresentInfo);
-}
-
-// vkAcquireNextImageKHR
-static inline VkResult vkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
-	return acquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
-}
-
-// vkGetSwapchainImagesKHR
-static inline VkResult vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
-	return getSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
-}
-
-// vkDestroySwapchainKHR
-static inline void vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
-	destroySwapchainKHR(device, swapchain, pAllocator);
-}
-
-// vkCreateSwapchainKHR
-static inline VkResult vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
-	return createSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
-}
-
-// vkGetPhysicalDeviceSurfacePresentModesKHR
-static inline VkResult vkGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
-	return getPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
-}
 
 // vkDestroySurfaceKHR
 static inline void vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
@@ -1049,6 +1050,71 @@ static inline VkResult vkGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevic
 static inline VkResult vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats) {
 	return getPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
 }
+
+// vkGetPhysicalDeviceSurfacePresentModesKHR
+static inline VkResult vkGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
+	return getPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
+}
+
+// vkCreateSwapchainKHR
+static inline VkResult vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
+	return createSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+}
+
+// vkDestroySwapchainKHR
+static inline void vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
+	destroySwapchainKHR(device, swapchain, pAllocator);
+}
+
+// vkGetSwapchainImagesKHR
+static inline VkResult vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
+	return getSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
+}
+
+// vkAcquireNextImageKHR
+static inline VkResult vkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
+	return acquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
+}
+
+// vkQueuePresentKHR
+static inline VkResult vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
+	return queuePresentKHR(queue, pPresentInfo);
+}
+
+// vkCreateXcbSurfaceKHR
+#if !defined(__ANDROID__) && !defined(_WIN32)
+static inline VkResult vkCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+	return createXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif
+
+// vkCreateWaylandSurfaceKHR
+#ifdef __linux__
+static inline VkResult vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+	return createWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif
+
+// vkGetPhysicalDeviceWaylandPresentationSupportKHR
+#ifdef __linux__
+static inline VkBool32 vkGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct wl_display* display) {
+	return getPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
+}
+#endif
+
+// vkCreateWin32SurfaceKHR
+#ifdef _WIN32
+static inline VkResult vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+	return createWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif
+
+// vkGetPhysicalDeviceWin32PresentationSupportKHR
+#ifdef _WIN32
+static inline VkBool32 vkGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex) {
+	return getPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
+}
+#endif
 
 // Macros that shadow certain values defined as static constants in
 // the API header. Used by Go code.

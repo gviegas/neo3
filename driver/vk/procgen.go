@@ -198,6 +198,19 @@ tokLoop:
 // Extension commands to include.
 var (
 	ExtAny = []string{
+		// From VK_KHR_get_physical_device_properties2:
+		"vkGetPhysicalDeviceFeatures2KHR",
+		"vkGetPhysicalDeviceFormatProperties2KHR",
+		"vkGetPhysicalDeviceImageFormatProperties2KHR",
+		"vkGetPhysicalDeviceMemoryProperties2KHR",
+		"vkGetPhysicalDeviceProperties2KHR",
+		"vkGetPhysicalDeviceQueueFamilyProperties2KHR",
+		"vkGetPhysicalDeviceSparseImageFormatProperties2KHR",
+		// From VK_KHR_create_renderpass2:
+		"vkCmdBeginRenderPass2KHR",
+		"vkCmdEndRenderPass2KHR",
+		"vkCmdNextSubpass2KHR",
+		"vkCreateRenderPass2KHR",
 		// From VK_KHR_dynamic_rendering:
 		"vkCmdBeginRenderingKHR",
 		"vkCmdEndRenderingKHR",

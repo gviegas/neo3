@@ -12,16 +12,21 @@ import (
 
 const (
 	// Instance extensions.
-	extSurface, extSurfaceS               = iota, "VK_KHR_surface"
-	extAndroidSurface, extAndroidSurfaceS = iota, "VK_KHR_android_surface"
-	extWaylandSurface, extWaylandSurfaceS = iota, "VK_KHR_wayland_surface"
-	extWin32Surface, extWin32SurfaceS     = iota, "VK_KHR_win32_surface"
-	extXCBSurface, extXCBSurfaceS         = iota, "VK_KHR_xcb_surface"
+	extGetPhysicalDeviceProperties2, extGetPhysicalDeviceProperties2S = iota, "VK_KHR_get_physical_device_properties2"
+	extSurface, extSurfaceS                                           = iota, "VK_KHR_surface"
+	extAndroidSurface, extAndroidSurfaceS                             = iota, "VK_KHR_android_surface"
+	extWaylandSurface, extWaylandSurfaceS                             = iota, "VK_KHR_wayland_surface"
+	extWin32Surface, extWin32SurfaceS                                 = iota, "VK_KHR_win32_surface"
+	extXCBSurface, extXCBSurfaceS                                     = iota, "VK_KHR_xcb_surface"
 
 	// Device extensions.
-	extDynamicRendering, extDynamicRenderingS = iota, "VK_KHR_dynamic_rendering"
-	extSynchronization2, extSynchronization2S = iota, "VK_KHR_synchronization2"
-	extSwapchain, extSwapchainS               = iota, "VK_KHR_swapchain"
+	extMultiview, extMultiviewS                     = iota, "VK_KHR_multiview"
+	extMaintenance2, extMaintenance2S               = iota, "VK_KHR_maintenance2"
+	extCreateRenderPass2, extCreateRenderPass2S     = iota, "VK_KHR_create_renderpass2"
+	extDepthStencilResolve, extDepthStencilResolveS = iota, "VK_KHR_depth_stencil_resolve"
+	extDynamicRendering, extDynamicRenderingS       = iota, "VK_KHR_dynamic_rendering"
+	extSynchronization2, extSynchronization2S       = iota, "VK_KHR_synchronization2"
+	extSwapchain, extSwapchainS                     = iota, "VK_KHR_swapchain"
 
 	extN = iota
 )
@@ -145,10 +150,27 @@ type extInfo struct {
 
 // These are platform-independent.
 var (
-	globalInstanceExts extInfo // Nothing currently.
-	globalDeviceExts   = extInfo{
-		required:  []int{extDynamicRendering, extSynchronization2},
-		requiredS: []string{extDynamicRenderingS, extSynchronization2S},
+	globalInstanceExts = extInfo{
+		required:  []int{extGetPhysicalDeviceProperties2},
+		requiredS: []string{extGetPhysicalDeviceProperties2S},
+	}
+	globalDeviceExts = extInfo{
+		required: []int{
+			extMultiview,
+			extMaintenance2,
+			extCreateRenderPass2,
+			extDepthStencilResolve,
+			extDynamicRendering,
+			extSynchronization2,
+		},
+		requiredS: []string{
+			extMultiviewS,
+			extMaintenance2S,
+			extCreateRenderPass2S,
+			extDepthStencilResolveS,
+			extDynamicRenderingS,
+			extSynchronization2S,
+		},
 	}
 )
 

@@ -125,18 +125,14 @@ PFN_vkCmdDispatch cmdDispatch = NULL;
 PFN_vkCmdDispatchIndirect cmdDispatchIndirect = NULL;
 PFN_vkCmdResetEvent2KHR cmdResetEvent2KHR = NULL;
 PFN_vkCmdSetEvent2KHR cmdSetEvent2KHR = NULL;
-PFN_vkGetDeviceQueue2 getDeviceQueue2 = NULL;
+PFN_vkCmdEndRenderPass2KHR cmdEndRenderPass2KHR = NULL;
 PFN_vkCmdCopyBuffer cmdCopyBuffer = NULL;
 PFN_vkCmdCopyImage cmdCopyImage = NULL;
 PFN_vkCmdBlitImage cmdBlitImage = NULL;
 PFN_vkCmdCopyBufferToImage cmdCopyBufferToImage = NULL;
 PFN_vkCmdCopyImageToBuffer cmdCopyImageToBuffer = NULL;
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR getPhysicalDeviceXcbPresentationSupportKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkCreateXcbSurfaceKHR createXcbSurfaceKHR = NULL;
-#endif
+PFN_vkCmdNextSubpass2KHR cmdNextSubpass2KHR = NULL;
+PFN_vkCmdBeginRenderPass2KHR cmdBeginRenderPass2KHR = NULL;
 PFN_vkCmdUpdateBuffer cmdUpdateBuffer = NULL;
 PFN_vkCmdFillBuffer cmdFillBuffer = NULL;
 PFN_vkCmdClearColorImage cmdClearColorImage = NULL;
@@ -149,12 +145,8 @@ PFN_vkCmdWaitEvents cmdWaitEvents = NULL;
 PFN_vkCmdPipelineBarrier cmdPipelineBarrier = NULL;
 PFN_vkCmdBeginQuery cmdBeginQuery = NULL;
 PFN_vkCmdEndQuery cmdEndQuery = NULL;
-#ifdef _WIN32
-PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR getPhysicalDeviceWin32PresentationSupportKHR = NULL;
-#endif
-#ifdef _WIN32
-PFN_vkCreateWin32SurfaceKHR createWin32SurfaceKHR = NULL;
-#endif
+PFN_vkCreateRenderPass2KHR createRenderPass2KHR = NULL;
+PFN_vkGetDeviceQueue2 getDeviceQueue2 = NULL;
 PFN_vkCmdResetQueryPool cmdResetQueryPool = NULL;
 PFN_vkCmdWriteTimestamp cmdWriteTimestamp = NULL;
 PFN_vkCmdCopyQueryPoolResults cmdCopyQueryPoolResults = NULL;
@@ -166,22 +158,41 @@ PFN_vkCmdExecuteCommands cmdExecuteCommands = NULL;
 #ifdef __ANDROID__
 PFN_vkCreateAndroidSurfaceKHR createAndroidSurfaceKHR = NULL;
 #endif
-#ifdef __linux__
-PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR getPhysicalDeviceWaylandPresentationSupportKHR = NULL;
+PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR getPhysicalDeviceSparseImageFormatProperties2KHR = NULL;
+PFN_vkGetPhysicalDeviceMemoryProperties2KHR getPhysicalDeviceMemoryProperties2KHR = NULL;
+PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR getPhysicalDeviceQueueFamilyProperties2KHR = NULL;
+PFN_vkGetPhysicalDeviceImageFormatProperties2KHR getPhysicalDeviceImageFormatProperties2KHR = NULL;
+PFN_vkGetPhysicalDeviceFormatProperties2KHR getPhysicalDeviceFormatProperties2KHR = NULL;
+PFN_vkGetPhysicalDeviceProperties2KHR getPhysicalDeviceProperties2KHR = NULL;
+PFN_vkGetPhysicalDeviceFeatures2KHR getPhysicalDeviceFeatures2KHR = NULL;
+#if !defined(__ANDROID__) && !defined(_WIN32)
+PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR getPhysicalDeviceXcbPresentationSupportKHR = NULL;
 #endif
-#ifdef __linux__
-PFN_vkCreateWaylandSurfaceKHR createWaylandSurfaceKHR = NULL;
-#endif
-PFN_vkQueuePresentKHR queuePresentKHR = NULL;
-PFN_vkAcquireNextImageKHR acquireNextImageKHR = NULL;
-PFN_vkGetSwapchainImagesKHR getSwapchainImagesKHR = NULL;
-PFN_vkDestroySwapchainKHR destroySwapchainKHR = NULL;
-PFN_vkCreateSwapchainKHR createSwapchainKHR = NULL;
-PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getPhysicalDeviceSurfacePresentModesKHR = NULL;
 PFN_vkDestroySurfaceKHR destroySurfaceKHR = NULL;
 PFN_vkGetPhysicalDeviceSurfaceSupportKHR getPhysicalDeviceSurfaceSupportKHR = NULL;
 PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getPhysicalDeviceSurfaceCapabilitiesKHR = NULL;
 PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getPhysicalDeviceSurfaceFormatsKHR = NULL;
+PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getPhysicalDeviceSurfacePresentModesKHR = NULL;
+PFN_vkCreateSwapchainKHR createSwapchainKHR = NULL;
+PFN_vkDestroySwapchainKHR destroySwapchainKHR = NULL;
+PFN_vkGetSwapchainImagesKHR getSwapchainImagesKHR = NULL;
+PFN_vkAcquireNextImageKHR acquireNextImageKHR = NULL;
+PFN_vkQueuePresentKHR queuePresentKHR = NULL;
+#if !defined(__ANDROID__) && !defined(_WIN32)
+PFN_vkCreateXcbSurfaceKHR createXcbSurfaceKHR = NULL;
+#endif
+#ifdef __linux__
+PFN_vkCreateWaylandSurfaceKHR createWaylandSurfaceKHR = NULL;
+#endif
+#ifdef __linux__
+PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR getPhysicalDeviceWaylandPresentationSupportKHR = NULL;
+#endif
+#ifdef _WIN32
+PFN_vkCreateWin32SurfaceKHR createWin32SurfaceKHR = NULL;
+#endif
+#ifdef _WIN32
+PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR getPhysicalDeviceWin32PresentationSupportKHR = NULL;
+#endif
 
 void getGlobalProcs(void) {
 	PFN_vkVoidFunction fp = NULL;
@@ -223,36 +234,28 @@ void getInstanceProcs(VkInstance dh) {
 	enumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)fp;
 	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSparseImageFormatProperties");
 	getPhysicalDeviceSparseImageFormatProperties = (PFN_vkGetPhysicalDeviceSparseImageFormatProperties)fp;
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceXcbPresentationSupportKHR");
-	getPhysicalDeviceXcbPresentationSupportKHR = (PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)fp;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkCreateXcbSurfaceKHR");
-	createXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)fp;
-#endif
-#ifdef _WIN32
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceWin32PresentationSupportKHR");
-	getPhysicalDeviceWin32PresentationSupportKHR = (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)fp;
-#endif
-#ifdef _WIN32
-	fp = getInstanceProcAddr(dh, "vkCreateWin32SurfaceKHR");
-	createWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)fp;
-#endif
 #ifdef __ANDROID__
 	fp = getInstanceProcAddr(dh, "vkCreateAndroidSurfaceKHR");
 	createAndroidSurfaceKHR = (PFN_vkCreateAndroidSurfaceKHR)fp;
 #endif
-#ifdef __linux__
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
-	getPhysicalDeviceWaylandPresentationSupportKHR = (PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSparseImageFormatProperties2KHR");
+	getPhysicalDeviceSparseImageFormatProperties2KHR = (PFN_vkGetPhysicalDeviceSparseImageFormatProperties2KHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceMemoryProperties2KHR");
+	getPhysicalDeviceMemoryProperties2KHR = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceQueueFamilyProperties2KHR");
+	getPhysicalDeviceQueueFamilyProperties2KHR = (PFN_vkGetPhysicalDeviceQueueFamilyProperties2KHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceImageFormatProperties2KHR");
+	getPhysicalDeviceImageFormatProperties2KHR = (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceFormatProperties2KHR");
+	getPhysicalDeviceFormatProperties2KHR = (PFN_vkGetPhysicalDeviceFormatProperties2KHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceProperties2KHR");
+	getPhysicalDeviceProperties2KHR = (PFN_vkGetPhysicalDeviceProperties2KHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceFeatures2KHR");
+	getPhysicalDeviceFeatures2KHR = (PFN_vkGetPhysicalDeviceFeatures2KHR)fp;
+#if !defined(__ANDROID__) && !defined(_WIN32)
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceXcbPresentationSupportKHR");
+	getPhysicalDeviceXcbPresentationSupportKHR = (PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR)fp;
 #endif
-#ifdef __linux__
-	fp = getInstanceProcAddr(dh, "vkCreateWaylandSurfaceKHR");
-	createWaylandSurfaceKHR = (PFN_vkCreateWaylandSurfaceKHR)fp;
-#endif
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfacePresentModesKHR");
-	getPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)fp;
 	fp = getInstanceProcAddr(dh, "vkDestroySurfaceKHR");
 	destroySurfaceKHR = (PFN_vkDestroySurfaceKHR)fp;
 	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfaceSupportKHR");
@@ -261,6 +264,28 @@ void getInstanceProcs(VkInstance dh) {
 	getPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)fp;
 	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfaceFormatsKHR");
 	getPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfacePresentModesKHR");
+	getPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)fp;
+#if !defined(__ANDROID__) && !defined(_WIN32)
+	fp = getInstanceProcAddr(dh, "vkCreateXcbSurfaceKHR");
+	createXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)fp;
+#endif
+#ifdef __linux__
+	fp = getInstanceProcAddr(dh, "vkCreateWaylandSurfaceKHR");
+	createWaylandSurfaceKHR = (PFN_vkCreateWaylandSurfaceKHR)fp;
+#endif
+#ifdef __linux__
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
+	getPhysicalDeviceWaylandPresentationSupportKHR = (PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)fp;
+#endif
+#ifdef _WIN32
+	fp = getInstanceProcAddr(dh, "vkCreateWin32SurfaceKHR");
+	createWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)fp;
+#endif
+#ifdef _WIN32
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceWin32PresentationSupportKHR");
+	getPhysicalDeviceWin32PresentationSupportKHR = (PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)fp;
+#endif
 }
 
 void getDeviceProcs(VkDevice dh) {
@@ -471,8 +496,8 @@ void getDeviceProcs(VkDevice dh) {
 	cmdResetEvent2KHR = (PFN_vkCmdResetEvent2KHR)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdSetEvent2KHR");
 	cmdSetEvent2KHR = (PFN_vkCmdSetEvent2KHR)fp;
-	fp = getDeviceProcAddr(dh, "vkGetDeviceQueue2");
-	getDeviceQueue2 = (PFN_vkGetDeviceQueue2)fp;
+	fp = getDeviceProcAddr(dh, "vkCmdEndRenderPass2KHR");
+	cmdEndRenderPass2KHR = (PFN_vkCmdEndRenderPass2KHR)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdCopyBuffer");
 	cmdCopyBuffer = (PFN_vkCmdCopyBuffer)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdCopyImage");
@@ -483,6 +508,10 @@ void getDeviceProcs(VkDevice dh) {
 	cmdCopyBufferToImage = (PFN_vkCmdCopyBufferToImage)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdCopyImageToBuffer");
 	cmdCopyImageToBuffer = (PFN_vkCmdCopyImageToBuffer)fp;
+	fp = getDeviceProcAddr(dh, "vkCmdNextSubpass2KHR");
+	cmdNextSubpass2KHR = (PFN_vkCmdNextSubpass2KHR)fp;
+	fp = getDeviceProcAddr(dh, "vkCmdBeginRenderPass2KHR");
+	cmdBeginRenderPass2KHR = (PFN_vkCmdBeginRenderPass2KHR)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdUpdateBuffer");
 	cmdUpdateBuffer = (PFN_vkCmdUpdateBuffer)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdFillBuffer");
@@ -507,6 +536,10 @@ void getDeviceProcs(VkDevice dh) {
 	cmdBeginQuery = (PFN_vkCmdBeginQuery)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdEndQuery");
 	cmdEndQuery = (PFN_vkCmdEndQuery)fp;
+	fp = getDeviceProcAddr(dh, "vkCreateRenderPass2KHR");
+	createRenderPass2KHR = (PFN_vkCreateRenderPass2KHR)fp;
+	fp = getDeviceProcAddr(dh, "vkGetDeviceQueue2");
+	getDeviceQueue2 = (PFN_vkGetDeviceQueue2)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdResetQueryPool");
 	cmdResetQueryPool = (PFN_vkCmdResetQueryPool)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdWriteTimestamp");
@@ -523,16 +556,16 @@ void getDeviceProcs(VkDevice dh) {
 	cmdEndRenderPass = (PFN_vkCmdEndRenderPass)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdExecuteCommands");
 	cmdExecuteCommands = (PFN_vkCmdExecuteCommands)fp;
-	fp = getDeviceProcAddr(dh, "vkQueuePresentKHR");
-	queuePresentKHR = (PFN_vkQueuePresentKHR)fp;
-	fp = getDeviceProcAddr(dh, "vkAcquireNextImageKHR");
-	acquireNextImageKHR = (PFN_vkAcquireNextImageKHR)fp;
-	fp = getDeviceProcAddr(dh, "vkGetSwapchainImagesKHR");
-	getSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)fp;
-	fp = getDeviceProcAddr(dh, "vkDestroySwapchainKHR");
-	destroySwapchainKHR = (PFN_vkDestroySwapchainKHR)fp;
 	fp = getDeviceProcAddr(dh, "vkCreateSwapchainKHR");
 	createSwapchainKHR = (PFN_vkCreateSwapchainKHR)fp;
+	fp = getDeviceProcAddr(dh, "vkDestroySwapchainKHR");
+	destroySwapchainKHR = (PFN_vkDestroySwapchainKHR)fp;
+	fp = getDeviceProcAddr(dh, "vkGetSwapchainImagesKHR");
+	getSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)fp;
+	fp = getDeviceProcAddr(dh, "vkAcquireNextImageKHR");
+	acquireNextImageKHR = (PFN_vkAcquireNextImageKHR)fp;
+	fp = getDeviceProcAddr(dh, "vkQueuePresentKHR");
+	queuePresentKHR = (PFN_vkQueuePresentKHR)fp;
 }
 
 void clearProcs(void) {
@@ -656,18 +689,14 @@ void clearProcs(void) {
 	cmdDispatchIndirect = NULL;
 	cmdResetEvent2KHR = NULL;
 	cmdSetEvent2KHR = NULL;
-	getDeviceQueue2 = NULL;
+	cmdEndRenderPass2KHR = NULL;
 	cmdCopyBuffer = NULL;
 	cmdCopyImage = NULL;
 	cmdBlitImage = NULL;
 	cmdCopyBufferToImage = NULL;
 	cmdCopyImageToBuffer = NULL;
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	getPhysicalDeviceXcbPresentationSupportKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	createXcbSurfaceKHR = NULL;
-#endif
+	cmdNextSubpass2KHR = NULL;
+	cmdBeginRenderPass2KHR = NULL;
 	cmdUpdateBuffer = NULL;
 	cmdFillBuffer = NULL;
 	cmdClearColorImage = NULL;
@@ -680,12 +709,8 @@ void clearProcs(void) {
 	cmdPipelineBarrier = NULL;
 	cmdBeginQuery = NULL;
 	cmdEndQuery = NULL;
-#ifdef _WIN32
-	getPhysicalDeviceWin32PresentationSupportKHR = NULL;
-#endif
-#ifdef _WIN32
-	createWin32SurfaceKHR = NULL;
-#endif
+	createRenderPass2KHR = NULL;
+	getDeviceQueue2 = NULL;
 	cmdResetQueryPool = NULL;
 	cmdWriteTimestamp = NULL;
 	cmdCopyQueryPoolResults = NULL;
@@ -697,20 +722,39 @@ void clearProcs(void) {
 #ifdef __ANDROID__
 	createAndroidSurfaceKHR = NULL;
 #endif
-#ifdef __linux__
-	getPhysicalDeviceWaylandPresentationSupportKHR = NULL;
+	getPhysicalDeviceSparseImageFormatProperties2KHR = NULL;
+	getPhysicalDeviceMemoryProperties2KHR = NULL;
+	getPhysicalDeviceQueueFamilyProperties2KHR = NULL;
+	getPhysicalDeviceImageFormatProperties2KHR = NULL;
+	getPhysicalDeviceFormatProperties2KHR = NULL;
+	getPhysicalDeviceProperties2KHR = NULL;
+	getPhysicalDeviceFeatures2KHR = NULL;
+#if !defined(__ANDROID__) && !defined(_WIN32)
+	getPhysicalDeviceXcbPresentationSupportKHR = NULL;
 #endif
-#ifdef __linux__
-	createWaylandSurfaceKHR = NULL;
-#endif
-	queuePresentKHR = NULL;
-	acquireNextImageKHR = NULL;
-	getSwapchainImagesKHR = NULL;
-	destroySwapchainKHR = NULL;
-	createSwapchainKHR = NULL;
-	getPhysicalDeviceSurfacePresentModesKHR = NULL;
 	destroySurfaceKHR = NULL;
 	getPhysicalDeviceSurfaceSupportKHR = NULL;
 	getPhysicalDeviceSurfaceCapabilitiesKHR = NULL;
 	getPhysicalDeviceSurfaceFormatsKHR = NULL;
+	getPhysicalDeviceSurfacePresentModesKHR = NULL;
+	createSwapchainKHR = NULL;
+	destroySwapchainKHR = NULL;
+	getSwapchainImagesKHR = NULL;
+	acquireNextImageKHR = NULL;
+	queuePresentKHR = NULL;
+#if !defined(__ANDROID__) && !defined(_WIN32)
+	createXcbSurfaceKHR = NULL;
+#endif
+#ifdef __linux__
+	createWaylandSurfaceKHR = NULL;
+#endif
+#ifdef __linux__
+	getPhysicalDeviceWaylandPresentationSupportKHR = NULL;
+#endif
+#ifdef _WIN32
+	createWin32SurfaceKHR = NULL;
+#endif
+#ifdef _WIN32
+	getPhysicalDeviceWin32PresentationSupportKHR = NULL;
+#endif
 }
