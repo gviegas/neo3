@@ -182,46 +182,22 @@ extern PFN_vkCmdExecuteCommands cmdExecuteCommands;
 #ifdef __ANDROID__
 extern PFN_vkCreateAndroidSurfaceKHR createAndroidSurfaceKHR;
 #endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkGetPhysicalDeviceDisplayPropertiesKHR getPhysicalDeviceDisplayPropertiesKHR;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR getPhysicalDeviceDisplayPlanePropertiesKHR;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkGetDisplayPlaneSupportedDisplaysKHR getDisplayPlaneSupportedDisplaysKHR;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkGetDisplayModePropertiesKHR getDisplayModePropertiesKHR;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkCreateDisplayModeKHR createDisplayModeKHR;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkGetDisplayPlaneCapabilitiesKHR getDisplayPlaneCapabilitiesKHR;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkCreateDisplayPlaneSurfaceKHR createDisplayPlaneSurfaceKHR;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-extern PFN_vkCreateSharedSwapchainsKHR createSharedSwapchainsKHR;
-#endif
-extern PFN_vkDestroySurfaceKHR destroySurfaceKHR;
-extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR getPhysicalDeviceSurfaceSupportKHR;
-extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getPhysicalDeviceSurfaceCapabilitiesKHR;
-extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getPhysicalDeviceSurfaceFormatsKHR;
-extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getPhysicalDeviceSurfacePresentModesKHR;
-extern PFN_vkCreateSwapchainKHR createSwapchainKHR;
-extern PFN_vkDestroySwapchainKHR destroySwapchainKHR;
-extern PFN_vkGetSwapchainImagesKHR getSwapchainImagesKHR;
-extern PFN_vkAcquireNextImageKHR acquireNextImageKHR;
-extern PFN_vkQueuePresentKHR queuePresentKHR;
 #ifdef __linux__
 extern PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR getPhysicalDeviceWaylandPresentationSupportKHR;
 #endif
 #ifdef __linux__
 extern PFN_vkCreateWaylandSurfaceKHR createWaylandSurfaceKHR;
 #endif
+extern PFN_vkQueuePresentKHR queuePresentKHR;
+extern PFN_vkAcquireNextImageKHR acquireNextImageKHR;
+extern PFN_vkGetSwapchainImagesKHR getSwapchainImagesKHR;
+extern PFN_vkDestroySwapchainKHR destroySwapchainKHR;
+extern PFN_vkCreateSwapchainKHR createSwapchainKHR;
+extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getPhysicalDeviceSurfacePresentModesKHR;
+extern PFN_vkDestroySurfaceKHR destroySurfaceKHR;
+extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR getPhysicalDeviceSurfaceSupportKHR;
+extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getPhysicalDeviceSurfaceCapabilitiesKHR;
+extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getPhysicalDeviceSurfaceFormatsKHR;
 
 // Functions that obtain the function pointers.
 // The process of obtaining the procedures for use is as follows:
@@ -1010,61 +986,49 @@ static inline VkResult vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAn
 }
 #endif
 
-// vkGetPhysicalDeviceDisplayPropertiesKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkDisplayPropertiesKHR* pProperties) {
-	return getPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+// vkGetPhysicalDeviceWaylandPresentationSupportKHR
+#ifdef __linux__
+static inline VkBool32 vkGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct wl_display* display) {
+	return getPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
 }
 #endif
 
-// vkGetPhysicalDeviceDisplayPlanePropertiesKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkDisplayPlanePropertiesKHR* pProperties) {
-	return getPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+// vkCreateWaylandSurfaceKHR
+#ifdef __linux__
+static inline VkResult vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+	return createWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
 }
 #endif
 
-// vkGetDisplayPlaneSupportedDisplaysKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex, uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) {
-	return getDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+// vkQueuePresentKHR
+static inline VkResult vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
+	return queuePresentKHR(queue, pPresentInfo);
 }
-#endif
 
-// vkGetDisplayModePropertiesKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t* pPropertyCount, VkDisplayModePropertiesKHR* pProperties) {
-	return getDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
+// vkAcquireNextImageKHR
+static inline VkResult vkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
+	return acquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
 }
-#endif
 
-// vkCreateDisplayModeKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode) {
-	return createDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
+// vkGetSwapchainImagesKHR
+static inline VkResult vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
+	return getSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
 }
-#endif
 
-// vkGetDisplayPlaneCapabilitiesKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex, VkDisplayPlaneCapabilitiesKHR* pCapabilities) {
-	return getDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
+// vkDestroySwapchainKHR
+static inline void vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
+	destroySwapchainKHR(device, swapchain, pAllocator);
 }
-#endif
 
-// vkCreateDisplayPlaneSurfaceKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-	return createDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
+// vkCreateSwapchainKHR
+static inline VkResult vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
+	return createSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
 }
-#endif
 
-// vkCreateSharedSwapchainsKHR
-#if !defined(__ANDROID__) && !defined(_WIN32)
-static inline VkResult vkCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount, const VkSwapchainCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) {
-	return createSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains);
+// vkGetPhysicalDeviceSurfacePresentModesKHR
+static inline VkResult vkGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
+	return getPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
 }
-#endif
 
 // vkDestroySurfaceKHR
 static inline void vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator) {
@@ -1085,50 +1049,6 @@ static inline VkResult vkGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevic
 static inline VkResult vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats) {
 	return getPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
 }
-
-// vkGetPhysicalDeviceSurfacePresentModesKHR
-static inline VkResult vkGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes) {
-	return getPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
-}
-
-// vkCreateSwapchainKHR
-static inline VkResult vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
-	return createSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
-}
-
-// vkDestroySwapchainKHR
-static inline void vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator) {
-	destroySwapchainKHR(device, swapchain, pAllocator);
-}
-
-// vkGetSwapchainImagesKHR
-static inline VkResult vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
-	return getSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
-}
-
-// vkAcquireNextImageKHR
-static inline VkResult vkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex) {
-	return acquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
-}
-
-// vkQueuePresentKHR
-static inline VkResult vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
-	return queuePresentKHR(queue, pPresentInfo);
-}
-
-// vkGetPhysicalDeviceWaylandPresentationSupportKHR
-#ifdef __linux__
-static inline VkBool32 vkGetPhysicalDeviceWaylandPresentationSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, struct wl_display* display) {
-	return getPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
-}
-#endif
-
-// vkCreateWaylandSurfaceKHR
-#ifdef __linux__
-static inline VkResult vkCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
-	return createWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
-}
-#endif
 
 // Macros that shadow certain values defined as static constants in
 // the API header. Used by Go code.

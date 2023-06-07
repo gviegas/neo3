@@ -14,8 +14,6 @@ import (
 
 func (s *swapchain) initSurface() error {
 	switch wsi.PlatformInUse() {
-	case wsi.None:
-		return s.initDisplaySurface()
 	case wsi.Wayland:
 		return s.initWaylandSurface()
 	case wsi.XCB:

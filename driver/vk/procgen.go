@@ -236,19 +236,9 @@ var (
 		"vkGetPhysicalDeviceWin32PresentationSupportKHR",
 	}
 	ExtGeneric = []string{
-		// From VK_KHR_xbc_surface:
+		// From VK_KHR_xcb_surface:
 		"vkCreateXcbSurfaceKHR",
 		"vkGetPhysicalDeviceXcbPresentationSupportKHR",
-		// From VK_KHR_display:
-		"vkCreateDisplayModeKHR",
-		"vkCreateDisplayPlaneSurfaceKHR",
-		"vkGetDisplayModePropertiesKHR",
-		"vkGetDisplayPlaneCapabilitiesKHR",
-		"vkGetDisplayPlaneSupportedDisplaysKHR",
-		"vkGetPhysicalDeviceDisplayPlanePropertiesKHR",
-		"vkGetPhysicalDeviceDisplayPropertiesKHR",
-		// From VK_KHR_display_swapchain:
-		"vkCreateSharedSwapchainsKHR",
 	}
 )
 

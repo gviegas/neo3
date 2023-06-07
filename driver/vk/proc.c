@@ -166,46 +166,22 @@ PFN_vkCmdExecuteCommands cmdExecuteCommands = NULL;
 #ifdef __ANDROID__
 PFN_vkCreateAndroidSurfaceKHR createAndroidSurfaceKHR = NULL;
 #endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkGetPhysicalDeviceDisplayPropertiesKHR getPhysicalDeviceDisplayPropertiesKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR getPhysicalDeviceDisplayPlanePropertiesKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkGetDisplayPlaneSupportedDisplaysKHR getDisplayPlaneSupportedDisplaysKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkGetDisplayModePropertiesKHR getDisplayModePropertiesKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkCreateDisplayModeKHR createDisplayModeKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkGetDisplayPlaneCapabilitiesKHR getDisplayPlaneCapabilitiesKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkCreateDisplayPlaneSurfaceKHR createDisplayPlaneSurfaceKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-PFN_vkCreateSharedSwapchainsKHR createSharedSwapchainsKHR = NULL;
-#endif
-PFN_vkDestroySurfaceKHR destroySurfaceKHR = NULL;
-PFN_vkGetPhysicalDeviceSurfaceSupportKHR getPhysicalDeviceSurfaceSupportKHR = NULL;
-PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getPhysicalDeviceSurfaceCapabilitiesKHR = NULL;
-PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getPhysicalDeviceSurfaceFormatsKHR = NULL;
-PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getPhysicalDeviceSurfacePresentModesKHR = NULL;
-PFN_vkCreateSwapchainKHR createSwapchainKHR = NULL;
-PFN_vkDestroySwapchainKHR destroySwapchainKHR = NULL;
-PFN_vkGetSwapchainImagesKHR getSwapchainImagesKHR = NULL;
-PFN_vkAcquireNextImageKHR acquireNextImageKHR = NULL;
-PFN_vkQueuePresentKHR queuePresentKHR = NULL;
 #ifdef __linux__
 PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR getPhysicalDeviceWaylandPresentationSupportKHR = NULL;
 #endif
 #ifdef __linux__
 PFN_vkCreateWaylandSurfaceKHR createWaylandSurfaceKHR = NULL;
 #endif
+PFN_vkQueuePresentKHR queuePresentKHR = NULL;
+PFN_vkAcquireNextImageKHR acquireNextImageKHR = NULL;
+PFN_vkGetSwapchainImagesKHR getSwapchainImagesKHR = NULL;
+PFN_vkDestroySwapchainKHR destroySwapchainKHR = NULL;
+PFN_vkCreateSwapchainKHR createSwapchainKHR = NULL;
+PFN_vkGetPhysicalDeviceSurfacePresentModesKHR getPhysicalDeviceSurfacePresentModesKHR = NULL;
+PFN_vkDestroySurfaceKHR destroySurfaceKHR = NULL;
+PFN_vkGetPhysicalDeviceSurfaceSupportKHR getPhysicalDeviceSurfaceSupportKHR = NULL;
+PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR getPhysicalDeviceSurfaceCapabilitiesKHR = NULL;
+PFN_vkGetPhysicalDeviceSurfaceFormatsKHR getPhysicalDeviceSurfaceFormatsKHR = NULL;
 
 void getGlobalProcs(void) {
 	PFN_vkVoidFunction fp = NULL;
@@ -267,44 +243,6 @@ void getInstanceProcs(VkInstance dh) {
 	fp = getInstanceProcAddr(dh, "vkCreateAndroidSurfaceKHR");
 	createAndroidSurfaceKHR = (PFN_vkCreateAndroidSurfaceKHR)fp;
 #endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceDisplayPropertiesKHR");
-	getPhysicalDeviceDisplayPropertiesKHR = (PFN_vkGetPhysicalDeviceDisplayPropertiesKHR)fp;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR");
-	getPhysicalDeviceDisplayPlanePropertiesKHR = (PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR)fp;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkGetDisplayPlaneSupportedDisplaysKHR");
-	getDisplayPlaneSupportedDisplaysKHR = (PFN_vkGetDisplayPlaneSupportedDisplaysKHR)fp;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkGetDisplayModePropertiesKHR");
-	getDisplayModePropertiesKHR = (PFN_vkGetDisplayModePropertiesKHR)fp;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkCreateDisplayModeKHR");
-	createDisplayModeKHR = (PFN_vkCreateDisplayModeKHR)fp;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkGetDisplayPlaneCapabilitiesKHR");
-	getDisplayPlaneCapabilitiesKHR = (PFN_vkGetDisplayPlaneCapabilitiesKHR)fp;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getInstanceProcAddr(dh, "vkCreateDisplayPlaneSurfaceKHR");
-	createDisplayPlaneSurfaceKHR = (PFN_vkCreateDisplayPlaneSurfaceKHR)fp;
-#endif
-	fp = getInstanceProcAddr(dh, "vkDestroySurfaceKHR");
-	destroySurfaceKHR = (PFN_vkDestroySurfaceKHR)fp;
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfaceSupportKHR");
-	getPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)fp;
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
-	getPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)fp;
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfaceFormatsKHR");
-	getPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)fp;
-	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfacePresentModesKHR");
-	getPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)fp;
 #ifdef __linux__
 	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceWaylandPresentationSupportKHR");
 	getPhysicalDeviceWaylandPresentationSupportKHR = (PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR)fp;
@@ -313,6 +251,16 @@ void getInstanceProcs(VkInstance dh) {
 	fp = getInstanceProcAddr(dh, "vkCreateWaylandSurfaceKHR");
 	createWaylandSurfaceKHR = (PFN_vkCreateWaylandSurfaceKHR)fp;
 #endif
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfacePresentModesKHR");
+	getPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)fp;
+	fp = getInstanceProcAddr(dh, "vkDestroySurfaceKHR");
+	destroySurfaceKHR = (PFN_vkDestroySurfaceKHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfaceSupportKHR");
+	getPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
+	getPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)fp;
+	fp = getInstanceProcAddr(dh, "vkGetPhysicalDeviceSurfaceFormatsKHR");
+	getPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)fp;
 }
 
 void getDeviceProcs(VkDevice dh) {
@@ -575,20 +523,16 @@ void getDeviceProcs(VkDevice dh) {
 	cmdEndRenderPass = (PFN_vkCmdEndRenderPass)fp;
 	fp = getDeviceProcAddr(dh, "vkCmdExecuteCommands");
 	cmdExecuteCommands = (PFN_vkCmdExecuteCommands)fp;
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	fp = getDeviceProcAddr(dh, "vkCreateSharedSwapchainsKHR");
-	createSharedSwapchainsKHR = (PFN_vkCreateSharedSwapchainsKHR)fp;
-#endif
-	fp = getDeviceProcAddr(dh, "vkCreateSwapchainKHR");
-	createSwapchainKHR = (PFN_vkCreateSwapchainKHR)fp;
-	fp = getDeviceProcAddr(dh, "vkDestroySwapchainKHR");
-	destroySwapchainKHR = (PFN_vkDestroySwapchainKHR)fp;
-	fp = getDeviceProcAddr(dh, "vkGetSwapchainImagesKHR");
-	getSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)fp;
-	fp = getDeviceProcAddr(dh, "vkAcquireNextImageKHR");
-	acquireNextImageKHR = (PFN_vkAcquireNextImageKHR)fp;
 	fp = getDeviceProcAddr(dh, "vkQueuePresentKHR");
 	queuePresentKHR = (PFN_vkQueuePresentKHR)fp;
+	fp = getDeviceProcAddr(dh, "vkAcquireNextImageKHR");
+	acquireNextImageKHR = (PFN_vkAcquireNextImageKHR)fp;
+	fp = getDeviceProcAddr(dh, "vkGetSwapchainImagesKHR");
+	getSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)fp;
+	fp = getDeviceProcAddr(dh, "vkDestroySwapchainKHR");
+	destroySwapchainKHR = (PFN_vkDestroySwapchainKHR)fp;
+	fp = getDeviceProcAddr(dh, "vkCreateSwapchainKHR");
+	createSwapchainKHR = (PFN_vkCreateSwapchainKHR)fp;
 }
 
 void clearProcs(void) {
@@ -753,44 +697,20 @@ void clearProcs(void) {
 #ifdef __ANDROID__
 	createAndroidSurfaceKHR = NULL;
 #endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	getPhysicalDeviceDisplayPropertiesKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	getPhysicalDeviceDisplayPlanePropertiesKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	getDisplayPlaneSupportedDisplaysKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	getDisplayModePropertiesKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	createDisplayModeKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	getDisplayPlaneCapabilitiesKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	createDisplayPlaneSurfaceKHR = NULL;
-#endif
-#if !defined(__ANDROID__) && !defined(_WIN32)
-	createSharedSwapchainsKHR = NULL;
-#endif
-	destroySurfaceKHR = NULL;
-	getPhysicalDeviceSurfaceSupportKHR = NULL;
-	getPhysicalDeviceSurfaceCapabilitiesKHR = NULL;
-	getPhysicalDeviceSurfaceFormatsKHR = NULL;
-	getPhysicalDeviceSurfacePresentModesKHR = NULL;
-	createSwapchainKHR = NULL;
-	destroySwapchainKHR = NULL;
-	getSwapchainImagesKHR = NULL;
-	acquireNextImageKHR = NULL;
-	queuePresentKHR = NULL;
 #ifdef __linux__
 	getPhysicalDeviceWaylandPresentationSupportKHR = NULL;
 #endif
 #ifdef __linux__
 	createWaylandSurfaceKHR = NULL;
 #endif
+	queuePresentKHR = NULL;
+	acquireNextImageKHR = NULL;
+	getSwapchainImagesKHR = NULL;
+	destroySwapchainKHR = NULL;
+	createSwapchainKHR = NULL;
+	getPhysicalDeviceSurfacePresentModesKHR = NULL;
+	destroySurfaceKHR = NULL;
+	getPhysicalDeviceSurfaceSupportKHR = NULL;
+	getPhysicalDeviceSurfaceCapabilitiesKHR = NULL;
+	getPhysicalDeviceSurfaceFormatsKHR = NULL;
 }

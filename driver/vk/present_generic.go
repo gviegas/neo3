@@ -13,10 +13,7 @@ import (
 // s.d and s.win must have been set to valid values.
 // It sets the qfam and sf fields of s.
 func (s *swapchain) initSurface() error {
-	switch wsi.PlatformInUse() {
-	case wsi.None:
-		return s.initDisplaySurface()
-	case wsi.XCB:
+	if wsi.PlatformInUse() == wsi.XCB {
 		return s.initXCBSurface()
 	}
 	return driver.ErrCannotPresent

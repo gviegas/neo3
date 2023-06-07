@@ -13,7 +13,6 @@ import (
 const (
 	// Instance extensions.
 	extSurface, extSurfaceS               = iota, "VK_KHR_surface"
-	extDisplay, extDisplayS               = iota, "VK_KHR_display"
 	extAndroidSurface, extAndroidSurfaceS = iota, "VK_KHR_android_surface"
 	extWaylandSurface, extWaylandSurfaceS = iota, "VK_KHR_wayland_surface"
 	extWin32Surface, extWin32SurfaceS     = iota, "VK_KHR_win32_surface"
@@ -23,7 +22,6 @@ const (
 	extDynamicRendering, extDynamicRenderingS = iota, "VK_KHR_dynamic_rendering"
 	extSynchronization2, extSynchronization2S = iota, "VK_KHR_synchronization2"
 	extSwapchain, extSwapchainS               = iota, "VK_KHR_swapchain"
-	extDisplaySwapchain, extDisplaySwapchainS = iota, "VK_KHR_display_swapchain"
 
 	extN = iota
 )

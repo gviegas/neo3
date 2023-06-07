@@ -239,14 +239,14 @@ func TestSelectExts(t *testing.T) {
 		{[]string{}, []string{}, []int{}},
 		{nil, []string{}, []int{}},
 		{[]string{}, nil, []int{}},
-		{[]string{extSurfaceS}, []string{extSurfaceS}, []int{}},
-		{[]string{extSurfaceS}, []string{extSurfaceS, extDisplayS}, []int{}},
-		{[]string{extDisplayS, extSurfaceS}, []string{extSurfaceS, extDisplayS}, []int{}},
-		{[]string{extDisplayS}, []string{extSurfaceS, extDisplayS}, []int{}},
-		{[]string{extSurfaceS}, nil, []int{0}},
-		{[]string{extDisplayS}, []string{extSurfaceS}, []int{0}},
-		{[]string{extSurfaceS, extDisplayS}, []string{extSurfaceS}, []int{1}},
-		{[]string{extSurfaceS, extDisplayS}, []string{}, []int{0, 1}},
+		{[]string{extSwapchainS}, []string{extSwapchainS}, []int{}},
+		{[]string{extSwapchainS}, []string{extSwapchainS, extDynamicRenderingS}, []int{}},
+		{[]string{extDynamicRenderingS, extSwapchainS}, []string{extSwapchainS, extDynamicRenderingS}, []int{}},
+		{[]string{extDynamicRenderingS}, []string{extSwapchainS, extDynamicRenderingS}, []int{}},
+		{[]string{extSwapchainS}, nil, []int{0}},
+		{[]string{extDynamicRenderingS}, []string{extSwapchainS}, []int{0}},
+		{[]string{extSwapchainS, extDynamicRenderingS}, []string{extSwapchainS}, []int{1}},
+		{[]string{extSwapchainS, extDynamicRenderingS}, []string{}, []int{0, 1}},
 	}
 	for _, c := range cases {
 		a, f, m := selectExts(c.exts, c.from)
@@ -269,9 +269,6 @@ func TestSelectExts(t *testing.T) {
 
 func TestExtSanity(t *testing.T) {
 	if !tDrv.exts[extSurface] {
-		if tDrv.exts[extDisplay] {
-			t.Fatal("tDrv.exts[extDisplay]\nhave true\nwant false")
-		}
 		if tDrv.exts[extAndroidSurface] {
 			t.Fatal("tDrv.exts[extAndroidSurface]\nhave true\nwant false")
 		}
@@ -289,29 +286,21 @@ func TestExtSanity(t *testing.T) {
 		}
 	}
 
-	if tDrv.exts[extDisplay] {
-		if !tDrv.exts[extSwapchain] && tDrv.exts[extDisplaySwapchain] {
-			t.Fatal("tDrv.exts[extDisplaySwapchain]\nhave true\nwant false")
-		}
-	} else if tDrv.exts[extDisplaySwapchain] {
-		t.Fatal("tDrv.exts[extDisplaySwapchain]\nhave true\nwant false")
-	}
-
 	var bads []string
 	var badi []int
 	switch runtime.GOOS {
-	default:
-		bads = []string{extAndroidSurfaceS, extWaylandSurfaceS, extWin32SurfaceS, extXCBSurfaceS}
-		badi = []int{extAndroidSurface, extWaylandSurface, extWin32Surface, extXCBSurface}
 	case "android":
-		bads = []string{extDisplayS, extWaylandSurfaceS, extWin32SurfaceS, extXCBSurfaceS}
-		badi = []int{extDisplay, extWaylandSurface, extWin32Surface, extXCBSurface}
+		bads = []string{extWaylandSurfaceS, extWin32SurfaceS, extXCBSurfaceS}
+		badi = []int{extWaylandSurface, extWin32Surface, extXCBSurface}
 	case "linux":
 		bads = []string{extAndroidSurfaceS, extWin32SurfaceS}
 		badi = []int{extAndroidSurface, extWin32Surface}
 	case "windows":
-		bads = []string{extDisplayS, extAndroidSurfaceS, extWaylandSurfaceS, extXCBSurfaceS}
-		badi = []int{extDisplay, extAndroidSurface, extWaylandSurface, extXCBSurface}
+		bads = []string{extAndroidSurfaceS, extWaylandSurfaceS, extXCBSurfaceS}
+		badi = []int{extAndroidSurface, extWaylandSurface, extXCBSurface}
+	default:
+		bads = []string{extAndroidSurfaceS, extWaylandSurfaceS, extWin32SurfaceS, extXCBSurfaceS}
+		badi = []int{extAndroidSurface, extWaylandSurface, extWin32Surface, extXCBSurface}
 	}
 	for i := range badi {
 		if tDrv.exts[badi[i]] {

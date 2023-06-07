@@ -35,11 +35,3 @@ func (s *swapchain) initXCBSurface() error {
 	s.sf = sf
 	return nil
 }
-
-// TODO
-func (s *swapchain) initDisplaySurface() error {
-	if !s.d.exts[extDisplay] {
-		return driver.ErrCannotPresent
-	}
-	panic("not implemented")
-}
