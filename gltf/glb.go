@@ -217,7 +217,7 @@ func Pack(w io.Writer, gltf *GLTF, bin []byte) (err error) {
 // If the BIN chunk (binary buffer) is present, its contents
 // are copied as-is into a new byte slice.
 func Unpack(r io.Reader) (gltf *GLTF, bin []byte, err error) {
-	n := 0
+	var n int
 	if n, err = SeekJSON(r, io.SeekStart); err != nil {
 		return
 	}
@@ -233,7 +233,7 @@ func Unpack(r io.Reader) (gltf *GLTF, bin []byte, err error) {
 	bin = make([]byte, n)
 	for err == nil {
 		off := len(bin) - n
-		x := 0
+		var x int
 		x, err = r.Read(bin[off:])
 		n -= x
 		if n == 0 {
