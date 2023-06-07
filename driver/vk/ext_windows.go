@@ -4,16 +4,14 @@ package vk
 
 func platformInstanceExts() extInfo {
 	return extInfo{
-		optional:  []int{extSurface, extWin32Surface},
-		optionalS: []string{extSurfaceS, extWin32SurfaceS},
+		optional: []extension{extSurface, extWin32Surface},
 	}
 }
 
 func platformDeviceExts(d *Driver) extInfo {
 	if d.exts[extSurface] && d.exts[extWin32Surface] {
 		return extInfo{
-			optional:  []int{extSwapchain},
-			optionalS: []string{extSwapchainS},
+			optional: []extension{extSwapchain},
 		}
 	}
 	return extInfo{}

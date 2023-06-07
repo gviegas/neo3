@@ -10,26 +10,73 @@ import (
 	"unsafe"
 )
 
+// extension identifies a Vulkan extension.
+type extension int
+
 const (
 	// Instance extensions.
-	extGetPhysicalDeviceProperties2, extGetPhysicalDeviceProperties2S = iota, "VK_KHR_get_physical_device_properties2"
-	extSurface, extSurfaceS                                           = iota, "VK_KHR_surface"
-	extAndroidSurface, extAndroidSurfaceS                             = iota, "VK_KHR_android_surface"
-	extWaylandSurface, extWaylandSurfaceS                             = iota, "VK_KHR_wayland_surface"
-	extWin32Surface, extWin32SurfaceS                                 = iota, "VK_KHR_win32_surface"
-	extXCBSurface, extXCBSurfaceS                                     = iota, "VK_KHR_xcb_surface"
+	extGetPhysicalDeviceProperties2 extension = iota
+	extSurface
+	extAndroidSurface
+	extWaylandSurface
+	extWin32Surface
+	extXCBSurface
 
 	// Device extensions.
-	extMultiview, extMultiviewS                     = iota, "VK_KHR_multiview"
-	extMaintenance2, extMaintenance2S               = iota, "VK_KHR_maintenance2"
-	extCreateRenderPass2, extCreateRenderPass2S     = iota, "VK_KHR_create_renderpass2"
-	extDepthStencilResolve, extDepthStencilResolveS = iota, "VK_KHR_depth_stencil_resolve"
-	extDynamicRendering, extDynamicRenderingS       = iota, "VK_KHR_dynamic_rendering"
-	extSynchronization2, extSynchronization2S       = iota, "VK_KHR_synchronization2"
-	extSwapchain, extSwapchainS                     = iota, "VK_KHR_swapchain"
+	extMultiview
+	extMaintenance2
+	extCreateRenderPass2
+	extDepthStencilResolve
+	extDynamicRendering
+	extSynchronization2
+	extSwapchain
 
-	extN = iota
+	extN int = iota
 )
+
+// name returns the extension name as a Go string.
+func (e extension) name() string {
+	switch e {
+	case extGetPhysicalDeviceProperties2:
+		return "VK_KHR_get_physical_device_properties2"
+	case extSurface:
+		return "VK_KHR_surface"
+	case extAndroidSurface:
+		return "VK_KHR_android_surface"
+	case extWaylandSurface:
+		return "VK_KHR_wayland_surface"
+	case extWin32Surface:
+		return "VK_KHR_win32_surface"
+	case extXCBSurface:
+		return "VK_KHR_xcb_surface"
+	case extMultiview:
+		return "VK_KHR_multiview"
+	case extMaintenance2:
+		return "VK_KHR_maintenance2"
+	case extCreateRenderPass2:
+		return "VK_KHR_create_renderpass2"
+	case extDepthStencilResolve:
+		return "VK_KHR_depth_stencil_resolve"
+	case extDynamicRendering:
+		return "VK_KHR_dynamic_rendering"
+	case extSynchronization2:
+		return "VK_KHR_synchronization2"
+	case extSwapchain:
+		return "VK_KHR_swapchain"
+	}
+	panic("you have to update vk.extension.name when adding new extensions")
+}
+
+// makeExtNames returns a new slice containing the name of every extension
+// present in exts.
+// Order is preserved.
+func makeExtNames(exts []extension) []string {
+	s := make([]string, 0, len(exts))
+	for _, e := range exts {
+		s = append(s, e.name())
+	}
+	return s
+}
 
 // instanceExts returns a list containing the names of all instance extensions
 // advertised by the Vulkan implementation.
@@ -139,37 +186,29 @@ func selectExts(exts []string, from []string) (names **C.char, free func(), miss
 }
 
 // extInfo describes required and optional extensions.
-// Its fields must only contain ext*/ext*S constants, all of which must be
-// paired accordingly.
 type extInfo struct {
-	required  []int
-	requiredS []string
-	optional  []int
-	optionalS []string
+	required, optional []extension
 }
+
+// requiredNames is equivalent to makeExtNames(i.required).
+func (i *extInfo) requiredNames() []string { return makeExtNames(i.required) }
+
+// optionalNames is equivalent to makeExtNames(i.optional).
+func (i *extInfo) optionalNames() []string { return makeExtNames(i.optional) }
 
 // These are platform-independent.
 var (
 	globalInstanceExts = extInfo{
-		required:  []int{extGetPhysicalDeviceProperties2},
-		requiredS: []string{extGetPhysicalDeviceProperties2S},
+		required: []extension{extGetPhysicalDeviceProperties2},
 	}
 	globalDeviceExts = extInfo{
-		required: []int{
+		required: []extension{
 			extMultiview,
 			extMaintenance2,
 			extCreateRenderPass2,
 			extDepthStencilResolve,
 			extDynamicRendering,
 			extSynchronization2,
-		},
-		requiredS: []string{
-			extMultiviewS,
-			extMaintenance2S,
-			extCreateRenderPass2S,
-			extDepthStencilResolveS,
-			extDynamicRenderingS,
-			extSynchronization2S,
 		},
 	}
 )
@@ -207,7 +246,7 @@ func (d *Driver) setDeviceExts(info *C.VkDeviceCreateInfo) (free func(), err err
 func (d *Driver) setExts(global *extInfo, platform *extInfo, set []string,
 	dstCount *C.uint32_t, dstNames ***C.char) (func(), error) {
 
-	exts := append(append([]string{}, global.requiredS...), platform.requiredS...)
+	exts := append(global.requiredNames(), platform.requiredNames()...)
 	if len(checkExts(exts, set)) != 0 {
 		// TODO: Consider logging what is missing.
 		return func() {}, errNoExtension
@@ -215,7 +254,7 @@ func (d *Driver) setExts(global *extInfo, platform *extInfo, set []string,
 
 	// Let selectExts filter optional extensions.
 	off := len(exts)
-	exts = append(append(exts, global.optionalS...), platform.optionalS...)
+	exts = append(append(exts, global.optionalNames()...), platform.optionalNames()...)
 	names, free, missing := selectExts(exts, set)
 	*dstCount = C.uint32_t(len(exts) - len(missing))
 	*dstNames = names
@@ -228,7 +267,7 @@ func (d *Driver) setExts(global *extInfo, platform *extInfo, set []string,
 
 	// We known for sure that required extensions are supported,
 	// so any missing extension has to be optional.
-	opt := append(append([]int{}, global.optional...), platform.optional...)
+	opt := append(append([]extension{}, global.optional...), platform.optional...)
 	for i := range opt {
 		if len(missing) == 0 {
 			for _, e := range opt[i:] {

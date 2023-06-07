@@ -156,7 +156,7 @@ func (d *Driver) initDevice() error {
 		}
 		if exts, err := deviceExts(dev); err == nil {
 			for _, e := range exts {
-				if e == extSwapchainS {
+				if e == extSwapchain.name() {
 					wgt += 2
 					break
 				}

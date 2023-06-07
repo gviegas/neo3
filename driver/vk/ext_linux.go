@@ -12,13 +12,11 @@ func platformInstanceExts() extInfo {
 	switch wsi.PlatformInUse() {
 	case wsi.Wayland:
 		return extInfo{
-			optional:  []int{extSurface, extWaylandSurface},
-			optionalS: []string{extSurfaceS, extWaylandSurfaceS},
+			optional: []extension{extSurface, extWaylandSurface},
 		}
 	case wsi.XCB:
 		return extInfo{
-			optional:  []int{extSurface, extXCBSurface},
-			optionalS: []string{extSurfaceS, extXCBSurfaceS},
+			optional: []extension{extSurface, extXCBSurface},
 		}
 	}
 	return extInfo{}
@@ -27,8 +25,7 @@ func platformInstanceExts() extInfo {
 func platformDeviceExts(d *Driver) extInfo {
 	if d.exts[extSurface] && (d.exts[extWaylandSurface] || d.exts[extXCBSurface]) {
 		return extInfo{
-			optional:  []int{extSwapchain},
-			optionalS: []string{extSwapchainS},
+			optional: []extension{extSwapchain},
 		}
 	}
 	return extInfo{}

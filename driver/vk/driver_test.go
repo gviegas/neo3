@@ -239,14 +239,14 @@ func TestSelectExts(t *testing.T) {
 		{[]string{}, []string{}, []int{}},
 		{nil, []string{}, []int{}},
 		{[]string{}, nil, []int{}},
-		{[]string{extSwapchainS}, []string{extSwapchainS}, []int{}},
-		{[]string{extSwapchainS}, []string{extSwapchainS, extDynamicRenderingS}, []int{}},
-		{[]string{extDynamicRenderingS, extSwapchainS}, []string{extSwapchainS, extDynamicRenderingS}, []int{}},
-		{[]string{extDynamicRenderingS}, []string{extSwapchainS, extDynamicRenderingS}, []int{}},
-		{[]string{extSwapchainS}, nil, []int{0}},
-		{[]string{extDynamicRenderingS}, []string{extSwapchainS}, []int{0}},
-		{[]string{extSwapchainS, extDynamicRenderingS}, []string{extSwapchainS}, []int{1}},
-		{[]string{extSwapchainS, extDynamicRenderingS}, []string{}, []int{0, 1}},
+		{[]string{extSwapchain.name()}, []string{extSwapchain.name()}, []int{}},
+		{[]string{extSwapchain.name()}, []string{extSwapchain.name(), extDynamicRendering.name()}, []int{}},
+		{[]string{extDynamicRendering.name(), extSwapchain.name()}, []string{extSwapchain.name(), extDynamicRendering.name()}, []int{}},
+		{[]string{extDynamicRendering.name()}, []string{extSwapchain.name(), extDynamicRendering.name()}, []int{}},
+		{[]string{extSwapchain.name()}, nil, []int{0}},
+		{[]string{extDynamicRendering.name()}, []string{extSwapchain.name()}, []int{0}},
+		{[]string{extSwapchain.name(), extDynamicRendering.name()}, []string{extSwapchain.name()}, []int{1}},
+		{[]string{extSwapchain.name(), extDynamicRendering.name()}, []string{}, []int{0, 1}},
 	}
 	for _, c := range cases {
 		a, f, m := selectExts(c.exts, c.from)
@@ -270,50 +270,45 @@ func TestSelectExts(t *testing.T) {
 func TestExtSanity(t *testing.T) {
 	for _, e := range globalInstanceExts.required {
 		if !tDrv.exts[e] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave want\nwant true", globalInstanceExts.requiredS[e])
+			t.Fatalf("tDrv.exts[<%s>]\nhave false\nwant true", e.name())
 		}
 	}
 	for _, e := range globalDeviceExts.required {
 		if !tDrv.exts[e] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave want\nwant true", globalDeviceExts.requiredS[e])
+			t.Fatalf("tDrv.exts[<%s>]\nhave false\nwant true", e.name())
 		}
 	}
 	if !tDrv.exts[extSurface] {
 		if tDrv.exts[extAndroidSurface] {
-			t.Fatal("tDrv.exts[extAndroidSurface]\nhave true\nwant false")
+			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extAndroidSurface.name())
 		}
 		if tDrv.exts[extWaylandSurface] {
-			t.Fatal("tDrv.exts[extWaylandSurface]\nhave true\nwant false")
+			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extWaylandSurface.name())
 		}
 		if tDrv.exts[extWin32Surface] {
-			t.Fatal("tDrv.exts[extWin32Surface]\nhave true\nwant false")
+			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extWin32Surface.name())
 		}
 		if tDrv.exts[extXCBSurface] {
-			t.Fatal("tDrv.exts[extXCBSurface]\nhave true\nwant false")
+			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extXCBSurface.name())
 		}
 		if tDrv.exts[extSwapchain] {
-			t.Fatal("tDrv.exts[extSwapchain]\nhave true\nwant false")
+			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extSwapchain.name())
 		}
 	}
-	var bads []string
-	var badi []int
+	var bad []extension
 	switch runtime.GOOS {
 	case "android":
-		bads = []string{extWaylandSurfaceS, extWin32SurfaceS, extXCBSurfaceS}
-		badi = []int{extWaylandSurface, extWin32Surface, extXCBSurface}
+		bad = []extension{extWaylandSurface, extWin32Surface, extXCBSurface}
 	case "linux":
-		bads = []string{extAndroidSurfaceS, extWin32SurfaceS}
-		badi = []int{extAndroidSurface, extWin32Surface}
+		bad = []extension{extAndroidSurface, extWin32Surface}
 	case "windows":
-		bads = []string{extAndroidSurfaceS, extWaylandSurfaceS, extXCBSurfaceS}
-		badi = []int{extAndroidSurface, extWaylandSurface, extXCBSurface}
+		bad = []extension{extAndroidSurface, extWaylandSurface, extXCBSurface}
 	default:
-		bads = []string{extAndroidSurfaceS, extWaylandSurfaceS, extWin32SurfaceS, extXCBSurfaceS}
-		badi = []int{extAndroidSurface, extWaylandSurface, extWin32Surface, extXCBSurface}
+		bad = []extension{extAndroidSurface, extWaylandSurface, extWin32Surface, extXCBSurface}
 	}
-	for i := range badi {
-		if tDrv.exts[badi[i]] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", bads[i])
+	for _, e := range bad {
+		if tDrv.exts[e] {
+			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", e.name())
 		}
 	}
 }
