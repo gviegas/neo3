@@ -268,6 +268,16 @@ func TestSelectExts(t *testing.T) {
 }
 
 func TestExtSanity(t *testing.T) {
+	for _, e := range globalInstanceExts.required {
+		if !tDrv.exts[e] {
+			t.Fatalf("tDrv.exts[<%s>]\nhave want\nwant true", globalInstanceExts.requiredS[e])
+		}
+	}
+	for _, e := range globalDeviceExts.required {
+		if !tDrv.exts[e] {
+			t.Fatalf("tDrv.exts[<%s>]\nhave want\nwant true", globalDeviceExts.requiredS[e])
+		}
+	}
 	if !tDrv.exts[extSurface] {
 		if tDrv.exts[extAndroidSurface] {
 			t.Fatal("tDrv.exts[extAndroidSurface]\nhave true\nwant false")
@@ -285,7 +295,6 @@ func TestExtSanity(t *testing.T) {
 			t.Fatal("tDrv.exts[extSwapchain]\nhave true\nwant false")
 		}
 	}
-
 	var bads []string
 	var badi []int
 	switch runtime.GOOS {
