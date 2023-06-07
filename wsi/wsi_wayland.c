@@ -407,7 +407,7 @@ struct wl_registry* displayGetRegistryWayland(struct wl_display* dpy) {
 		(struct wl_proxy*)dpy, WL_DISPLAY_GET_REGISTRY, &registryInterfaceWayland, proxyGetVersion((struct wl_proxy*)dpy), 0, NULL);
 }
 
-static void registryGlobal(void*, struct wl_registry*, uint32_t name, const char* iface, uint32_t vers) {
+static void registryGlobal(void* data_, struct wl_registry* rty_, uint32_t name, const char* iface, uint32_t vers) {
 	char* s = strdup(iface);
 	if (s == NULL)
 		return;
@@ -415,7 +415,7 @@ static void registryGlobal(void*, struct wl_registry*, uint32_t name, const char
 	free(s);
 }
 
-static void registryGlobalRemove(void*, struct wl_registry*, uint32_t name) {
+static void registryGlobalRemove(void* data_, struct wl_registry* rty_, uint32_t name) {
 	registryGlobalRemoveWayland(name);
 }
 
@@ -444,7 +444,7 @@ struct wl_surface* compositorCreateSurfaceWayland(struct wl_compositor* cpt) {
 		(struct wl_proxy*)cpt, WL_COMPOSITOR_CREATE_SURFACE, &surfaceInterfaceWayland, proxyGetVersion((struct wl_proxy*)cpt), 0, NULL);
 }
 
-static void shmFormat(void*, struct wl_shm*, uint32_t format) {
+static void shmFormat(void* data_, struct wl_shm* shm_, uint32_t format) {
 	shmFormatWayland(format);
 }
 
@@ -471,7 +471,7 @@ void shmPoolDestroyWayland(struct wl_shm_pool* shmp) {
 	proxyMarshalFlags((struct wl_proxy*)shmp, WL_SHM_POOL_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)shmp), WL_MARSHAL_FLAG_DESTROY);
 }
 
-static void bufferRelease(void*, struct wl_buffer* buf) {
+static void bufferRelease(void* data_, struct wl_buffer* buf) {
 	bufferReleaseWayland(buf);
 }
 
@@ -484,11 +484,11 @@ void bufferDestroyWayland(struct wl_buffer* buf) {
 	proxyMarshalFlags((struct wl_proxy*)buf, WL_BUFFER_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)buf), WL_MARSHAL_FLAG_DESTROY);
 }
 
-static void surfaceEnter(void*, struct wl_surface* sf, struct wl_output* out) {
+static void surfaceEnter(void* data_, struct wl_surface* sf, struct wl_output* out) {
 	surfaceEnterWayland(sf, out);
 }
 
-static void surfaceLeave(void*, struct wl_surface* sf, struct wl_output* out) {
+static void surfaceLeave(void* data_, struct wl_surface* sf, struct wl_output* out) {
 	surfaceLeaveWayland(sf, out);
 }
 
@@ -521,7 +521,7 @@ void surfaceDamageBufferWayland(struct wl_surface* sf, int32_t x, int32_t y, int
 	proxyMarshalFlags((struct wl_proxy*)sf, WL_SURFACE_DAMAGE_BUFFER, NULL, proxyGetVersion((struct wl_proxy*)sf), 0, x, y, width, height);
 }
 
-static void wmBasePing(void*, struct xdg_wm_base*, uint32_t serial) {
+static void wmBasePing(void* data_, struct xdg_wm_base* wm_, uint32_t serial) {
 	wmBasePingXDG(serial);
 }
 
@@ -552,7 +552,7 @@ void positionerDestroyXDG(struct xdg_positioner* pos) {
 	proxyMarshalFlags((struct wl_proxy*)pos, XDG_POSITIONER_DESTROY, NULL, proxyGetVersion((struct wl_proxy*)pos), WL_MARSHAL_FLAG_DESTROY);
 }
 
-static void surfaceConfigure(void*, struct xdg_surface* xsf, uint32_t serial) {
+static void surfaceConfigure(void* data_, struct xdg_surface* xsf, uint32_t serial) {
 	surfaceConfigureXDG(xsf, serial);
 }
 
@@ -583,15 +583,15 @@ void surfaceAckConfigureXDG(struct xdg_surface* xsf, uint32_t serial) {
 	proxyMarshalFlags((struct wl_proxy*)xsf, XDG_SURFACE_ACK_CONFIGURE, NULL, proxyGetVersion((struct wl_proxy*)xsf), 0, serial);
 }
 
-static void toplevelConfigure(void*, struct xdg_toplevel* tl, int32_t width, int32_t height, struct wl_array* states) {
+static void toplevelConfigure(void* data_, struct xdg_toplevel* tl, int32_t width, int32_t height, struct wl_array* states) {
 	toplevelConfigureXDG(tl, width, height, states);
 }
 
-static void toplevelClose(void*, struct xdg_toplevel* tl) {
+static void toplevelClose(void* data_, struct xdg_toplevel* tl) {
 	toplevelCloseXDG(tl);
 }
 
-static void toplevelConfigureBounds(void*, struct xdg_toplevel* tl, int32_t width, int32_t height) {
+static void toplevelConfigureBounds(void* data_, struct xdg_toplevel* tl, int32_t width, int32_t height) {
 	toplevelConfigureBoundsXDG(tl, width, height);
 }
 
@@ -636,11 +636,11 @@ void toplevelUnsetFullscreenXDG(struct xdg_toplevel* tl) {
 	proxyMarshalFlags((struct wl_proxy*)tl, XDG_TOPLEVEL_UNSET_FULLSCREEN, NULL, proxyGetVersion((struct wl_proxy*)tl), 0);
 }
 
-static void seatCapabilities(void*, struct wl_seat*, uint32_t capab) {
+static void seatCapabilities(void* data_, struct wl_seat* seat_, uint32_t capab) {
 	seatCapabilitiesWayland(capab);
 }
 
-static void seatName(void*, struct wl_seat*, const char* name) {
+static void seatName(void* data_, struct wl_seat* seat_, const char* name) {
 	char* s = strdup(name);
 	if (s == NULL)
 		return;
@@ -674,39 +674,39 @@ void seatReleaseWayland(struct wl_seat* seat) {
 	proxyMarshalFlags((struct wl_proxy*)seat, WL_SEAT_RELEASE, NULL, proxyGetVersion((struct wl_proxy*)seat), WL_MARSHAL_FLAG_DESTROY);
 }
 
-static void pointerEnter(void*, struct wl_pointer*, uint32_t serial, struct wl_surface* sf, wl_fixed_t x, wl_fixed_t y) {
+static void pointerEnter(void* data_, struct wl_pointer* pt_, uint32_t serial, struct wl_surface* sf, wl_fixed_t x, wl_fixed_t y) {
 	pointerEnterWayland(serial, sf, x, y);
 }
 
-static void pointerLeave(void*, struct wl_pointer*, uint32_t serial, struct wl_surface* sf) {
+static void pointerLeave(void* data_, struct wl_pointer* pt_, uint32_t serial, struct wl_surface* sf) {
 	pointerLeaveWayland(serial, sf);
 }
 
-static void pointerMotion(void*, struct wl_pointer*, uint32_t millis, wl_fixed_t x, wl_fixed_t y) {
+static void pointerMotion(void* data_, struct wl_pointer* pt_, uint32_t millis, wl_fixed_t x, wl_fixed_t y) {
 	pointerMotionWayland(millis, x, y);
 }
 
-static void pointerButton(void*, struct wl_pointer*, uint32_t serial, uint32_t millis, uint32_t button, uint32_t state) {
+static void pointerButton(void* data_, struct wl_pointer* pt_, uint32_t serial, uint32_t millis, uint32_t button, uint32_t state) {
 	pointerButtonWayland(serial, millis, button, state);
 }
 
-static void pointerAxis(void*, struct wl_pointer*, uint32_t millis, uint32_t axis, wl_fixed_t value) {
+static void pointerAxis(void* data_, struct wl_pointer* pt_, uint32_t millis, uint32_t axis, wl_fixed_t value) {
 	pointerAxisWayland(millis, axis, value);
 }
 
-static void pointerFrame(void*, struct wl_pointer*) {
+static void pointerFrame(void* data_, struct wl_pointer* pt_) {
 	pointerFrameWayland();
 }
 
-static void pointerAxisSource(void*, struct wl_pointer*, uint32_t axisSrc) {
+static void pointerAxisSource(void* data_, struct wl_pointer* pt_, uint32_t axisSrc) {
 	pointerAxisSourceWayland(axisSrc);
 }
 
-static void pointerAxisStop(void*, struct wl_pointer*, uint32_t millis, uint32_t axis) {
+static void pointerAxisStop(void* data_, struct wl_pointer* pt_, uint32_t millis, uint32_t axis) {
 	pointerAxisStopWayland(millis, axis);
 }
 
-static void pointerAxisDiscrete(void*, struct wl_pointer*, uint32_t axis, int32_t discrete) {
+static void pointerAxisDiscrete(void* data_, struct wl_pointer* pt_, uint32_t axis, int32_t discrete) {
 	pointerAxisDiscreteWayland(axis, discrete);
 }
 
@@ -737,27 +737,27 @@ void pointerReleaseWayland(struct wl_pointer* pt) {
 	proxyMarshalFlags((struct wl_proxy*)pt, WL_POINTER_RELEASE, NULL, proxyGetVersion((struct wl_proxy*)pt), WL_MARSHAL_FLAG_DESTROY);
 }
 
-static void keyboardKeymap(void*, struct wl_keyboard*, uint32_t format, int32_t fd, uint32_t size) {
+static void keyboardKeymap(void* data_, struct wl_keyboard* kb_, uint32_t format, int32_t fd, uint32_t size) {
 	keyboardKeymapWayland(format, fd, size);
 }
 
-static void keyboardEnter(void*, struct wl_keyboard*, uint32_t serial, struct wl_surface* sf, struct wl_array* keys) {
+static void keyboardEnter(void* data_, struct wl_keyboard* kb_, uint32_t serial, struct wl_surface* sf, struct wl_array* keys) {
 	keyboardEnterWayland(serial, sf, keys);
 }
 
-static void keyboardLeave(void*, struct wl_keyboard*, uint32_t serial, struct wl_surface* sf) {
+static void keyboardLeave(void* data_, struct wl_keyboard* kb_, uint32_t serial, struct wl_surface* sf) {
 	keyboardLeaveWayland(serial, sf);
 }
 
-static void keyboardKey(void*, struct wl_keyboard*, uint32_t serial, uint32_t millis, uint32_t key, uint32_t state) {
+static void keyboardKey(void* data_, struct wl_keyboard* kb_, uint32_t serial, uint32_t millis, uint32_t key, uint32_t state) {
 	keyboardKeyWayland(serial, millis, key, state);
 }
 
-static void keyboardModifiers(void*, struct wl_keyboard*, uint32_t serial, uint32_t depressed, uint32_t latched, uint32_t locked, uint32_t group) {
+static void keyboardModifiers(void* data_, struct wl_keyboard* kb_, uint32_t serial, uint32_t depressed, uint32_t latched, uint32_t locked, uint32_t group) {
 	keyboardModifiersWayland(serial, depressed, latched, locked, group);
 }
 
-static void keyboardRepeatInfo(void*, struct wl_keyboard*, int32_t rate, int32_t delay) {
+static void keyboardRepeatInfo(void* data_, struct wl_keyboard* kb_, int32_t rate, int32_t delay) {
 	keyboardRepeatInfoWayland(rate, delay);
 }
 
