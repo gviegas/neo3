@@ -355,7 +355,7 @@ func keyMsgWin32(wprm C.WPARAM, lprm C.LPARAM) {
 		pressed := lprm&(1<<31) == 0
 		keyboardKeyHandler.KeyboardKey(key, pressed)
 	}
-	if modMaskWin32 != prevModMask && KeyboardModifierHandler != nil {
+	if modMaskWin32 != prevModMask && keyboardModifierHandler != nil {
 		keyboardModifierHandler.KeyboardModifier(modMaskWin32)
 	}
 }
