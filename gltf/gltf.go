@@ -74,6 +74,27 @@ type Sparse struct {
 	Extras     any `json:"extras,omitempty"`
 }
 
+// accessor.*.componentType values.
+const (
+	BYTE           = 5120
+	UNSIGNED_BYTE  = 5121
+	SHORT          = 5122
+	UNSIGNED_SHORT = 5123
+	UNSIGNED_INT   = 5125
+	FLOAT          = 5126
+)
+
+// accessor.type values.
+const (
+	SCALAR = "SCALAR"
+	VEC2   = "VEC2"
+	VEC3   = "VEC3"
+	VEC4   = "VEC4"
+	MAT2   = "MAT2"
+	MAT3   = "MAT3"
+	MAT4   = "MAT4"
+)
+
 // glTF.animations' element.
 type Animation struct {
 	Channels   []AChannel `json:"channels"`
@@ -105,6 +126,21 @@ type ASampler struct {
 	Extras        any    `json:"extras,omitempty"`
 }
 
+// animation.channel.target.path values.
+const (
+	Ptranslation = "translation"
+	Protation    = "rotation"
+	Pscale       = "scale"
+	Pweights     = "weights"
+)
+
+// animation.sampler.interpolation values.
+const (
+	ILINEAR     = "LINEAR"
+	STEP        = "STEP"
+	CUBICSPLINE = "CUBICSPLINE"
+)
+
 // glTF.buffers' element.
 type Buffer struct {
 	URI        string `json:"uri,omitempty"`
@@ -125,6 +161,12 @@ type BufferView struct {
 	Extensions any    `json:"extensions,omitempty"`
 	Extras     any    `json:"extras,omitempty"`
 }
+
+// bufferView.target values.
+const (
+	ARRAY_BUFFER = iota + 34962
+	ELEMENT_ARRAY_BUFFER
+)
 
 // glTF.cameras' element.
 type Camera struct {
@@ -156,6 +198,12 @@ type Perspective struct {
 	Extras      any     `json:"extras,omitempty"`
 }
 
+// camera.type values.
+const (
+	Tperspective  = "perspective"
+	Torthographic = "ortographic"
+)
+
 // glTF.images' element.
 type Image struct {
 	URI        string `json:"uri,omitempty"`
@@ -165,6 +213,12 @@ type Image struct {
 	Extensions any    `json:"extensions,omitempty"`
 	Extras     any    `json:"extras,omitempty"`
 }
+
+// image.mimeType values.
+const (
+	JPEG = "image/jpeg"
+	PNG  = "image/png"
+)
 
 // glTF.materials' element.
 type Material struct {
@@ -210,6 +264,13 @@ type PBRMetallicRoughness struct {
 	Extras                   any          `json:"extras,omitempty"`
 }
 
+// material.alphaMode values.
+const (
+	OPAQUE = "OPAQUE"
+	MASK   = "MASK"
+	BLEND  = "BLEND"
+)
+
 // glTF.meshes' element.
 type Mesh struct {
 	Primitives []Primitive `json:"primitives"`
@@ -229,6 +290,17 @@ type Primitive struct {
 	Extensions any                `json:"extensions,omitempty"`
 	Extras     any                `json:"extras,omitempty"`
 }
+
+// mesh.primitive.mode values.
+const (
+	POINTS = iota
+	LINES
+	LINE_LOOP
+	LINE_STRIP
+	TRIANGLES
+	TRIANGLE_STRIP
+	TRIANGLE_FAN
+)
 
 // glTF.nodes' element.
 // XXX: Way too many pointers here.
@@ -258,6 +330,23 @@ type Sampler struct {
 	Extensions any    `json:"extensions,omitempty"`
 	Extras     any    `json:"extras,omitempty"`
 }
+
+// sampler.*Filter values.
+const (
+	NEAREST                = 9728
+	FLINEAR                = 9729
+	NEAREST_MIPMAP_NEAREST = 9984
+	LINEAR_MIPMAP_NEAREST  = 9985
+	NEAREST_MIPMAP_LINEAR  = 9986
+	LINEAR_MIPMAP_LINEAR   = 9987
+)
+
+// sampler.wrap* values.
+const (
+	CLAMP_TO_EDGE   = 33071
+	MIRRORED_REPEAT = 33648
+	REPEAT          = 10497
+)
 
 // glTF.scenes' element.
 type Scene struct {
