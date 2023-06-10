@@ -4,6 +4,7 @@ package gltf
 
 import (
 	"errors"
+	"math"
 	"strconv"
 )
 
@@ -46,6 +47,11 @@ func (f *GLTF) Check() error {
 	}
 	for i := range f.BufferViews {
 		if err := f.BufferViews[i].Check(f); err != nil {
+			return err
+		}
+	}
+	for i := range f.Cameras {
+		if err := f.Cameras[i].Check(f); err != nil {
 			return err
 		}
 	}
@@ -175,6 +181,44 @@ func (v *BufferView) Check(gltf *GLTF) error {
 	case 0, ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER:
 	default:
 		return newErr("invalid BufferView.Target value")
+	}
+	return nil
+}
+
+// Check checks that c is a valid glTF.cameras element.
+func (c *Camera) Check(gltf *GLTF) error {
+	switch c.Type {
+	case Torthographic:
+		if c.Orthographic == nil || c.Perspective != nil {
+			return newErr("invalid Camera.Orthographic setup")
+		}
+		if c.Orthographic.Xmag <= 0 {
+			return newErr("invalid Camera.Orthographic.Zmag value")
+		}
+		if c.Orthographic.Ymag <= 0 {
+			return newErr("invalid Camera.Orthographic.Ymag value")
+		}
+		if c.Orthographic.Zfar == 0 || c.Orthographic.Zfar <= c.Orthographic.Znear {
+			return newErr("invalid Camera.Orthographic.Zfar value")
+		}
+	case Tperspective:
+		if c.Perspective == nil || c.Orthographic != nil {
+			return newErr("invalid Camera.Perspective setup")
+		}
+		if c.Perspective.AspectRatio <= 0 {
+			return newErr("invalid Camera.Perspective.AspectRatio value")
+		}
+		if c.Perspective.YFOV >= math.Pi {
+			return newErr("invalid Camera.Perspective.YFOV value")
+		}
+		if c.Perspective.Zfar != 0 && c.Perspective.Zfar <= c.Perspective.Znear {
+			return newErr("invalid Camera.Perspective.Zfar value")
+		}
+		if c.Perspective.Znear <= 0 {
+			return newErr("invalid Camera.Perspective.Znear value")
+		}
+	default:
+		return newErr("invalid Camera.Type value")
 	}
 	return nil
 }
