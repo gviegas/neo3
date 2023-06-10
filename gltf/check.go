@@ -4,6 +4,7 @@ package gltf
 
 import (
 	"errors"
+	"strconv"
 )
 
 func newErr(reason string) error {
@@ -13,9 +14,21 @@ func newErr(reason string) error {
 // Check checks that f is valid glTF.
 // TODO
 func (f *GLTF) Check() error {
+	vers, err := strconv.ParseFloat(f.Asset.Version, 64)
+	if err != nil {
+		return newErr("invalid GLTF.Asset.Version string")
+	}
+	minVers, err := strconv.ParseFloat(f.Asset.MinVersion, 64)
+	if err == nil && minVers >= 3 {
+		return newErr("unsupported GLTF.Asset.MinVersion")
+	} else if vers < 2 || vers >= 3 {
+		return newErr("unsupported GLTF.Asset.Version")
+	}
+
 	if s := f.Scene; s != nil && (*s < 0 || *s >= int64(len(f.Nodes))) {
 		return newErr("invalid GLTF.Scene index")
 	}
+
 	for _, a := range f.Accessors {
 		if err := a.Check(f); err != nil {
 			return err
