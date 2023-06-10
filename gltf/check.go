@@ -65,6 +65,11 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	for i := range f.Meshes {
+		if err := f.Meshes[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -364,6 +369,43 @@ func (m *Material) Check(gltf *GLTF) error {
 		}
 		if *cut < 0 {
 			return newErr("invalid Material.AlphaCutoff value")
+		}
+	}
+	return nil
+}
+
+// Check checks that m is a valid glTF.meshes element.
+func (m *Mesh) Check(gltf *GLTF) error {
+	if len(m.Primitives) == 0 {
+		return newErr("invalid Mesh.Primitives length")
+	}
+	for i := range m.Primitives {
+		p := &m.Primitives[i]
+		if _, ok := p.Attributes["POSITION"]; !ok {
+			return newErr("invalid Mesh.Primitives[].Attributes map")
+		}
+		// TODO: Should check for unsupported semantics.
+		for _, v := range p.Attributes {
+			if v < 0 || v >= int64(len(gltf.Accessors)) {
+				return newErr("invalid Mesh.Primitives[].Attributes index")
+			}
+		}
+		if i := p.Indices; i != nil {
+			if *i < 0 || *i >= int64(len(gltf.Accessors)) {
+				return newErr("invalid Mesh.Primitives[].Indices index")
+			}
+		}
+		if i := p.Material; i != nil {
+			if *i < 0 || *i >= int64(len(gltf.Accessors)) {
+				return newErr("invalid Mesh.Primitives[].Material index")
+			}
+		}
+		if p.Mode != nil {
+			switch *p.Mode {
+			case POINTS, LINES, LINE_LOOP, LINE_STRIP, TRIANGLES, TRIANGLE_STRIP, TRIANGLE_FAN:
+			default:
+				return newErr("invalid Mesh.Primitives[].Mode value")
+			}
 		}
 	}
 	return nil
