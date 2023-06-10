@@ -60,6 +60,11 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	for i := range f.Materials {
+		if err := f.Materials[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -246,6 +251,119 @@ func (i *Image) Check(gltf *GLTF) error {
 	default:
 		if i.BufferView != nil {
 			return newErr("invalid Image.URI/BufferView definitions")
+		}
+	}
+	return nil
+}
+
+// Check checks that m is a valid glTF.materials element.
+func (m *Material) Check(gltf *GLTF) error {
+	if pbr := m.PBRMetallicRoughness; pbr != nil {
+		if fac := pbr.BaseColorFactor; fac != nil {
+			for _, x := range fac {
+				if x < 0 || x > 1 {
+					return newErr("invalid Material.PBRMetallicRoughness.BaseColorFactor value")
+				}
+			}
+		}
+		if tex := pbr.BaseColorTexture; tex != nil {
+			if tex.Index < 0 || tex.Index >= int64(len(gltf.Textures)) {
+				return newErr("invalid Material.PBRMetallicRoughness.BaseColorTexture.Index index")
+			}
+			if tex.TexCoord < 0 {
+				return newErr("invalid Material.Texture.PBRMetallicRoughness.BaseColorTexture.TexCoord set")
+			}
+			// XXX: Only two sets are supported currently.
+			if tex.TexCoord > 1 {
+				return newErr("unsupported Material.PBRMetallicRoughness.BaseColorTexture.TexCoord set")
+			}
+		}
+		if fac := pbr.MetallicFactor; fac != nil {
+			if *fac < 0 || *fac > 1 {
+				return newErr("invalid Material.PBRMetallicRoughness.MetallicFactor value")
+			}
+		}
+		if fac := pbr.RoughnessFactor; fac != nil {
+			if *fac < 0 || *fac > 1 {
+				return newErr("invalid Material.PBRMetallicRoughness.RoughnessFactor value")
+			}
+		}
+		if tex := pbr.MetallicRoughnessTexture; tex != nil {
+			if tex.Index < 0 || tex.Index >= int64(len(gltf.Textures)) {
+				return newErr("invalid Material.PBRMetallicRoughness.MetallicRoughnessTexture.Index index")
+			}
+			if tex.TexCoord < 0 {
+				return newErr("invalid Material.Texture.PBRMetallicRoughness.MetallicRoughnessTexture.TexCoord set")
+			}
+			// XXX: Only two sets are supported currently.
+			if tex.TexCoord > 1 {
+				return newErr("unsupported Material.PBRMetallicRoughness.MetallicRoughnessTexture.TexCoord set")
+			}
+		}
+	}
+
+	if norm := m.NormalTexture; norm != nil {
+		if norm.Index < 0 || norm.Index >= int64(len(gltf.Textures)) {
+			return newErr("invalid Material.NormalTexture.Index index")
+		}
+		if norm.TexCoord < 0 {
+			return newErr("invalid Material.NormalTexture.TexCoord set")
+		}
+		// XXX: Only two sets are supported currently.
+		if norm.TexCoord > 1 {
+			return newErr("unsupported Material.NormalTexture.TexCoord set")
+		}
+	}
+
+	if occ := m.OcclusionTexture; occ != nil {
+		if occ.Index < 0 || occ.Index >= int64(len(gltf.Textures)) {
+			return newErr("invalid Material.OcclusionTexture.Index index")
+		}
+		if occ.TexCoord < 0 {
+			return newErr("invalid Material.OcclusionTexture.TexCoord set")
+		}
+		// XXX: Only two sets are supported currently.
+		if occ.TexCoord > 1 {
+			return newErr("unsupported Material.OcclusionTexture.TexCoord set")
+		}
+		if str := occ.Strength; str != nil {
+			if *str < 0 || *str > 1 {
+				return newErr("invalid Material.OcclusionTexture.Strength value")
+			}
+		}
+	}
+
+	if emis := m.EmissiveTexture; emis != nil {
+		if emis.Index < 0 || emis.Index >= int64(len(gltf.Textures)) {
+			return newErr("invalid Material.EmissiveTexture.Index index")
+		}
+		if emis.TexCoord < 0 {
+			return newErr("invalid Material.EmissiveTexture.TexCoord set")
+		}
+		// XXX: Only two sets are supported currently.
+		if emis.TexCoord > 1 {
+			return newErr("unsupported Material.EmissiveTexture.TexCoord set")
+		}
+	}
+	if fac := m.EmissiveFactor; fac != nil {
+		for _, x := range fac {
+			if x < 0 || x > 1 {
+				return newErr("invalid Material.EmissiveFactor value")
+			}
+		}
+	}
+
+	switch m.AlphaMode {
+	case "", OPAQUE, MASK, BLEND:
+	default:
+		return newErr("invalid Material.AlphaMode value")
+	}
+	if cut := m.AlphaCutoff; cut != nil {
+		if m.AlphaMode == "" {
+			return newErr("invalid Material.AlphaCutoff definition")
+		}
+		if *cut < 0 {
+			return newErr("invalid Material.AlphaCutoff value")
 		}
 	}
 	return nil
