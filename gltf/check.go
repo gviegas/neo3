@@ -55,6 +55,11 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	for i := range f.Images {
+		if err := f.Images[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -219,6 +224,29 @@ func (c *Camera) Check(gltf *GLTF) error {
 		}
 	default:
 		return newErr("invalid Camera.Type value")
+	}
+	return nil
+}
+
+// Check checks that i is a valid glTF.images element.
+func (i *Image) Check(gltf *GLTF) error {
+	switch i.URI {
+	case "":
+		if i.BufferView == nil {
+			return newErr("invalid Image.URI/BufferView non-definitions")
+		}
+		if *i.BufferView < 0 || *i.BufferView >= int64(len(gltf.BufferViews)) {
+			return newErr("invalid Image.BufferView index")
+		}
+		switch i.MimeType {
+		case JPEG, PNG:
+		default:
+			return newErr("invalid Image.MimeType value")
+		}
+	default:
+		if i.BufferView != nil {
+			return newErr("invalid Image.URI/BufferView definitions")
+		}
 	}
 	return nil
 }
