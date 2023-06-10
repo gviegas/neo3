@@ -39,6 +39,16 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	for i := range f.Buffers {
+		if err := f.Buffers[i].Check(f); err != nil {
+			return err
+		}
+	}
+	for i := range f.BufferViews {
+		if err := f.BufferViews[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -135,6 +145,36 @@ func (a *Animation) Check(gltf *GLTF) error {
 		if s.Output < 0 || s.Output >= int64(len(gltf.Accessors)) {
 			return newErr("invalid Animation.Samplers[].Output index")
 		}
+	}
+	return nil
+}
+
+// Check checks that b is a valid glTF.buffers element.
+func (b *Buffer) Check(gltf *GLTF) error {
+	if b.ByteLength < 1 {
+		return newErr("invalid Buffer.ByteLength value")
+	}
+	return nil
+}
+
+// Check checks that v is a valid glTF.bufferViews element.
+func (v *BufferView) Check(gltf *GLTF) error {
+	if v.Buffer < 0 || v.Buffer >= int64(len(gltf.BufferViews)) {
+		return newErr("invalid BufferView.Buffer index")
+	}
+	if v.ByteOffset < 0 {
+		return newErr("invalid BufferView.ByteOffset value")
+	}
+	if v.ByteLength < 1 || v.ByteOffset+v.ByteLength > gltf.Buffers[v.Buffer].ByteLength {
+		return newErr("invalid BufferView.ByteLength value")
+	}
+	if v.ByteStride != 0 && (v.ByteStride < 4 || v.ByteStride > 252) {
+		return newErr("invalid BufferView.ByteStride value")
+	}
+	switch v.Target {
+	case 0, ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER:
+	default:
+		return newErr("invalid BufferView.Target value")
 	}
 	return nil
 }
