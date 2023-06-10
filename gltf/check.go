@@ -11,7 +11,7 @@ func newErr(reason string) error {
 	return errors.New("gltf: " + reason)
 }
 
-// Check checks that f is valid glTF.
+// Check checks that f is a valid glTF object.
 // TODO
 func (f *GLTF) Check() error {
 	vers, err := strconv.ParseFloat(f.Asset.Version, 64)
@@ -29,15 +29,20 @@ func (f *GLTF) Check() error {
 		return newErr("invalid GLTF.Scene index")
 	}
 
-	for _, a := range f.Accessors {
-		if err := a.Check(f); err != nil {
+	for i := range f.Accessors {
+		if err := f.Accessors[i].Check(f); err != nil {
+			return err
+		}
+	}
+	for i := range f.Animations {
+		if err := f.Animations[i].Check(f); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// Check checks that a is valid glTF.accessors' element.
+// Check checks that a is a valid glTF.accessors element.
 func (a *Accessor) Check(gltf *GLTF) error {
 	if a.BufferView != nil {
 		idx := *a.BufferView
@@ -85,6 +90,50 @@ func (a *Accessor) Check(gltf *GLTF) error {
 		}
 		if s.Values.ByteOffset < 0 { // TODO: Check upper bound.
 			return newErr("invalid Accessor.Sparse.Values.ByteOffset value")
+		}
+	}
+	return nil
+}
+
+// Check checks that a is a valid glTF.animations element.
+func (a *Animation) Check(gltf *GLTF) error {
+	if len(a.Channels) == 0 {
+		return newErr("invalid Animation.Channels length")
+	}
+	if len(a.Samplers) == 0 {
+		return newErr("invalid Animation.Samplers length")
+	}
+
+	for i := range a.Channels {
+		c := &a.Channels[i]
+		if c.Sampler < 0 || c.Sampler >= int64(len(a.Samplers)) {
+			return newErr("invalid Animation.Channels[].Sampler index")
+		}
+		if c.Target.Node != nil {
+			nd := *c.Target.Node
+			if nd < 0 || nd >= int64(len(gltf.Nodes)) {
+				return newErr("invalid Animation.Channels[].Target.Node index")
+			}
+		}
+		switch c.Target.Path {
+		case Ptranslation, Protation, Pscale, Pweights:
+		default:
+			return newErr("invalid Animation.Channels[].Target.Path value")
+		}
+	}
+
+	for i := range a.Samplers {
+		s := &a.Samplers[i]
+		if s.Input < 0 || s.Input >= int64(len(gltf.Accessors)) {
+			return newErr("invalid Animation.Samplers[].Input index")
+		}
+		switch s.Interpolation {
+		case ILINEAR, STEP, CUBICSPLINE:
+		default:
+			return newErr("invalid Animation.Samplers[].Interpolation value")
+		}
+		if s.Output < 0 || s.Output >= int64(len(gltf.Accessors)) {
+			return newErr("invalid Animation.Samplers[].Output index")
 		}
 	}
 	return nil
