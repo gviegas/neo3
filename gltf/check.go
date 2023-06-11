@@ -87,6 +87,11 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	for i := range f.Skins {
+		if err := f.Skins[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -464,7 +469,7 @@ func (n *Node) Check(gltf *GLTF) error {
 			cmap[chd] = true
 		}
 		if clen != len(cmap) {
-			return newErr("invalid Node.Children[] list")
+			return newErr("invalid Node.Children list")
 		}
 	}
 	return nil
@@ -510,7 +515,46 @@ func (s *Scene) Check(gltf *GLTF) error {
 			nmap[nd] = true
 		}
 		if nlen != len(nmap) {
-			return newErr("invalid Scene.Nodes[] list")
+			return newErr("invalid Scene.Nodes list")
+		}
+	}
+	return nil
+}
+
+// Check checks that s is a valid glTF.skins element.
+func (s *Skin) Check(gltf *GLTF) error {
+	if ibm := s.InverseBindMatrices; ibm != nil {
+		if *ibm < 0 || *ibm >= int64(len(gltf.Accessors)) {
+			return newErr("invalid Skin.InverseBindMatrices index")
+		}
+		acc := &gltf.Accessors[*ibm]
+		if acc.Count < int64(len(s.Joints)) || acc.Type != MAT4 {
+			return newErr("invalid Skin.InverseBindMatrices accessor")
+		}
+	}
+	if skl := s.Skeleton; skl != nil {
+		if *skl < 0 || *skl >= int64(len(gltf.Nodes)) {
+			return newErr("invalid Skin.Skeleton index")
+		}
+	}
+	jlen := len(s.Joints)
+	switch jlen {
+	case 0:
+		return newErr("invalid Skin.Joints length")
+	case 1:
+		if s.Joints[0] < 0 || s.Joints[0] >= int64(len(gltf.Nodes)) {
+			return newErr("invalid Skin.Joints[] index")
+		}
+	default:
+		jmap := make(map[int64]bool, jlen)
+		for _, jnt := range s.Joints {
+			if jnt < 0 || jnt >= int64(len(gltf.Nodes)) {
+				return newErr("invalid Skin.Joints[] index")
+			}
+			jmap[jnt] = true
+		}
+		if jlen != len(jmap) {
+			return newErr("invalid Skin.Joints list")
 		}
 	}
 	return nil
