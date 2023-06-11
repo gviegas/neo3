@@ -26,7 +26,7 @@ func (f *GLTF) Check() error {
 		return newErr("unsupported GLTF.Asset.Version")
 	}
 
-	if s := f.Scene; s != nil && (*s < 0 || *s >= int64(len(f.Nodes))) {
+	if s := f.Scene; s != nil && (*s < 0 || *s >= int64(len(f.Scenes))) {
 		return newErr("invalid GLTF.Scene index")
 	}
 
