@@ -77,6 +77,11 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	for i := range f.Samplers {
+		if err := f.Samplers[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -455,6 +460,28 @@ func (n *Node) Check(gltf *GLTF) error {
 		}
 		if clen != len(cmap) {
 			return newErr("invalid Node.Children[] list")
+		}
+	}
+	return nil
+}
+
+// Check checks that s is a valid glTF.samplers element.
+func (s *Sampler) Check(gltf *GLTF) error {
+	switch s.MagFilter {
+	case 0, NEAREST, FLINEAR:
+	default:
+		return newErr("invalid Sampler.MagFilter value")
+	}
+	switch s.MinFilter {
+	case 0, NEAREST, FLINEAR, NEAREST_MIPMAP_NEAREST, LINEAR_MIPMAP_NEAREST, NEAREST_MIPMAP_LINEAR, LINEAR_MIPMAP_LINEAR:
+	default:
+		return newErr("invalid Sampler.MinFilter value")
+	}
+	for _, w := range [2]int64{s.WrapS, s.WrapT} {
+		switch w {
+		case 0, CLAMP_TO_EDGE, MIRRORED_REPEAT, REPEAT:
+		default:
+			return newErr("invalid Sampler.WrapS/T value")
 		}
 	}
 	return nil
