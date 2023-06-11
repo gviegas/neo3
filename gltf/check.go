@@ -70,6 +70,13 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	// TODO: Check that the graph has no cycles and that
+	// nodes have one parent at most.
+	for i := range f.Nodes {
+		if err := f.Nodes[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -406,6 +413,48 @@ func (m *Mesh) Check(gltf *GLTF) error {
 			default:
 				return newErr("invalid Mesh.Primitives[].Mode value")
 			}
+		}
+	}
+	return nil
+}
+
+// Check checks that n is a valid glTF.nodes element.
+func (n *Node) Check(gltf *GLTF) error {
+	if cam := n.Camera; cam != nil {
+		if *cam < 0 || *cam >= int64(len(gltf.Cameras)) {
+			return newErr("invalid Node.Camera index")
+		}
+	}
+	if sk := n.Skin; sk != nil {
+		if *sk < 0 || *sk >= int64(len(gltf.Skins)) {
+			return newErr("invalid Node.Skin index")
+		}
+	}
+	if m := n.Matrix; m != nil {
+		if n.Rotation != nil || n.Scale != nil || n.Translation != nil {
+			return newErr("invalid Node.Matrix/TRS definitions")
+		}
+	}
+	if msh := n.Mesh; msh != nil {
+		if *msh < 0 || *msh >= int64(len(gltf.Meshes)) {
+			return newErr("invalid Node.Mesh index")
+		}
+	}
+	if clen := len(n.Children); clen > 0 {
+		cmap := make(map[int64]bool, clen)
+		for _, chd := range n.Children {
+			if chd < 0 || chd >= int64(len(gltf.Nodes)) {
+				return newErr("invalid Node.Children[] index")
+			}
+			// TODO: Checking for cycles on gltf.Check should
+			// handle this case.
+			if &gltf.Nodes[chd] == n {
+				return newErr("invalid Node.Children[] hierarchy")
+			}
+			cmap[chd] = true
+		}
+		if clen != len(cmap) {
+			return newErr("invalid Node.Children[] list")
 		}
 	}
 	return nil
