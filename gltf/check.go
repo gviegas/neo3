@@ -92,6 +92,11 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	for i := range f.Textures {
+		if err := f.Textures[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -566,6 +571,22 @@ func (s *Skin) Check(gltf *GLTF) error {
 		}
 		if jlen != len(jmap) {
 			return newErr("invalid Skin.Joints list")
+		}
+	}
+	return nil
+}
+
+// Check checks that t is a valid glTF.textures element.
+func (t *Texture) Check(gltf *GLTF) error {
+	if splr := t.Sampler; splr != nil {
+		if *splr < 0 || *splr >= int64(len(gltf.Samplers)) {
+			return newErr("invalid Texture.Sampler index")
+		}
+	}
+	// NOTE: Texture data source may be defined elsewhere.
+	if src := t.Source; src != nil {
+		if *src < 0 || *src >= int64(len(gltf.Images)) {
+			return newErr("invalid Texture.Source index")
 		}
 	}
 	return nil
