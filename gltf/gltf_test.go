@@ -10,6 +10,8 @@ import (
 	"testing"
 )
 
+// TODO: Test complex glTF files.
+
 // This needs to match binary buffer length from both
 // testdata/cube.glb and testdata/cube.bin, ignoring
 // padding bytes.
@@ -21,6 +23,9 @@ func TestMinimalGLTF(t *testing.T) {
 	r := bytes.NewReader([]byte(`{"asset":{"version":"2.0"}}`))
 	gltf, err := Decode(r)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err = gltf.Check(); err != nil {
 		t.Fatal(err)
 	}
 	if s := gltf.Asset.Version; s != "2.0" {
@@ -64,15 +69,16 @@ func TestGLTF(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err = gltf.Check(); err != nil {
+		t.Fatal(err)
+	}
 	var buf bytes.Buffer
-	err = Encode(&buf, gltf)
-	if err != nil {
+	if err = Encode(&buf, gltf); err != nil {
 		t.Fatal(err)
 	}
 	s := buf.String()
 	buf.Reset()
-	err = json.Indent(&buf, []byte(s), "", "    ")
-	if err != nil {
+	if err = json.Indent(&buf, []byte(s), "", "    "); err != nil {
 		t.Fatal(err)
 	}
 	t.Log(string(buf.Bytes()))
