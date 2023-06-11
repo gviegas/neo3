@@ -455,14 +455,25 @@ func (n *Node) Check(gltf *GLTF) error {
 			return newErr("invalid Node.Mesh index")
 		}
 	}
-	if clen := len(n.Children); clen > 0 {
+	clen := len(n.Children)
+	switch clen {
+	case 0:
+	case 1:
+		if n.Children[0] < 0 || n.Children[0] >= int64(len(gltf.Nodes)) {
+			return newErr("invalid Node.Children[] index")
+		}
+		// TODO: Checking for cycles on gltf.Check should
+		// handle this case.
+		if &gltf.Nodes[n.Children[0]] == n {
+			return newErr("invalid Node.Children[] hierarchy")
+		}
+	default:
 		cmap := make(map[int64]bool, clen)
 		for _, chd := range n.Children {
 			if chd < 0 || chd >= int64(len(gltf.Nodes)) {
 				return newErr("invalid Node.Children[] index")
 			}
-			// TODO: Checking for cycles on gltf.Check should
-			// handle this case.
+			// TODO: See above.
 			if &gltf.Nodes[chd] == n {
 				return newErr("invalid Node.Children[] hierarchy")
 			}
