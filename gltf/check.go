@@ -82,6 +82,11 @@ func (f *GLTF) Check() error {
 			return err
 		}
 	}
+	for i := range f.Scenes {
+		if err := f.Scenes[i].Check(f); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -482,6 +487,30 @@ func (s *Sampler) Check(gltf *GLTF) error {
 		case 0, CLAMP_TO_EDGE, MIRRORED_REPEAT, REPEAT:
 		default:
 			return newErr("invalid Sampler.WrapS/T value")
+		}
+	}
+	return nil
+}
+
+// Check checks that s is a valid glTF.scenes element.
+func (s *Scene) Check(gltf *GLTF) error {
+	nlen := len(s.Nodes)
+	switch nlen {
+	case 0:
+	case 1:
+		if s.Nodes[0] < 0 || s.Nodes[0] >= int64(len(gltf.Nodes)) {
+			return newErr("invalid Scene.Nodes[] index")
+		}
+	default:
+		nmap := make(map[int64]bool, nlen)
+		for _, nd := range s.Nodes {
+			if nd < 0 || nd >= int64(len(gltf.Nodes)) {
+				return newErr("invalid Scene.Nodes[] index")
+			}
+			nmap[nd] = true
+		}
+		if nlen != len(nmap) {
+			return newErr("invalid Scene.Nodes[] list")
 		}
 	}
 	return nil
