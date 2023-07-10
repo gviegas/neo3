@@ -1043,6 +1043,7 @@ type Sampling struct {
 	AddrV    AddrMode
 	AddrW    AddrMode
 	MaxAniso int
+	DoCmp    bool
 	Cmp      CmpFunc
 	MinLOD   float32
 	MaxLOD   float32
