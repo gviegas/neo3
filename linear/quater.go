@@ -12,6 +12,12 @@ type Q struct {
 	R float32
 }
 
+// IQ returns Q's identity.
+func IQ() Q { return Q{R: 1} }
+
+// I makes q an identity quaternion.
+func (q *Q) I() { *q = IQ() }
+
 // Mul sets q to contain l ⋅ r.
 func (q *Q) Mul(l, r *Q) {
 	var v, w V3
