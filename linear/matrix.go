@@ -9,8 +9,11 @@ import (
 // M3 is a column-major 3x3 matrix of float32.
 type M3 [3]V3
 
+// I3 returns M3's identity.
+func I3() M3 { return M3{{1}, {1: 1}, {2: 1}} }
+
 // I makes m an identity matrix.
-func (m *M3) I() { *m = M3{{1}, {1: 1}, {2: 1}} }
+func (m *M3) I() { *m = I3() }
 
 // Mul sets m to contain l ⋅ r.
 func (m *M3) Mul(l, r *M3) {
@@ -102,8 +105,11 @@ func (m *M3) RotateQ(q *Q) {
 // M4 is a column-major 4x4 matrix of float32.
 type M4 [4]V4
 
+// I4 returns M4's identity.
+func I4() M4 { return M4{{1}, {1: 1}, {2: 1}, {3: 1}} }
+
 // I makes m an identity matrix.
-func (m *M4) I() { *m = M4{{1}, {1: 1}, {2: 1}, {3: 1}} }
+func (m *M4) I() { *m = I4() }
 
 // Mul sets m to contain l ⋅ r.
 func (m *M4) Mul(l, r *M4) {
