@@ -27,11 +27,15 @@ func (d *Driver) NewSampler(spln *driver.Sampling) (driver.Sampler, error) {
 		addressModeW: convAddrMode(spln.AddrW),
 		// TODO: Anisotropy is a feature - disable it for now.
 		//maxAnisotropy: C.float(maxAniso),
-		compareEnable: C.VK_TRUE,
-		compareOp:     convCmpFunc(spln.Cmp),
+		compareEnable: C.VK_FALSE,
+		compareOp:     C.VK_COMPARE_OP_NEVER,
 		minLod:        C.float(spln.MinLOD),
 		maxLod:        C.float(spln.MaxLOD),
 		borderColor:   C.VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
+	}
+	if spln.DoCmp {
+		info.compareEnable = C.VK_TRUE
+		info.compareOp = convCmpFunc(spln.Cmp)
 	}
 	var splr C.VkSampler
 	err := checkResult(C.vkCreateSampler(d.dev, &info, nil, &splr))
