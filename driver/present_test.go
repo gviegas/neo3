@@ -323,6 +323,7 @@ func (t *T) samplingSetup() {
 		AddrV:    driver.AWrap,
 		AddrW:    driver.AWrap,
 		MaxAniso: 1,
+		DoCmp:    false,
 		Cmp:      driver.CNever,
 		MinLOD:   0,
 		MaxLOD:   0,
