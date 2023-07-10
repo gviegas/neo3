@@ -221,7 +221,7 @@ func (m *M4) Translate(x, y, z float32) {
 	*m = M4{{1}, {1: 1}, {2: 1}, {x, y, z, 1}}
 }
 
-// LooAt sets m to contain a view transform.
+// LookAt sets m to contain a view transform.
 func (m *M4) LookAt(center, eye, up *V3) {
 	var f, s, u V3
 	f.Sub(center, eye)
