@@ -602,8 +602,9 @@ func (s *Sampler) AddrW() driver.AddrMode { return s.param.AddrW }
 // MaxAniso returns the maximum anisotropy of s.
 func (s *Sampler) MaxAniso() int { return s.param.MaxAniso }
 
-// Cmp returns the driver.CmpFunc of s.
-func (s *Sampler) Cmp() driver.CmpFunc { return s.param.Cmp }
+// Cmp returns the driver.CmpFunc of s and a boolean
+// indicating whether it supports depth comparison.
+func (s *Sampler) Cmp() (driver.CmpFunc, bool) { return s.param.Cmp, s.param.DoCmp }
 
 // MinLOD returns the minimum level of detail of s.
 func (s *Sampler) MinLOD() float32 { return s.param.MinLOD }
