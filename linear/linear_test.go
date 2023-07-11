@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestV(t *testing.T) {
+func TestV3(t *testing.T) {
 	var u V3
 	v := V3{1, 2, 4}
 	w := V3{0, -1, 2}
@@ -69,7 +69,64 @@ func TestV(t *testing.T) {
 	}
 }
 
-func TestM(t *testing.T) {
+func TestV4(t *testing.T) {
+	var u V4
+	v := V4{1, 2, 4, -2}
+	w := V4{0, -1, 2, 3}
+
+	if u.Add(&v, &w); u != (V4{1, 1, 6, 1}) {
+		t.Fatalf("V4.Add\nhave %v\nwant [1 1 6 1]", u)
+	}
+	if u.Sub(&v, &w); u != (V4{1, 3, 2, -5}) {
+		t.Fatalf("V4.Sub\nhave %v\nwant [1 3 2 -5]", u)
+	}
+	if u.Scale(-1, &v); u != (V4{-1, -2, -4, 2}) {
+		t.Fatalf("V4.Scale\nhave %v\nwant [-1 -2 -4 2]", u)
+	}
+	if u.Scale(2, &w); u != (V4{0, -2, 4, 6}) {
+		t.Fatalf("V4.Scale\nhave %v\nwant [0 -2 4 6]", u)
+	}
+	if d := v.Dot(&w); d != 0 {
+		t.Fatalf("V4.Dot\nhave %v\nwant 0\n", d)
+	}
+	if d := v.Dot(&v); d != 25 {
+		t.Fatalf("V4.Dot\nhave %v\nwant 25\n", d)
+	}
+	if l := v.Len(); l != float32(math.Sqrt(25)) {
+		t.Fatalf("V4.Len\nhave %v\nwant %v\n", l, math.Sqrt(25))
+	}
+	if l := w.Len(); l != float32(math.Sqrt(14)) {
+		t.Fatalf("V4.Len\nhave %v\nwant %v\n", l, math.Sqrt(14))
+	}
+
+	v = V4{0, 0, 0, -2}
+	w = V4{4, 0, 0, 0}
+
+	if v.Norm(&v); v != (V4{0, 0, 0, -1}) {
+		t.Fatalf("V4.Norm\nhave %v\nwant [0 0 0 -1]", v)
+	}
+	if w.Norm(&w); w != (V4{1, 0, 0, 0}) {
+		t.Fatalf("V4.Norm\nhave %v\nwant [1 0 0 0]", w)
+	}
+
+	m := M4{
+		{2, 0, 1, -1},
+		{1, 3, 2, -3},
+		{0, -4, 2, 3},
+		{1, 2, -1, 0},
+	}
+	v = V4{-1, 0, 1, 2}
+
+	if u.Mul(&m, &v); u != (V4{0, 0, -1, 4}) {
+		t.Fatalf("V4.Mul\nhave %v\nwant [0 0 -1 4]", u)
+	}
+	m.I()
+	if u.Mul(&m, &v); u != v {
+		t.Fatalf("V4.Mul\nhave %v\nwant %v", u, v)
+	}
+}
+
+func TestM3(t *testing.T) {
 	var l M3
 	m := M3{
 		{1, 4, 7},
@@ -99,11 +156,62 @@ func TestM(t *testing.T) {
 	}
 }
 
+func TestM4(t *testing.T) {
+	var l M4
+	m := M4{
+		{1, 5, 9, 13},
+		{2, 6, 10, 14},
+		{3, 7, 11, 15},
+		{4, 8, 12, 16},
+	}
+	n := M4{
+		{0, 1, 0, 0},
+		{1, 0, 0, 0},
+		{0, 0, 0, 1},
+		{0, 0, 1, 0},
+	}
+	o := M4{
+		{4, 0, 0, 0},
+		{0, 5, 0, 0},
+		{0, 0, 2, 0},
+		{3, -2, -5, 1},
+	}
+
+	if l.I(); l != (M4{{1}, {0, 1}, {0, 0, 1}, {0, 0, 0, 1}}) {
+		t.Fatalf("M4.I\nhave %v\nwant [%v %v %v %v]", l, V4{1}, V4{0, 1}, V4{0, 0, 1}, V4{0, 0, 0, 1})
+	}
+	if l.Mul(&m, &n); l != (M4{m[1], m[0], m[3], m[2]}) {
+		t.Fatalf("M4.Mul\nhave %v\nwant [%v %v %v %v]", l, m[1], m[0], m[3], m[2])
+	}
+	if l.Mul(&n, &m); l != (M4{{5, 1, 13, 9}, {6, 2, 14, 10}, {7, 3, 15, 11}, {8, 4, 16, 12}}) {
+		t.Fatalf("M4.Mul\nhave %v\nwant %v", l, M4{{5, 1, 13, 9}, {6, 2, 14, 10}, {7, 3, 15, 11}, {8, 4, 16, 12}})
+	}
+	if l.Transpose(&m); l != (M4{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}}) {
+		t.Fatalf("M4.Transpose\nhave %v\nwant %v", l, M4{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}, {13, 14, 15, 16}})
+	}
+	if l.Invert(&o); l != (M4{
+		{1 / o[0][0]},
+		{1: 1 / o[1][1]},
+		{2: 1 / o[2][2]},
+		{-o[3][0] / o[0][0], -o[3][1] / o[1][1], -o[3][2] / o[2][2], o[3][3]},
+	}) {
+		t.Fatalf("M4.Invert\nhave %v\nwant %v", l, M4{
+			{1 / o[0][0]},
+			{1: 1 / o[1][1]},
+			{2: 1 / o[2][2]},
+			{-o[3][0] / o[0][0], -o[3][1] / o[1][1], -o[3][2] / o[2][2], o[3][3]},
+		})
+	}
+}
+
 func TestQ(t *testing.T) {
 	var r Q
 	q := Q{V: V3{1, 0, 0}, R: 3}
 	p := Q{V: V3{0, 1, 0}, R: 3}
 
+	if r.I(); r.V != (V3{}) || r.R != 1 {
+		t.Fatalf("Q.I\nhave %v\nwant {[0 0 0] 1}", r)
+	}
 	if r.Mul(&q, &p); r.V != (V3{3, 3, 1}) || r.R != 9 {
 		t.Fatalf("Q.Mul\nhave %v\nwant {[3 3 1] 9}", r)
 	}
