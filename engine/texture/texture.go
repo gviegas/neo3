@@ -504,6 +504,9 @@ func (t *Texture) Samples() int { return t.param.Samples }
 
 // Free invalidates t and destroys the driver.Image and
 // the driver.ImageView(s).
+// The caller is responsible for ensuring that there
+// are no pending copies targeting any view of t, and
+// that none is issued during the call.
 func (t *Texture) Free() {
 	if len(t.views) > 0 {
 		img := t.views[0].Image()
