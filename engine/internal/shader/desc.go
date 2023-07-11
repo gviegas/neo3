@@ -122,7 +122,7 @@ func newDescHeap1() (driver.DescHeap, error) {
 }
 
 // newDescHeap2 creates a new driver.DescHeap suitable for
-// material (MaterialLayout) data plus texture/samplers.
+// material (MaterialLayout) data plus textures/samplers.
 func newDescHeap2() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
 		constantDesc(materialNr),
@@ -345,6 +345,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 // SetShadowMap sets a shadow texture/sampler pair in the
 // global heap.
 // tex.Image() must support driver.UShaderSample.
+// splr must support depth comparison.
 func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	switch {
 	case uint(cpy) >= uint(t.dcpy[globalHeap]):
@@ -440,8 +441,8 @@ func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sample
 
 // Frame returns a pointer to GPU memory mapping to a
 // given FrameLayout of the global heap.
-// A valid constant buffer must be set at the time this
-// method is called.
+// A valid constant buffer must be set when this method
+// is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Frame(cpy int) *FrameLayout {
@@ -455,8 +456,8 @@ func (t *Table) Frame(cpy int) *FrameLayout {
 
 // Light returns a pointer to GPU memory mapping to a
 // given LightLayout array of the global heap.
-// A valid constant buffer must be set at the time this
-// method is called.
+// A valid constant buffer must be set when this method
+// is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
@@ -471,8 +472,8 @@ func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
 
 // Shadow returns a pointer to GPU memory mapping to a
 // given ShadowLayout array of the global heap.
-// A valid constant buffer must be set at the time this
-// method is called.
+// A valid constant buffer must be set when this method
+// is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
@@ -487,8 +488,8 @@ func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
 
 // Drawable returns a pointer to GPU memory mapping to a
 // given DrawableLayout of the drawable heap.
-// A valid constant buffer must be set at the time this
-// method is called.
+// A valid constant buffer must be set when this method
+// is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Drawable(cpy int) *DrawableLayout {
@@ -502,8 +503,8 @@ func (t *Table) Drawable(cpy int) *DrawableLayout {
 
 // Material returns a pointer to GPU memory mapping to a
 // given MaterialLayout of the material heap.
-// A valid constant buffer must be set at the time this
-// method is called.
+// A valid constant buffer must be set when this method
+// is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Material(cpy int) *MaterialLayout {
@@ -517,8 +518,8 @@ func (t *Table) Material(cpy int) *MaterialLayout {
 
 // Joint returns a pointer to GPU memory mapping to a
 // given JointLayout array of the joint heap.
-// A valid constant buffer must be set at the time this
-// method is called.
+// A valid constant buffer must be set when this method
+// is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Joint(cpy int) *[MaxJoint]JointLayout {
