@@ -96,6 +96,8 @@ const (
 )
 
 // SetUnused sets whether the light is unused.
+// Shaders will stop processing lights as soon as
+// they find an unused light slot.
 func (l *LightLayout) SetUnused(unused bool) {
 	var bool32 int32
 	if unused {
@@ -144,6 +146,8 @@ func (l *LightLayout) SetDirection(d *linear.V3) { copy(l[12:15], d[:]) }
 type ShadowLayout [32]float32
 
 // SetUnused sets whether the shadow is unused.
+// Shaders will stop processing shadows as soon as
+// they find an unused shadow slot.
 func (l *ShadowLayout) SetUnused(unused bool) {
 	var bool32 int32
 	if unused {
