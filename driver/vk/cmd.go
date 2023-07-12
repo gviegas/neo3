@@ -353,11 +353,11 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 				}
 				continue
 			}
-			cview = color[i].Color.(*imageView).view
+			cview = color[i].Color.(*imageView).view[0]
 			var rview C.VkImageView
 			rmode := C.VkResolveModeFlagBitsKHR(C.VK_RESOLVE_MODE_NONE_KHR)
 			if color[i].Resolve != nil {
-				rview = color[i].Resolve.(*imageView).view
+				rview = color[i].Resolve.(*imageView).view[0]
 				// NOTE: Color formats are all fp currently.
 				rmode = C.VK_RESOLVE_MODE_AVERAGE_BIT_KHR
 			}
@@ -396,18 +396,19 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 		}
 		*pstencil = *pdepth
 		if ds.DS != nil {
-			dsview = ds.DS.(*imageView).view
+			dsview = ds.DS.(*imageView).view[0]
 			var rview C.VkImageView
 			rmode := C.VkResolveModeFlagBitsKHR(C.VK_RESOLVE_MODE_NONE_KHR)
 			if ds.Resolve != nil {
-				rview = ds.Resolve.(*imageView).view
+				rview = ds.Resolve.(*imageView).view[0]
 				// Implementations must support this mode
 				// (assuming the format itself supports MS).
 				rmode = C.VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR
 			}
 			var clear C.VkClearDepthStencilValue
 			sclear := unsafe.Slice((*byte)(unsafe.Pointer(&clear)), unsafe.Sizeof(clear))
-			aspect := ds.DS.(*imageView).subres.aspectMask
+			aspect := ds.DS.(*imageView).subres[0].aspectMask
+			aspect |= ds.DS.(*imageView).subres[1].aspectMask
 			if aspect&C.VK_IMAGE_ASPECT_DEPTH_BIT != 0 {
 				pdepth.imageView = dsview
 				pdepth.resolveMode = rmode
