@@ -158,11 +158,18 @@ func (im *image) Destroy() {
 	*im = image{}
 }
 
+// Two planes for depth/stencil formats.
+// When used as render target, the aspect flags of the subresource
+// don't matter. However, for descriptor binding, only one bit
+// can be set. We handle this case by creating the first view as
+// depth-only and the second view as stencil-only.
+const maxPlane = 2
+
 // imageView implements driver.ImageView.
 type imageView struct {
 	i      *image
-	view   C.VkImageView
-	subres C.VkImageSubresourceRange
+	view   [maxPlane]C.VkImageView
+	subres [maxPlane]C.VkImageSubresourceRange
 }
 
 // NewView creates a new image view.
@@ -195,7 +202,13 @@ func (im *image) NewView(typ driver.ViewType, layer, layers, level, levels int) 
 			b: C.VK_COMPONENT_SWIZZLE_IDENTITY,
 			a: C.VK_COMPONENT_SWIZZLE_IDENTITY,
 		},
-		subresourceRange: C.VkImageSubresourceRange{
+	}
+
+	// NOTE: Currently this assumes that only depth/stencil
+	// may need another view.
+	var view [maxPlane]C.VkImageView
+	subres := [maxPlane]C.VkImageSubresourceRange{
+		{
 			aspectMask:     im.subres.aspectMask,
 			baseMipLevel:   C.uint32_t(level),
 			levelCount:     C.uint32_t(levels),
@@ -203,21 +216,38 @@ func (im *image) NewView(typ driver.ViewType, layer, layers, level, levels int) 
 			layerCount:     C.uint32_t(layers),
 		},
 	}
+	n := 1
+	const (
+		comb = C.VK_IMAGE_ASPECT_DEPTH_BIT | C.VK_IMAGE_ASPECT_STENCIL_BIT
+		bind = C.VK_IMAGE_USAGE_SAMPLED_BIT | C.VK_IMAGE_USAGE_STORAGE_BIT
+	)
+	if im.subres.aspectMask == comb && im.usg&bind != 0 {
+		subres[1] = subres[0]
+		subres[1].aspectMask = C.VK_IMAGE_ASPECT_STENCIL_BIT
+		subres[0].aspectMask = C.VK_IMAGE_ASPECT_DEPTH_BIT
+		n = 2
+	}
+
 	var dev C.VkDevice
 	if im.m != nil {
 		dev = im.m.d.dev
 	} else {
 		dev = im.s.d.dev
 	}
-	var view C.VkImageView
-	err := checkResult(C.vkCreateImageView(dev, &info, nil, &view))
-	if err != nil {
-		return nil, err
+	for i := 0; i < n; i++ {
+		info.subresourceRange = subres[i]
+		err := checkResult(C.vkCreateImageView(dev, &info, nil, &view[i]))
+		if err != nil {
+			for j := 0; j < i; j++ {
+				C.vkDestroyImageView(dev, view[j], nil)
+			}
+			return nil, err
+		}
 	}
 	return &imageView{
 		i:      im,
 		view:   view,
-		subres: info.subresourceRange,
+		subres: subres,
 	}, nil
 }
 
@@ -231,9 +261,13 @@ func (v *imageView) Destroy() {
 	}
 	if v.i != nil {
 		if v.i.m != nil {
-			C.vkDestroyImageView(v.i.m.d.dev, v.view, nil)
+			for i := range v.view {
+				C.vkDestroyImageView(v.i.m.d.dev, v.view[i], nil)
+			}
 		} else if v.i.s != nil {
-			C.vkDestroyImageView(v.i.s.d.dev, v.view, nil)
+			for i := range v.view {
+				C.vkDestroyImageView(v.i.s.d.dev, v.view[i], nil)
+			}
 		}
 	}
 	*v = imageView{}
