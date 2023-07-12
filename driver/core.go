@@ -513,7 +513,10 @@ type DescHeap interface {
 	// SetImage updates the image views referred by the
 	// given descriptor of the given heap copy.
 	// The descriptor must be of type DImage or DTexture.
-	SetImage(cpy, nr, start int, iv []ImageView)
+	// plane is used to select the plane/aspect for each
+	// view in iv. It is allowed to be nil if all views
+	// have a single plane/aspect.
+	SetImage(cpy, nr, start int, iv []ImageView, plane []int)
 
 	// SetSampler updates the samplers referred by the
 	// given descriptor of the given heap copy.
