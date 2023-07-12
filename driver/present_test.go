@@ -379,7 +379,7 @@ func (t *T) descriptorSetup() {
 	}
 	for i := 0; i < NFrame; i++ {
 		dheap.SetBuffer(i, 0, 0, []driver.Buffer{t.constBuf}, []int64{int64(512 * i)}, []int64{64})
-		dheap.SetImage(i, 1, 0, []driver.ImageView{t.splView})
+		dheap.SetImage(i, 1, 0, []driver.ImageView{t.splView}, nil)
 		dheap.SetSampler(i, 2, 0, []driver.Sampler{t.splr})
 	}
 
