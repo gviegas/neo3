@@ -16,6 +16,7 @@ type image struct {
 	img    C.VkImage
 	fmt    C.VkFormat
 	subres C.VkImageSubresourceRange
+	usg    C.VkImageUsageFlags
 }
 
 // NewImage creates a new image.
@@ -140,6 +141,7 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 			levelCount: C.uint32_t(levels),
 			layerCount: C.uint32_t(layers),
 		},
+		usg: usage,
 	}
 	return im, nil
 }
