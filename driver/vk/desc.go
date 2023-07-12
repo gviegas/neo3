@@ -205,7 +205,7 @@ func (h *descHeap) SetBuffer(cpy, nr, start int, buf []driver.Buffer, off, size 
 
 // SetImage updates the image views referred by the given descriptor of
 // the given heap copy.
-func (h *descHeap) SetImage(cpy, nr, start int, iv []driver.ImageView) {
+func (h *descHeap) SetImage(cpy, nr, start int, iv []driver.ImageView, plane []int) {
 	p := (*C.VkDescriptorImageInfo)(C.malloc(C.size_t(len(iv)) * C.sizeof_VkDescriptorImageInfo))
 	defer C.free(unsafe.Pointer(p))
 	s := unsafe.Slice(p, len(iv))
@@ -216,10 +216,27 @@ func (h *descHeap) SetImage(cpy, nr, start int, iv []driver.ImageView) {
 	} else {
 		lay = C.VK_IMAGE_LAYOUT_GENERAL
 	}
-	for i := range s {
-		s[i] = C.VkDescriptorImageInfo{
-			imageView:   iv[i].(*imageView).view,
-			imageLayout: lay,
+	if len(plane) == 0 {
+		for i := range s {
+			s[i] = C.VkDescriptorImageInfo{
+				imageView:   iv[i].(*imageView).view,
+				imageLayout: lay,
+			}
+		}
+	} else {
+		for i := range s {
+			var view C.VkImageView
+			switch plane[i] {
+			case 0:
+				view = iv[i].(*imageView).view
+			case 1:
+				// TODO
+				panic("TODO")
+			}
+			s[i] = C.VkDescriptorImageInfo{
+				imageView:   view,
+				imageLayout: lay,
+			}
 		}
 	}
 	write := C.VkWriteDescriptorSet{
