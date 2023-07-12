@@ -219,22 +219,14 @@ func (h *descHeap) SetImage(cpy, nr, start int, iv []driver.ImageView, plane []i
 	if len(plane) == 0 {
 		for i := range s {
 			s[i] = C.VkDescriptorImageInfo{
-				imageView:   iv[i].(*imageView).view,
+				imageView:   iv[i].(*imageView).view[0],
 				imageLayout: lay,
 			}
 		}
 	} else {
 		for i := range s {
-			var view C.VkImageView
-			switch plane[i] {
-			case 0:
-				view = iv[i].(*imageView).view
-			case 1:
-				// TODO
-				panic("TODO")
-			}
 			s[i] = C.VkDescriptorImageInfo{
-				imageView:   view,
+				imageView:   iv[i].(*imageView).view[plane[i]],
 				imageLayout: lay,
 			}
 		}
