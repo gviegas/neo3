@@ -90,5 +90,5 @@ func Register(drv Driver) {
 var (
 	// NOTE: Currently, this mutex is unnecessary.
 	mu      sync.Mutex
-	drivers []Driver = make([]Driver, 0, 4)
+	drivers []Driver = make([]Driver, 0, 1)
 )
