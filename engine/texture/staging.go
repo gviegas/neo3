@@ -219,19 +219,20 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, off int64) (err error) 
 		},
 	})
 
+	wk.Work[0].CopyBufToImg(&driver.BufImgCopy{
+		Buf:    s.buf,
+		BufOff: off,
+		// TODO: Stride[0] must be 256-byte aligned.
+		Stride: [2]int{t.param.Dim3D.Width, t.param.Dim3D.Height},
+		Img:    t.views[view].Image(),
+		ImgOff: driver.Off3D{},
+		Layer:  il,
+		Level:  0,
+		Size:   t.param.Dim3D,
+		Layers: nl,
+		// TODO: Handle depth/stencil formats.
+	})
 	for i := 0; i < nl; i++ {
-		wk.Work[0].CopyBufToImg(&driver.BufImgCopy{
-			Buf:    s.buf,
-			BufOff: off + int64(n*i),
-			// TODO: Stride[0] must be 256-byte aligned.
-			Stride: [2]int64{int64(t.param.Dim3D.Width)},
-			Img:    t.views[view].Image(),
-			ImgOff: driver.Off3D{},
-			Layer:  il + i,
-			Level:  0,
-			Size:   t.param.Dim3D,
-			// TODO: Handle depth/stencil formats.
-		})
 		// The current layout is not relevant
 		// because the whole layer is going to
 		// be overwritten by this command.
@@ -283,6 +284,8 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error
 	}
 	// Need separate transitions if not all
 	// layers are in the same layout.
+	// TODO: Maybe try to merge contiguous
+	// layers that share the same layout.
 	var differ bool
 	before := []driver.Layout{t.setPending(il)}
 	for i := 1; i < nl; i++ {
@@ -304,6 +307,7 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error
 		// TODO: Consider caching this on s
 		// (or t; see Texture.Transition).
 		xs := make([]driver.Transition, nl)
+		img := t.views[view].Image()
 		for i := 0; i < nl; i++ {
 			xs = append(xs, driver.Transition{
 				Barrier: driver.Barrier{
@@ -314,7 +318,7 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error
 				},
 				LayoutBefore: before[i],
 				LayoutAfter:  driver.LCopySrc,
-				Img:          t.views[view].Image(),
+				Img:          img,
 				Layer:        il + i,
 				Layers:       1,
 				Level:        0,
@@ -342,19 +346,20 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error
 		})
 	}
 
+	wk.Work[0].CopyImgToBuf(&driver.BufImgCopy{
+		Buf:    s.buf,
+		BufOff: off,
+		// TODO: Stride[0] must be 256-byte aligned.
+		Stride: [2]int{t.param.Dim3D.Width, t.param.Dim3D.Height},
+		Img:    t.views[view].Image(),
+		ImgOff: driver.Off3D{},
+		Layer:  il,
+		Level:  0,
+		Size:   t.param.Dim3D,
+		Layers: nl,
+		// TODO: Handle depth/stencil formats.
+	})
 	for i := 0; i < nl; i++ {
-		wk.Work[0].CopyImgToBuf(&driver.BufImgCopy{
-			Buf:    s.buf,
-			BufOff: off + int64(n*i),
-			// TODO: Stride[0] must be 256-byte aligned.
-			Stride: [2]int64{int64(t.param.Dim3D.Width)},
-			Img:    t.views[view].Image(),
-			ImgOff: driver.Off3D{},
-			Layer:  il + i,
-			Level:  0,
-			Size:   t.param.Dim3D,
-			// TODO: Handle depth/stencil formats.
-		})
 		s.pend = append(s.pend, pendingCopy{t, il + i, driver.LCopySrc})
 	}
 	if t.param.Levels > 1 {
