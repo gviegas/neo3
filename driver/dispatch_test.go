@@ -201,7 +201,7 @@ func Example_dispatch() {
 	}
 
 	// Write the results to file.
-	nrgba := image.NewRGBA(image.Rect(0, 0, dim.Width, dim.Height))
+	nrgba := image.NewNRGBA(image.Rect(0, 0, dim.Width, dim.Height))
 	copy(nrgba.Pix, staging.Bytes())
 	file, err = os.Create("testdata/checker.png")
 	if err != nil {
