@@ -355,7 +355,7 @@ func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler)
 	case splr == nil:
 		panic("nil shadow map sampler")
 	}
-	t.dt.Heap(globalHeap).SetImage(cpy, shdwTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(globalHeap).SetImage(cpy, shdwTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(globalHeap).SetSampler(cpy, shdwSplrNr, 0, []driver.Sampler{splr})
 }
 
@@ -371,7 +371,7 @@ func (t *Table) SetBaseColor(cpy int, tex driver.ImageView, splr driver.Sampler)
 	case splr == nil:
 		panic("nil base color sampler")
 	}
-	t.dt.Heap(materialHeap).SetImage(cpy, colorTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetImage(cpy, colorTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(materialHeap).SetSampler(cpy, colorSplrNr, 0, []driver.Sampler{splr})
 }
 
@@ -387,7 +387,7 @@ func (t *Table) SetMetalRough(cpy int, tex driver.ImageView, splr driver.Sampler
 	case splr == nil:
 		panic("nil metallic-roughness sampler")
 	}
-	t.dt.Heap(materialHeap).SetImage(cpy, metalTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetImage(cpy, metalTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(materialHeap).SetSampler(cpy, metalSplrNr, 0, []driver.Sampler{splr})
 }
 
@@ -403,7 +403,7 @@ func (t *Table) SetNormalMap(cpy int, tex driver.ImageView, splr driver.Sampler)
 	case splr == nil:
 		panic("nil normal map sampler")
 	}
-	t.dt.Heap(materialHeap).SetImage(cpy, normTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetImage(cpy, normTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(materialHeap).SetSampler(cpy, normSplrNr, 0, []driver.Sampler{splr})
 }
 
@@ -419,7 +419,7 @@ func (t *Table) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampl
 	case splr == nil:
 		panic("nil occlusion map sampler")
 	}
-	t.dt.Heap(materialHeap).SetImage(cpy, occTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetImage(cpy, occTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(materialHeap).SetSampler(cpy, occSplrNr, 0, []driver.Sampler{splr})
 }
 
@@ -435,7 +435,7 @@ func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sample
 	case splr == nil:
 		panic("nil emissive map sampler")
 	}
-	t.dt.Heap(materialHeap).SetImage(cpy, emisTexNr, 0, []driver.ImageView{tex})
+	t.dt.Heap(materialHeap).SetImage(cpy, emisTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(materialHeap).SetSampler(cpy, emisSplrNr, 0, []driver.Sampler{splr})
 }
 
