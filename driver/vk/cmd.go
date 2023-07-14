@@ -708,7 +708,7 @@ func (cb *cmdBuffer) CopyBufToImg(param *driver.BufImgCopy) {
 			aspectMask:     aspect,
 			mipLevel:       C.uint32_t(param.Level),
 			baseArrayLayer: C.uint32_t(param.Layer),
-			layerCount:     1,
+			layerCount:     C.uint32_t(param.Layers),
 		},
 		imageOffset: C.VkOffset3D{
 			x: C.int32_t(param.ImgOff.X),
@@ -759,7 +759,7 @@ func (cb *cmdBuffer) CopyImgToBuf(param *driver.BufImgCopy) {
 			aspectMask:     aspect,
 			mipLevel:       C.uint32_t(param.Level),
 			baseArrayLayer: C.uint32_t(param.Layer),
-			layerCount:     1,
+			layerCount:     C.uint32_t(param.Layers),
 		},
 		imageOffset: C.VkOffset3D{
 			x: C.int32_t(param.ImgOff.X),

@@ -175,6 +175,7 @@ func Example_dispatch() {
 			Stride: [2]int{dim.Width, dim.Height},
 			Img:    storage,
 			Size:   dim,
+			Layers: 1,
 		})
 		if err := cbCopy.End(); err != nil {
 			ch <- err

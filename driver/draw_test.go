@@ -231,6 +231,7 @@ func Example_draw() {
 			Layer:  0,
 			Level:  0,
 			Size:   dim,
+			Layers: 1,
 		}
 		tdraw = [1]driver.Transition{
 			{

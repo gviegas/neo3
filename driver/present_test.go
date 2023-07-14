@@ -289,6 +289,7 @@ func (t *T) samplingSetup() {
 		Stride: [2]int{size.Width, size.Height},
 		Img:    img,
 		Size:   size,
+		Layers: 1,
 	})
 	t.cb[0].Transition([]driver.Transition{
 		{

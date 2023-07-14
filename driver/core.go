@@ -313,6 +313,7 @@ type BufImgCopy struct {
 	Layer  int
 	Level  int
 	Size   Dim3D
+	Layers int
 	// DepthCopy selects either the depth or stencil
 	// aspects to copy. It is only used if Img has a
 	// combined depth/stencil format.
