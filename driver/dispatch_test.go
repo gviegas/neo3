@@ -172,7 +172,7 @@ func Example_dispatch() {
 		})
 		cbCopy.CopyImgToBuf(&driver.BufImgCopy{
 			Buf:    staging,
-			Stride: [2]int64{int64(dim.Width)},
+			Stride: [2]int{dim.Width, dim.Height},
 			Img:    storage,
 			Size:   dim,
 		})

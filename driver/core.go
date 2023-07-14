@@ -307,7 +307,7 @@ type BufImgCopy struct {
 	// in the buffer. It is given in pixels.
 	// Stride[0] refers to the row length and Stride[1]
 	// refers to the image height.
-	Stride [2]int64
+	Stride [2]int
 	Img    Image
 	ImgOff Off3D
 	Layer  int

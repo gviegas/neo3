@@ -225,7 +225,7 @@ func Example_draw() {
 			Buf:    cpy,
 			BufOff: 0,
 			// Stride is given in pixels, not bytes.
-			Stride: [2]int64{int64(dim.Width), int64(dim.Height)},
+			Stride: [2]int{dim.Width, dim.Height},
 			Img:    img,
 			ImgOff: driver.Off3D{},
 			Layer:  0,

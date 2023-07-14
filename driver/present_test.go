@@ -286,7 +286,7 @@ func (t *T) samplingSetup() {
 	})
 	t.cb[0].CopyBufToImg(&driver.BufImgCopy{
 		Buf:    buf,
-		Stride: [2]int64{int64(size.Width)},
+		Stride: [2]int{size.Width, size.Height},
 		Img:    img,
 		Size:   size,
 	})
