@@ -5,7 +5,7 @@ package driver_test
 import (
 	"bytes"
 	"image"
-	_ "image/png"
+	"image/png"
 	"log"
 	"math"
 	"os"
@@ -233,7 +233,7 @@ func (t *T) samplingSetup() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	decImg, _, err := image.Decode(reader)
+	decImg, err := png.Decode(reader)
 	if err != nil {
 		log.Fatal(err)
 	}
