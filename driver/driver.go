@@ -8,6 +8,7 @@ package driver
 
 import (
 	"errors"
+	"log"
 	"sync"
 )
 
@@ -80,10 +81,12 @@ func Register(drv Driver) {
 	for i := range drivers {
 		if drivers[i].Name() == drv.Name() {
 			drivers[i] = drv
+			log.Printf("[!] driver '%s' replaced", drv.Name())
 			return
 		}
 	}
 	drivers = append(drivers, drv)
+	log.Printf("driver '%s' registered", drv.Name())
 }
 
 // Variables used for driver registration.
