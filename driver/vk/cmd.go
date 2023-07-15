@@ -680,9 +680,10 @@ func (cb *cmdBuffer) CopyBufToImg(param *driver.BufImgCopy) {
 	img := param.Img.(*image)
 	var aspect C.VkImageAspectFlags
 	if img.subres.aspectMask == C.VK_IMAGE_ASPECT_DEPTH_BIT|C.VK_IMAGE_ASPECT_STENCIL_BIT {
-		if param.DepthCopy {
+		switch param.Plane {
+		case 0:
 			aspect = C.VK_IMAGE_ASPECT_DEPTH_BIT
-		} else {
+		case 1:
 			aspect = C.VK_IMAGE_ASPECT_STENCIL_BIT
 		}
 	} else {
@@ -731,9 +732,10 @@ func (cb *cmdBuffer) CopyImgToBuf(param *driver.BufImgCopy) {
 	buf := param.Buf.(*buffer)
 	var aspect C.VkImageAspectFlags
 	if img.subres.aspectMask == C.VK_IMAGE_ASPECT_DEPTH_BIT|C.VK_IMAGE_ASPECT_STENCIL_BIT {
-		if param.DepthCopy {
+		switch param.Plane {
+		case 0:
 			aspect = C.VK_IMAGE_ASPECT_DEPTH_BIT
-		} else {
+		case 1:
 			aspect = C.VK_IMAGE_ASPECT_STENCIL_BIT
 		}
 	} else {

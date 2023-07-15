@@ -312,12 +312,13 @@ type BufImgCopy struct {
 	ImgOff Off3D
 	Layer  int
 	Level  int
+	// Plane selects the plane/aspect of the image.
+	// The first plane/aspect is 0. For combined
+	// depth/stencil formats, depth is Plane 0 and
+	// stencil is Plane 1.
+	Plane  int
 	Size   Dim3D
 	Layers int
-	// DepthCopy selects either the depth or stencil
-	// aspects to copy. It is only used if Img has a
-	// combined depth/stencil format.
-	DepthCopy bool
 }
 
 // Sync is the type of a synchronization scope.
