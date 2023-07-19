@@ -838,8 +838,12 @@ type Usage int
 
 // Usage flags for Buffer and Image.
 const (
+	// The resource can be copied from.
+	UCopySrc Usage = 1 << iota
+	// The resource can be copied to.
+	UCopyDst
 	// The resource can be read in shaders.
-	UShaderRead Usage = 1 << iota
+	UShaderRead
 	// The resource can be written in shaders.
 	UShaderWrite
 	// The resource can provide constant data for shaders.

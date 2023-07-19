@@ -46,7 +46,7 @@ func Example_draw() {
 		Height: 512,
 		Depth:  1,
 	}
-	img, err := gpu.NewImage(pf, dim, 1, 1, 1, driver.URenderTarget)
+	img, err := gpu.NewImage(pf, dim, 1, 1, 1, driver.UCopySrc|driver.URenderTarget)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func Example_draw() {
 	// Create a second buffer to copy image data into.
 	// Image memory is GPU-private, so a staging buffer is required
 	// if we are going to access image data from the CPU side.
-	cpy, err := gpu.NewBuffer(int64(dim.Width*dim.Height*dim.Depth*psz), true, 0)
+	cpy, err := gpu.NewBuffer(int64(dim.Width*dim.Height*dim.Depth*psz), true, driver.UCopyDst)
 	if err != nil {
 		log.Fatal(err)
 	}

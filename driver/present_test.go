@@ -246,7 +246,7 @@ func (t *T) samplingSetup() {
 	default:
 		log.Fatal("decoded image is neither NRGBA nor RGBA")
 	}
-	buf, err := gpu.NewBuffer(int64(len(pix)), true, 0)
+	buf, err := gpu.NewBuffer(int64(len(pix)), true, driver.UCopySrc)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func (t *T) samplingSetup() {
 		Width:  decImg.Bounds().Max.X,
 		Height: decImg.Bounds().Max.Y,
 	}
-	img, err := gpu.NewImage(driver.RGBA8sRGB, size, 1, 1, 1, driver.UShaderSample)
+	img, err := gpu.NewImage(driver.RGBA8sRGB, size, 1, 1, 1, driver.UCopyDst|driver.UShaderSample)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -29,7 +29,7 @@ func Example_dispatch() {
 	size := int64(dim.Width * dim.Height * pfmt.Size())
 
 	// Create the storage image/view (write-only).
-	storage, err := gpu.NewImage(pfmt, dim, 1, 1, 1, driver.UShaderWrite)
+	storage, err := gpu.NewImage(pfmt, dim, 1, 1, 1, driver.UCopySrc|driver.UShaderWrite)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func Example_dispatch() {
 
 	// Create a staging buffer to copy the result,
 	// so it can be read by the CPU.
-	staging, err := gpu.NewBuffer(size, true, 0)
+	staging, err := gpu.NewBuffer(size, true, driver.UCopyDst)
 	if err != nil {
 		log.Fatal(err)
 	}
