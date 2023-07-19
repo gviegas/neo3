@@ -86,7 +86,8 @@ func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
 			return span{}, err
 		}
 		if b.buf != nil {
-			// TODO: Do this copy through the GPU.
+			// TODO: Do this copy through the GPU
+			// (requires driver.UCopySrc/UCopyDst).
 			copy(buf.Bytes(), b.buf.Bytes())
 			b.buf.Destroy()
 		}
