@@ -166,7 +166,9 @@ func New2D(param *TexParam) (t *Texture, err error) {
 	err = errors.New(prefix + reason)
 	return
 validParam:
-	usage := driver.UShaderSample
+	// TODO: Consider removing driver.UCopySrc and
+	// disallowing CopyFromView calls instead.
+	usage := driver.UCopySrc | driver.UCopyDst | driver.UShaderSample
 	views, err := makeViews(param, usage, tex2D)
 	if err == nil {
 		// TODO: Should destroy driver resources
@@ -206,7 +208,9 @@ func NewCube(param *TexParam) (t *Texture, err error) {
 	err = errors.New(prefix + reason)
 	return
 validParam:
-	usage := driver.UShaderSample
+	// TODO: Consider removing driver.UCopySrc and
+	// disallowing CopyFromView calls instead.
+	usage := driver.UCopySrc | driver.UCopyDst | driver.UShaderSample
 	views, err := makeViews(param, usage, texCube)
 	if err == nil {
 		// TODO: Should destroy driver resources
@@ -244,7 +248,9 @@ func NewTarget(param *TexParam) (t *Texture, err error) {
 	err = errors.New(prefix + reason)
 	return
 validParam:
-	usage := driver.UShaderSample | driver.URenderTarget
+	// TODO: Consider removing driver.UCopyDst and
+	// disallowing CopyToView calls instead.
+	usage := driver.UCopySrc | driver.UCopyDst | driver.UShaderSample | driver.URenderTarget
 	views, err := makeViews(param, usage, texTarget)
 	if err == nil {
 		// TODO: Should destroy driver resources

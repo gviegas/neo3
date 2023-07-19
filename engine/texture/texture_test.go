@@ -23,7 +23,7 @@ func (tex *Texture) check(t *testing.T) {
 			t.Fatalf("Texture.views[%d].Image: differs from [0]\nhave %v\nwant %v", i, x, img)
 		}
 	}
-	usg := ^(driver.UShaderRead | driver.UShaderWrite | driver.UShaderSample | driver.URenderTarget)
+	usg := ^(driver.UCopySrc | driver.UCopyDst | driver.UShaderRead | driver.UShaderWrite | driver.UShaderSample | driver.URenderTarget)
 	if tex.usage == 0 || tex.usage&usg != 0 {
 		t.Fatalf("Texture.usage: unexpected flag(s) set:\n0x%x", tex.usage&usg)
 	}

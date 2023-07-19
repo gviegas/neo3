@@ -145,9 +145,7 @@ func newStaging(n int) (*stagingBuffer, error) {
 	wk := make(chan *driver.WorkItem, 1)
 	wk <- &driver.WorkItem{Work: []driver.CmdBuffer{cb}}
 	n = (n + blockSize*nbit - 1) &^ (blockSize*nbit - 1)
-	// No usage flags necessary; all buffers
-	// support copying.
-	buf, err := ctxt.GPU().NewBuffer(int64(n), true, 0)
+	buf, err := ctxt.GPU().NewBuffer(int64(n), true, driver.UCopySrc|driver.UCopyDst)
 	if err != nil {
 		cb.Destroy()
 		return nil, err
