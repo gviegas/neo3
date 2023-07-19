@@ -19,8 +19,12 @@ type buffer struct {
 func (d *Driver) NewBuffer(size int64, visible bool, usg driver.Usage) (driver.Buffer, error) {
 	// TODO: Some of these usages may not be required.
 	var u C.VkBufferUsageFlags
-	u |= C.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-	u |= C.VK_BUFFER_USAGE_TRANSFER_DST_BIT
+	if usg&driver.UCopySrc != 0 {
+		u |= C.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+	}
+	if usg&driver.UCopyDst != 0 {
+		u |= C.VK_BUFFER_USAGE_TRANSFER_DST_BIT
+	}
 	u |= C.VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
 	if usg&(driver.UShaderRead|driver.UShaderWrite) != 0 {
 		u |= C.VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT

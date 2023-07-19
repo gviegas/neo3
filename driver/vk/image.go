@@ -61,6 +61,12 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 	}
 
 	var usage C.VkImageUsageFlags
+	if usg&driver.UCopySrc != 0 {
+		usage |= C.VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+	}
+	if usg&driver.UCopyDst != 0 {
+		usage |= C.VK_IMAGE_USAGE_TRANSFER_DST_BIT
+	}
 	if usg&(driver.UShaderRead|driver.UShaderWrite) != 0 {
 		usage |= C.VK_IMAGE_USAGE_STORAGE_BIT
 	}
@@ -82,8 +88,6 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 		// a view in this case.
 		panic("cannot create image without a valid usage")
 	}
-	usage |= C.VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-	usage |= C.VK_IMAGE_USAGE_TRANSFER_DST_BIT
 
 	var prop C.VkImageFormatProperties
 	res := C.vkGetPhysicalDeviceImageFormatProperties(d.pdev, format, typ, C.VK_IMAGE_TILING_OPTIMAL, usage, flags, &prop)

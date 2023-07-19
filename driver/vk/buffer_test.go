@@ -15,6 +15,8 @@ func TestBuffer(t *testing.T) {
 		visible bool
 		usage   driver.Usage
 	}{
+		{2048, true, driver.UCopySrc},
+		{4096, true, driver.UCopyDst},
 		{8192, true, driver.UShaderRead | driver.UShaderWrite | driver.UShaderConst | driver.UVertexData | driver.UIndexData},
 		{512, true, 0},
 		{16, true, driver.UShaderRead | driver.UShaderWrite},
