@@ -89,8 +89,6 @@ func makeViews(param *TexParam, usage driver.Usage, texType int) (v []driver.Ima
 		nl = 1
 	case texCube:
 		if param.Layers > 6 {
-			// BUG: Certain back-ends may not support
-			// views of type IViewCubeArray.
 			view, err := img.NewView(driver.IViewCubeArray, 0, param.Layers, 0, param.Levels)
 			if err != nil {
 				img.Destroy()
@@ -182,6 +180,7 @@ validParam:
 // NewCube creates a new cube texture.
 func NewCube(param *TexParam) (t *Texture, err error) {
 	limits := ctxt.Limits()
+	features := ctxt.Features()
 	var reason string
 	switch {
 	case param == nil:
@@ -198,6 +197,8 @@ func NewCube(param *TexParam) (t *Texture, err error) {
 		reason = "too many layers"
 	case param.Layers%6 != 0:
 		reason = "cube's layer count not a multiple of 6"
+	case param.Layers > 6 && !features.CubeArray:
+		reason = "cube arrays not supported"
 	case param.Levels < 1, param.Levels > ComputeLevels(param.Dim3D):
 		reason = "invalid level count"
 	case param.Samples != 1:
