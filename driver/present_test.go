@@ -532,8 +532,8 @@ func (t *T) renderLoop() {
 		// in the image view we acquired previously.
 		cb.BeginPass(dim.Width, dim.Height, 1, []driver.ColorTarget{t.rt[next]}, &t.ds)
 		cb.SetPipeline(t.pipeln)
-		cb.SetViewport([]driver.Viewport{t.vport})
-		cb.SetScissor([]driver.Scissor{t.sciss})
+		cb.SetViewport(t.vport)
+		cb.SetScissor(t.sciss)
 		cb.SetVertexBuf(0, []driver.Buffer{t.vertBuf, t.vertBuf}, []int64{0, 512})
 		cb.SetDescTableGraph(t.dtab, 0, []int{frame})
 		cb.Draw(36, 1, 0, 0)

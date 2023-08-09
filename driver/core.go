@@ -132,13 +132,11 @@ type CmdBuffer interface {
 	// type of pipeline.
 	SetPipeline(pl Pipeline)
 
-	// SetViewport sets the bounds of one or more
-	// viewports.
-	SetViewport(vp []Viewport)
+	// SetViewport sets the bounds of the viewport.
+	SetViewport(vp Viewport)
 
-	// SetScissor sets the rectangles of one or more
-	// viewport scissors.
-	SetScissor(sciss []Scissor)
+	// SetScissor sets the scissor rectangle.
+	SetScissor(sciss Scissor)
 
 	// SetBlendColor sets the constant blend color.
 	SetBlendColor(r, g, b, a float32)
@@ -1104,8 +1102,6 @@ type Limits struct {
 	MaxRenderLayers int
 	// Maximum size of a point primitive.
 	MaxPointSize float32
-	// Maximum number of viewports.
-	MaxViewports int
 
 	// Maximum number of vertex inputs in a
 	// vertex shader.

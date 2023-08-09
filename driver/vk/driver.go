@@ -241,7 +241,6 @@ func (d *Driver) setLimits(lim *C.VkPhysicalDeviceLimits) {
 		MaxRenderSize:   [2]int{int(lim.maxFramebufferWidth), int(lim.maxFramebufferHeight)},
 		MaxRenderLayers: int(lim.maxFramebufferLayers),
 		MaxPointSize:    float32(lim.pointSizeRange[1]),
-		MaxViewports:    int(lim.maxViewports),
 
 		MaxVertexIn:   int(lim.maxVertexInputBindings),
 		MaxFragmentIn: int(lim.maxFragmentInputComponents / 4),
@@ -268,7 +267,6 @@ func (d *Driver) setFeatures(info *C.VkDeviceCreateInfo) (free func()) {
 		depthBiasClamp:                          fq.depthBiasClamp,
 		fillModeNonSolid:                        fq.fillModeNonSolid,
 		largePoints:                             fq.largePoints,
-		multiViewport:                           fq.multiViewport,
 		samplerAnisotropy:                       fq.samplerAnisotropy,
 		fragmentStoresAndAtomics:                fq.fragmentStoresAndAtomics,
 		shaderUniformBufferArrayDynamicIndexing: fq.shaderUniformBufferArrayDynamicIndexing,

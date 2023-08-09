@@ -459,68 +459,32 @@ func (cb *cmdBuffer) SetPipeline(pl driver.Pipeline) {
 	C.vkCmdBindPipeline(cb.cb, pipeln.bindp, pipeln.pl)
 }
 
-// SetViewport sets the bounds of one or more viewports.
-func (cb *cmdBuffer) SetViewport(vp []driver.Viewport) {
-	nvp := len(vp)
-	switch {
-	case nvp == 1:
-		vport := C.VkViewport{
-			x:        C.float(vp[0].X),
-			y:        C.float(vp[0].Y),
-			width:    C.float(vp[0].Width),
-			height:   C.float(vp[0].Height),
-			minDepth: C.float(vp[0].Znear),
-			maxDepth: C.float(vp[0].Zfar),
-		}
-		C.vkCmdSetViewport(cb.cb, 0, 1, &vport)
-	case nvp > 1:
-		vport := make([]C.VkViewport, nvp)
-		for i := range vport {
-			vport[i] = C.VkViewport{
-				x:        C.float(vp[i].X),
-				y:        C.float(vp[i].Y),
-				width:    C.float(vp[i].Width),
-				height:   C.float(vp[i].Height),
-				minDepth: C.float(vp[i].Znear),
-				maxDepth: C.float(vp[i].Zfar),
-			}
-		}
-		C.vkCmdSetViewport(cb.cb, 0, C.uint32_t(nvp), unsafe.SliceData(vport))
+// SetViewport sets the bounds of the viewport.
+func (cb *cmdBuffer) SetViewport(vp driver.Viewport) {
+	vport := C.VkViewport{
+		x:        C.float(vp.X),
+		y:        C.float(vp.Y),
+		width:    C.float(vp.Width),
+		height:   C.float(vp.Height),
+		minDepth: C.float(vp.Znear),
+		maxDepth: C.float(vp.Zfar),
 	}
+	C.vkCmdSetViewport(cb.cb, 0, 1, &vport)
 }
 
-// SetScissor sets the rectangles of one or more viewport scissors.
-func (cb *cmdBuffer) SetScissor(sciss []driver.Scissor) {
-	nsciss := len(sciss)
-	switch {
-	case nsciss == 1:
-		rect := C.VkRect2D{
-			offset: C.VkOffset2D{
-				x: C.int32_t(sciss[0].X),
-				y: C.int32_t(sciss[0].Y),
-			},
-			extent: C.VkExtent2D{
-				width:  C.uint32_t(sciss[0].Width),
-				height: C.uint32_t(sciss[0].Height),
-			},
-		}
-		C.vkCmdSetScissor(cb.cb, 0, 1, &rect)
-	case nsciss > 1:
-		rect := make([]C.VkRect2D, nsciss)
-		for i := range rect {
-			rect[i] = C.VkRect2D{
-				offset: C.VkOffset2D{
-					x: C.int32_t(sciss[i].X),
-					y: C.int32_t(sciss[i].Y),
-				},
-				extent: C.VkExtent2D{
-					width:  C.uint32_t(sciss[i].Width),
-					height: C.uint32_t(sciss[i].Height),
-				},
-			}
-		}
-		C.vkCmdSetScissor(cb.cb, 0, C.uint32_t(nsciss), unsafe.SliceData(rect))
+// SetScissor sets the scissor rectange.
+func (cb *cmdBuffer) SetScissor(sciss driver.Scissor) {
+	rect := C.VkRect2D{
+		offset: C.VkOffset2D{
+			x: C.int32_t(sciss.X),
+			y: C.int32_t(sciss.Y),
+		},
+		extent: C.VkExtent2D{
+			width:  C.uint32_t(sciss.Width),
+			height: C.uint32_t(sciss.Height),
+		},
 	}
+	C.vkCmdSetScissor(cb.cb, 0, 1, &rect)
 }
 
 // SetBlendColor sets the constant blend color.
