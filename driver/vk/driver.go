@@ -53,6 +53,9 @@ type Driver struct {
 
 	// Limits of pdev.
 	lim driver.Limits
+
+	// Features of pdev.
+	feat driver.Features
 }
 
 func init() {
@@ -253,13 +256,23 @@ func (d *Driver) setLimits(lim *C.VkPhysicalDeviceLimits) {
 	}
 }
 
-// setFeatures chooses which features to enable.
-// BUG: Either provide a way in the driver package to check what is
-// enabled or just let device creation fail.
+// setFeatures sets d.feat and configures info's features.
 func (d *Driver) setFeatures(info *C.VkDeviceCreateInfo) (free func()) {
 	var fq C.VkPhysicalDeviceFeatures
 	C.vkGetPhysicalDeviceFeatures(d.pdev, &fq)
+
+	if fq.independentBlend == C.VK_TRUE {
+		d.feat.IndependentBlend = true
+	}
+	if fq.fillModeNonSolid == C.VK_TRUE {
+		d.feat.FLines = true
+	}
+	if fq.imageCubeArray == C.VK_TRUE {
+		d.feat.CubeArray = true
+	}
+
 	feat := (*C.VkPhysicalDeviceFeatures)(C.malloc(C.size_t(unsafe.Sizeof(fq))))
+	// TODO: Need to expose more features through driver.Features.
 	*feat = C.VkPhysicalDeviceFeatures{
 		fullDrawIndexUint32:                     fq.fullDrawIndexUint32,
 		imageCubeArray:                          fq.imageCubeArray,
@@ -482,6 +495,9 @@ func (d *Driver) Driver() driver.Driver { return d }
 
 // Limits returns the implementation limits.
 func (d *Driver) Limits() driver.Limits { return d.lim }
+
+// Features returns the supported features.
+func (d *Driver) Features() driver.Features { return d.feat }
 
 // checkResult returns an error derived from a VkResult value.
 // If such value does not indicate an error, it returns nil instead.
