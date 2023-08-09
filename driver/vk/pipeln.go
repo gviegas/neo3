@@ -186,8 +186,6 @@ func setGraphTess(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (
 
 // setGraphViewport sets the viewport state for graphics pipeline creation.
 func setGraphViewport(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (free func()) {
-	// TODO: Define a field in driver.GraphState indicating the
-	// number of viewports to use.
 	pvp := (*C.VkPipelineViewportStateCreateInfo)(C.malloc(C.sizeof_VkPipelineViewportStateCreateInfo))
 	*pvp = C.VkPipelineViewportStateCreateInfo{
 		sType:         C.VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -202,6 +200,10 @@ func setGraphViewport(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInf
 
 // setGraphRaster sets the rasterization state for graphics pipeline creation.
 func setGraphRaster(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (free func()) {
+	var discard C.VkBool32
+	if gs.Raster.Discard {
+		discard = C.VK_TRUE
+	}
 	var frontFace C.VkFrontFace
 	if gs.Raster.Clockwise {
 		frontFace = C.VK_FRONT_FACE_CLOCKWISE
@@ -215,6 +217,7 @@ func setGraphRaster(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo)
 	prz := (*C.VkPipelineRasterizationStateCreateInfo)(C.malloc(C.sizeof_VkPipelineRasterizationStateCreateInfo))
 	*prz = C.VkPipelineRasterizationStateCreateInfo{
 		sType:                   C.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+		rasterizerDiscardEnable: discard,
 		polygonMode:             convFillMode(gs.Raster.Fill),
 		cullMode:                convCullMode(gs.Raster.Cull),
 		frontFace:               frontFace,

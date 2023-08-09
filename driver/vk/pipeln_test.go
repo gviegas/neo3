@@ -35,6 +35,7 @@ func plTestNew(vert, frag driver.ShaderCode, desc driver.DescTable, color driver
 		},
 		Topology: driver.TTriangle,
 		Raster: driver.RasterState{
+			Discard:   false,
 			Clockwise: false,
 			Cull:      driver.CBack,
 			Fill:      driver.FFill,
@@ -105,6 +106,7 @@ func plTestNewColorOnly(vert, frag driver.ShaderCode, desc driver.DescTable, col
 		},
 		Topology: driver.TTriangle,
 		Raster: driver.RasterState{
+			Discard:   false,
 			Clockwise: false,
 			Cull:      driver.CBack,
 			Fill:      driver.FFill,
@@ -154,6 +156,7 @@ func plTestNewDepthOnly(vert driver.ShaderCode, ds driver.PixelFmt) (driver.Pipe
 		},
 		Topology: driver.TTriangle,
 		Raster: driver.RasterState{
+			Discard:   false,
 			Clockwise: false,
 			Cull:      driver.CBack,
 			Fill:      driver.FFill,

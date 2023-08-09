@@ -658,6 +658,8 @@ const (
 // RasterState defines the rasterization state of a
 // graphics pipeline.
 type RasterState struct {
+	// Discard disables rasterization.
+	Discard bool
 	// Winding order is either clockwise or counter-clockwise.
 	Clockwise bool
 	Cull      CullMode

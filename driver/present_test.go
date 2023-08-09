@@ -408,6 +408,7 @@ func (t *T) pipelineSetup() {
 		},
 		Topology: driver.TTriangle,
 		Raster: driver.RasterState{
+			Discard:   false,
 			Clockwise: false,
 			Cull:      driver.CBack,
 			Fill:      driver.FFill,
