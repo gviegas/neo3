@@ -50,6 +50,10 @@ type GPU interface {
 	// Limits returns the implementation limits.
 	// They are immutable for the lifetime of the GPU.
 	Limits() Limits
+
+	// Features returns the supported features.
+	// They are immutable for the lifetime of the GPU.
+	Features() Features
 }
 
 // Destroyer is the interface that wraps the Destroy method.
@@ -1114,4 +1118,17 @@ type Limits struct {
 
 	// Maximum dispatch count.
 	MaxDispatch [3]int
+}
+
+// Features describes available features.
+// These may vary across drivers and devices.
+type Features struct {
+	// Whether BlendState.IndependentBlend
+	// is supported.
+	IndependentBlend bool
+	// Whether the FLines FillMode is supported.
+	FLines bool
+	// Whether ImageView of type IViewCubeArray
+	// is supported.
+	CubeArray bool
 }
