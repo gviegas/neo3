@@ -11,19 +11,22 @@ import (
 )
 
 var (
-	drv    driver.Driver
-	gpu    driver.GPU
-	limits driver.Limits
+	drv      driver.Driver
+	gpu      driver.GPU
+	limits   driver.Limits
+	features driver.Features
 )
 
 var errNoDriver = errors.New("ctxt: driver not found")
 
-// loadDriver attempts to load any driver whose name contains
-// the provided name string. It is case-sensitive.
-// If name is the empty string, all drivers are considered.
-// It assumes that the drv and gpu vars hold invalid values
-// and replaces both on success. It also updates limits with
-// a call to gpu.Limits().
+// loadDriver attempts to load any driver whose name
+// contains the name string. It is case-sensitive.
+// If name is the empty string, then all registered
+// drivers are considered.
+// It assumes that the drv and gpu vars hold invalid
+// values and replaces both on success.
+// The limits and features vars are queried from the
+// new gpu.
 func loadDriver(name string) error {
 	drivers := driver.Drivers()
 	err := errNoDriver
@@ -38,6 +41,7 @@ func loadDriver(name string) error {
 		drv = drivers[i]
 		gpu = u
 		limits = gpu.Limits()
+		features = gpu.Features()
 		return nil
 	}
 	return err
@@ -49,7 +53,12 @@ func Driver() driver.Driver { return drv }
 // GPU returns the driver.GPU.
 func GPU() driver.GPU { return gpu }
 
-// Limits returns driver.Limits of the context's GPU.
+// Limits returns GPU().Limits().
 // This value is retrieved only once. It must not be
 // changed by the caller.
 func Limits() *driver.Limits { return &limits }
+
+// Features returns GPU().Features().
+// This value is retrieved only once. It must not be
+// changed by the caller.
+func Features() *driver.Features { return &features }
