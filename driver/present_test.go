@@ -23,7 +23,7 @@ const DepthFmt = driver.D16un
 
 var dim = driver.Dim3D{
 	Width:  480,
-	Height: 300,
+	Height: 270,
 }
 
 var brokenSC bool
@@ -449,6 +449,8 @@ func (t *T) renderLoop() {
 		wk := &driver.WorkItem{Work: []driver.CmdBuffer{t.cb[i]}}
 		t.ch <- wk
 	}
+	t0 := time.Now()
+	t1 := t0
 	for !t.quit {
 		wk := <-t.ch
 		if err = wk.Err; err != nil {
@@ -467,9 +469,12 @@ func (t *T) renderLoop() {
 			brokenSC = false
 		}
 
+		dt := t1.Sub(t0)
+		t0, t1 = t1, time.Now()
+
 		// Note that, as long as we use the same buffer range,
 		// we need not set the descriptor heap again.
-		t.updateTransform(time.Second / 60)
+		t.updateTransform(dt)
 		copy(t.constBuf.Bytes()[512*frame:], unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
 
 		// Begin must come before anything else.
@@ -762,7 +767,7 @@ func (m *M) infPerspective(yfov, aspectRatio, znear float32) {
 	m[14] = -2 * znear
 }
 
-func (m *M) lookAt(eye, center, up *V) {
+func (m *M) lookAt(center, eye, up *V) {
 	var f, s, u V
 	f.subtract(center, eye)
 	f.normalize()
@@ -823,7 +828,7 @@ func (t *T) updateTransform(dt time.Duration) {
 	eye := V{3, -3, -4}
 	center := V{0}
 	up := V{0, -1, 0}
-	view.lookAt(&eye, &center, &up)
+	view.lookAt(&center, &eye, &up)
 
 	axis := &up
 	model.rotate(axis, t.angle)
