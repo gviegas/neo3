@@ -53,6 +53,8 @@ type Driver struct {
 
 	// Limits of pdev.
 	lim driver.Limits
+	// Upper bound for Sampling.MaxAniso.
+	aniso int
 
 	// Features of pdev.
 	feat driver.Features
@@ -222,7 +224,7 @@ func (d *Driver) initDevice() error {
 	return nil
 }
 
-// setLimits sets d.lim.
+// setLimits sets d.lim and d.aniso.
 func (d *Driver) setLimits(lim *C.VkPhysicalDeviceLimits) {
 	d.lim = driver.Limits{
 		MaxImage1D:   int(lim.maxImageDimension1D),
@@ -254,6 +256,7 @@ func (d *Driver) setLimits(lim *C.VkPhysicalDeviceLimits) {
 			int(lim.maxComputeWorkGroupCount[2]),
 		},
 	}
+	d.aniso = max(1, int(lim.maxSamplerAnisotropy))
 }
 
 // setFeatures sets d.feat and configures info's features.
