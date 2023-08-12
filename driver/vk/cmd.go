@@ -590,18 +590,9 @@ func (cb *cmdBuffer) CopyBuffer(param *driver.BufferCopy) {
 func (cb *cmdBuffer) CopyImage(param *driver.ImageCopy) {
 	from := param.From.(*image)
 	to := param.To.(*image)
-	width := param.Size.Width
-	height := param.Size.Height
-	depth := param.Size.Depth
-	if width < 1 {
-		width = 1
-	}
-	if height < 1 {
-		height = 1
-	}
-	if depth < 1 {
-		depth = 1
-	}
+	width := max(1, param.Size.Width)
+	height := max(1, param.Size.Height)
+	depth := max(1, param.Size.Depth)
 	cpy := C.VkImageCopy{
 		srcSubresource: C.VkImageSubresourceLayers{
 			aspectMask:     from.subres.aspectMask,
@@ -653,18 +644,9 @@ func (cb *cmdBuffer) CopyBufToImg(param *driver.BufImgCopy) {
 	} else {
 		aspect = img.subres.aspectMask
 	}
-	width := param.Size.Width
-	height := param.Size.Height
-	depth := param.Size.Depth
-	if width < 1 {
-		width = 1
-	}
-	if height < 1 {
-		height = 1
-	}
-	if depth < 1 {
-		depth = 1
-	}
+	width := max(1, param.Size.Width)
+	height := max(1, param.Size.Height)
+	depth := max(1, param.Size.Depth)
 	cpy := C.VkBufferImageCopy{
 		bufferOffset:      C.VkDeviceSize(param.BufOff),
 		bufferRowLength:   C.uint32_t(param.Stride[0]),
@@ -705,18 +687,9 @@ func (cb *cmdBuffer) CopyImgToBuf(param *driver.BufImgCopy) {
 	} else {
 		aspect = img.subres.aspectMask
 	}
-	width := param.Size.Width
-	height := param.Size.Height
-	depth := param.Size.Depth
-	if width < 1 {
-		width = 1
-	}
-	if height < 1 {
-		height = 1
-	}
-	if depth < 1 {
-		depth = 1
-	}
+	width := max(1, param.Size.Width)
+	height := max(1, param.Size.Height)
+	depth := max(1, param.Size.Depth)
 	cpy := C.VkBufferImageCopy{
 		bufferOffset:      C.VkDeviceSize(param.BufOff),
 		bufferRowLength:   C.uint32_t(param.Stride[0]),
