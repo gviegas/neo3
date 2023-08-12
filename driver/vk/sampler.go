@@ -18,20 +18,24 @@ type sampler struct {
 // NewSampler creates a new sampler.
 func (d *Driver) NewSampler(spln *driver.Sampling) (driver.Sampler, error) {
 	info := C.VkSamplerCreateInfo{
-		sType:        C.VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		magFilter:    convFilter(spln.Mag),
-		minFilter:    convFilter(spln.Min),
-		mipmapMode:   convMipFilter(spln.Mipmap),
-		addressModeU: convAddrMode(spln.AddrU),
-		addressModeV: convAddrMode(spln.AddrV),
-		addressModeW: convAddrMode(spln.AddrW),
-		// TODO: Anisotropy is a feature - disable it for now.
-		//maxAnisotropy: C.float(maxAniso),
-		compareEnable: C.VK_FALSE,
-		compareOp:     C.VK_COMPARE_OP_NEVER,
-		minLod:        C.float(spln.MinLOD),
-		maxLod:        C.float(spln.MaxLOD),
-		borderColor:   C.VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
+		sType:            C.VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		magFilter:        convFilter(spln.Mag),
+		minFilter:        convFilter(spln.Min),
+		mipmapMode:       convMipFilter(spln.Mipmap),
+		addressModeU:     convAddrMode(spln.AddrU),
+		addressModeV:     convAddrMode(spln.AddrV),
+		addressModeW:     convAddrMode(spln.AddrW),
+		anisotropyEnable: C.VK_FALSE,
+		maxAnisotropy:    1,
+		compareEnable:    C.VK_FALSE,
+		compareOp:        C.VK_COMPARE_OP_NEVER,
+		minLod:           C.float(spln.MinLOD),
+		maxLod:           C.float(spln.MaxLOD),
+		borderColor:      C.VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
+	}
+	if spln.MaxAniso > 1 && d.aniso > 1 {
+		info.anisotropyEnable = C.VK_TRUE
+		info.maxAnisotropy = C.float(max(1, min(spln.MaxAniso, d.aniso)))
 	}
 	if spln.DoCmp {
 		info.compareEnable = C.VK_TRUE
