@@ -220,17 +220,10 @@ func (m *Bitm[T]) SearchRange(n int) (index int, ok bool) {
 
 // Clear unsets every bit in the map.
 func (m *Bitm[T]) Clear() {
-	if m.Len() == m.Rem() {
+	n := m.Len()
+	if n == m.Rem() {
 		return
 	}
-	const n = 16
-	var zeroes [n]T
-	s := m.m[:]
-	for {
-		if copy(s, zeroes[:]) < n {
-			m.rem = m.Len()
-			return
-		}
-		s = s[n:]
-	}
+	clear(m.m)
+	m.rem = n
 }
