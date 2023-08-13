@@ -44,12 +44,7 @@ func (m *Bitm[T]) Grow(nplus int) (index int) {
 	index = m.Len()
 	if nplus > 0 {
 		m.rem += nplus * m.nbit()
-		var zeroes [16]T
-		for nplus > len(zeroes) {
-			m.m = append(m.m, zeroes[:]...)
-			nplus -= len(zeroes)
-		}
-		m.m = append(m.m, zeroes[:nplus]...)
+		m.m = append(m.m, make([]T, nplus)...)
 	}
 	return
 }
