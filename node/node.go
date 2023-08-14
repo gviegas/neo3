@@ -149,9 +149,7 @@ func (g *Graph) Insert(n Interface, prev Node) Node {
 	}
 	g.nodes[newn-1].sub = Nil
 	g.nodes[newn-1].data = len(g.data)
-	var world linear.M4
-	world.I()
-	g.data = append(g.data, data{n, world, false, newn})
+	g.data = append(g.data, data{n, linear.I4(), false, newn})
 	return newn
 }
 
