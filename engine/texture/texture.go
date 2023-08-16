@@ -559,8 +559,6 @@ func NewSampler(param *SplrParam) (s *Sampler, err error) {
 	switch {
 	case param == nil:
 		reason = "nil param"
-	// TODO: An upper bound should be defined
-	// in driver.Limits.
 	case param.MaxAniso < 1:
 		reason = "invalid max anisotropy"
 	case param.MinLOD < 0:
