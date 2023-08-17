@@ -21,6 +21,8 @@ type Material struct {
 	// Other models may yet be added.
 	prop any
 
+	layout shader.MaterialLayout
+
 	// TODO: Descriptors; const buffer.
 }
 
@@ -158,7 +160,7 @@ func New(prop *PBR) (m *Material, err error) {
 	}
 	p := new(PBR)
 	*p = *prop
-	m = &Material{p}
+	m = &Material{p, prop.shaderLayout()}
 	return
 }
 
@@ -169,7 +171,7 @@ func NewUnlit(prop *Unlit) (m *Material, err error) {
 	}
 	p := new(Unlit)
 	*p = *prop
-	m = &Material{p}
+	m = &Material{p, prop.shaderLayout()}
 	return
 }
 
