@@ -97,21 +97,7 @@ func TestNew(t *testing.T) {
 		if err != nil || mat == nil {
 			t.Fatalf("New*:\nhave %v, %#v\nwant non-nil, nil", mat, err)
 		}
-		if mat.prop == nil {
-			t.Fatal("Material.prop: is any(nil)")
-		}
-		switch x := mat.prop.(type) {
-		case *PBR:
-			if x == nil {
-				t.Fatal("Material.prop: is (*PBR)(nil)")
-			}
-		case *Unlit:
-			if x == nil {
-				t.Fatal("Material.prop: is (*Unlit)(nil)")
-			}
-		default:
-			t.Fatalf("Material.prop: invalid type\nhave %T\nwant %T or %T", mat.prop, &PBR{}, &Unlit{})
-		}
+		// TODO: Compare fields to property used to create the Material.
 	}
 
 	checkFail := func(mat *Material, err error, reason string) {

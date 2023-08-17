@@ -17,11 +17,12 @@ const prefix = "material: "
 // Material defines the material properties to be applied
 // to geometry during rendering.
 type Material struct {
-	// *PBR or *Unlit.
-	// Other models may yet be added.
-	prop any
-
-	layout shader.MaterialLayout
+	baseColor  TexRef
+	metalRough TexRef
+	normal     TexRef
+	occlusion  TexRef
+	emissive   TexRef
+	layout     shader.MaterialLayout
 
 	// TODO: Descriptors; const buffer.
 }
@@ -154,25 +155,29 @@ func (u *Unlit) shaderLayout() (l shader.MaterialLayout) {
 }
 
 // New creates a new material using the default model.
-func New(prop *PBR) (m *Material, err error) {
-	if err = prop.validate(); err != nil {
-		return
+func New(prop *PBR) (*Material, error) {
+	if err := prop.validate(); err != nil {
+		return nil, err
 	}
-	p := new(PBR)
-	*p = *prop
-	m = &Material{p, prop.shaderLayout()}
-	return
+	return &Material{
+		baseColor:  prop.BaseColor.TexRef,
+		metalRough: prop.MetalRough.TexRef,
+		normal:     prop.Normal.TexRef,
+		occlusion:  prop.Occlusion.TexRef,
+		emissive:   prop.Emissive.TexRef,
+		layout:     prop.shaderLayout(),
+	}, nil
 }
 
 // NewUnlit creates a new material using the unlit model.
-func NewUnlit(prop *Unlit) (m *Material, err error) {
-	if err = prop.validate(); err != nil {
-		return
+func NewUnlit(prop *Unlit) (*Material, error) {
+	if err := prop.validate(); err != nil {
+		return nil, err
 	}
-	p := new(Unlit)
-	*p = *prop
-	m = &Material{p, prop.shaderLayout()}
-	return
+	return &Material{
+		baseColor: prop.BaseColor.TexRef,
+		layout:    prop.shaderLayout(),
+	}, nil
 }
 
 // Parameter validation for New* functions.
