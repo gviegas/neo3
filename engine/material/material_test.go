@@ -146,10 +146,10 @@ func TestNew(t *testing.T) {
 		}
 	}
 
-	// New calls that must succeed.
+	// NewPBR calls that must succeed.
 	t.Run("PBR", func(t *testing.T) {
 		var pbr PBR
-		mat, err := New(&pbr)
+		mat, err := NewPBR(&pbr)
 		check(mat, err, &pbr)
 
 		pbr = PBR{
@@ -177,7 +177,7 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
 		}
-		mat, err = New(&pbr)
+		mat, err = NewPBR(&pbr)
 		check(mat, err, &pbr)
 
 		pbr = PBR{
@@ -194,7 +194,7 @@ func TestNew(t *testing.T) {
 			AlphaCutoff: 0.5,
 			DoubleSided: false,
 		}
-		mat, err = New(&pbr)
+		mat, err = NewPBR(&pbr)
 		check(mat, err, &pbr)
 
 		pbr = PBR{
@@ -222,7 +222,7 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaBlend,
 			DoubleSided: true,
 		}
-		mat, err = New(&pbr)
+		mat, err = NewPBR(&pbr)
 		check(mat, err, &pbr)
 
 		pbr = PBR{
@@ -242,7 +242,7 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
 		}
-		mat, err = New(&pbr)
+		mat, err = NewPBR(&pbr)
 		check(mat, err, &pbr)
 
 		pbr = PBR{
@@ -266,7 +266,7 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
 		}
-		mat, err = New(&pbr)
+		mat, err = NewPBR(&pbr)
 		check(mat, err, &pbr)
 
 		pbr = PBR{
@@ -286,7 +286,7 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
 		}
-		mat, err = New(&pbr)
+		mat, err = NewPBR(&pbr)
 		check(mat, err, &pbr)
 	})
 
@@ -367,9 +367,9 @@ func TestNew(t *testing.T) {
 		check(mat, err, &unlit)
 	})
 
-	// New calls that must fail.
+	// NewPBR calls that must fail.
 	t.Run("PBRFail", func(t *testing.T) {
-		mat, err := New(&PBR{
+		mat, err := NewPBR(&PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 0, nil, UVSet0},
 				Factor: [4]float32{1, 1, 1, 1},
@@ -377,7 +377,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "nil TexRef.Sampler")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 0, splr, UVSet1 + 1},
 				Factor: [4]float32{1, 1, 1, 1},
@@ -385,7 +385,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "undefined UV set constant")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 0, splr, UVSet0},
 				Factor: [4]float32{1, 1, 1, 1.1},
@@ -393,7 +393,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "BaseColor.Factor outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			MetalRough: MetalRough{
 				TexRef:    TexRef{oneChTex, 0, splr, UVSet0},
 				Metalness: 1,
@@ -402,7 +402,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "MetalRough.Texture has insufficient channels")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			MetalRough: MetalRough{
 				TexRef:    TexRef{occMetal, 0, splr, UVSet0},
 				Metalness: -0.1,
@@ -411,7 +411,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "MetalRough.Metalness outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			MetalRough: MetalRough{
 				TexRef:    TexRef{occMetal, 0, splr, UVSet0},
 				Metalness: 1.2,
@@ -420,7 +420,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "MetalRough.Metalness outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			MetalRough: MetalRough{
 				TexRef:    TexRef{occMetal, 0, splr, UVSet0},
 				Metalness: 1,
@@ -429,7 +429,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "MetalRough.Roughness outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			MetalRough: MetalRough{
 				TexRef:    TexRef{occMetal, 0, splr, UVSet0},
 				Metalness: 1,
@@ -438,7 +438,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "MetalRough.Roughness outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			Normal: Normal{
 				TexRef: TexRef{normal, -1, splr, UVSet0},
 				Scale:  1,
@@ -446,7 +446,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "invalid TexRef.View")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			Normal: Normal{
 				TexRef: TexRef{twoChTex, 0, splr, UVSet0},
 				Scale:  1,
@@ -454,7 +454,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "Normal.Texture has insufficient channels")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			Normal: Normal{
 				TexRef: TexRef{normal, 0, splr, UVSet0},
 				Scale:  -1,
@@ -462,7 +462,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "Normal.Scale less than 0.0")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			Occlusion: Occlusion{
 				TexRef:   TexRef{occMetal, 0, splr, UVSet0},
 				Strength: 2,
@@ -470,7 +470,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "Occlusion.Strength outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			Occlusion: Occlusion{
 				TexRef:   TexRef{occMetal, 0, splr, UVSet0},
 				Strength: -3,
@@ -478,7 +478,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "Occlusion.Strength outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			Emissive: Emissive{
 				TexRef: TexRef{twoChTex, 0, splr, UVSet0},
 				Factor: [3]float32{1, 1, 1},
@@ -486,7 +486,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "Emissive.Texture has insufficient channels")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			Emissive: Emissive{
 				TexRef: TexRef{emissive, 0, splr, UVSet0},
 				Factor: [3]float32{1, 1, -1},
@@ -494,7 +494,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "Emissive.Factor outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{
+		mat, err = NewPBR(&PBR{
 			Emissive: Emissive{
 				TexRef: TexRef{emissive, 0, splr, UVSet0},
 				Factor: [3]float32{2},
@@ -502,7 +502,7 @@ func TestNew(t *testing.T) {
 		})
 		checkFail(mat, err, "Emissive.Factor outside [0.0, 1.0] interval")
 
-		mat, err = New(&PBR{AlphaMode: AlphaMask + 1})
+		mat, err = NewPBR(&PBR{AlphaMode: AlphaMask + 1})
 		checkFail(mat, err, "undefined alpha mode constant")
 	})
 

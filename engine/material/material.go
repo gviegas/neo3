@@ -154,8 +154,8 @@ func (u *Unlit) shaderLayout() (l shader.MaterialLayout) {
 	return
 }
 
-// New creates a new material using the default model.
-func New(prop *PBR) (*Material, error) {
+// NewPBR creates a new material using the default model.
+func NewPBR(prop *PBR) (*Material, error) {
 	if err := prop.validate(); err != nil {
 		return nil, err
 	}
