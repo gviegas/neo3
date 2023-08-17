@@ -93,11 +93,48 @@ func TestNew(t *testing.T) {
 		t.Fatalf("texture.NewSampler failed:\n%#v", err)
 	}
 
-	check := func(mat *Material, err error) {
+	check := func(mat *Material, err error, prop any) {
 		if err != nil || mat == nil {
 			t.Fatalf("New*:\nhave %v, %#v\nwant non-nil, nil", mat, err)
 		}
-		// TODO: Compare fields to property used to create the Material.
+		var want Material
+		switch prop := prop.(type) {
+		case *PBR:
+			want = Material{
+				baseColor:  prop.BaseColor.TexRef,
+				metalRough: prop.MetalRough.TexRef,
+				normal:     prop.Normal.TexRef,
+				occlusion:  prop.Occlusion.TexRef,
+				emissive:   prop.Emissive.TexRef,
+				layout:     prop.shaderLayout(),
+			}
+		case *Unlit:
+			want = Material{
+				baseColor: prop.BaseColor.TexRef,
+				layout:    prop.shaderLayout(),
+			}
+		default:
+			t.Fatalf("unexpected Material property")
+		}
+		if mat.baseColor != want.baseColor {
+			t.Fatalf("New*: Material.baseColor\nhave %v\nwant %v", mat.baseColor, want.baseColor)
+		}
+		if mat.metalRough != want.metalRough {
+			t.Fatalf("New*: Material.metalRough\nhave %v\nwant %v", mat.metalRough, want.metalRough)
+		}
+		if mat.normal != want.normal {
+			t.Fatalf("New*: Material.normal\nhave %v\nwant %v", mat.normal, want.normal)
+		}
+		if mat.occlusion != want.occlusion {
+			t.Fatalf("New*: Material.occlusion\nhave %v\nwant %v", mat.occlusion, want.occlusion)
+		}
+		if mat.emissive != want.emissive {
+			t.Fatalf("New*: Material.emissive\nhave %v\nwant %v", mat.emissive, want.emissive)
+		}
+		if mat.layout != want.layout {
+			// TODO: Should validate layout contents.
+			t.Fatalf("New*: Material.layout\nhave %v\nwant %v", mat.layout, want.layout)
+		}
 	}
 
 	checkFail := func(mat *Material, err error, reason string) {
@@ -111,10 +148,11 @@ func TestNew(t *testing.T) {
 
 	// New calls that must succeed.
 	t.Run("PBR", func(t *testing.T) {
-		mat, err := New(&PBR{})
-		check(mat, err)
+		var pbr PBR
+		mat, err := New(&pbr)
+		check(mat, err, &pbr)
 
-		mat, err = New(&PBR{
+		pbr = PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 0, splr, UVSet0},
 				Factor: [4]float32{1, 1, 1, 1},
@@ -138,10 +176,11 @@ func TestNew(t *testing.T) {
 			},
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = New(&pbr)
+		check(mat, err, &pbr)
 
-		mat, err = New(&PBR{
+		pbr = PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 1, splr, UVSet0},
 				Factor: [4]float32{1, 1, 1, 1},
@@ -154,10 +193,11 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaMask,
 			AlphaCutoff: 0.5,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = New(&pbr)
+		check(mat, err, &pbr)
 
-		mat, err = New(&PBR{
+		pbr = PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{},
 				Factor: [4]float32{1, 1, 1, 0.75},
@@ -181,10 +221,11 @@ func TestNew(t *testing.T) {
 			},
 			AlphaMode:   AlphaBlend,
 			DoubleSided: true,
-		})
-		check(mat, err)
+		}
+		mat, err = New(&pbr)
+		check(mat, err, &pbr)
 
-		mat, err = New(&PBR{
+		pbr = PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 3, splr, UVSet0},
 				Factor: [4]float32{1, 1, 1, 1},
@@ -200,10 +241,11 @@ func TestNew(t *testing.T) {
 			},
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = New(&pbr)
+		check(mat, err, &pbr)
 
-		mat, err = New(&PBR{
+		pbr = PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{},
 				Factor: [4]float32{1, 0.2, 0.05, 1},
@@ -223,10 +265,11 @@ func TestNew(t *testing.T) {
 			},
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = New(&pbr)
+		check(mat, err, &pbr)
 
-		mat, err = New(&PBR{
+		pbr = PBR{
 			BaseColor: BaseColor{
 				TexRef: TexRef{},
 				Factor: [4]float32{1, 1, 1, 1},
@@ -242,36 +285,40 @@ func TestNew(t *testing.T) {
 			},
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = New(&pbr)
+		check(mat, err, &pbr)
 	})
 
 	// NewUnlit calls that must succeed.
 	t.Run("Unlit", func(t *testing.T) {
-		mat, err := NewUnlit(&Unlit{})
-		check(mat, err)
+		var unlit Unlit
+		mat, err := NewUnlit(&unlit)
+		check(mat, err, &unlit)
 
-		mat, err = NewUnlit(&Unlit{
+		unlit = Unlit{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 0, splr, UVSet0},
 				Factor: [4]float32{1, 1, 1, 1},
 			},
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = NewUnlit(&unlit)
+		check(mat, err, &unlit)
 
-		mat, err = NewUnlit(&Unlit{
+		unlit = Unlit{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 2, splr, UVSet1},
 				Factor: [4]float32{1, 1, 1, 1},
 			},
 			AlphaMode:   AlphaBlend,
 			DoubleSided: true,
-		})
-		check(mat, err)
+		}
+		mat, err = NewUnlit(&unlit)
+		check(mat, err, &unlit)
 
-		mat, err = NewUnlit(&Unlit{
+		unlit = Unlit{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 1, splr, UVSet0},
 				Factor: [4]float32{1, 1, 1, 1},
@@ -279,20 +326,22 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaMask,
 			AlphaCutoff: 0.5,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = NewUnlit(&unlit)
+		check(mat, err, &unlit)
 
-		mat, err = NewUnlit(&Unlit{
+		unlit = Unlit{
 			BaseColor: BaseColor{
 				TexRef: TexRef{},
 				Factor: [4]float32{0.1, 0.01, 0.125, 1},
 			},
 			AlphaMode:   AlphaOpaque,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = NewUnlit(&unlit)
+		check(mat, err, &unlit)
 
-		mat, err = NewUnlit(&Unlit{
+		unlit = Unlit{
 			BaseColor: BaseColor{
 				TexRef: TexRef{color, 0, splr, UVSet1},
 				Factor: [4]float32{},
@@ -300,11 +349,12 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaMask,
 			AlphaCutoff: 2,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = NewUnlit(&unlit)
+		check(mat, err, &unlit)
 
 		// This has the same effect as AlphaOpaque.
-		mat, err = NewUnlit(&Unlit{
+		unlit = Unlit{
 			BaseColor: BaseColor{
 				TexRef: TexRef{},
 				Factor: [4]float32{0.6, 0.7, 0.8, 1},
@@ -312,8 +362,9 @@ func TestNew(t *testing.T) {
 			AlphaMode:   AlphaMask,
 			AlphaCutoff: -100,
 			DoubleSided: false,
-		})
-		check(mat, err)
+		}
+		mat, err = NewUnlit(&unlit)
+		check(mat, err, &unlit)
 	})
 
 	// New calls that must fail.
