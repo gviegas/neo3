@@ -99,8 +99,7 @@ type PBR struct {
 
 // shaderLayout creates the shader.MaterialLayout of p.
 // It assumes that p is valid.
-func (p *PBR) shaderLayout() shader.MaterialLayout {
-	var l shader.MaterialLayout
+func (p *PBR) shaderLayout() (l shader.MaterialLayout) {
 	l.SetColorFactor((*linear.V4)(&p.BaseColor.Factor))
 	l.SetMetalRough(p.MetalRough.Metalness, p.MetalRough.Roughness)
 	l.SetNormScale(p.Normal.Scale)
@@ -120,7 +119,7 @@ func (p *PBR) shaderLayout() shader.MaterialLayout {
 		flags |= shader.MatDoubleSided
 	}
 	l.SetFlags(flags)
-	return l
+	return
 }
 
 // Unlit defines properties of the unlit material model.
@@ -129,6 +128,27 @@ type Unlit struct {
 	AlphaMode   int
 	AlphaCutoff float32
 	DoubleSided bool
+}
+
+// shaderLayout creates the shader.MaterialLayout of u.
+// It assumes that u is valid.
+func (u *Unlit) shaderLayout() (l shader.MaterialLayout) {
+	l.SetColorFactor((*linear.V4)(&u.BaseColor.Factor))
+	l.SetAlphaCutoff(u.AlphaCutoff)
+	flags := shader.MatUnlit
+	switch u.AlphaMode {
+	case AlphaOpaque:
+		flags |= shader.MatAOpaque
+	case AlphaBlend:
+		flags |= shader.MatABlend
+	case AlphaMask:
+		flags |= shader.MatAMask
+	}
+	if u.DoubleSided {
+		flags |= shader.MatDoubleSided
+	}
+	l.SetFlags(flags)
+	return
 }
 
 // New creates a new material using the default model.
