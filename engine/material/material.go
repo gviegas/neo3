@@ -7,7 +7,9 @@ package material
 import (
 	"errors"
 
+	"gviegas/neo3/engine/internal/shader"
 	"gviegas/neo3/engine/texture"
+	"gviegas/neo3/linear"
 )
 
 const prefix = "material: "
@@ -93,6 +95,32 @@ type PBR struct {
 	AlphaMode   int
 	AlphaCutoff float32
 	DoubleSided bool
+}
+
+// shaderLayout creates the shader.MaterialLayout of p.
+// It assumes that p is valid.
+func (p *PBR) shaderLayout() shader.MaterialLayout {
+	var l shader.MaterialLayout
+	l.SetColorFactor((*linear.V4)(&p.BaseColor.Factor))
+	l.SetMetalRough(p.MetalRough.Metalness, p.MetalRough.Roughness)
+	l.SetNormScale(p.Normal.Scale)
+	l.SetOccStrength(p.Occlusion.Strength)
+	l.SetEmisFactor((*linear.V3)(&p.Emissive.Factor))
+	l.SetAlphaCutoff(p.AlphaCutoff)
+	flags := shader.MatPBR
+	switch p.AlphaMode {
+	case AlphaOpaque:
+		flags |= shader.MatAOpaque
+	case AlphaBlend:
+		flags |= shader.MatABlend
+	case AlphaMask:
+		flags |= shader.MatAMask
+	}
+	if p.DoubleSided {
+		flags |= shader.MatDoubleSided
+	}
+	l.SetFlags(flags)
+	return l
 }
 
 // Unlit defines properties of the unlit material model.
