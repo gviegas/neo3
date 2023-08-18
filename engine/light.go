@@ -45,3 +45,16 @@ type Light struct {
 	typ    int
 	layout shader.LightLayout
 }
+
+// Light creates the light source described by t.
+func (t *SunLight) Light() Light {
+	var l shader.LightLayout
+	l.SetType(shader.SunLight)
+	l.SetIntensity(t.Intensity)
+	l.SetColor(&linear.V3{t.R, t.G, t.B})
+	l.SetDirection(&t.Direction)
+	return Light{
+		typ:    sunLight,
+		layout: l,
+	}
+}
