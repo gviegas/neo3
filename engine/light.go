@@ -3,6 +3,8 @@
 package engine
 
 import (
+	"math"
+
 	"gviegas/neo3/engine/internal/shader"
 	"gviegas/neo3/linear"
 )
@@ -69,6 +71,31 @@ func (t *PointLight) Light() Light {
 	l.SetPosition(&t.Position)
 	return Light{
 		typ:    pointLight,
+		layout: l,
+	}
+}
+
+// Light creates the light source described by t.
+func (t *SpotLight) Light() Light {
+	innerCos := math.Cos(float64(t.InnerAngle))
+	outerCos := math.Cos(float64(t.OuterAngle))
+	cosDiff := innerCos - outerCos
+	var scale float64
+	if cosDiff < 1e-6 {
+		scale = 1e6
+	} else {
+		scale = 1 / cosDiff
+	}
+	var l shader.LightLayout
+	l.SetType(shader.SpotLight)
+	l.SetRange(t.Range)
+	l.SetColor(&linear.V3{t.R, t.G, t.B})
+	l.SetAngScale(float32(scale))
+	l.SetPosition(&t.Position)
+	l.SetAngOffset(float32(scale * -outerCos))
+	l.SetDirection(&t.Direction)
+	return Light{
+		typ:    spotLight,
 		layout: l,
 	}
 }
