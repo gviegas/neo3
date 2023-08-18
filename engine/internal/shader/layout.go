@@ -90,7 +90,7 @@ type LightLayout [16]float32
 
 // Types of light.
 const (
-	DirectLight int32 = iota
+	SunLight int32 = iota
 	PointLight
 	SpotLight
 )
@@ -132,7 +132,7 @@ func (l *LightLayout) SetPosition(p *linear.V3) { copy(l[8:11], p[:]) }
 func (l *LightLayout) SetAngOffset(off float32) { l[11] = off }
 
 // SetDirection sets the direction.
-// Used for DirectLight and SpotLight.
+// Used for SunLight and SpotLight.
 func (l *LightLayout) SetDirection(d *linear.V3) { copy(l[12:15], d[:]) }
 
 // ShadowLayout is the layout of shadow data.
