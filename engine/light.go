@@ -58,3 +58,17 @@ func (t *SunLight) Light() Light {
 		layout: l,
 	}
 }
+
+// Light creates the light source described by t.
+func (t *PointLight) Light() Light {
+	var l shader.LightLayout
+	l.SetType(shader.PointLight)
+	l.SetIntensity(t.Intensity)
+	l.SetRange(t.Range)
+	l.SetColor(&linear.V3{t.R, t.G, t.B})
+	l.SetPosition(&t.Position)
+	return Light{
+		typ:    pointLight,
+		layout: l,
+	}
+}
