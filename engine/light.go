@@ -51,7 +51,7 @@ type SunLight struct {
 func (t *SunLight) Light() Light {
 	var l shader.LightLayout
 	l.SetType(shader.SunLight)
-	l.SetIntensity(t.Intensity)
+	l.SetIntensity(max(0, t.Intensity))
 	l.SetColor(&linear.V3{t.R, t.G, t.B})
 	l.SetDirection(&t.Direction)
 	return Light{
@@ -79,7 +79,7 @@ type PointLight struct {
 func (t *PointLight) Light() Light {
 	var l shader.LightLayout
 	l.SetType(shader.PointLight)
-	l.SetIntensity(t.Intensity)
+	l.SetIntensity(max(0, t.Intensity))
 	l.SetRange(t.Range)
 	l.SetColor(&linear.V3{t.R, t.G, t.B})
 	l.SetPosition(&t.Position)
@@ -121,7 +121,7 @@ func (t *SpotLight) Light() Light {
 	)
 	var l shader.LightLayout
 	l.SetType(shader.SpotLight)
-	l.SetIntensity(t.Intensity)
+	l.SetIntensity(max(0, t.Intensity))
 	l.SetRange(t.Range)
 	l.SetColor(&linear.V3{t.R, t.G, t.B})
 	l.SetAngScale(float32(scale))
