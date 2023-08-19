@@ -38,7 +38,7 @@ func (l *Light) SetPosition(p *linear.V3) { l.layout.SetPosition(p) }
 // SunLight is a directional light.
 // The light is emitted in the given Direction.
 // It behaves as if located infinitely far way.
-// Intensity's unit is lux.
+// Intensity is the illuminance in lux.
 type SunLight struct {
 	Direction linear.V3
 	Intensity float32
@@ -64,7 +64,7 @@ func (t *SunLight) Light() Light {
 // The light is emitted in all directions from the
 // given Position.
 // Range determines the area affected by the light.
-// Intensity's unit is candela.
+// Intensity is the luminous intensity in candela.
 type PointLight struct {
 	Position  linear.V3
 	Range     float32
@@ -92,10 +92,9 @@ func (t *PointLight) Light() Light {
 // SpotLight is a directional, positional light.
 // The light is emitted in a cone in the given Direction
 // from the given Position.
-// Range, InnerAngle and OuterAngle determine the area
-// affected by the light.
-// InnerAngle's/OuterAngle's unit is radians.
-// Intensity's unit is candela.
+// InnerAngle and OuterAngle (in radians), alongside
+// Range, determine the area affected by the light.
+// Intensity is the luminous intensity in candela.
 type SpotLight struct {
 	Direction  linear.V3
 	Position   linear.V3
