@@ -9,33 +9,6 @@ import (
 	"gviegas/neo3/linear"
 )
 
-// SunLight is a directional light.
-type SunLight struct {
-	Direction linear.V3
-	Intensity float32
-	R, G, B   float32
-}
-
-// PointLight is an omnidirectional, positional light.
-type PointLight struct {
-	Position  linear.V3
-	Range     float32
-	Intensity float32
-	R, G, B   float32
-}
-
-// SpotLight is a directional, positional light defined
-// by a conical shape.
-type SpotLight struct {
-	Direction  linear.V3
-	Position   linear.V3
-	InnerAngle float32
-	OuterAngle float32
-	Range      float32
-	Intensity  float32
-	R, G, B    float32
-}
-
 const (
 	sunLight = iota
 	pointLight
@@ -46,6 +19,15 @@ const (
 type Light struct {
 	typ    int
 	layout shader.LightLayout
+}
+
+// SunLight is a directional light.
+// The light is emitted in the given Direction.
+// It behaves as if located infinitely far way.
+type SunLight struct {
+	Direction linear.V3
+	Intensity float32
+	R, G, B   float32
 }
 
 // Light creates the light source described by t.
@@ -61,6 +43,17 @@ func (t *SunLight) Light() Light {
 	}
 }
 
+// PointLight is an omnidirectional, positional light.
+// The light is emitted in all directions from the
+// given Position.
+// Range determines the area affected by the light.
+type PointLight struct {
+	Position  linear.V3
+	Range     float32
+	Intensity float32
+	R, G, B   float32
+}
+
 // Light creates the light source described by t.
 func (t *PointLight) Light() Light {
 	var l shader.LightLayout
@@ -73,6 +66,21 @@ func (t *PointLight) Light() Light {
 		typ:    pointLight,
 		layout: l,
 	}
+}
+
+// SpotLight is a directional, positional light.
+// The light is emitted in a cone in the given Direction
+// from the given Position.
+// Range, InnerAngle and OuterAngle determine the area
+// affected by the light.
+type SpotLight struct {
+	Direction  linear.V3
+	Position   linear.V3
+	InnerAngle float32
+	OuterAngle float32
+	Range      float32
+	Intensity  float32
+	R, G, B    float32
 }
 
 // Light creates the light source described by t.
