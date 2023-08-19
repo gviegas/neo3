@@ -77,15 +77,13 @@ func (t *PointLight) Light() Light {
 
 // Light creates the light source described by t.
 func (t *SpotLight) Light() Light {
-	innerCos := math.Cos(float64(t.InnerAngle))
-	outerCos := math.Cos(float64(t.OuterAngle))
-	cosDiff := innerCos - outerCos
-	var scale float64
-	if cosDiff < 1e-6 {
-		scale = 1e6
-	} else {
-		scale = 1 / cosDiff
-	}
+	var (
+		inner    = max(0, min(float64(t.InnerAngle), math.Pi/2-1e-6))
+		outer    = max(inner+1e-6, min(float64(t.OuterAngle), math.Pi/2))
+		innerCos = math.Cos(inner)
+		outerCos = math.Cos(outer)
+		scale    = 1 / (innerCos - outerCos)
+	)
 	var l shader.LightLayout
 	l.SetType(shader.SpotLight)
 	l.SetRange(t.Range)
