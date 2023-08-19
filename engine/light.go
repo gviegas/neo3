@@ -121,6 +121,7 @@ func (t *SpotLight) Light() Light {
 	)
 	var l shader.LightLayout
 	l.SetType(shader.SpotLight)
+	l.SetIntensity(t.Intensity)
 	l.SetRange(t.Range)
 	l.SetColor(&linear.V3{t.R, t.G, t.B})
 	l.SetAngScale(float32(scale))
