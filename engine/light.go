@@ -16,6 +16,9 @@ const (
 )
 
 // Light defines a light source.
+// The zero value for Light is not valid; one must
+// call SunLight.Light, PointLight.Light or
+// SpotLight.Light to create an initialized Light.
 type Light struct {
 	typ    int
 	layout shader.LightLayout
@@ -35,6 +38,7 @@ func (l *Light) SetPosition(p *linear.V3) { l.layout.SetPosition(p) }
 // SunLight is a directional light.
 // The light is emitted in the given Direction.
 // It behaves as if located infinitely far way.
+// Intensity's unit is lux.
 type SunLight struct {
 	Direction linear.V3
 	Intensity float32
@@ -42,6 +46,8 @@ type SunLight struct {
 }
 
 // Light creates the light source described by t.
+// t.Direction must have length 1.
+// t.R/G/B must be in the range [0, 1].
 func (t *SunLight) Light() Light {
 	var l shader.LightLayout
 	l.SetType(shader.SunLight)
@@ -58,6 +64,7 @@ func (t *SunLight) Light() Light {
 // The light is emitted in all directions from the
 // given Position.
 // Range determines the area affected by the light.
+// Intensity's unit is candela.
 type PointLight struct {
 	Position  linear.V3
 	Range     float32
@@ -66,6 +73,9 @@ type PointLight struct {
 }
 
 // Light creates the light source described by t.
+// t.R/G/B must be in the range [0, 1].
+// t.Range may be set to 0 or less to indicate an
+// infinite range.
 func (t *PointLight) Light() Light {
 	var l shader.LightLayout
 	l.SetType(shader.PointLight)
@@ -84,6 +94,8 @@ func (t *PointLight) Light() Light {
 // from the given Position.
 // Range, InnerAngle and OuterAngle determine the area
 // affected by the light.
+// InnerAngle's/OuterAngle's unit is radians.
+// Intensity's unit is candela.
 type SpotLight struct {
 	Direction  linear.V3
 	Position   linear.V3
@@ -95,6 +107,10 @@ type SpotLight struct {
 }
 
 // Light creates the light source described by t.
+// t.Direction must have length 1.
+// t.R/G/B must be in the range [0, 1].
+// t.Range may be set to 0 or less to indicate an
+// infinite range.
 func (t *SpotLight) Light() Light {
 	var (
 		inner    = max(0, min(float64(t.InnerAngle), math.Pi/2-1e-6))
