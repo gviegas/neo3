@@ -21,6 +21,17 @@ type Light struct {
 	layout shader.LightLayout
 }
 
+// SetDirection sets the direction of the light.
+// It does not normalize d.
+// Only applies to sun and spot lights.
+func (l *Light) SetDirection(d *linear.V3) { l.layout.SetDirection(d) }
+
+// SetPosition sets the position of the light.
+// Only applies to point and spot lights.
+func (l *Light) SetPosition(p *linear.V3) { l.layout.SetPosition(p) }
+
+// TODO: Maybe add more setters to Light.
+
 // SunLight is a directional light.
 // The light is emitted in the given Direction.
 // It behaves as if located infinitely far way.
