@@ -52,3 +52,22 @@ func (m *dataMap[I, D]) insert(data D) I {
 	m.data = append(m.data, dataEntry[D]{data, int(id)})
 	return id
 }
+
+// remove removes the data identified by id.
+// It returns the removed data.
+// id must belong to m.
+func (m *dataMap[I, D]) remove(id I) D {
+	d := m.ids[id].data
+	data := m.data[d]
+	last := len(m.data) - 1
+	if d < last {
+		swap := m.data[last].id
+		m.ids[swap].data = d
+		m.data[d] = m.data[last]
+	}
+	m.ids[id].data = -1
+	m.idMap.Unset(int(id))
+	m.data[last] = dataEntry[D]{}
+	m.data = m.data[:last]
+	return data.data
+}
