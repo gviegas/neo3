@@ -80,3 +80,6 @@ func (m *dataMap[I, D]) get(id I) *D { return &m.data[m.ids[id].data].data }
 // This slice aliases m's entries and as such must not
 // be mutated by the caller.
 func (m *dataMap[I, D]) entries() []dataEntry[D] { return m.data }
+
+// len is equivalent to len(m.entries()).
+func (m *dataMap[_, _]) len() int { return len(m.data) }
