@@ -71,3 +71,7 @@ func (m *dataMap[I, D]) remove(id I) D {
 	m.data = m.data[:last]
 	return data.data
 }
+
+// get returns a pointer to the data identified by id.
+// id must belong to m.
+func (m *dataMap[I, D]) get(id I) *D { return &m.data[m.ids[id].data].data }
