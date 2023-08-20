@@ -75,3 +75,8 @@ func (m *dataMap[I, D]) remove(id I) D {
 // get returns a pointer to the data identified by id.
 // id must belong to m.
 func (m *dataMap[I, D]) get(id I) *D { return &m.data[m.ids[id].data].data }
+
+// entries returns the dataEntry slice of m.
+// This slice aliases m's entries and as such must not
+// be mutated by the caller.
+func (m *dataMap[I, D]) entries() []dataEntry[D] { return m.data }
