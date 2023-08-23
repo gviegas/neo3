@@ -1,7 +1,6 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-// Package skin implements blend-weight skinning.
-package skin
+package engine
 
 import (
 	"errors"
@@ -9,8 +8,6 @@ import (
 
 	"gviegas/neo3/linear"
 )
-
-const prefix = "skin: "
 
 // Skin defines skinning data.
 type Skin struct {
@@ -47,8 +44,10 @@ type Joint struct {
 	Parent int
 }
 
-// New creates a new skin from a joint hierarchy.
-func New(joints []Joint) (*Skin, error) {
+// NewSkin creates a new skin from a joint hierarchy.
+func NewSkin(joints []Joint) (*Skin, error) {
+	const prefix = "skin: "
+
 	n := len(joints)
 	if n == 0 {
 		return nil, errors.New(prefix + "[]Joint length is 0")

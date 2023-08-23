@@ -1,8 +1,9 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-package skin
+package engine
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -35,7 +36,7 @@ func dummyJoints(len, depth int) []Joint {
 	return js
 }
 
-func TestNew(t *testing.T) {
+func TestSkin(t *testing.T) {
 	for _, x := range [...][2]int{
 		{1, 0},
 		{2, 0},
@@ -76,75 +77,75 @@ func TestNew(t *testing.T) {
 		{65535, 65534},
 	} {
 		in := dummyJoints(x[0], x[1])
-		sk, err := New(in)
+		sk, err := NewSkin(in)
 		if sk == nil || err != nil {
-			t.Fatalf("New:\nhave %v, %#v\nwant non-nil, nil", sk, err)
+			t.Fatalf("NewSkin:\nhave %v, %#v\nwant non-nil, nil", sk, err)
 		}
 		if x, y := len(sk.joints), len(in); x != y {
-			t.Fatalf("New: len(Skin.joints)\nhave %d\nwant %d", x, y)
+			t.Fatalf("NewSkin: len(Skin.joints)\nhave %d\nwant %d", x, y)
 		}
 		if x, y := len(sk.hier), len(in); x != y {
-			t.Fatalf("New: len(Skin.hier)\nhave %d\nwant %d", x, y)
+			t.Fatalf("NewSkin: len(Skin.hier)\nhave %d\nwant %d", x, y)
 		}
 		var cnt int
 		for i := range sk.joints {
 			if x := sk.joints[i].jm; x == (linear.M4{}) {
-				t.Fatal("New: Skin.joints.jm is the zero matrix")
+				t.Fatal("NewSkin: Skin.joints.jm is the zero matrix")
 			}
 			if x := sk.joints[i].ibm; x < -1 || x >= len(sk.ibm) {
-				t.Fatalf("New: bad Skin.joints.ibm index\nhave %d\nwant [-1, %d)", x, len(sk.ibm))
+				t.Fatalf("NewSkin: bad Skin.joints.ibm index\nhave %d\nwant [-1, %d)", x, len(sk.ibm))
 			}
 			if x := sk.joints[i].parent; x < -1 || x >= len(in) {
-				t.Fatalf("New: bad Skin.joints.parent index\nhave %d\nwant [-1, %d)", x, len(in))
+				t.Fatalf("NewSkin: bad Skin.joints.parent index\nhave %d\nwant [-1, %d)", x, len(in))
 			}
 			if x := sk.hier[i]; x < 0 || x > len(in) {
-				t.Fatalf("New: bad Skin.hier index\nhave %d\nwant [0, %d)", x, len(in))
+				t.Fatalf("NewSkin: bad Skin.hier index\nhave %d\nwant [0, %d)", x, len(in))
 			}
 			cnt += 1 + sk.hier[i]
 		}
 		if x := (x[0]*x[0] + x[0]) / 2; x != cnt {
-			t.Fatalf("New: bad Skin.joints.hier count\nhave %d\nwant %d", cnt, x)
+			t.Fatalf("NewSkin: bad Skin.joints.hier count\nhave %d\nwant %d", cnt, x)
 		}
 		sk.checkHier(t)
 	}
 }
 
-func TestNewFail(t *testing.T) {
+func TestSkinFail(t *testing.T) {
 	var sk *Skin
 	var err error
 
 	checkFail := func(reason string) {
 		if sk != nil || err == nil {
-			t.Fatalf("New:\nhave %v, %#v\nwant nil, non-nil", sk, err)
+			t.Fatalf("NewSkin:\nhave %v, %#v\nwant nil, non-nil", sk, err)
 		}
 		if x := err.Error(); !strings.HasSuffix(x, reason) {
-			t.Fatalf("New: error.Error()\nhave \"%s\"\nwant \"%s%s\"", x, prefix, reason)
+			t.Fatalf("NewSkin: error.Error()\nhave \"%s\"\nwant \"%s\"", x, "skin: "+reason)
 		}
 	}
 
-	sk, err = New([]Joint{})
+	sk, err = NewSkin([]Joint{})
 	checkFail("[]Joint length is 0")
-	sk, err = New(nil)
+	sk, err = NewSkin(nil)
 	checkFail("[]Joint length is 0")
 
 	j1 := dummyJoints(1, 0)
 	j1[0].Parent = 1
-	sk, err = New(j1)
+	sk, err = NewSkin(j1)
 	checkFail("Joint.Parent out of bounds")
 	j1[0].Parent = 0
-	sk, err = New(j1)
+	sk, err = NewSkin(j1)
 	checkFail("Joint.Parent refers to itself")
 
 	j20 := dummyJoints(20, 5)
 	j20[19].Parent = 20
-	sk, err = New(j20)
+	sk, err = NewSkin(j20)
 	checkFail("Joint.Parent out of bounds")
 	j20[10].Parent = 10
-	sk, err = New(j20)
+	sk, err = NewSkin(j20)
 	checkFail("Joint.Parent refers to itself")
 }
 
-func TestNewScrambled(t *testing.T) {
+func TestSkinScrambled(t *testing.T) {
 	var ident linear.M4
 	ident.I()
 
@@ -211,9 +212,9 @@ func TestNewScrambled(t *testing.T) {
 		},
 	}
 
-	sk, err := New(js)
+	sk, err := NewSkin(js)
 	if sk == nil || err != nil {
-		t.Fatalf("New:\nhave %v, %#v\nwant non-nil, nil", sk, err)
+		t.Fatalf("NewSkin:\nhave %v, %#v\nwant non-nil, nil", sk, err)
 	}
 	sk.checkHier(t)
 }
@@ -238,11 +239,58 @@ func dummyJointsRev(depth int) []Joint {
 	return js
 }
 
-func TestNewReversed(t *testing.T) {
+func TestSkinReversed(t *testing.T) {
 	js := dummyJointsRev(20)
-	sk, err := New(js)
+	sk, err := NewSkin(js)
 	if sk == nil || err != nil {
-		t.Fatalf("New:\nhave %v, %#v\nwant non-nil, nil", sk, err)
+		t.Fatalf("NewSkin:\nhave %v, %#v\nwant non-nil, nil", sk, err)
 	}
 	sk.checkHier(t)
+}
+
+func BenchmarkSkin(b *testing.B) {
+	for _, x := range [...][2]int{
+		{1, 0},
+		{4, 0},
+		{4, 1},
+		{4, 2},
+		{4, 3},
+		{15, 0},
+		{15, 7},
+		{15, 14},
+		{64, 0},
+		{64, 32},
+		{64, 63},
+		{128, 0},
+		{128, 64},
+		{128, 127},
+		{255, 0},
+		{255, 127},
+		{255, 254},
+		{65535, 0},
+		{65535, 32767},
+		{65535, 65534},
+	} {
+		in := dummyJoints(x[0], x[1])
+		s := fmt.Sprintf("{len=%d,dep=%d}", x[0], x[1])
+
+		b.Run(s, func(b *testing.B) {
+			if _, err := NewSkin(in); err != nil {
+				b.Fatalf("NewSkin failed:\n%#v", err)
+			}
+		})
+	}
+}
+
+func BenchmarkSkinReversed(b *testing.B) {
+	for _, x := range [...]int{0, 1, 2, 15, 31, 63, 127, 255, 256, 1023, 8192, 32767, 65534} {
+		in := dummyJointsRev(x)
+		s := fmt.Sprintf("{depth=%d}", x)
+
+		b.Run(s, func(b *testing.B) {
+			if _, err := NewSkin(in); err != nil {
+				b.Fatalf("NewSkin failed:\n%#v", err)
+			}
+		})
+	}
 }
