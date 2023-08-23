@@ -54,20 +54,20 @@ type MetalRough struct {
 	Roughness float32
 }
 
-// Normal is the material's normal map.
-type Normal struct {
+// NormalMap is the material's normal map.
+type NormalMap struct {
 	TexRef
 	Scale float32
 }
 
-// Occlusion is the material's occlusion map.
-type Occlusion struct {
+// OcclusionMap is the material's occlusion map.
+type OcclusionMap struct {
 	TexRef
 	Strength float32
 }
 
-// Emissive is the material's emissive map.
-type Emissive struct {
+// EmissiveMap is the material's emissive map.
+type EmissiveMap struct {
 	TexRef
 	Factor [3]float32
 }
@@ -88,9 +88,9 @@ const (
 type PBR struct {
 	BaseColor   BaseColor
 	MetalRough  MetalRough
-	Normal      Normal
-	Occlusion   Occlusion
-	Emissive    Emissive
+	Normal      NormalMap
+	Occlusion   OcclusionMap
+	Emissive    EmissiveMap
 	AlphaMode   int
 	AlphaCutoff float32
 	DoubleSided bool
@@ -238,49 +238,49 @@ func (p *MetalRough) validate() error {
 	return nil
 }
 
-func (p *Normal) validate() error {
+func (p *NormalMap) validate() error {
 	if p.Texture != nil {
 		if err := p.TexRef.validate(false); err != nil {
 			return err
 		}
 		if p.Texture.PixelFmt().Channels() < 3 {
-			return newMatErr("Normal.Texture has insufficient channels")
+			return newMatErr("NormalMap.Texture has insufficient channels")
 		}
 	}
 	if p.Scale < 0 {
-		return newMatErr("Normal.Scale less than 0.0")
+		return newMatErr("NormalMap.Scale less than 0.0")
 	}
 	return nil
 }
 
-func (p *Occlusion) validate() error {
+func (p *OcclusionMap) validate() error {
 	if err := p.TexRef.validate(true); err != nil {
 		return err
 	}
 	if p.Strength < 0 || p.Strength > 1 {
-		return newMatErr("Occlusion.Strength outside [0.0, 1.0] interval")
+		return newMatErr("OcclusionMap.Strength outside [0.0, 1.0] interval")
 	}
 	return nil
 }
 
-func (p *Emissive) validate() error {
+func (p *EmissiveMap) validate() error {
 	if p.Texture != nil {
 		if err := p.TexRef.validate(false); err != nil {
 			return err
 		}
 		if p.Texture.PixelFmt().Channels() < 3 {
-			return newMatErr("Emissive.Texture has insufficient channels")
+			return newMatErr("EmissiveMap.Texture has insufficient channels")
 		}
 	}
 	for _, x := range p.Factor {
 		if x < 0 || x > 1 {
-			return newMatErr("Emissive.Factor outside [0.0, 1.0] interval")
+			return newMatErr("EmissiveMap.Factor outside [0.0, 1.0] interval")
 		}
 	}
 	return nil
 }
 
-func validateAlpha(mode int, cutoff float32) error {
+func validateAlphaMode(mode int, cutoff float32) error {
 	switch mode {
 	case AlphaOpaque, AlphaBlend:
 	case AlphaMask:
@@ -308,7 +308,7 @@ func (p *PBR) validate() error {
 	if err := p.Emissive.validate(); err != nil {
 		return err
 	}
-	if err := validateAlpha(p.AlphaMode, p.AlphaCutoff); err != nil {
+	if err := validateAlphaMode(p.AlphaMode, p.AlphaCutoff); err != nil {
 		return err
 	}
 	return nil
@@ -318,7 +318,7 @@ func (p *Unlit) validate() error {
 	if err := p.BaseColor.validate(); err != nil {
 		return err
 	}
-	if err := validateAlpha(p.AlphaMode, p.AlphaCutoff); err != nil {
+	if err := validateAlphaMode(p.AlphaMode, p.AlphaCutoff); err != nil {
 		return err
 	}
 	return nil

@@ -162,15 +162,15 @@ func TestMaterial(t *testing.T) {
 				Metalness: 1,
 				Roughness: 0.5,
 			},
-			Normal: Normal{
+			Normal: NormalMap{
 				TexRef: TexRef{normal, 0, splr, UVSet0},
 				Scale:  1,
 			},
-			Occlusion: Occlusion{
+			Occlusion: OcclusionMap{
 				TexRef:   TexRef{occMetal, 0, splr, UVSet0},
 				Strength: 0.5,
 			},
-			Emissive: Emissive{
+			Emissive: EmissiveMap{
 				TexRef: TexRef{emissive, 0, splr, UVSet0},
 				Factor: [3]float32{1, 1, 1},
 			},
@@ -207,15 +207,15 @@ func TestMaterial(t *testing.T) {
 				Metalness: 1,
 				Roughness: 0.25,
 			},
-			Normal: Normal{
+			Normal: NormalMap{
 				TexRef: TexRef{normal, 2, splr, UVSet0},
 				Scale:  1,
 			},
-			Occlusion: Occlusion{
+			Occlusion: OcclusionMap{
 				TexRef:   TexRef{occMetal, 1, splr, UVSet0},
 				Strength: 1,
 			},
-			Emissive: Emissive{
+			Emissive: EmissiveMap{
 				TexRef: TexRef{emissive, 0, splr, UVSet0},
 				Factor: [3]float32{0.5, 0.5, 0.5},
 			},
@@ -235,7 +235,7 @@ func TestMaterial(t *testing.T) {
 				Metalness: 0,
 				Roughness: 0.5,
 			},
-			Normal: Normal{
+			Normal: NormalMap{
 				TexRef: TexRef{normal, 0, splr, UVSet0},
 				Scale:  20,
 			},
@@ -255,11 +255,11 @@ func TestMaterial(t *testing.T) {
 				Metalness: 0,
 				Roughness: 0.9,
 			},
-			Occlusion: Occlusion{
+			Occlusion: OcclusionMap{
 				TexRef:   TexRef{occMetal, 0, splr, UVSet0},
 				Strength: 0.5,
 			},
-			Emissive: Emissive{
+			Emissive: EmissiveMap{
 				TexRef: TexRef{emissive, 0, splr, UVSet0},
 				Factor: [3]float32{1, 1, 1},
 			},
@@ -279,7 +279,7 @@ func TestMaterial(t *testing.T) {
 				Metalness: 1,
 				Roughness: 1,
 			},
-			Occlusion: Occlusion{
+			Occlusion: OcclusionMap{
 				TexRef:   TexRef{occMetal, 0, splr, UVSet1},
 				Strength: 0.65,
 			},
@@ -439,7 +439,7 @@ func TestMaterial(t *testing.T) {
 		checkFail(mat, err, "MetalRough.Roughness outside [0.0, 1.0] interval")
 
 		mat, err = NewPBR(&PBR{
-			Normal: Normal{
+			Normal: NormalMap{
 				TexRef: TexRef{normal, -1, splr, UVSet0},
 				Scale:  1,
 			},
@@ -447,60 +447,60 @@ func TestMaterial(t *testing.T) {
 		checkFail(mat, err, "invalid TexRef.View")
 
 		mat, err = NewPBR(&PBR{
-			Normal: Normal{
+			Normal: NormalMap{
 				TexRef: TexRef{twoChTex, 0, splr, UVSet0},
 				Scale:  1,
 			},
 		})
-		checkFail(mat, err, "Normal.Texture has insufficient channels")
+		checkFail(mat, err, "NormalMap.Texture has insufficient channels")
 
 		mat, err = NewPBR(&PBR{
-			Normal: Normal{
+			Normal: NormalMap{
 				TexRef: TexRef{normal, 0, splr, UVSet0},
 				Scale:  -1,
 			},
 		})
-		checkFail(mat, err, "Normal.Scale less than 0.0")
+		checkFail(mat, err, "NormalMap.Scale less than 0.0")
 
 		mat, err = NewPBR(&PBR{
-			Occlusion: Occlusion{
+			Occlusion: OcclusionMap{
 				TexRef:   TexRef{occMetal, 0, splr, UVSet0},
 				Strength: 2,
 			},
 		})
-		checkFail(mat, err, "Occlusion.Strength outside [0.0, 1.0] interval")
+		checkFail(mat, err, "OcclusionMap.Strength outside [0.0, 1.0] interval")
 
 		mat, err = NewPBR(&PBR{
-			Occlusion: Occlusion{
+			Occlusion: OcclusionMap{
 				TexRef:   TexRef{occMetal, 0, splr, UVSet0},
 				Strength: -3,
 			},
 		})
-		checkFail(mat, err, "Occlusion.Strength outside [0.0, 1.0] interval")
+		checkFail(mat, err, "OcclusionMap.Strength outside [0.0, 1.0] interval")
 
 		mat, err = NewPBR(&PBR{
-			Emissive: Emissive{
+			Emissive: EmissiveMap{
 				TexRef: TexRef{twoChTex, 0, splr, UVSet0},
 				Factor: [3]float32{1, 1, 1},
 			},
 		})
-		checkFail(mat, err, "Emissive.Texture has insufficient channels")
+		checkFail(mat, err, "EmissiveMap.Texture has insufficient channels")
 
 		mat, err = NewPBR(&PBR{
-			Emissive: Emissive{
+			Emissive: EmissiveMap{
 				TexRef: TexRef{emissive, 0, splr, UVSet0},
 				Factor: [3]float32{1, 1, -1},
 			},
 		})
-		checkFail(mat, err, "Emissive.Factor outside [0.0, 1.0] interval")
+		checkFail(mat, err, "EmissiveMap.Factor outside [0.0, 1.0] interval")
 
 		mat, err = NewPBR(&PBR{
-			Emissive: Emissive{
+			Emissive: EmissiveMap{
 				TexRef: TexRef{emissive, 0, splr, UVSet0},
 				Factor: [3]float32{2},
 			},
 		})
-		checkFail(mat, err, "Emissive.Factor outside [0.0, 1.0] interval")
+		checkFail(mat, err, "EmissiveMap.Factor outside [0.0, 1.0] interval")
 
 		mat, err = NewPBR(&PBR{AlphaMode: AlphaMask + 1})
 		checkFail(mat, err, "undefined alpha mode constant")
