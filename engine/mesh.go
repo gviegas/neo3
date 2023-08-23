@@ -1,8 +1,6 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
-// Package mesh implements the mesh data representation used
-// in the engine's renderer.
-package mesh
+package engine
 
 import (
 	"bytes"
@@ -14,8 +12,6 @@ import (
 
 	"gviegas/neo3/driver"
 )
-
-const prefix = "mesh: "
 
 // Mesh is a collection of primitives.
 // Each primitive defines the data for a draw call.
@@ -278,7 +274,7 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 		return uint16(u)
 	}
 
-	var err = errors.New(prefix + "unsupported vertex format for " + s.String())
+	var err = errors.New("mesh: unsupported vertex format for " + s.String())
 	var p *byte
 
 	switch s {
@@ -408,14 +404,16 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 	return bytes.NewReader(unsafe.Slice(p, n)), nil
 }
 
-// SemanticData describes how to fetch semantic data from Data.Srcs.
+// SemanticData describes how to fetch semantic data from
+// MeshData.Srcs.
 type SemanticData struct {
 	Format driver.VertexFmt
 	Offset int64
 	Src    int
 }
 
-// IndexData describes how to fetch index data from Data.Srcs.
+// IndexData describes how to fetch index data from
+// MeshData.Srcs.
 type IndexData struct {
 	Format driver.IndexFmt
 	Offset int64
@@ -423,7 +421,7 @@ type IndexData struct {
 }
 
 // PrimitiveData describes the data layout of a mesh's primitive
-// and how to fetch such data from Data.Srcs.
+// and how to fetch such data from MeshData.Srcs.
 type PrimitiveData struct {
 	Topology    driver.Topology
 	VertexCount int
@@ -439,16 +437,16 @@ type PrimitiveData struct {
 	Index IndexData
 }
 
-// Data defines the data layout of a whole mesh and provides
-// the data sources to read from.
-type Data struct {
+// MeshData defines the data layout of a whole mesh
+// and provides the data sources to read from.
+type MeshData struct {
 	Primitives []PrimitiveData
 	Srcs       []io.ReadSeeker
 }
 
-// New creates a new mesh.
-func New(data *Data) (m *Mesh, err error) {
-	err = validateData(data)
+// NewMesh creates a new mesh.
+func NewMesh(data *MeshData) (m *Mesh, err error) {
+	err = validateMeshData(data)
 	if err != nil {
 		return
 	}
@@ -488,8 +486,8 @@ func New(data *Data) (m *Mesh, err error) {
 }
 
 // validateData checks whether data is valid.
-func validateData(data *Data) error {
-	newErr := func(reason string) error { return errors.New(prefix + reason) }
+func validateMeshData(data *MeshData) error {
+	newErr := func(reason string) error { return errors.New("mesh: " + reason) }
 
 	switch {
 	case data == nil:

@@ -1,6 +1,6 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
-package mesh
+package engine
 
 import (
 	"errors"
@@ -16,8 +16,8 @@ import (
 // Global mesh storage.
 var storage meshBuffer
 
-// SetBuffer sets the GPU buffer into which mesh data will
-// be stored.
+// SetMeshBuffer sets the GPU buffer into which mesh data
+// will be stored.
 // The buffer must be host-visible, its usage must include
 // both driver.UVertexData and driver.UIndexData, and its
 // capacity must be a multiple of 16384 bytes.
@@ -25,7 +25,7 @@ var storage meshBuffer
 //
 // NOTE: Calls to this function invalidate all previously
 // created meshes.
-func SetBuffer(buf driver.Buffer) driver.Buffer {
+func SetMeshBuffer(buf driver.Buffer) driver.Buffer {
 	storage.Lock()
 	defer storage.Unlock()
 	switch buf {
@@ -75,7 +75,7 @@ func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
 	is, ok := b.spanMap.SearchRange(ns)
 	if !ok {
 		// TODO: Reconsider the growth strategy here.
-		// Currently, it assumes that SetBuffer will
+		// Currently it assumes that SetMeshBuffer will
 		// be called with a sensibly sized buffer and
 		// that reallocations will not happen often,
 		// so it optimizes for space.
@@ -127,7 +127,7 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p int,
 		case driver.Index32:
 			isz = 4
 		default:
-			err = errors.New(prefix + "undefined driver.IndexFmt constant")
+			err = errors.New("mesh: undefined driver.IndexFmt constant")
 		}
 		src := srcs[data.Index.Src]
 		off := data.Index.Offset

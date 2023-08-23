@@ -1,6 +1,6 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-package mesh
+package engine
 
 import (
 	"bytes"
@@ -13,8 +13,6 @@ import (
 	"gviegas/neo3/driver"
 	"gviegas/neo3/engine/internal/ctxt"
 )
-
-var gpu = ctxt.GPU()
 
 func TestSemantic(t *testing.T) {
 	semantics := map[Semantic]int{
@@ -43,29 +41,29 @@ func TestSemantic(t *testing.T) {
 	t.Log(s)
 }
 
-func TestSetBuffer(t *testing.T) {
-	SetBuffer(nil)
+func TestSetMeshBuffer(t *testing.T) {
+	SetMeshBuffer(nil)
 	if storage.buf != nil {
-		t.Fatalf("SetBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
+		t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
 	}
 	if x := storage.spanMap.Len(); x != 0 {
-		t.Fatalf("SetBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
+		t.Fatalf("SetMeshBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := storage.primMap.Len(); x != 0 {
-		t.Fatalf("SetBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+		t.Fatalf("SetMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := len(storage.prims); x != 0 {
-		t.Fatalf("SetBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+		t.Fatalf("SetMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 	}
 	// Set to non-nil.
 	var prev driver.Buffer
 	for _, s := range [...]int64{16384, 32768, 1048576, 16777216 + 16384} {
-		buf, err := gpu.NewBuffer(s, true, driver.UVertexData|driver.UIndexData)
+		buf, err := ctxt.GPU().NewBuffer(s, true, driver.UVertexData|driver.UIndexData)
 		if err != nil {
 			panic("could not create a driver.Buffer for testing")
 		}
-		if x := SetBuffer(buf); x != prev {
-			t.Fatalf("SetBuffer: storage.buf\nhave %v\nwant %v", x, prev)
+		if x := SetMeshBuffer(buf); x != prev {
+			t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant %v", x, prev)
 		} else {
 			if x != nil {
 				x.Destroy()
@@ -73,36 +71,36 @@ func TestSetBuffer(t *testing.T) {
 			prev = buf
 		}
 		if storage.buf != buf {
-			t.Fatalf("SetBuffer: storage.buf\nhave %v\nwant %v", storage.buf, buf)
+			t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant %v", storage.buf, buf)
 		}
 		n := storage.spanMap.Len()
 		if x := s / blockSize; int(x) != n {
-			t.Fatalf("SetBuffer: storage.spanMap.Len\nhave %d\nwant %d", n, x)
+			t.Fatalf("SetMeshBuffer: storage.spanMap.Len\nhave %d\nwant %d", n, x)
 		}
 		if x := storage.primMap.Len(); x != 0 {
-			t.Fatalf("SetBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+			t.Fatalf("SetMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
 		}
 		if x := len(storage.prims); x != 0 {
-			t.Fatalf("SetBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+			t.Fatalf("SetMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 		}
 	}
 	// Set to nil again.
-	if x := SetBuffer(nil); x != prev {
-		t.Fatalf("SetBuffer: storage.buf\nhave %v\nwant %v", x, prev)
+	if x := SetMeshBuffer(nil); x != prev {
+		t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant %v", x, prev)
 	} else {
 		x.Destroy()
 	}
 	if storage.buf != nil {
-		t.Fatalf("SetBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
+		t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
 	}
 	if x := storage.spanMap.Len(); x != 0 {
-		t.Fatalf("SetBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
+		t.Fatalf("SetMeshBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := storage.primMap.Len(); x != 0 {
-		t.Fatalf("SetBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+		t.Fatalf("SetMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := len(storage.prims); x != 0 {
-		t.Fatalf("SetBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+		t.Fatalf("SetMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 	}
 }
 
@@ -309,7 +307,7 @@ func TestConv(t *testing.T) {
 			if r != nil || err == nil {
 				t.Fatalf("%s.conv: unexpected result: (%v, nil)", sem, r)
 			}
-			if !strings.HasPrefix(err.Error(), prefix) {
+			if !strings.HasPrefix(err.Error(), "mesh: ") {
 				t.Fatalf("%s.conv: unexpected error: %#v", sem, err)
 			}
 			r8.Seek(0, io.SeekStart)
@@ -551,7 +549,7 @@ func TestConv(t *testing.T) {
 	}
 }
 
-func dummyData1(ntris int) Data {
+func dummyData1(ntris int) MeshData {
 	p := PrimitiveData{
 		Topology:     driver.TTriangle,
 		VertexCount:  ntris * 3,
@@ -568,7 +566,7 @@ func dummyData1(ntris int) Data {
 		fillDummySem(s, d)
 		srcs[i] = bytes.NewReader(d)
 	}
-	return Data{[]PrimitiveData{p}, srcs}
+	return MeshData{[]PrimitiveData{p}, srcs}
 }
 
 func checkDummyData1(m *Mesh, ntris int, t *testing.T) {
@@ -604,7 +602,7 @@ func checkDummyData1(m *Mesh, ntris int, t *testing.T) {
 	}
 }
 
-func dummyData2(ntris int) Data {
+func dummyData2(ntris int) MeshData {
 	p := PrimitiveData{
 		Topology:     driver.TTriangle,
 		VertexCount:  ntris * 3,
@@ -639,7 +637,7 @@ func dummyData2(ntris int) Data {
 	fillDummyIdx(p.Index.Format, d)
 	srcs[1] = bytes.NewReader(d)
 
-	return Data{[]PrimitiveData{p}, srcs}
+	return MeshData{[]PrimitiveData{p}, srcs}
 }
 
 func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
@@ -708,7 +706,7 @@ func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
 	}
 }
 
-func dummyData3(ntris int) Data {
+func dummyData3(ntris int) MeshData {
 	p := PrimitiveData{
 		Topology:     driver.TTriangle,
 		VertexCount:  ntris * 3,
@@ -748,7 +746,7 @@ func dummyData3(ntris int) Data {
 		fillDummySem(Semantic(1<<i), d[x.Offset:x.Offset+sz])
 	}
 
-	return Data{[]PrimitiveData{p}, []io.ReadSeeker{bytes.NewReader(d)}}
+	return MeshData{[]PrimitiveData{p}, []io.ReadSeeker{bytes.NewReader(d)}}
 }
 
 func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
@@ -801,7 +799,7 @@ func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
 	}
 }
 
-func dummyData4(ntris int) Data {
+func dummyData4(ntris int) MeshData {
 	var srcs []io.ReadSeeker
 
 	p1 := PrimitiveData{
@@ -850,7 +848,7 @@ func dummyData4(ntris int) Data {
 		srcs = append(srcs, bytes.NewReader(d))
 	}
 
-	return Data{[]PrimitiveData{p3, p1, p2}, srcs}
+	return MeshData{[]PrimitiveData{p3, p1, p2}, srcs}
 }
 
 func checkDummyData4(m *Mesh, ntris int, t *testing.T) {
@@ -920,24 +918,24 @@ func fillDummyIdx(i driver.IndexFmt, d []byte) {
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestMesh(t *testing.T) {
 	defer func() {
-		b := SetBuffer(nil)
+		b := SetMeshBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
 	}()
 	const n = 20 << 20
-	buf, err := gpu.NewBuffer(n, true, driver.UVertexData|driver.UIndexData)
+	buf, err := ctxt.GPU().NewBuffer(n, true, driver.UVertexData|driver.UIndexData)
 	if err == nil {
-		SetBuffer(buf)
+		SetMeshBuffer(buf)
 	} else {
-		t.Fatalf("gpu.NewBuffer: %#v", err)
+		t.Fatalf("ctxt.GPU().NewBuffer: %#v", err)
 	}
 
 	cases := [...]struct {
 		ntris int
-		dummy func(int) Data
+		dummy func(int) MeshData
 		check func(*Mesh, int, *testing.T)
 	}{
 		{1, dummyData1, checkDummyData1},
@@ -961,12 +959,12 @@ func TestNew(t *testing.T) {
 		{100, dummyData3, checkDummyData3},
 	}
 	var res [len(cases)]struct {
-		data Data
+		data MeshData
 		mesh *Mesh
 	}
 	for i := range cases {
 		res[i].data = cases[i].dummy(cases[i].ntris)
-		res[i].mesh, err = New(&res[i].data)
+		res[i].mesh, err = NewMesh(&res[i].data)
 		if err != nil {
 			t.Log(cases[i])
 			t.Fatalf("New: unexpected error: %#v", err)
@@ -984,9 +982,9 @@ func TestNew(t *testing.T) {
 	t.Logf("final storage.buf.Cap() is %.2f MiB", float64(cap)/(1<<20))
 }
 
-func TestInputs(t *testing.T) {
+func TestMeshInputs(t *testing.T) {
 	defer func() {
-		b := SetBuffer(nil)
+		b := SetMeshBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
@@ -1044,12 +1042,12 @@ func TestInputs(t *testing.T) {
 	}
 
 	have := [6][]driver.VertexIn{}
-	var d Data
+	var d MeshData
 	var m *Mesh
 	var err error
 
 	d = dummyData1(200)
-	m, err = New(&d)
+	m, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1057,7 +1055,7 @@ func TestInputs(t *testing.T) {
 	check(want[:1], have[:1])
 
 	d = dummyData2(100)
-	m, err = New(&d)
+	m, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1065,7 +1063,7 @@ func TestInputs(t *testing.T) {
 	check(want[:2], have[:2])
 
 	d = dummyData3(1024)
-	m, err = New(&d)
+	m, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1073,7 +1071,7 @@ func TestInputs(t *testing.T) {
 	check(want[:2], have[:2])
 
 	d = dummyData4(60)
-	m, err = New(&d)
+	m, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1083,9 +1081,9 @@ func TestInputs(t *testing.T) {
 	check(want[:], have[:])
 }
 
-func TestFree(t *testing.T) {
+func TestMeshFree(t *testing.T) {
 	defer func() {
-		b := SetBuffer(nil)
+		b := SetMeshBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
@@ -1135,12 +1133,12 @@ func TestFree(t *testing.T) {
 	}
 
 	var s snapshot
-	var d Data
+	var d MeshData
 	var m *Mesh
 	var err error
 
 	d = dummyData1(500)
-	m, err = New(&d)
+	m, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1149,7 +1147,7 @@ func TestFree(t *testing.T) {
 	check(&s)
 
 	d = dummyData2(5)
-	m, err = New(&d)
+	m, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1158,7 +1156,7 @@ func TestFree(t *testing.T) {
 	check(&s)
 
 	d = dummyData3(1000)
-	m, err = New(&d)
+	m, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1167,7 +1165,7 @@ func TestFree(t *testing.T) {
 	check(&s)
 
 	d = dummyData4(175)
-	m, err = New(&d)
+	m, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1176,22 +1174,22 @@ func TestFree(t *testing.T) {
 	check(&s)
 
 	d = dummyData3(12)
-	m1, err := New(&d)
+	m1, err := NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData4(50)
-	m2, err := New(&d)
+	m2, err := NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData2(2000)
-	m3, err := New(&d)
+	m3, err := NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData1(1023)
-	m4, err := New(&d)
+	m4, err := NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1209,22 +1207,22 @@ func TestFree(t *testing.T) {
 	check(&s)
 
 	d = dummyData3(12)
-	m1, err = New(&d)
+	m1, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData4(50)
-	m2, err = New(&d)
+	m2, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData2(2000)
-	m3, err = New(&d)
+	m3, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData1(1023)
-	m4, err = New(&d)
+	m4, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1242,12 +1240,12 @@ func TestFree(t *testing.T) {
 	check(&s)
 
 	d = dummyData1(75)
-	m1, err = New(&d)
+	m1, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData2(140)
-	m2, err = New(&d)
+	m2, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1255,12 +1253,12 @@ func TestFree(t *testing.T) {
 	m1.Free()
 	check(&s)
 	d = dummyData3(80)
-	m3, err = New(&d)
+	m3, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData4(513)
-	m4, err = New(&d)
+	m4, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1268,7 +1266,7 @@ func TestFree(t *testing.T) {
 	m3.Free()
 	check(&s)
 	d = dummyData1(400)
-	m1, err = New(&d)
+	m1, err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1295,7 +1293,7 @@ func TestFree(t *testing.T) {
 		default:
 			d = dummyData4(66)
 		}
-		if m, err = New(&d); err != nil {
+		if m, err = NewMesh(&d); err != nil {
 			t.Fatalf("New failed: %#v", err)
 		} else {
 			ms = append(ms, m)
@@ -1311,17 +1309,17 @@ func TestFree(t *testing.T) {
 	ms[0].Free()
 	check(&s)
 	d = dummyData1(100)
-	ms[n-1], err = New(&d)
+	ms[n-1], err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData3(200)
-	ms[0], err = New(&d)
+	ms[0], err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
 	d = dummyData4(150)
-	ms[n/2], err = New(&d)
+	ms[n/2], err = NewMesh(&d)
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
@@ -1330,4 +1328,106 @@ func TestFree(t *testing.T) {
 		ms[i].Free()
 		check(&s)
 	}
+}
+
+const (
+	nbufBench  = 64 << 20
+	ntrisBench = 1000
+)
+
+// TODO: NewMesh locks the storage for writing during
+// span searching, buffer growth and copying, and
+// new data copying. The last step (new data copying)
+// can be done with just a reading lock.
+// Consider splitting the meshBuffer methods so New
+// can release the writing lock as soon as all spans
+// it needs have been reserved, and then copy the new
+// data while holding a RLock.
+
+func BenchmarkMeshGrow(b *testing.B) {
+	if buf := SetMeshBuffer(nil); buf != nil {
+		buf.Destroy()
+	}
+	data := dummyData1(ntrisBench)
+	b.Run("x", func(b *testing.B) {
+		// Will grow the buffer on every iteration.
+		// Expected to be very slow.
+		b.RunParallel(func(bp *testing.PB) {
+			for bp.Next() {
+				if storage.buf != nil && storage.buf.Cap() > nbufBench {
+					continue
+				}
+				for i := range data.Srcs {
+					data.Srcs[i].Seek(0, io.SeekStart)
+				}
+				if _, err := NewMesh(&data); err != nil {
+					b.Fatalf("NewMesh failed:\n%#v", err)
+				}
+			}
+		})
+	})
+	b.Log("buf.Cap():", storage.buf.Cap())
+	b.Log("spanMap.Rem()/Len():", storage.spanMap.Rem(), storage.spanMap.Len())
+	b.Log("primMap.Rem()/Len():", storage.primMap.Rem(), storage.primMap.Len())
+}
+
+func BenchmarkMeshPre(b *testing.B) {
+	buf, err := ctxt.GPU().NewBuffer(nbufBench, true, driver.UVertexData|driver.UIndexData)
+	if err != nil {
+		b.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	if buf = SetMeshBuffer(buf); buf != nil {
+		buf.Destroy()
+	}
+	data := dummyData1(ntrisBench)
+	b.Run("x", func(b *testing.B) {
+		// Will use pre-allocated memory.
+		// Expected to be fast.
+		b.RunParallel(func(bp *testing.PB) {
+			for bp.Next() {
+				if storage.buf != nil && storage.buf.Cap() > nbufBench {
+					continue
+				}
+				for i := range data.Srcs {
+					data.Srcs[i].Seek(0, io.SeekStart)
+				}
+				if _, err := NewMesh(&data); err != nil {
+					b.Fatalf("NewMesh failed:\n%#v", err)
+				}
+			}
+		})
+	})
+	b.Log("buf.Cap():", storage.buf.Cap())
+	b.Log("spanMap.Rem()/Len():", storage.spanMap.Rem(), storage.spanMap.Len())
+	b.Log("primMap.Rem()/Len():", storage.primMap.Rem(), storage.primMap.Len())
+}
+
+func BenchmarkMeshFree(b *testing.B) {
+	if buf := SetMeshBuffer(nil); buf != nil {
+		buf.Destroy()
+	}
+	data := dummyData1(ntrisBench)
+	b.Run("x", func(b *testing.B) {
+		// Will create and then free the mesh,
+		// so its spans can be reused.
+		// Expected to be reasonably fast.
+		b.RunParallel(func(bp *testing.PB) {
+			for bp.Next() {
+				if storage.buf != nil && storage.buf.Cap() > nbufBench {
+					continue
+				}
+				for i := range data.Srcs {
+					data.Srcs[i].Seek(0, io.SeekStart)
+				}
+				m, err := NewMesh(&data)
+				if err != nil {
+					b.Fatalf("NewMesh failed:\n%#v", err)
+				}
+				m.Free()
+			}
+		})
+	})
+	b.Log("buf.Cap():", storage.buf.Cap())
+	b.Log("spanMap.Rem()/Len():", storage.spanMap.Rem(), storage.spanMap.Len())
+	b.Log("primMap.Rem()/Len():", storage.primMap.Rem(), storage.primMap.Len())
 }
