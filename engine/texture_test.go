@@ -1,6 +1,6 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-package texture
+package engine
 
 import (
 	"strings"
@@ -43,7 +43,7 @@ func Test2D(t *testing.T) {
 	})
 	switch {
 	case err != nil:
-		if strings.HasPrefix(err.Error(), prefix) {
+		if strings.HasPrefix(err.Error(), texPrefix) {
 			t.Fatalf("New2D: unexpected error:\n%#v", err)
 		}
 	}
@@ -54,7 +54,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -73,7 +73,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -92,7 +92,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -111,7 +111,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -130,7 +130,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -149,7 +149,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -168,7 +168,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -187,7 +187,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -206,7 +206,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -225,7 +225,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 
@@ -244,7 +244,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("New2D: unexpected error:\n%#v", err)
 	}
 }
@@ -263,7 +263,7 @@ func TestCube(t *testing.T) {
 	})
 	switch {
 	case err != nil:
-		if strings.HasPrefix(err.Error(), prefix) {
+		if strings.HasPrefix(err.Error(), texPrefix) {
 			t.Fatalf("NewCube: unexpected error:\n%#v", err)
 		}
 	}
@@ -274,7 +274,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -293,7 +293,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -312,7 +312,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -331,7 +331,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -350,7 +350,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -369,7 +369,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -388,7 +388,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -407,7 +407,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -426,7 +426,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -445,7 +445,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 
@@ -464,7 +464,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewCube: unexpected error:\n%#v", err)
 	}
 }
@@ -483,7 +483,7 @@ func TestTarget(t *testing.T) {
 	})
 	switch {
 	case err != nil:
-		if strings.HasPrefix(err.Error(), prefix) {
+		if strings.HasPrefix(err.Error(), texPrefix) {
 			t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 		}
 	}
@@ -494,7 +494,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -513,7 +513,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -532,7 +532,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -551,7 +551,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -570,7 +570,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -589,7 +589,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -608,7 +608,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -627,7 +627,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -646,7 +646,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -665,7 +665,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 
@@ -684,7 +684,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
 	}
 }
@@ -712,7 +712,7 @@ func TestSampler(t *testing.T) {
 	})
 	switch {
 	case err != nil:
-		if strings.HasPrefix(err.Error(), prefix) {
+		if strings.HasPrefix(err.Error(), texPrefix) {
 			t.Fatalf("NewSampler: unexpected error:\n%#v", err)
 		}
 	}
@@ -733,7 +733,7 @@ func TestSampler(t *testing.T) {
 	})
 	switch {
 	case err != nil:
-		if strings.HasPrefix(err.Error(), prefix) {
+		if strings.HasPrefix(err.Error(), texPrefix) {
 			t.Fatalf("NewSampler: unexpected error:\n%#v", err)
 		}
 	}
@@ -744,7 +744,7 @@ func TestSampler(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
 	}
 
@@ -763,7 +763,7 @@ func TestSampler(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
 	}
 
@@ -782,7 +782,7 @@ func TestSampler(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
 	}
 
@@ -801,7 +801,7 @@ func TestSampler(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
 	}
 
@@ -822,7 +822,7 @@ func TestSampler(t *testing.T) {
 	switch {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
-	case !strings.HasPrefix(err.Error(), prefix):
+	case !strings.HasPrefix(err.Error(), texPrefix):
 		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
 	}
 }
@@ -987,42 +987,42 @@ func TestStaging(t *testing.T) {
 		}
 	}
 
-	const n = blockSize * nbit
+	const n = stagingBlock * stagingNBit
 
 	s, err = newStaging(n)
-	check(n, nbit)
+	check(n, stagingNBit)
 	s.free()
 	checkFree()
 
 	s, err = newStaging(n - 1)
-	check(n, nbit)
+	check(n, stagingNBit)
 	s.free()
 	checkFree()
 
 	s, err = newStaging(n + 1)
-	check(n*2, nbit*2)
+	check(n*2, stagingNBit*2)
 	s.free()
 	checkFree()
 
 	s, err = newStaging(1)
-	check(n, nbit)
+	check(n, stagingNBit)
 	s.free()
 	checkFree()
 
 	s, err = newStaging(n + n - 1)
-	check(n*2, nbit*2)
+	check(n*2, stagingNBit*2)
 	s.free()
 	checkFree()
 
 	x := 2048 * 2048 * 4
 	s, err = newStaging(x)
 	x = (x + n - 1) &^ (n - 1)
-	check(x, x/blockSize)
+	check(x, x/stagingBlock)
 	s.free()
 	checkFree()
 }
 
-func TestInit(t *testing.T) {
+func TestStagingInit(t *testing.T) {
 	var s []*stagingBuffer
 	for i := 0; i < cap(staging); i++ {
 		select {
@@ -1046,8 +1046,8 @@ func TestInit(t *testing.T) {
 			if wk.Err != nil {
 				t.Fatalf("staging: (<-wk).Err\nhave %#v\nwant nil", wk.Err)
 			}
-			if x.buf.Cap() != blockSize*nbit {
-				t.Fatalf("staging: buf.Cap:\nhave %d\nwant %d", x.buf.Cap(), blockSize*nbit)
+			if x.buf.Cap() != stagingBlock*stagingNBit {
+				t.Fatalf("staging: buf.Cap:\nhave %d\nwant %d", x.buf.Cap(), stagingBlock*stagingNBit)
 			}
 			x.wk <- wk
 			s = append(s, x)
@@ -1077,7 +1077,7 @@ func checkData[T comparable](a, b []T, t *testing.T) {
 }
 
 // TODO: Cube texture; multiple mip levels.
-func TestCopy(t *testing.T) {
+func TestTextureCopy(t *testing.T) {
 	// One layer.
 	for _, param := range [...]TexParam{
 		{
@@ -1255,7 +1255,7 @@ func TestCopy(t *testing.T) {
 	}
 }
 
-func TestCopyPending(t *testing.T) {
+func TestTextureCopyPending(t *testing.T) {
 	param := TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D:    driver.Dim3D{1024, 512, 0},
@@ -1263,7 +1263,7 @@ func TestCopyPending(t *testing.T) {
 		Levels:   1,
 		Samples:  1,
 	}
-	for param.Size()*param.Width*param.Height > blockSize*nbit {
+	for param.Size()*param.Width*param.Height > stagingBlock*stagingNBit {
 		param.Width /= 2
 		param.Height /= 2
 	}
@@ -1300,7 +1300,7 @@ func TestCopyPending(t *testing.T) {
 		//}
 		staging = make(chan *stagingBuffer, cap(staging))
 		for i := 0; i < cap(staging); i++ {
-			s, err := newStaging(blockSize * nbit)
+			s, err := newStaging(stagingBlock * stagingNBit)
 			if err != nil {
 				s = &stagingBuffer{}
 			}
@@ -1322,7 +1322,7 @@ func TestCopyPending(t *testing.T) {
 	t.Fatal("Texture.CopyToView: expected to be unreachable")
 }
 
-func TestCopyPendingNoPanic(t *testing.T) {
+func TestTextureCopyPendingNoPanic(t *testing.T) {
 	param := TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D:    driver.Dim3D{1024, 512, 0},
@@ -1330,7 +1330,7 @@ func TestCopyPendingNoPanic(t *testing.T) {
 		Levels:   1,
 		Samples:  1,
 	}
-	for param.Size()*param.Width*param.Height > blockSize*nbit {
+	for param.Size()*param.Width*param.Height > stagingBlock*stagingNBit {
 		param.Width /= 2
 		param.Height /= 2
 	}
@@ -1363,7 +1363,7 @@ func TestCopyPendingNoPanic(t *testing.T) {
 	//tex.Free()
 }
 
-func TestCommit(t *testing.T) {
+func TestStagingCommit(t *testing.T) {
 	concCommit := func() {
 		const n = 8
 		errs := make(chan error, n)
@@ -1389,7 +1389,7 @@ func TestCommit(t *testing.T) {
 		Levels:   1,
 		Samples:  1,
 	}
-	for param.Size()*param.Width*param.Height*2 > blockSize*nbit {
+	for param.Size()*param.Width*param.Height*2 > stagingBlock*stagingNBit {
 		param.Width /= 2
 		param.Height /= 2
 	}

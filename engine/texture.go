@@ -1,8 +1,6 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-// Package texture provides a wrapper around the
-// driver's Image/Sampler types.
-package texture
+package engine
 
 import (
 	"errors"
@@ -12,7 +10,7 @@ import (
 	"gviegas/neo3/engine/internal/ctxt"
 )
 
-const prefix = "texture: "
+const texPrefix = "texture: "
 
 // Texture wraps a driver.Image.
 type Texture struct {
@@ -161,7 +159,7 @@ func New2D(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(prefix + reason)
+	err = errors.New(texPrefix + reason)
 	return
 validParam:
 	// TODO: Consider removing driver.UCopySrc and
@@ -206,7 +204,7 @@ func NewCube(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(prefix + reason)
+	err = errors.New(texPrefix + reason)
 	return
 validParam:
 	// TODO: Consider removing driver.UCopySrc and
@@ -246,7 +244,7 @@ func NewTarget(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(prefix + reason)
+	err = errors.New(texPrefix + reason)
 	return
 validParam:
 	// TODO: Consider removing driver.UCopyDst and
@@ -570,7 +568,7 @@ func NewSampler(param *SplrParam) (s *Sampler, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(prefix + reason)
+	err = errors.New(texPrefix + reason)
 	return
 validParam:
 	splr, err := ctxt.GPU().NewSampler(param)

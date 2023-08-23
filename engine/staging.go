@@ -1,6 +1,6 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-package texture
+package engine
 
 import (
 	"errors"
@@ -25,7 +25,7 @@ func init() {
 	n := runtime.GOMAXPROCS(-1)
 	staging = make(chan *stagingBuffer, n)
 	for i := 0; i < n; i++ {
-		s, err := newStaging(blockSize * nbit)
+		s, err := newStaging(stagingBlock * stagingNBit)
 		if err != nil {
 			s = &stagingBuffer{}
 		}
@@ -126,14 +126,14 @@ type pendingCopy struct {
 // 1024x1024 32-bit textures (no mip) will take
 // one bitmap word with this configuration.
 const (
-	blockSize = 131072
-	nbit      = 32
+	stagingBlock = 131072
+	stagingNBit  = 32
 )
 
 // newStaging creates a new stagingBuffer with the
 // given size in bytes.
 // n must be greater than 0; it will be rounded up
-// to a multiple of blockSize * nbit.
+// to a multiple of stagingBlock * stagingNBit.
 func newStaging(n int) (*stagingBuffer, error) {
 	if n <= 0 {
 		panic("texture.newStaging: n <= 0")
@@ -144,14 +144,14 @@ func newStaging(n int) (*stagingBuffer, error) {
 	}
 	wk := make(chan *driver.WorkItem, 1)
 	wk <- &driver.WorkItem{Work: []driver.CmdBuffer{cb}}
-	n = (n + blockSize*nbit - 1) &^ (blockSize*nbit - 1)
+	n = (n + stagingBlock*stagingNBit - 1) &^ (stagingBlock*stagingNBit - 1)
 	buf, err := ctxt.GPU().NewBuffer(int64(n), true, driver.UCopySrc|driver.UCopyDst)
 	if err != nil {
 		cb.Destroy()
 		return nil, err
 	}
 	var bm bitm.Bitm[uint32]
-	bm.Grow(n / blockSize / nbit)
+	bm.Grow(n / stagingBlock / stagingNBit)
 	return &stagingBuffer{wk, buf, bm, nil}, nil
 }
 
@@ -159,17 +159,17 @@ func newStaging(n int) (*stagingBuffer, error) {
 // data from s's buffer into view.
 // off must have been returned by a previous call
 // to s.reserve (i.e., it must be a multiple of
-// blockSize).
+// stagingBlock).
 // Only the first mip level must be provided.
 // If t is arrayed and view is the last view, then
 // the buffer must contain the first level of
 // every layer, in order and tightly packed.
 func (s *stagingBuffer) copyToView(t *Texture, view int, off int64) (err error) {
 	if t.param.Samples != 1 {
-		return errors.New(prefix + "cannot copy data to MS texture")
+		return errors.New(texPrefix + "cannot copy data to MS texture")
 	}
 	if view < 0 || view >= len(t.views) {
-		return errors.New(prefix + "view index out of bounds")
+		return errors.New(texPrefix + "view index out of bounds")
 	}
 
 	il := view
@@ -187,7 +187,7 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, off int64) (err error) 
 	}
 	n := t.param.PixelFmt.Size() * t.param.Dim3D.Width * t.param.Dim3D.Height
 	if off+int64(n*nl) > s.buf.Cap() {
-		return errors.New(prefix + "not enough buffer capacity for copying")
+		return errors.New(texPrefix + "not enough buffer capacity for copying")
 	}
 
 	wk := <-s.wk
@@ -252,13 +252,13 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, off int64) (err error) 
 // data from view into s's buffer.
 // off must have been returned by a previous call
 // to s.reserve (i.e., it must be a multiple of
-// blockSize).
+// stagingBlock).
 func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error) {
 	if t.param.Samples != 1 {
-		return errors.New(prefix + "cannot copy data from MS texture")
+		return errors.New(texPrefix + "cannot copy data from MS texture")
 	}
 	if view < 0 || view >= len(t.views) {
-		return errors.New(prefix + "view index out of bounds")
+		return errors.New(texPrefix + "view index out of bounds")
 	}
 
 	il := view
@@ -278,7 +278,7 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error
 	// all mip levels.
 	n := t.param.PixelFmt.Size() * t.param.Dim3D.Width * t.param.Dim3D.Height
 	if off+int64(n*nl) > s.buf.Cap() {
-		return errors.New(prefix + "not enough buffer capacity for copying")
+		return errors.New(texPrefix + "not enough buffer capacity for copying")
 	}
 	// Need separate transitions if not all
 	// layers are in the same layout.
@@ -384,7 +384,7 @@ func (s *stagingBuffer) stage(data []byte) (off int64, err error) {
 // unstage writes s.buf's data to dst.
 // off must have been returned by a previous call
 // to s.reserve (i.e., it must be a multiple of
-// blockSize).
+// stagingBlock).
 // It returns the number of bytes written.
 //
 // NOTE: Since stagingBuffer methods may flush
@@ -396,12 +396,12 @@ func (s *stagingBuffer) unstage(off int64, dst []byte) (n int) {
 	if off >= s.buf.Cap() {
 		return
 	}
-	if off%blockSize != 0 {
+	if off%stagingBlock != 0 {
 		panic("stagingBuffer.unstage: misaligned off")
 	}
 	n = copy(dst, s.buf.Bytes()[off:])
-	ib := int(off) / blockSize
-	nb := (n + blockSize - 1) / blockSize
+	ib := int(off) / stagingBlock
+	nb := (n + stagingBlock - 1) / stagingBlock
 	for i := 0; i < nb; i++ {
 		s.bm.Unset(ib + i)
 	}
@@ -418,7 +418,7 @@ func (s *stagingBuffer) reserve(n int) (off int64, err error) {
 	if n <= 0 {
 		panic("stagingBuffer.reserve: n <= 0")
 	}
-	n = (n + blockSize - 1) / blockSize
+	n = (n + stagingBlock - 1) / stagingBlock
 	idx, ok := s.bm.SearchRange(n)
 	if !ok {
 		if err = s.commit(); err != nil {
@@ -426,10 +426,10 @@ func (s *stagingBuffer) reserve(n int) (off int64, err error) {
 		}
 		// TODO: Consider using idx 0 instead.
 		idx = s.bm.Len()
-		n := (n + nbit - 1) / nbit
+		n := (n + stagingNBit - 1) / stagingNBit
 		s.bm.Grow(n)
 		// TODO: Make buffer cap bounds configurable.
-		n = n * blockSize * nbit
+		n = n * stagingBlock * stagingNBit
 		if s.buf != nil {
 			n += int(s.buf.Cap())
 			s.buf.Destroy()
@@ -444,7 +444,7 @@ func (s *stagingBuffer) reserve(n int) (off int64, err error) {
 	for i := 0; i < n; i++ {
 		s.bm.Set(idx + i)
 	}
-	off = int64(idx) * blockSize
+	off = int64(idx) * stagingBlock
 	return
 }
 

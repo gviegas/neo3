@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"gviegas/neo3/engine/internal/shader"
-	"gviegas/neo3/engine/texture"
 	"gviegas/neo3/linear"
 )
 
@@ -27,17 +26,17 @@ type Material struct {
 // and its sampler, with sampling operations using a
 // given UV set.
 type TexRef struct {
-	Texture *texture.Texture
+	Texture *Texture
 	View    int
-	Sampler *texture.Sampler
+	Sampler *Sampler
 	UVSet   int
 }
 
-// UV sets matching mesh.TexCoord* semantics.
+// UV sets matching TexCoord* semantics.
 const (
-	// mesh.TexCoord0.
+	// TexCoord0.
 	UVSet0 = iota
-	// mesh.TexCoord1.
+	// TexCoord1.
 	UVSet1
 )
 
@@ -182,7 +181,7 @@ func newMatErr(reason string) error { return errors.New("material: " + reason) }
 
 func (p *TexRef) validate(optional bool) error {
 	// TODO: Should ensure somehow that the Texture
-	// was created by a call to texture.New2D
+	// was created by a call to New2D
 	// (it is fine to ignore this for now because
 	// all textures support driver.UShaderSample).
 	if p.Texture == nil {

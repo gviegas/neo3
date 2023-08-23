@@ -7,11 +7,10 @@ import (
 	"testing"
 
 	"gviegas/neo3/driver"
-	"gviegas/neo3/engine/texture"
 )
 
 func TestMaterial(t *testing.T) {
-	color, err := texture.New2D(&texture.TexParam{
+	color, err := New2D(&TexParam{
 		PixelFmt: driver.RGBA8sRGB,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   4,
@@ -19,10 +18,10 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("texture.New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%#v", err)
 	}
 
-	occMetal, err := texture.New2D(&texture.TexParam{
+	occMetal, err := New2D(&TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   3,
@@ -30,10 +29,10 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("texture.New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%#v", err)
 	}
 
-	normal, err := texture.New2D(&texture.TexParam{
+	normal, err := New2D(&TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   2,
@@ -41,10 +40,10 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("texture.New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%#v", err)
 	}
 
-	emissive, err := texture.New2D(&texture.TexParam{
+	emissive, err := New2D(&TexParam{
 		PixelFmt: driver.RGBA8sRGB,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   1,
@@ -52,10 +51,10 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("texture.New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%#v", err)
 	}
 
-	oneChTex, err := texture.New2D(&texture.TexParam{
+	oneChTex, err := New2D(&TexParam{
 		PixelFmt: driver.R8un,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   1,
@@ -63,10 +62,10 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("texture.New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%#v", err)
 	}
 
-	twoChTex, err := texture.New2D(&texture.TexParam{
+	twoChTex, err := New2D(&TexParam{
 		PixelFmt: driver.RG8un,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   1,
@@ -74,10 +73,10 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("texture.New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%#v", err)
 	}
 
-	splr, err := texture.NewSampler(&texture.SplrParam{
+	splr, err := NewSampler(&SplrParam{
 		Min:      driver.FLinear,
 		Mag:      driver.FLinear,
 		Mipmap:   driver.FNearest,
@@ -90,7 +89,7 @@ func TestMaterial(t *testing.T) {
 		MaxLOD:   0,
 	})
 	if err != nil {
-		t.Fatalf("texture.NewSampler failed:\n%#v", err)
+		t.Fatalf("NewSampler failed:\n%#v", err)
 	}
 
 	check := func(mat *Material, err error, prop any) {
