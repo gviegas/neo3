@@ -37,8 +37,8 @@ func SetMeshBuffer(buf driver.Buffer) driver.Buffer {
 		storage.prims = nil
 	default:
 		c := buf.Cap()
-		n := c / (blockSize * spanMapNBit)
-		if n > int64(^uint(0)>>1) || c != n*(blockSize*spanMapNBit) {
+		n := c / (spanBlock * spanMapNBit)
+		if n > int64(^uint(0)>>1) || c != n*(spanBlock*spanMapNBit) {
 			panic("invalid mesh buffer capacity")
 		}
 		storage.spanMap = bitm.Bitm[uint32]{}
@@ -70,8 +70,8 @@ const (
 // It returns a span identifying the buffer range where
 // the data was stored.
 func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
-	nb := (byteLen + (blockSize - 1)) &^ (blockSize - 1)
-	ns := nb / blockSize
+	nb := (byteLen + (spanBlock - 1)) &^ (spanBlock - 1)
+	ns := nb / spanBlock
 	is, ok := b.spanMap.SearchRange(ns)
 	if !ok {
 		// TODO: Reconsider the growth strategy here.
@@ -80,7 +80,7 @@ func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
 		// that reallocations will not happen often,
 		// so it optimizes for space.
 		nplus := (ns + (spanMapNBit - 1)) / spanMapNBit
-		bcap := int64(b.spanMap.Len()+nplus*spanMapNBit) * blockSize
+		bcap := int64(b.spanMap.Len()+nplus*spanMapNBit) * spanBlock
 		buf, err := ctxt.GPU().NewBuffer(bcap, true, driver.UVertexData|driver.UIndexData)
 		if err != nil {
 			return span{}, err
@@ -94,7 +94,7 @@ func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
 		b.buf = buf
 		is = b.spanMap.Grow(nplus)
 	}
-	slc := b.buf.Bytes()[is*blockSize : is*blockSize+byteLen]
+	slc := b.buf.Bytes()[is*spanBlock : is*spanBlock+byteLen]
 	for len(slc) > 0 {
 		switch n, err := src.Read(slc); {
 		case n > 0:
@@ -127,7 +127,7 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p int,
 		case driver.Index32:
 			isz = 4
 		default:
-			err = errors.New("mesh: undefined driver.IndexFmt constant")
+			err = errors.New(meshPrefix + "undefined driver.IndexFmt constant")
 		}
 		src := srcs[data.Index.Src]
 		off := data.Index.Offset
@@ -240,17 +240,17 @@ type span struct {
 	end   int
 }
 
-// span granularity.
-const blockSize = 512
+// span block size.
+const spanBlock = 512
 
 // byteStart computes the span's first byte.
-func (s span) byteStart() int { return s.start * blockSize }
+func (s span) byteStart() int { return s.start * spanBlock }
 
 // byteEnd computes the span's one-past-the-end byte.
-func (s span) byteEnd() int { return s.end * blockSize }
+func (s span) byteEnd() int { return s.end * spanBlock }
 
 // byteLen computes the span's byte length.
-func (s span) byteLen() int { return (s.end - s.start) * blockSize }
+func (s span) byteLen() int { return (s.end - s.start) * spanBlock }
 
 // String implements fmt.Stringer.
 func (s span) String() string {

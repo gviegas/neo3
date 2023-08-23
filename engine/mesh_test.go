@@ -74,7 +74,7 @@ func TestSetMeshBuffer(t *testing.T) {
 			t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant %v", storage.buf, buf)
 		}
 		n := storage.spanMap.Len()
-		if x := s / blockSize; int(x) != n {
+		if x := s / spanBlock; int(x) != n {
 			t.Fatalf("SetMeshBuffer: storage.spanMap.Len\nhave %d\nwant %d", n, x)
 		}
 		if x := storage.primMap.Len(); x != 0 {
@@ -120,11 +120,11 @@ func TestSpan(t *testing.T) {
 	var s span
 	check(s, want{})
 	s.end++
-	check(s, want{0, blockSize, blockSize})
+	check(s, want{0, spanBlock, spanBlock})
 	s.end++
-	check(s, want{0, blockSize * 2, blockSize * 2})
+	check(s, want{0, spanBlock * 2, spanBlock * 2})
 	s.start++
-	check(s, want{blockSize, blockSize * 2, blockSize})
+	check(s, want{spanBlock, spanBlock * 2, spanBlock})
 	var p primitive
 	for i := range p.vertex {
 		check(p.vertex[i].span, want{})
@@ -133,10 +133,10 @@ func TestSpan(t *testing.T) {
 	p.vertex[Normal.I()].span = s
 	p.vertex[Normal.I()].start++
 	p.vertex[Normal.I()].end += 3
-	check(p.vertex[Normal.I()].span, want{blockSize * 2, blockSize * 5, blockSize * 3})
+	check(p.vertex[Normal.I()].span, want{spanBlock * 2, spanBlock * 5, spanBlock * 3})
 }
 
-func TestStore(t *testing.T) {
+func TestStorage(t *testing.T) {
 	var b meshBuffer
 
 	newSrc := func(byteLen int, mark byte) io.ReadSeeker {
@@ -148,10 +148,10 @@ func TestStore(t *testing.T) {
 	}
 
 	check := func(s span, err error, byteLen int, mark byte) {
-		if x, y := b.buf.Cap(), int64(b.spanMap.Len())*blockSize; x < y {
-			t.Fatalf("meshBuffer.store: buf.Cap() < spanMap.Len()*blockSize: %d/%d", x, y)
+		if x, y := b.buf.Cap(), int64(b.spanMap.Len())*spanBlock; x < y {
+			t.Fatalf("meshBuffer.store: buf.Cap() < spanMap.Len()*spanBlock: %d/%d", x, y)
 		} else if x != y {
-			t.Logf("[!] meshBuffer.store: buf.Cap() != spanMap.Len()*blockSize: %d/%d", x, y)
+			t.Logf("[!] meshBuffer.store: buf.Cap() != spanMap.Len()*spanBlock: %d/%d", x, y)
 		}
 		if s == (span{}) || err != nil {
 			t.Fatalf("meshBuffer.store: unexpected result: (%v, %v)", s, err)
@@ -184,16 +184,16 @@ func TestStore(t *testing.T) {
 		4<<20 - 1,
 		1 << 16,
 		3<<20 + 1,
-		blockSize * spanMapNBit,
-		blockSize*spanMapNBit - 1,
-		blockSize*spanMapNBit + 1,
-		16 * blockSize * spanMapNBit,
-		4*blockSize*spanMapNBit + 3,
-		9*blockSize*spanMapNBit - 6,
-		blockSize,
-		blockSize * 2,
-		blockSize + 1,
-		blockSize - 1,
+		spanBlock * spanMapNBit,
+		spanBlock*spanMapNBit - 1,
+		spanBlock*spanMapNBit + 1,
+		16 * spanBlock * spanMapNBit,
+		4*spanBlock*spanMapNBit + 3,
+		9*spanBlock*spanMapNBit - 6,
+		spanBlock,
+		spanBlock * 2,
+		spanBlock + 1,
+		spanBlock - 1,
 	} {
 		s, err := b.store(newSrc(x, byte(i+1)), x)
 		check(s, err, x, byte(i+1))
@@ -206,14 +206,14 @@ func TestStore(t *testing.T) {
 	bcap := int(b.buf.Cap())
 	t.Logf("total requested size: %d bytes", acc)
 	t.Logf("spans:\n%v", spans)
-	t.Logf("span map length: %d (%d bytes)", slen, slen*blockSize)
-	t.Logf("span map remaining: %d (%d bytes)", srem, srem*blockSize)
+	t.Logf("span map length: %d (%d bytes)", slen, slen*spanBlock)
+	t.Logf("span map remaining: %d (%d bytes)", srem, srem*spanBlock)
 	t.Logf("buffer utilization: %.3f%% (%d bytes of %d are unused)", float64(acc)/float64(bcap)*100, bcap-acc, bcap)
 
 	b.buf.Destroy()
 }
 
-func TestConv(t *testing.T) {
+func TestSemanticConv(t *testing.T) {
 	const n = 4096 * 16
 	f32 := make([]float32, n)
 	u16 := make([]uint16, n)
@@ -307,7 +307,7 @@ func TestConv(t *testing.T) {
 			if r != nil || err == nil {
 				t.Fatalf("%s.conv: unexpected result: (%v, nil)", sem, r)
 			}
-			if !strings.HasPrefix(err.Error(), "mesh: ") {
+			if !strings.HasPrefix(err.Error(), meshPrefix) {
 				t.Fatalf("%s.conv: unexpected error: %#v", sem, err)
 			}
 			r8.Seek(0, io.SeekStart)
@@ -590,7 +590,7 @@ func checkDummyData1(m *Mesh, ntris int, t *testing.T) {
 	for _, s := range [3]Semantic{Position, Normal, TexCoord0} {
 		n := p.vertex[s.I()].format.Size() * ntris * 3
 		spn := p.vertex[s.I()].span
-		if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+		if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
 			t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
 		}
 		x := ^byte(s.I())
@@ -665,7 +665,7 @@ func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
 	s := Position
 	n := p.vertex[s.I()].format.Size() * ntris * 3
 	spn := p.vertex[s.I()].span
-	if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+	if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
 		t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
 	}
 	x := ^byte(s.I())
@@ -678,7 +678,7 @@ func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
 	s = Color0
 	n = p.vertex[s.I()].format.Size() * ntris * 3
 	spn = p.vertex[s.I()].span
-	if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+	if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
 		t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
 	}
 	x = ^byte(s.I())
@@ -695,7 +695,7 @@ func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
 
 	n = 2 * ntris * 6
 	spn = p.index.span
-	if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+	if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
 		t.Fatalf("storage.prims[%d].index.span: end - start\nhave %d\nwant %d", m.primIdx, x, y)
 	}
 	x = byte(p.index.format + 1)
@@ -775,7 +775,7 @@ func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
 		s := Semantic(1 << i)
 		n := p.vertex[s.I()].format.Size() * ntris * 3
 		spn := p.vertex[s.I()].span
-		if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+		if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
 			t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
 		}
 		x := ^byte(s.I())
@@ -788,7 +788,7 @@ func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
 
 	n := 4*ntris*6 + 60
 	spn := p.index.span
-	if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+	if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
 		t.Fatalf("storage.prims[%d].index.span: end - start\nhave %d\nwant %d", m.primIdx, x, y)
 	}
 	x := byte(p.index.format + 1)
@@ -891,7 +891,7 @@ func checkDummyData4(m *Mesh, ntris int, t *testing.T) {
 		for _, s := range ss[i] {
 			n := p.vertex[s.I()].format.Size() * ntris * 3
 			spn := p.vertex[s.I()].span
-			if x, y := spn.end-spn.start, (n+(blockSize-1))/blockSize; x != y {
+			if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
 				t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", is[i], s, x, y)
 			}
 			x := ^byte(s.I())

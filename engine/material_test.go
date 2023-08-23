@@ -141,7 +141,7 @@ func TestMaterial(t *testing.T) {
 			t.Fatalf("New*:\nhave %v, %#v\nwant nil, non-nil", mat, err)
 		}
 		if !strings.HasSuffix(err.Error(), reason) {
-			t.Fatalf("New*: error.Error\nhave \"%s\"\nwant \"%s\"", err.Error(), "material: "+reason)
+			t.Fatalf("New*: error.Error\nhave \"%s\"\nwant \"%s\"", err.Error(), matPrefix+reason)
 		}
 	}
 

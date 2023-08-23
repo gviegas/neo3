@@ -13,6 +13,8 @@ import (
 	"gviegas/neo3/driver"
 )
 
+const meshPrefix = "mesh: "
+
 // Mesh is a collection of primitives.
 // Each primitive defines the data for a draw call.
 type Mesh struct {
@@ -274,7 +276,7 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 		return uint16(u)
 	}
 
-	var err = errors.New("mesh: unsupported vertex format for " + s.String())
+	var err = errors.New(meshPrefix + "unsupported vertex format for " + s.String())
 	var p *byte
 
 	switch s {
@@ -404,8 +406,8 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 	return bytes.NewReader(unsafe.Slice(p, n)), nil
 }
 
-// SemanticData describes how to fetch semantic data from
-// MeshData.Srcs.
+// SemanticData describes how to fetch semantic data
+// from MeshData.Srcs.
 type SemanticData struct {
 	Format driver.VertexFmt
 	Offset int64
@@ -420,8 +422,9 @@ type IndexData struct {
 	Src    int
 }
 
-// PrimitiveData describes the data layout of a mesh's primitive
-// and how to fetch such data from MeshData.Srcs.
+// PrimitiveData describes the data layout of a mesh's
+// primitive and how to fetch such data from
+// MeshData.Srcs.
 type PrimitiveData struct {
 	Topology    driver.Topology
 	VertexCount int
@@ -487,7 +490,7 @@ func NewMesh(data *MeshData) (m *Mesh, err error) {
 
 // validateData checks whether data is valid.
 func validateMeshData(data *MeshData) error {
-	newErr := func(reason string) error { return errors.New("mesh: " + reason) }
+	newErr := func(reason string) error { return errors.New(meshPrefix + reason) }
 
 	switch {
 	case data == nil:

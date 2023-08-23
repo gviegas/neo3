@@ -119,7 +119,7 @@ func TestSkinFail(t *testing.T) {
 			t.Fatalf("NewSkin:\nhave %v, %#v\nwant nil, non-nil", sk, err)
 		}
 		if x := err.Error(); !strings.HasSuffix(x, reason) {
-			t.Fatalf("NewSkin: error.Error()\nhave \"%s\"\nwant \"%s\"", x, "skin: "+reason)
+			t.Fatalf("NewSkin: error.Error()\nhave \"%s\"\nwant \"%s\"", x, skinPrefix+reason)
 		}
 	}
 

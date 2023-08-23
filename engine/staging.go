@@ -15,10 +15,10 @@ import (
 var (
 	// Global staging buffer(s).
 	staging chan *stagingBuffer
-	// Variables for Commit calls.
-	commitMu    sync.Mutex
-	commitCache []*stagingBuffer
-	commitWk    chan *driver.WorkItem
+	// Variables for CommitStaging calls.
+	stagingMu    sync.Mutex
+	stagingCache []*stagingBuffer
+	stagingWk    chan *driver.WorkItem
 )
 
 func init() {
@@ -31,53 +31,53 @@ func init() {
 		}
 		staging <- s
 	}
-	commitCache = make([]*stagingBuffer, 0, n)
-	commitWk = make(chan *driver.WorkItem, 1)
-	commitWk <- &driver.WorkItem{Work: make([]driver.CmdBuffer, 0, n)}
+	stagingCache = make([]*stagingBuffer, 0, n)
+	stagingWk = make(chan *driver.WorkItem, 1)
+	stagingWk <- &driver.WorkItem{Work: make([]driver.CmdBuffer, 0, n)}
 }
 
-// Commit executes all pending Texture copies.
+// CommitStaging executes all pending Texture copies.
 // It blocks until execution completes.
-func Commit() (err error) {
-	commitMu.Lock()
-	cwk := <-commitWk
+func CommitStaging() (err error) {
+	stagingMu.Lock()
+	swk := <-stagingWk
 
 	// This deferral correctly clears global
 	// state, regardless of the outcome.
 	// Code below ensures that the command
 	// buffers are reset if necessary.
 	defer func() {
-		for _, x := range commitCache {
+		for _, x := range stagingCache {
 			x.bm.Clear()
 			x.drainPending(err != nil)
 			staging <- x
 		}
-		commitCache = commitCache[:0]
-		cwk.Work = cwk.Work[:0]
-		commitWk <- cwk
-		commitMu.Unlock()
+		stagingCache = stagingCache[:0]
+		swk.Work = swk.Work[:0]
+		stagingWk <- swk
+		stagingMu.Unlock()
 	}()
 
 	n := cap(staging)
 	for i := 0; i < n; i++ {
-		commitCache = append(commitCache, <-staging)
+		stagingCache = append(stagingCache, <-staging)
 	}
 
-	for i, x := range commitCache {
+	for i, x := range stagingCache {
 		wk := <-x.wk
 		if !wk.Work[0].IsRecording() {
 			if len(x.pend) != 0 {
 				// This should never happen.
-				panic("texture.Commit: pending copies while not recording")
+				panic("CommitStaging: pending copies while not recording")
 			}
 		} else if err = wk.Work[0].End(); err != nil {
 			x.wk <- wk
-			for _, x := range cwk.Work {
+			for _, x := range swk.Work {
 				// Need to reset these since
 				// they won't be committed.
 				x.Reset()
 			}
-			for _, x := range commitCache[i+1:] {
+			for _, x := range stagingCache[i+1:] {
 				// Need to reset these since
 				// they won't be ended.
 				wk := <-x.wk
@@ -86,19 +86,19 @@ func Commit() (err error) {
 			}
 			return
 		} else {
-			cwk.Work = append(cwk.Work, wk.Work[0])
+			swk.Work = append(swk.Work, wk.Work[0])
 		}
 		x.wk <- wk
 	}
 
-	if len(cwk.Work) == 0 {
+	if len(swk.Work) == 0 {
 		return
 	}
-	if err = ctxt.GPU().Commit(cwk, commitWk); err != nil {
+	if err = ctxt.GPU().Commit(swk, stagingWk); err != nil {
 		return
 	}
-	cwk = <-commitWk
-	err, cwk.Err = cwk.Err, nil
+	swk = <-stagingWk
+	err, swk.Err = swk.Err, nil
 	return
 }
 
@@ -136,7 +136,7 @@ const (
 // to a multiple of stagingBlock * stagingNBit.
 func newStaging(n int) (*stagingBuffer, error) {
 	if n <= 0 {
-		panic("texture.newStaging: n <= 0")
+		panic("newStaging: n <= 0")
 	}
 	cb, err := ctxt.GPU().NewCmdBuffer()
 	if err != nil {

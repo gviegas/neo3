@@ -1077,7 +1077,7 @@ func checkData[T comparable](a, b []T, t *testing.T) {
 }
 
 // TODO: Cube texture; multiple mip levels.
-func TestTextureCopy(t *testing.T) {
+func TestViewCopy(t *testing.T) {
 	// One layer.
 	for _, param := range [...]TexParam{
 		{
@@ -1255,7 +1255,7 @@ func TestTextureCopy(t *testing.T) {
 	}
 }
 
-func TestTextureCopyPending(t *testing.T) {
+func TestViewCopyPending(t *testing.T) {
 	param := TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D:    driver.Dim3D{1024, 512, 0},
@@ -1293,7 +1293,7 @@ func TestTextureCopyPending(t *testing.T) {
 
 		// Panicking corrupts the global state;
 		// reset it so other tests can run safely.
-		commitMu.Lock()
+		stagingMu.Lock()
 		// Likely to block forever.
 		//for i := 0; i < cap(staging); i++ {
 		//	(<-staging).free()
@@ -1306,12 +1306,12 @@ func TestTextureCopyPending(t *testing.T) {
 			}
 			staging <- s
 		}
-		commitCache = commitCache[:0]
-		wk := <-commitWk
+		stagingCache = stagingCache[:0]
+		wk := <-stagingWk
 		wk.Work = wk.Work[:0]
 		wk.Err = nil
-		commitWk <- wk
-		commitMu.Unlock()
+		stagingWk <- wk
+		stagingMu.Unlock()
 
 		tex.Free()
 	}()
@@ -1322,7 +1322,7 @@ func TestTextureCopyPending(t *testing.T) {
 	t.Fatal("Texture.CopyToView: expected to be unreachable")
 }
 
-func TestTextureCopyPendingNoPanic(t *testing.T) {
+func TestViewCopyPendingNoPanic(t *testing.T) {
 	param := TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D:    driver.Dim3D{1024, 512, 0},
@@ -1363,19 +1363,19 @@ func TestTextureCopyPendingNoPanic(t *testing.T) {
 	//tex.Free()
 }
 
-func TestStagingCommit(t *testing.T) {
+func TestCommitStaging(t *testing.T) {
 	concCommit := func() {
 		const n = 8
 		errs := make(chan error, n)
 		for i := 0; i < n; i++ {
 			go func() {
 				time.Sleep(time.Nanosecond * 20)
-				errs <- Commit()
+				errs <- CommitStaging()
 			}()
 		}
 		for i := n; i > 0; i-- {
 			if err := <-errs; err != nil {
-				t.Fatalf("Commit failed:\n%#v", err)
+				t.Fatalf("CommitStaging failed:\n%#v", err)
 			}
 		}
 	}
@@ -1411,7 +1411,7 @@ func TestStagingCommit(t *testing.T) {
 	}
 
 	// Copy single-layer texture uncommitted
-	// and then Commit.
+	// and then commit.
 	if err = tex1.CopyToView(0, data, false); err != nil {
 		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
 	}
@@ -1420,7 +1420,7 @@ func TestStagingCommit(t *testing.T) {
 	}
 	concCommit()
 	if tex1.layouts[0].Load() == invalLayout {
-		t.Fatalf("Commit: should have set a valid layout")
+		t.Fatalf("CommitStaging: should have set a valid layout")
 	}
 	n := tex1.ViewSize(0)
 	if x, err := tex1.CopyFromView(0, dst); err != nil || x != n {
@@ -1429,7 +1429,7 @@ func TestStagingCommit(t *testing.T) {
 	checkData(data, dst[:n], t)
 
 	// Copy different layers of different textures
-	// uncommitted and then Commit.
+	// uncommitted and then commit.
 	if err = tex2.CopyToView(1, data[16:], false); err != nil {
 		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
 	}
@@ -1441,7 +1441,7 @@ func TestStagingCommit(t *testing.T) {
 	}
 	concCommit()
 	if tex2.layouts[1].Load() == invalLayout || tex1.layouts[0].Load() == invalLayout {
-		t.Fatalf("Commit: should have set a valid layout")
+		t.Fatalf("CommitStaging: should have set a valid layout")
 	}
 	n = tex2.ViewSize(1)
 	if x, err := tex2.CopyFromView(1, dst); err != nil || x != n {
@@ -1455,7 +1455,7 @@ func TestStagingCommit(t *testing.T) {
 	checkData(data[48:], dst[n:n*2], t)
 
 	// Copy different layers of the same texture
-	// uncommitted and then Commit.
+	// uncommitted and then commit.
 	if err = tex2.CopyToView(0, data[256:], false); err != nil {
 		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
 	}
@@ -1467,7 +1467,7 @@ func TestStagingCommit(t *testing.T) {
 	}
 	concCommit()
 	if tex2.layouts[0].Load() == invalLayout || tex2.layouts[1].Load() == invalLayout {
-		t.Fatalf("Commit: should have set a valid layout")
+		t.Fatalf("CommitStaging: should have set a valid layout")
 	}
 	n = tex2.ViewSize(0)
 	if x, err := tex2.CopyFromView(0, dst); err != nil || x != n {

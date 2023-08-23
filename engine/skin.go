@@ -9,6 +9,8 @@ import (
 	"gviegas/neo3/linear"
 )
 
+const skinPrefix = "skin: "
+
 // Skin defines skinning data.
 type Skin struct {
 	joints []joint
@@ -46,11 +48,9 @@ type Joint struct {
 
 // NewSkin creates a new skin from a joint hierarchy.
 func NewSkin(joints []Joint) (*Skin, error) {
-	const prefix = "skin: "
-
 	n := len(joints)
 	if n == 0 {
-		return nil, errors.New(prefix + "[]Joint length is 0")
+		return nil, errors.New(skinPrefix + "[]Joint length is 0")
 	}
 
 	js := make([]joint, 0, n)
@@ -62,9 +62,9 @@ func NewSkin(joints []Joint) (*Skin, error) {
 		pnt := joints[i].Parent
 		switch {
 		case pnt >= n:
-			return nil, errors.New(prefix + "Joint.Parent out of bounds")
+			return nil, errors.New(skinPrefix + "Joint.Parent out of bounds")
 		case pnt == i:
-			return nil, errors.New(prefix + "Joint.Parent refers to itself")
+			return nil, errors.New(skinPrefix + "Joint.Parent refers to itself")
 		case pnt < 0:
 			pnt = -1
 		}
