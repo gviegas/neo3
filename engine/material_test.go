@@ -1,6 +1,6 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-package material
+package engine
 
 import (
 	"strings"
@@ -10,7 +10,7 @@ import (
 	"gviegas/neo3/engine/texture"
 )
 
-func TestNew(t *testing.T) {
+func TestMaterial(t *testing.T) {
 	color, err := texture.New2D(&texture.TexParam{
 		PixelFmt: driver.RGBA8sRGB,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
@@ -142,7 +142,7 @@ func TestNew(t *testing.T) {
 			t.Fatalf("New*:\nhave %v, %#v\nwant nil, non-nil", mat, err)
 		}
 		if !strings.HasSuffix(err.Error(), reason) {
-			t.Fatalf("New*: error.Error\nhave \"%s\"\nwant \"%s%s\"", err.Error(), prefix, reason)
+			t.Fatalf("New*: error.Error\nhave \"%s\"\nwant \"%s\"", err.Error(), "material: "+reason)
 		}
 	}
 

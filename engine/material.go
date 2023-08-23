@@ -1,8 +1,6 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
-// Package material implements the material model used in
-// the engine.
-package material
+package engine
 
 import (
 	"errors"
@@ -11,8 +9,6 @@ import (
 	"gviegas/neo3/engine/texture"
 	"gviegas/neo3/linear"
 )
-
-const prefix = "material: "
 
 // Material defines the material properties to be applied
 // to geometry during rendering.
@@ -182,7 +178,7 @@ func NewUnlit(prop *Unlit) (*Material, error) {
 
 // Parameter validation for New* functions.
 
-func newErr(reason string) error { return errors.New(prefix + reason) }
+func newMatErr(reason string) error { return errors.New("material: " + reason) }
 
 func (p *TexRef) validate(optional bool) error {
 	// TODO: Should ensure somehow that the Texture
@@ -193,21 +189,21 @@ func (p *TexRef) validate(optional bool) error {
 		if optional {
 			return nil
 		}
-		return newErr("nil TexRef.Texture")
+		return newMatErr("nil TexRef.Texture")
 	}
 	if !p.Texture.IsValidView(p.View) {
-		return newErr("invalid TexRef.View")
+		return newMatErr("invalid TexRef.View")
 	}
 	if !p.Texture.PixelFmt().IsColor() {
-		return newErr("TexRef.Texture has non-color format")
+		return newMatErr("TexRef.Texture has non-color format")
 	}
 	if p.Sampler == nil {
-		return newErr("nil TexRef.Sampler")
+		return newMatErr("nil TexRef.Sampler")
 	}
 	switch p.UVSet {
 	case UVSet0, UVSet1:
 	default:
-		return newErr("undefined UV set constant")
+		return newMatErr("undefined UV set constant")
 	}
 	return nil
 }
@@ -218,7 +214,7 @@ func (p *BaseColor) validate() error {
 	}
 	for _, x := range p.Factor {
 		if x < 0 || x > 1 {
-			return newErr("BaseColor.Factor outside [0.0, 1.0] interval")
+			return newMatErr("BaseColor.Factor outside [0.0, 1.0] interval")
 		}
 	}
 	return nil
@@ -230,14 +226,14 @@ func (p *MetalRough) validate() error {
 			return err
 		}
 		if p.Texture.PixelFmt().Channels() < 2 {
-			return newErr("MetalRough.Texture has insufficient channels")
+			return newMatErr("MetalRough.Texture has insufficient channels")
 		}
 	}
 	if p.Metalness < 0 || p.Metalness > 1 {
-		return newErr("MetalRough.Metalness outside [0.0, 1.0] interval")
+		return newMatErr("MetalRough.Metalness outside [0.0, 1.0] interval")
 	}
 	if p.Roughness < 0 || p.Roughness > 1 {
-		return newErr("MetalRough.Roughness outside [0.0, 1.0] interval")
+		return newMatErr("MetalRough.Roughness outside [0.0, 1.0] interval")
 	}
 	return nil
 }
@@ -248,11 +244,11 @@ func (p *Normal) validate() error {
 			return err
 		}
 		if p.Texture.PixelFmt().Channels() < 3 {
-			return newErr("Normal.Texture has insufficient channels")
+			return newMatErr("Normal.Texture has insufficient channels")
 		}
 	}
 	if p.Scale < 0 {
-		return newErr("Normal.Scale less than 0.0")
+		return newMatErr("Normal.Scale less than 0.0")
 	}
 	return nil
 }
@@ -262,7 +258,7 @@ func (p *Occlusion) validate() error {
 		return err
 	}
 	if p.Strength < 0 || p.Strength > 1 {
-		return newErr("Occlusion.Strength outside [0.0, 1.0] interval")
+		return newMatErr("Occlusion.Strength outside [0.0, 1.0] interval")
 	}
 	return nil
 }
@@ -273,12 +269,12 @@ func (p *Emissive) validate() error {
 			return err
 		}
 		if p.Texture.PixelFmt().Channels() < 3 {
-			return newErr("Emissive.Texture has insufficient channels")
+			return newMatErr("Emissive.Texture has insufficient channels")
 		}
 	}
 	for _, x := range p.Factor {
 		if x < 0 || x > 1 {
-			return newErr("Emissive.Factor outside [0.0, 1.0] interval")
+			return newMatErr("Emissive.Factor outside [0.0, 1.0] interval")
 		}
 	}
 	return nil
@@ -291,7 +287,7 @@ func validateAlpha(mode int, cutoff float32) error {
 		// Don't restrict cutoff values,
 		// even if they don't make sense.
 	default:
-		return newErr("undefined alpha mode constant")
+		return newMatErr("undefined alpha mode constant")
 	}
 	return nil
 }
