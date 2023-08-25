@@ -1549,11 +1549,11 @@ func TestTransition(t *testing.T) {
 	checkTex1(driver.LUndefined, driver.LUndefined, driver.LUndefined)
 	checkTex2(driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined)
 
-	tex1.Transition(0, cb, driver.LColorTarget, driver.Barrier{})
+	tex1.transition(0, cb, driver.LColorTarget, driver.Barrier{})
 	checkTex1(invalLayout, driver.LUndefined, driver.LUndefined)
-	tex1.Transition(2, cb, driver.LShaderRead, driver.Barrier{})
+	tex1.transition(2, cb, driver.LShaderRead, driver.Barrier{})
 	checkTex1(invalLayout, driver.LUndefined, invalLayout)
-	tex2.Transition(0, cb, driver.LShaderRead, driver.Barrier{})
+	tex2.transition(0, cb, driver.LShaderRead, driver.Barrier{})
 	checkTex2(invalLayout, invalLayout, invalLayout, invalLayout, invalLayout, invalLayout)
 
 	if err = cb.End(); err != nil {
@@ -1566,27 +1566,27 @@ func TestTransition(t *testing.T) {
 		t.Fatalf("driver.GPU.Commit: (<-ch).Err\n%#v", err)
 	}
 
-	tex2.SetLayout(0, driver.LShaderRead)
+	tex2.setLayout(0, driver.LShaderRead)
 	checkTex2(driver.LShaderRead, driver.LShaderRead, driver.LShaderRead, driver.LShaderRead, driver.LShaderRead, driver.LShaderRead)
-	tex1.SetLayout(0, driver.LColorTarget)
+	tex1.setLayout(0, driver.LColorTarget)
 	checkTex1(driver.LColorTarget, driver.LUndefined, invalLayout)
-	tex1.SetLayout(2, driver.LShaderRead)
+	tex1.setLayout(2, driver.LShaderRead)
 	checkTex1(driver.LColorTarget, driver.LUndefined, driver.LShaderRead)
 
 	if err = cb.Begin(); err != nil {
 		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
 	}
 
-	tex2.Transition(0, cb, driver.LCopyDst, driver.Barrier{})
+	tex2.transition(0, cb, driver.LCopyDst, driver.Barrier{})
 	checkTex2(invalLayout, invalLayout, invalLayout, invalLayout, invalLayout, invalLayout)
-	tex1.Transition(2, cb, driver.LCopyDst, driver.Barrier{})
+	tex1.transition(2, cb, driver.LCopyDst, driver.Barrier{})
 	checkTex1(driver.LColorTarget, driver.LUndefined, invalLayout)
 
 	cb.Reset()
 
-	tex2.SetLayout(0, driver.LUndefined)
+	tex2.setLayout(0, driver.LUndefined)
 	checkTex2(driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined, driver.LUndefined)
-	tex1.SetLayout(2, driver.LUndefined)
+	tex1.setLayout(2, driver.LUndefined)
 	checkTex1(driver.LColorTarget, driver.LUndefined, driver.LUndefined)
 
 	cb.Destroy()
@@ -1617,34 +1617,34 @@ func TestTransitionPanic(t *testing.T) {
 		if x := recover(); x != nil {
 			const want = "layout already pending"
 			if x != want {
-				t.Fatalf("Texture.Transition: recover():\nhave %v\nwant %s", x, want)
+				t.Fatalf("Texture.transition: recover():\nhave %v\nwant %s", x, want)
 			}
 			for _, i := range [...]int{1, 0, 4} {
 				if x := tex.layouts[i].Load(); x != invalLayout {
-					t.Fatalf("Texture.Transition: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, invalLayout)
+					t.Fatalf("Texture.transition: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, invalLayout)
 				}
 			}
 			for _, i := range [...]int{2, 3, 5, 6, 7, 8, 9} {
 				if x := tex.layouts[i].Load(); x != int64(driver.LUndefined) {
-					t.Fatalf("Texture.Transition: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LUndefined)
+					t.Fatalf("Texture.transition: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LUndefined)
 				}
 			}
 		} else {
-			t.Fatal("Texture.Transition: should have panicked")
+			t.Fatal("Texture.transition: should have panicked")
 		}
 		cb.Destroy()
 		tex.Free()
 	}()
 
 	// Ok.
-	tex.Transition(1, cb, driver.LColorTarget, driver.Barrier{})
+	tex.transition(1, cb, driver.LColorTarget, driver.Barrier{})
 	// Ok.
-	tex.Transition(0, cb, driver.LColorTarget, driver.Barrier{})
+	tex.transition(0, cb, driver.LColorTarget, driver.Barrier{})
 	// Ok.
-	tex.Transition(4, cb, driver.LShaderRead, driver.Barrier{})
+	tex.transition(4, cb, driver.LShaderRead, driver.Barrier{})
 	// Must panic.
-	tex.Transition(tex.param.Layers, cb, driver.LColorTarget, driver.Barrier{})
-	t.Fatal("Texture.Transition: expected to be unreachable")
+	tex.transition(tex.param.Layers, cb, driver.LColorTarget, driver.Barrier{})
+	t.Fatal("Texture.transition: expected to be unreachable")
 }
 
 func TestSetLayoutPanic(t *testing.T) {
@@ -1671,26 +1671,26 @@ func TestSetLayoutPanic(t *testing.T) {
 		if x := recover(); x != nil {
 			const want = "layout not pending"
 			if x != want {
-				t.Fatalf("Texture.SetLayout: recover():\nhave %v\nwant %s", x, want)
+				t.Fatalf("Texture.setLayout: recover():\nhave %v\nwant %s", x, want)
 			}
 			for i := 6; i < 12; i++ {
 				if x := tex.layouts[i].Load(); x != int64(driver.LShaderRead) {
-					t.Fatalf("Texture.SetLayout: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LShaderRead)
+					t.Fatalf("Texture.setLayout: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LShaderRead)
 				}
 			}
 			for i := 0; i < 6; i++ {
 				if x := tex.layouts[i].Load(); x != int64(driver.LUndefined) {
-					t.Fatalf("Texture.SetLayout: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LUndefined)
+					t.Fatalf("Texture.setLayout: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LUndefined)
 				}
 			}
 		} else {
-			t.Fatal("Texture.SetLayout: should have panicked")
+			t.Fatal("Texture.setLayout: should have panicked")
 		}
 		cb.Destroy()
 		tex.Free()
 	}()
 
-	tex.Transition(1, cb, driver.LColorTarget, driver.Barrier{})
+	tex.transition(1, cb, driver.LColorTarget, driver.Barrier{})
 
 	if err = cb.End(); err != nil {
 		t.Fatalf("driver.CmdBuffer.End failed:\n%#v", err)
@@ -1703,8 +1703,8 @@ func TestSetLayoutPanic(t *testing.T) {
 	}
 
 	// Ok.
-	tex.SetLayout(1, driver.LShaderRead)
+	tex.setLayout(1, driver.LShaderRead)
 	// Must panic.
-	tex.SetLayout(0, driver.LShaderRead)
-	t.Fatal("Texture.SetLayout: expected to be unreachable")
+	tex.setLayout(0, driver.LShaderRead)
+	t.Fatal("Texture.setLayout: expected to be unreachable")
 }

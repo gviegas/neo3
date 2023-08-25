@@ -385,15 +385,15 @@ func (t *Texture) unsetPending(layer int, layout driver.Layout) {
 	}
 }
 
-// Transition records a layout transition for view in
+// transition records a layout transition for view in
 // the given command buffer.
 // The caller must ensure that no copies targeting
 // this particular view of t happen until the command
 // completes execution.
 // The caller is also responsible for calling
-// t.SetLayout after the transition executes to
+// t.setLayout after the transition executes to
 // update t's state. Not doing so may cause a panic.
-func (t *Texture) Transition(view int, cb driver.CmdBuffer, layout driver.Layout, barrier driver.Barrier) {
+func (t *Texture) transition(view int, cb driver.CmdBuffer, layout driver.Layout, barrier driver.Barrier) {
 	if !t.IsValidView(view) {
 		panic("not a valid view of Texture")
 	}
@@ -459,15 +459,15 @@ func (t *Texture) Transition(view int, cb driver.CmdBuffer, layout driver.Layout
 	}
 }
 
-// SetLayout sets the layout of view.
+// setLayout sets the layout of view.
 // It must be called, exactly once, after the preceding
-// t.Transition command executes to update t's state.
+// t.transition command executes to update t's state.
 // layout must either match the transition's layout, or
 // be driver.LUndefined (in case of failure to execute
 // the layout transition command).
-// Calling this method with no preceding Transition is
+// Calling this method with no preceding transition is
 // invalid and may cause a panic.
-func (t *Texture) SetLayout(view int, layout driver.Layout) {
+func (t *Texture) setLayout(view int, layout driver.Layout) {
 	if !t.IsValidView(view) {
 		panic("not a valid view of Texture")
 	}
