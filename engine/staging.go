@@ -36,9 +36,9 @@ func init() {
 	stagingWk <- &driver.WorkItem{Work: make([]driver.CmdBuffer, 0, n)}
 }
 
-// CommitStaging executes all pending Texture copies.
+// commitStaging executes all pending Texture copies.
 // It blocks until execution completes.
-func CommitStaging() (err error) {
+func commitStaging() (err error) {
 	stagingMu.Lock()
 	swk := <-stagingWk
 
@@ -68,7 +68,7 @@ func CommitStaging() (err error) {
 		if !wk.Work[0].IsRecording() {
 			if len(x.pend) != 0 {
 				// This should never happen.
-				panic("CommitStaging: pending copies while not recording")
+				panic("commitStaging: pending copies while not recording")
 			}
 		} else if err = wk.Work[0].End(); err != nil {
 			x.wk <- wk

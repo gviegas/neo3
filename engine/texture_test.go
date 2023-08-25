@@ -1370,12 +1370,12 @@ func TestCommitStaging(t *testing.T) {
 		for i := 0; i < n; i++ {
 			go func() {
 				time.Sleep(time.Nanosecond * 20)
-				errs <- CommitStaging()
+				errs <- commitStaging()
 			}()
 		}
 		for i := n; i > 0; i-- {
 			if err := <-errs; err != nil {
-				t.Fatalf("CommitStaging failed:\n%#v", err)
+				t.Fatalf("commitStaging failed:\n%#v", err)
 			}
 		}
 	}
@@ -1420,7 +1420,7 @@ func TestCommitStaging(t *testing.T) {
 	}
 	concCommit()
 	if tex1.layouts[0].Load() == invalLayout {
-		t.Fatalf("CommitStaging: should have set a valid layout")
+		t.Fatalf("commitStaging: should have set a valid layout")
 	}
 	n := tex1.ViewSize(0)
 	if x, err := tex1.CopyFromView(0, dst); err != nil || x != n {
@@ -1441,7 +1441,7 @@ func TestCommitStaging(t *testing.T) {
 	}
 	concCommit()
 	if tex2.layouts[1].Load() == invalLayout || tex1.layouts[0].Load() == invalLayout {
-		t.Fatalf("CommitStaging: should have set a valid layout")
+		t.Fatalf("commitStaging: should have set a valid layout")
 	}
 	n = tex2.ViewSize(1)
 	if x, err := tex2.CopyFromView(1, dst); err != nil || x != n {
@@ -1467,7 +1467,7 @@ func TestCommitStaging(t *testing.T) {
 	}
 	concCommit()
 	if tex2.layouts[0].Load() == invalLayout || tex2.layouts[1].Load() == invalLayout {
-		t.Fatalf("CommitStaging: should have set a valid layout")
+		t.Fatalf("commitStaging: should have set a valid layout")
 	}
 	n = tex2.ViewSize(0)
 	if x, err := tex2.CopyFromView(0, dst); err != nil || x != n {
