@@ -42,18 +42,18 @@ func TestSemantic(t *testing.T) {
 }
 
 func TestSetMeshBuffer(t *testing.T) {
-	SetMeshBuffer(nil)
+	setMeshBuffer(nil)
 	if storage.buf != nil {
-		t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
+		t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
 	}
 	if x := storage.spanMap.Len(); x != 0 {
-		t.Fatalf("SetMeshBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
+		t.Fatalf("setMeshBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := storage.primMap.Len(); x != 0 {
-		t.Fatalf("SetMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+		t.Fatalf("setMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := len(storage.prims); x != 0 {
-		t.Fatalf("SetMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+		t.Fatalf("setMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 	}
 	// Set to non-nil.
 	var prev driver.Buffer
@@ -62,8 +62,8 @@ func TestSetMeshBuffer(t *testing.T) {
 		if err != nil {
 			panic("could not create a driver.Buffer for testing")
 		}
-		if x := SetMeshBuffer(buf); x != prev {
-			t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant %v", x, prev)
+		if x := setMeshBuffer(buf); x != prev {
+			t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant %v", x, prev)
 		} else {
 			if x != nil {
 				x.Destroy()
@@ -71,36 +71,36 @@ func TestSetMeshBuffer(t *testing.T) {
 			prev = buf
 		}
 		if storage.buf != buf {
-			t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant %v", storage.buf, buf)
+			t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant %v", storage.buf, buf)
 		}
 		n := storage.spanMap.Len()
 		if x := s / spanBlock; int(x) != n {
-			t.Fatalf("SetMeshBuffer: storage.spanMap.Len\nhave %d\nwant %d", n, x)
+			t.Fatalf("setMeshBuffer: storage.spanMap.Len\nhave %d\nwant %d", n, x)
 		}
 		if x := storage.primMap.Len(); x != 0 {
-			t.Fatalf("SetMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+			t.Fatalf("setMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
 		}
 		if x := len(storage.prims); x != 0 {
-			t.Fatalf("SetMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+			t.Fatalf("setMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 		}
 	}
 	// Set to nil again.
-	if x := SetMeshBuffer(nil); x != prev {
-		t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant %v", x, prev)
+	if x := setMeshBuffer(nil); x != prev {
+		t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant %v", x, prev)
 	} else {
 		x.Destroy()
 	}
 	if storage.buf != nil {
-		t.Fatalf("SetMeshBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
+		t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
 	}
 	if x := storage.spanMap.Len(); x != 0 {
-		t.Fatalf("SetMeshBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
+		t.Fatalf("setMeshBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := storage.primMap.Len(); x != 0 {
-		t.Fatalf("SetMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+		t.Fatalf("setMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
 	}
 	if x := len(storage.prims); x != 0 {
-		t.Fatalf("SetMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+		t.Fatalf("setMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
 	}
 }
 
@@ -920,7 +920,7 @@ func fillDummyIdx(i driver.IndexFmt, d []byte) {
 
 func TestMesh(t *testing.T) {
 	defer func() {
-		b := SetMeshBuffer(nil)
+		b := setMeshBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
@@ -928,7 +928,7 @@ func TestMesh(t *testing.T) {
 	const n = 20 << 20
 	buf, err := ctxt.GPU().NewBuffer(n, true, driver.UVertexData|driver.UIndexData)
 	if err == nil {
-		SetMeshBuffer(buf)
+		setMeshBuffer(buf)
 	} else {
 		t.Fatalf("ctxt.GPU().NewBuffer: %#v", err)
 	}
@@ -984,7 +984,7 @@ func TestMesh(t *testing.T) {
 
 func TestMeshInputs(t *testing.T) {
 	defer func() {
-		b := SetMeshBuffer(nil)
+		b := setMeshBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
@@ -1083,7 +1083,7 @@ func TestMeshInputs(t *testing.T) {
 
 func TestMeshFree(t *testing.T) {
 	defer func() {
-		b := SetMeshBuffer(nil)
+		b := setMeshBuffer(nil)
 		if b != nil {
 			b.Destroy()
 		}
@@ -1345,7 +1345,7 @@ const (
 // data while holding a RLock.
 
 func BenchmarkMeshGrow(b *testing.B) {
-	if buf := SetMeshBuffer(nil); buf != nil {
+	if buf := setMeshBuffer(nil); buf != nil {
 		buf.Destroy()
 	}
 	data := dummyData1(ntrisBench)
@@ -1376,7 +1376,7 @@ func BenchmarkMeshPre(b *testing.B) {
 	if err != nil {
 		b.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
 	}
-	if buf = SetMeshBuffer(buf); buf != nil {
+	if buf = setMeshBuffer(buf); buf != nil {
 		buf.Destroy()
 	}
 	data := dummyData1(ntrisBench)
@@ -1403,7 +1403,7 @@ func BenchmarkMeshPre(b *testing.B) {
 }
 
 func BenchmarkMeshFree(b *testing.B) {
-	if buf := SetMeshBuffer(nil); buf != nil {
+	if buf := setMeshBuffer(nil); buf != nil {
 		buf.Destroy()
 	}
 	data := dummyData1(ntrisBench)

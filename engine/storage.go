@@ -16,7 +16,7 @@ import (
 // Global mesh storage.
 var storage meshBuffer
 
-// SetMeshBuffer sets the GPU buffer into which mesh data
+// setMeshBuffer sets the GPU buffer into which mesh data
 // will be stored.
 // The buffer must be host-visible, its usage must include
 // both driver.UVertexData and driver.UIndexData, and its
@@ -25,7 +25,7 @@ var storage meshBuffer
 //
 // NOTE: Calls to this function invalidate all previously
 // created meshes.
-func SetMeshBuffer(buf driver.Buffer) driver.Buffer {
+func setMeshBuffer(buf driver.Buffer) driver.Buffer {
 	storage.Lock()
 	defer storage.Unlock()
 	switch buf {
