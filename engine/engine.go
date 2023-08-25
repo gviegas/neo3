@@ -20,9 +20,13 @@ const (
 	// The maximum number of joints in a skin.
 	MaxJoint = int(shader.MaxJoint)
 
-	dflMaxDrawable = 2048
-	dflMaxMaterial = 512
-	dflMaxSkin     = 1024
+	// The minimum size of the mesh buffer.
+	MinMeshBuffer = 16384
+
+	dflMaxDrawable       = 2048
+	dflMaxMaterial       = 512
+	dflMaxSkin           = 1024
+	dflInitialMeshBuffer = MinMeshBuffer * 256
 )
 
 // Config is used to configure the engine.
@@ -62,18 +66,26 @@ type Config struct {
 	//
 	// Default is 1024.
 	MaxSkin int
+
+	// The initial size of the mesh buffer.
+	//
+	// It must be a multiple of 16384 bytes.
+	//
+	// Default is 4194304 bytes (4MiB).
+	InitialMeshBuffer int
 }
 
 // DefaultConfig returns the default configuration.
 func DefaultConfig() Config {
 	return Config{
-		DoubleBuffered: false,
-		MaxLight:       MaxLight,
-		MaxShadow:      MaxShadow,
-		MaxJoint:       MaxJoint,
-		MaxDrawable:    dflMaxDrawable,
-		MaxMaterial:    dflMaxMaterial,
-		MaxSkin:        dflMaxSkin,
+		DoubleBuffered:    false,
+		MaxLight:          MaxLight,
+		MaxShadow:         MaxShadow,
+		MaxJoint:          MaxJoint,
+		MaxDrawable:       dflMaxDrawable,
+		MaxMaterial:       dflMaxMaterial,
+		MaxSkin:           dflMaxSkin,
+		InitialMeshBuffer: dflInitialMeshBuffer,
 	}
 }
 
