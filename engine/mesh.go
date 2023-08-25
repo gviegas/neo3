@@ -26,12 +26,12 @@ type Mesh struct {
 // Len returns the number of primitives in m.
 func (m *Mesh) Len() int { return m.primLen }
 
-// Inputs returns a driver.VertexIn slice describing the
+// inputs returns a driver.VertexIn slice describing the
 // vertex input layout of the primitive at index prim.
 // If prim is out of bounds, it returns a nil slice.
 // Inputs are ordered by the Semantic value they represent.
 // driver.VertexIn.Nr is set to Semantic.I().
-func (m *Mesh) Inputs(prim int) []driver.VertexIn {
+func (m *Mesh) inputs(prim int) []driver.VertexIn {
 	if prim >= m.primLen || prim < 0 {
 		return nil
 	}
@@ -58,15 +58,15 @@ func (m *Mesh) Inputs(prim int) []driver.VertexIn {
 	return vin[:n]
 }
 
-// Draw sets the vertex/index buffers and draws the primitive
+// draw sets the vertex/index buffers and draws the primitive
 // identified by prim.
 // The caller is responsible for setting up cb as to be valid
 // for drawing the primitive. In particular, it assumes that
 // cb has an active render pass and that a compatible graphics
 // pipeline has been set (a compatible pipeline is one whose
-// vertex inputs match m.Inputs(prim)).
+// vertex inputs match m.inputs(prim)).
 // If prim is out of bounds, the call is silently ignored.
-func (m *Mesh) Draw(prim int, cb driver.CmdBuffer, instCnt int) {
+func (m *Mesh) draw(prim int, cb driver.CmdBuffer, instCnt int) {
 	if prim >= m.primLen || prim < 0 {
 		return
 	}

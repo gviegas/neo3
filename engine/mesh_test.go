@@ -996,11 +996,11 @@ func TestMeshInputs(t *testing.T) {
 		}
 		for i := 0; i < len(want); i++ {
 			if x, y := len(want[i]), len(have[i]); x != y {
-				t.Fatalf("Mesh.Inputs: length mismatch\nhave %d\nwant %d", y, x)
+				t.Fatalf("Mesh.inputs: length mismatch\nhave %d\nwant %d", y, x)
 			}
 			for j := 0; j < len(want[i]); j++ {
 				if x, y := want[i][j], have[i][j]; x != y {
-					t.Fatalf("Mesh.Inputs: value mismatch\nhave %v\nwant %v", y, x)
+					t.Fatalf("Mesh.inputs: value mismatch\nhave %v\nwant %v", y, x)
 				}
 			}
 		}
@@ -1051,7 +1051,7 @@ func TestMeshInputs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
-	have[0] = m.Inputs(0)
+	have[0] = m.inputs(0)
 	check(want[:1], have[:1])
 
 	d = dummyData2(100)
@@ -1059,7 +1059,7 @@ func TestMeshInputs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
-	have[1] = m.Inputs(0)
+	have[1] = m.inputs(0)
 	check(want[:2], have[:2])
 
 	d = dummyData3(1024)
@@ -1067,7 +1067,7 @@ func TestMeshInputs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
-	have[2] = m.Inputs(0)
+	have[2] = m.inputs(0)
 	check(want[:2], have[:2])
 
 	d = dummyData4(60)
@@ -1075,9 +1075,9 @@ func TestMeshInputs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New failed: %#v", err)
 	}
-	have[3] = m.Inputs(1)
-	have[4] = m.Inputs(2)
-	have[5] = m.Inputs(0)
+	have[3] = m.inputs(1)
+	have[4] = m.inputs(2)
+	have[5] = m.inputs(0)
 	check(want[:], have[:])
 }
 
