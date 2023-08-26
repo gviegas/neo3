@@ -29,6 +29,13 @@ func copyM4(dst []float32, m *linear.M4) {
 	copy(dst, unsafe.Slice((*float32)(unsafe.Pointer(m)), 16))
 }
 
+func copyM3(dst []float32, m *linear.M3) {
+	// The columns themselves must be 16-byte aligned.
+	copy(dst[0:], m[0][:])
+	copy(dst[4:], m[1][:])
+	copy(dst[8:], m[2][:])
+}
+
 // FrameLayout is the layout of per-frame, global data.
 // It is defined as follows:
 //
@@ -163,8 +170,8 @@ func (l *ShadowLayout) SetShadow(m *linear.M4) { copyM4(l[16:32], m) }
 // It is defined as follows:
 //
 //	[0:16]  | world matrix
-//	[16:32] | normal matrix
-//	[32:48] | ???
+//	[16:28] | normal matrix (padded columns)
+//	[28:48] | ???
 //	[48]    | ID
 //	[49]	| ???
 //	[50]    | ???
@@ -178,7 +185,7 @@ type DrawableLayout [64]float32
 func (l *DrawableLayout) SetWorld(m *linear.M4) { copyM4(l[:16], m) }
 
 // SetNormal sets the normal matrix.
-func (l *DrawableLayout) SetNormal(m *linear.M4) { copyM4(l[16:32], m) }
+func (l *DrawableLayout) SetNormal(m *linear.M3) { copyM3(l[16:28], m) }
 
 // SetID sets the drawable's ID.
 func (l *DrawableLayout) SetID(id uint32) { l[48] = *(*float32)(unsafe.Pointer(&id)) }
@@ -239,14 +246,14 @@ func (l *MaterialLayout) SetFlags(flg uint32) { l[12] = *(*float32)(unsafe.Point
 // It is defined as follows:
 //
 //	[0:16]  | joint matrix
-//	[16:32] | normal matrix
-type JointLayout [32]float32
+//	[16:28] | normal matrix (padded columns)
+type JointLayout [28]float32
 
 // SetJoint sets the joint matrix.
 func (l *JointLayout) SetJoint(m *linear.M4) { copyM4(l[:16], m) }
 
 // SetNormal sets the normal matrix.
-func (l *JointLayout) SetNormal(m *linear.M4) { copyM4(l[16:32], m) }
+func (l *JointLayout) SetNormal(m *linear.M3) { copyM3(l[16:28], m) }
 
 // Constants defining the maximum number of elements
 // for layouts that are aggregated into static arrays.

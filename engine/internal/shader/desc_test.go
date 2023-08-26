@@ -511,9 +511,14 @@ func TestDrawableWriteN(t *testing.T) {
 
 	tb.SetConstBuf(buf, 0)
 
-	var wld, norm linear.M4
+	var wld linear.M4
+	var norm linear.M3
 	wld.Translate(100, 50, -25)
-	norm.Invert(&wld)
+	norm.Invert(&linear.M3{
+		{wld[0][0], wld[0][1], wld[0][2]},
+		{wld[1][0], wld[1][1], wld[1][2]},
+		{wld[2][0], wld[2][1], wld[2][2]},
+	})
 	norm.Transpose(&norm)
 	id := uint32(0x1d)
 	id1 := id << 8
@@ -529,7 +534,11 @@ func TestDrawableWriteN(t *testing.T) {
 	checkSlicesT(tb.Drawable(0)[48:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 48))
 	s = "Table.Drawable(3)[%d:]"
 	checkSlicesT(tb.Drawable(3)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Drawable(3)[16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	checkSlicesT(tb.Drawable(3)[16:], []float32{
+		norm[0][0], norm[0][1], norm[0][2], 0,
+		norm[1][0], norm[1][1], norm[1][2], 0,
+		norm[2][0], norm[2][1], norm[2][2], 0,
+	}, t, fmt.Sprintf(s, 16))
 	s = "Table.Drawable(9)[%d:]"
 	checkSlicesT(tb.Drawable(9)[48:], unsafe.Slice((*float32)(unsafe.Pointer(&id1)), 1), t, fmt.Sprintf(s, 48))
 }
@@ -618,9 +627,14 @@ func TestJointWrite(t *testing.T) {
 
 	tb.SetConstBuf(buf, 0)
 
-	var jnt, norm linear.M4
+	var jnt linear.M4
+	var norm linear.M3
 	jnt.Translate(-0.5, -0.25, 0.125)
-	norm.Invert(&jnt)
+	norm.Invert(&linear.M3{
+		{jnt[0][0], jnt[0][1], jnt[0][2]},
+		{jnt[1][0], jnt[1][1], jnt[1][2]},
+		{jnt[2][0], jnt[2][1], jnt[2][2]},
+	})
 	norm.Transpose(&norm)
 
 	tb.Joint(0)[0].SetJoint(&jnt)
@@ -629,7 +643,11 @@ func TestJointWrite(t *testing.T) {
 
 	s := "Table.Joint(0)[0][%d:]"
 	checkSlicesT(tb.Joint(0)[0][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Joint(0)[0][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	checkSlicesT(tb.Joint(0)[0][16:], []float32{
+		norm[0][0], norm[0][1], norm[0][2], 0,
+		norm[1][0], norm[1][1], norm[1][2], 0,
+		norm[2][0], norm[2][1], norm[2][2], 0,
+	}, t, fmt.Sprintf(s, 16))
 	s = fmt.Sprintf("Table.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
 	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
 }
@@ -649,9 +667,14 @@ func TestJointWriteN(t *testing.T) {
 
 	tb.SetConstBuf(buf, 0)
 
-	var jnt, norm linear.M4
+	var jnt linear.M4
+	var norm linear.M3
 	jnt.Translate(-0.5, -0.25, 0.125)
-	norm.Invert(&jnt)
+	norm.Invert(&linear.M3{
+		{jnt[0][0], jnt[0][1], jnt[0][2]},
+		{jnt[1][0], jnt[1][1], jnt[1][2]},
+		{jnt[2][0], jnt[2][1], jnt[2][2]},
+	})
 	norm.Transpose(&norm)
 
 	tb.Joint(0)[0].SetJoint(&jnt)
@@ -664,7 +687,11 @@ func TestJointWriteN(t *testing.T) {
 
 	s := "Table.Joint(0)[0][%d:]"
 	checkSlicesT(tb.Joint(0)[0][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Joint(0)[0][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	checkSlicesT(tb.Joint(0)[0][16:], []float32{
+		norm[0][0], norm[0][1], norm[0][2], 0,
+		norm[1][0], norm[1][1], norm[1][2], 0,
+		norm[2][0], norm[2][1], norm[2][2], 0,
+	}, t, fmt.Sprintf(s, 16))
 	s = fmt.Sprintf("Table.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
 	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
 
@@ -672,10 +699,18 @@ func TestJointWriteN(t *testing.T) {
 	checkSlicesT(tb.Joint(5)[MaxJoint/2][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
 
 	s = "Table.Joint(9)[1][%d:]"
-	checkSlicesT(tb.Joint(9)[1][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	checkSlicesT(tb.Joint(9)[1][16:], []float32{
+		norm[0][0], norm[0][1], norm[0][2], 0,
+		norm[1][0], norm[1][1], norm[1][2], 0,
+		norm[2][0], norm[2][1], norm[2][2], 0,
+	}, t, fmt.Sprintf(s, 16))
 	s = fmt.Sprintf("Table.Joint(9)[%d]%s", MaxJoint-1, "[%d:]")
 	checkSlicesT(tb.Joint(9)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Joint(9)[MaxJoint-1][16:], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, fmt.Sprintf(s, 16))
+	checkSlicesT(tb.Joint(9)[MaxJoint-1][16:], []float32{
+		norm[0][0], norm[0][1], norm[0][2], 0,
+		norm[1][0], norm[1][1], norm[1][2], 0,
+		norm[2][0], norm[2][1], norm[2][2], 0,
+	}, t, fmt.Sprintf(s, 16))
 }
 
 func TestSetCBFail(t *testing.T) {

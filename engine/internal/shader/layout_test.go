@@ -193,9 +193,13 @@ func TestDrawableLayout(t *testing.T) {
 	var wld linear.M4
 	wld.Translate(10, 20, 30)
 
-	// [16:32]
-	var norm linear.M4
-	norm.Invert(&wld)
+	// [16:28]
+	var norm linear.M3
+	norm.Invert(&linear.M3{
+		{wld[0][0], wld[0][1], wld[0][2]},
+		{wld[1][0], wld[1][1], wld[1][2]},
+		{wld[2][0], wld[2][1], wld[2][2]},
+	})
 	norm.Transpose(&norm)
 
 	// [48:49]
@@ -209,7 +213,11 @@ func TestDrawableLayout(t *testing.T) {
 	s := "DrawableLayout."
 
 	checkSlicesT(l[:16], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, s+"SetWorld")
-	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, s+"SetNormal")
+	checkSlicesT(l[16:28], []float32{
+		norm[0][0], norm[0][1], norm[0][2], 0,
+		norm[1][0], norm[1][1], norm[1][2], 0,
+		norm[2][0], norm[2][1], norm[2][2], 0,
+	}, t, s+"SetNormal")
 	if x := *(*uint32)(unsafe.Pointer(&id)); x != id {
 		t.Fatalf("%sSetID:\nhave %d\nwant %d", s, x, id)
 	}
@@ -272,9 +280,13 @@ func TestJointLayout(t *testing.T) {
 	var jnt linear.M4
 	jnt.Translate(-300, -200, -100)
 
-	// [16:32]
-	var norm linear.M4
-	norm.Invert(&jnt)
+	// [16:28]
+	var norm linear.M3
+	norm.Invert(&linear.M3{
+		{jnt[0][0], jnt[0][1], jnt[0][2]},
+		{jnt[1][0], jnt[1][1], jnt[1][2]},
+		{jnt[2][0], jnt[2][1], jnt[2][2]},
+	})
 	norm.Transpose(&norm)
 
 	var l JointLayout
@@ -284,5 +296,9 @@ func TestJointLayout(t *testing.T) {
 	s := "JointLayout."
 
 	checkSlicesT(l[:16], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, s+"SetJoint")
-	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&norm)), 16), t, s+"SetNormal")
+	checkSlicesT(l[16:28], []float32{
+		norm[0][0], norm[0][1], norm[0][2], 0,
+		norm[1][0], norm[1][1], norm[1][2], 0,
+		norm[2][0], norm[2][1], norm[2][2], 0,
+	}, t, s+"SetNormal")
 }
