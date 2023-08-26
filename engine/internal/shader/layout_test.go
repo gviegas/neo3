@@ -3,6 +3,7 @@
 package shader
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 	"time"
@@ -191,15 +192,12 @@ func TestShadowLayout(t *testing.T) {
 func TestDrawableLayout(t *testing.T) {
 	// [0:16]
 	var wld linear.M4
-	wld.Translate(10, 20, 30)
+	wld.Rotate(math.Pi/4, &linear.V3{0, 0.7071, 0.7071})
 
 	// [16:28]
 	var norm linear.M3
-	norm.Invert(&linear.M3{
-		{wld[0][0], wld[0][1], wld[0][2]},
-		{wld[1][0], wld[1][1], wld[1][2]},
-		{wld[2][0], wld[2][1], wld[2][2]},
-	})
+	norm.FromM4(&wld)
+	norm.Invert(&norm)
 	norm.Transpose(&norm)
 
 	// [48:49]
@@ -278,15 +276,12 @@ func TestMaterialLayout(t *testing.T) {
 func TestJointLayout(t *testing.T) {
 	// [0:16]
 	var jnt linear.M4
-	jnt.Translate(-300, -200, -100)
+	jnt.Rotate(math.Pi/3, &linear.V3{-0.7071, 0.7071, 0})
 
 	// [16:28]
 	var norm linear.M3
-	norm.Invert(&linear.M3{
-		{jnt[0][0], jnt[0][1], jnt[0][2]},
-		{jnt[1][0], jnt[1][1], jnt[1][2]},
-		{jnt[2][0], jnt[2][1], jnt[2][2]},
-	})
+	norm.FromM4(&jnt)
+	norm.Invert(&norm)
 	norm.Transpose(&norm)
 
 	var l JointLayout

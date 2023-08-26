@@ -513,12 +513,9 @@ func TestDrawableWriteN(t *testing.T) {
 
 	var wld linear.M4
 	var norm linear.M3
-	wld.Translate(100, 50, -25)
-	norm.Invert(&linear.M3{
-		{wld[0][0], wld[0][1], wld[0][2]},
-		{wld[1][0], wld[1][1], wld[1][2]},
-		{wld[2][0], wld[2][1], wld[2][2]},
-	})
+	wld.Scale(0.5, 2, 3)
+	norm.FromM4(&wld)
+	norm.Invert(&norm)
 	norm.Transpose(&norm)
 	id := uint32(0x1d)
 	id1 := id << 8
@@ -629,12 +626,9 @@ func TestJointWrite(t *testing.T) {
 
 	var jnt linear.M4
 	var norm linear.M3
-	jnt.Translate(-0.5, -0.25, 0.125)
-	norm.Invert(&linear.M3{
-		{jnt[0][0], jnt[0][1], jnt[0][2]},
-		{jnt[1][0], jnt[1][1], jnt[1][2]},
-		{jnt[2][0], jnt[2][1], jnt[2][2]},
-	})
+	jnt.Scale(-0.5, -0.25, 0.125)
+	norm.FromM4(&jnt)
+	norm.Invert(&norm)
 	norm.Transpose(&norm)
 
 	tb.Joint(0)[0].SetJoint(&jnt)
@@ -669,12 +663,9 @@ func TestJointWriteN(t *testing.T) {
 
 	var jnt linear.M4
 	var norm linear.M3
-	jnt.Translate(-0.5, -0.25, 0.125)
-	norm.Invert(&linear.M3{
-		{jnt[0][0], jnt[0][1], jnt[0][2]},
-		{jnt[1][0], jnt[1][1], jnt[1][2]},
-		{jnt[2][0], jnt[2][1], jnt[2][2]},
-	})
+	jnt.Scale(-0.5, -0.25, 0.125)
+	norm.FromM4(&jnt)
+	norm.Invert(&norm)
 	norm.Transpose(&norm)
 
 	tb.Joint(0)[0].SetJoint(&jnt)
