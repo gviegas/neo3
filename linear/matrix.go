@@ -102,6 +102,13 @@ func (m *M3) RotateQ(q *Q) {
 	m[2][2] = 1 - xx2 - yy2
 }
 
+// FromM4 sets m to contain n's upper-left.
+func (m *M3) FromM4(n *M4) {
+	copy(m[0][:], n[0][:])
+	copy(m[1][:], n[1][:])
+	copy(m[2][:], n[2][:])
+}
+
 // M4 is a column-major 4x4 matrix of float32.
 type M4 [4]V4
 
@@ -273,4 +280,13 @@ func (m *M4) Ortho(xmag, ymag, znear, zfar float32) {
 		{2: 2 / (znear - zfar)},
 		{2: (zfar + znear) / (znear - zfar), 3: 1},
 	}
+}
+
+// FromM3 sets m to contain n as its upper-left and
+// {0, 0, 0, 1} as its last column/row.
+func (m *M4) FromM3(n *M3) {
+	*m = M4{3: {3: 1}}
+	copy(m[0][:], n[0][:])
+	copy(m[1][:], n[1][:])
+	copy(m[2][:], n[2][:])
 }

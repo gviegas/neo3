@@ -242,3 +242,51 @@ func TestTRS(t *testing.T) {
 		t.Fatalf("TRS*v\nhave %v\nwant %v", v, V4{4, 3, 2, 1})
 	}
 }
+
+func TestMConv(t *testing.T) {
+	i3 := I3()
+	i4 := I4()
+
+	var m3, n3 M3
+	var m4, n4 M4
+
+	m3.FromM4(&i4)
+	m4.FromM3(&i3)
+	if m3 != i3 {
+		t.Fatalf("M3.FromM4()\nhave %v\nwant %v", m3, i3)
+	}
+	if m4 != i4 {
+		t.Fatalf("M4.FromM3()\nhave %v\nwant %v", m4, i4)
+	}
+
+	m3.FromM4(&m4)
+	m4.FromM3(&m3)
+	if m3 != i3 {
+		t.Fatalf("M3.FromM4()\nhave %v\nwant %v", m3, i3)
+	}
+	if m4 != i4 {
+		t.Fatalf("M4.FromM3()\nhave %v\nwant %v", m4, i4)
+	}
+
+	m3.FromM4(&n4)
+	m4.FromM3(&n3)
+	if m3 != (M3{}) {
+		t.Fatalf("M3.FromM4()\nhave %v\nwant %v", m3, M3{})
+	}
+	if m4 != (M4{{}, {}, {}, {0, 0, 0, 1}}) {
+		t.Fatalf("M4.FromM3()\nhave %v\nwant %v", m4, M4{})
+	}
+
+	n4.Translate(-5, 10, -20)
+	m3.FromM4(&n4)
+	if m3 != i3 {
+		t.Fatalf("M3.FromM4()\nhave %v\nwant %v", m3, i3)
+	}
+
+	n3.Scale(0.25, 1.5, -1)
+	n4.Scale(n3[0][0], n3[1][1], n3[2][2])
+	m4.FromM3(&n3)
+	if m4 != n4 {
+		t.Fatalf("M4.FromM3()\nhave %v\nwant %v", m4, n4)
+	}
+}
