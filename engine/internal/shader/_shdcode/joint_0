@@ -7,12 +7,12 @@
 #endif
 
 #ifndef MAX_JOINT
-# define MAX_JOINT 128
+# define MAX_JOINT 170
 #endif
 
 struct JointElem {
-	mat4 jnt;
-	mat4 norm;
+	mat4x3 jnt;
+	mat3 norm;
 };
 
 layout(set=JOINT_HEAP, binding=JOINT_NR) uniform Joint {
