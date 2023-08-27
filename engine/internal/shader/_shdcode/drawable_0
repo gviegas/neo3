@@ -8,7 +8,6 @@
 
 layout(set=DRAWABLE_HEAP, binding=DRAWABLE_NR) uniform Drawable {
 	mat4 world;
-	mat4 norm;
-	mat4 _;
+	mat3 norm;
 	uint id;
 } drawable;
