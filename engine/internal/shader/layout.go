@@ -171,12 +171,11 @@ func (l *ShadowLayout) SetShadow(m *linear.M4) { copyM4(l[16:32], m) }
 //
 //	[0:16]  | world matrix
 //	[16:28] | normal matrix (padded columns)
-//	[28:48] | ???
-//	[48]    | ID
-//	[49]	| ???
-//	[50]    | ???
-//	[51]    | ???
-//	[52:63] | (unused)
+//	[28]    | ID
+//	[29]    | ???
+//	[30]    | ???
+//	[31]    | ???
+//	[32:63] | (unused)
 //
 // NOTE: This layout is likely to change.
 type DrawableLayout [64]float32
@@ -188,7 +187,7 @@ func (l *DrawableLayout) SetWorld(m *linear.M4) { copyM4(l[:16], m) }
 func (l *DrawableLayout) SetNormal(m *linear.M3) { copyM3(l[16:28], m) }
 
 // SetID sets the drawable's ID.
-func (l *DrawableLayout) SetID(id uint32) { l[48] = *(*float32)(unsafe.Pointer(&id)) }
+func (l *DrawableLayout) SetID(id uint32) { l[28] = *(*float32)(unsafe.Pointer(&id)) }
 
 // MaterialLayout is the layout of material data.
 // It is defined as follows:

@@ -493,7 +493,7 @@ func TestDrawableWrite(t *testing.T) {
 
 	s := "Table.Drawable(0)[%d:]"
 	checkSlicesT(tb.Drawable(0)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Drawable(0)[48:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 48))
+	checkSlicesT(tb.Drawable(0)[28:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 28))
 }
 
 func TestDrawableWriteN(t *testing.T) {
@@ -528,7 +528,7 @@ func TestDrawableWriteN(t *testing.T) {
 
 	s := "Table.Drawable(0)[%d:]"
 	checkSlicesT(tb.Drawable(0)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Drawable(0)[48:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 48))
+	checkSlicesT(tb.Drawable(0)[28:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 28))
 	s = "Table.Drawable(3)[%d:]"
 	checkSlicesT(tb.Drawable(3)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
 	checkSlicesT(tb.Drawable(3)[16:], []float32{
@@ -537,7 +537,7 @@ func TestDrawableWriteN(t *testing.T) {
 		norm[2][0], norm[2][1], norm[2][2], 0,
 	}, t, fmt.Sprintf(s, 16))
 	s = "Table.Drawable(9)[%d:]"
-	checkSlicesT(tb.Drawable(9)[48:], unsafe.Slice((*float32)(unsafe.Pointer(&id1)), 1), t, fmt.Sprintf(s, 48))
+	checkSlicesT(tb.Drawable(9)[28:], unsafe.Slice((*float32)(unsafe.Pointer(&id1)), 1), t, fmt.Sprintf(s, 28))
 }
 
 func TestMaterialWrite(t *testing.T) {

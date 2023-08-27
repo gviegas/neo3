@@ -200,7 +200,7 @@ func TestDrawableLayout(t *testing.T) {
 	norm.Invert(&norm)
 	norm.Transpose(&norm)
 
-	// [48:49]
+	// [28:29]
 	id := uint32(0x1d)
 
 	var l DrawableLayout
@@ -216,7 +216,7 @@ func TestDrawableLayout(t *testing.T) {
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
 	}, t, s+"SetNormal")
-	if x := *(*uint32)(unsafe.Pointer(&id)); x != id {
+	if x := *(*uint32)(unsafe.Pointer(&l[28])); x != id {
 		t.Fatalf("%sSetID:\nhave %d\nwant %d", s, x, id)
 	}
 }
