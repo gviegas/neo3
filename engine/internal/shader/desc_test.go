@@ -636,14 +636,22 @@ func TestJointWrite(t *testing.T) {
 	tb.Joint(0)[MaxJoint-1].SetJoint(&jnt)
 
 	s := "Table.Joint(0)[0][%d:]"
-	checkSlicesT(tb.Joint(0)[0][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Joint(0)[0][16:], []float32{
+	checkSlicesT(tb.Joint(0)[0][:], []float32{
+		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
+		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
+		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
+	}, t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(0)[0][12:], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
-	}, t, fmt.Sprintf(s, 16))
+	}, t, fmt.Sprintf(s, 12))
 	s = fmt.Sprintf("Table.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
-	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], []float32{
+		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
+		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
+		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
+	}, t, fmt.Sprintf(s, 0))
 }
 
 func TestJointWriteN(t *testing.T) {
@@ -677,31 +685,47 @@ func TestJointWriteN(t *testing.T) {
 	tb.Joint(9)[MaxJoint-1].SetNormal(&norm)
 
 	s := "Table.Joint(0)[0][%d:]"
-	checkSlicesT(tb.Joint(0)[0][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Joint(0)[0][16:], []float32{
+	checkSlicesT(tb.Joint(0)[0][:], []float32{
+		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
+		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
+		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
+	}, t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(0)[0][12:], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
-	}, t, fmt.Sprintf(s, 16))
+	}, t, fmt.Sprintf(s, 12))
 	s = fmt.Sprintf("Table.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
-	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], []float32{
+		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
+		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
+		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
+	}, t, fmt.Sprintf(s, 0))
 
 	s = fmt.Sprintf("Table.Joint(5)[%d]%s", MaxJoint/2, "[%d:]")
-	checkSlicesT(tb.Joint(5)[MaxJoint/2][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(5)[MaxJoint/2][:], []float32{
+		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
+		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
+		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
+	}, t, fmt.Sprintf(s, 0))
 
 	s = "Table.Joint(9)[1][%d:]"
-	checkSlicesT(tb.Joint(9)[1][16:], []float32{
+	checkSlicesT(tb.Joint(9)[1][12:], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
-	}, t, fmt.Sprintf(s, 16))
+	}, t, fmt.Sprintf(s, 12))
 	s = fmt.Sprintf("Table.Joint(9)[%d]%s", MaxJoint-1, "[%d:]")
-	checkSlicesT(tb.Joint(9)[MaxJoint-1][:], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, fmt.Sprintf(s, 0))
-	checkSlicesT(tb.Joint(9)[MaxJoint-1][16:], []float32{
+	checkSlicesT(tb.Joint(9)[MaxJoint-1][:], []float32{
+		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
+		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
+		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
+	}, t, fmt.Sprintf(s, 0))
+	checkSlicesT(tb.Joint(9)[MaxJoint-1][12:], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
-	}, t, fmt.Sprintf(s, 16))
+	}, t, fmt.Sprintf(s, 12))
 }
 
 func TestSetCBFail(t *testing.T) {

@@ -274,11 +274,11 @@ func TestMaterialLayout(t *testing.T) {
 }
 
 func TestJointLayout(t *testing.T) {
-	// [0:16]
+	// [0:12]
 	var jnt linear.M4
 	jnt.Rotate(math.Pi/3, &linear.V3{-0.7071, 0.7071, 0})
 
-	// [16:28]
+	// [12:24]
 	var norm linear.M3
 	norm.FromM4(&jnt)
 	norm.Invert(&norm)
@@ -290,8 +290,12 @@ func TestJointLayout(t *testing.T) {
 
 	s := "JointLayout."
 
-	checkSlicesT(l[:16], unsafe.Slice((*float32)(unsafe.Pointer(&jnt)), 16), t, s+"SetJoint")
-	checkSlicesT(l[16:28], []float32{
+	checkSlicesT(l[:12], []float32{
+		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
+		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
+		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
+	}, t, s+"SetJoint")
+	checkSlicesT(l[12:24], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,

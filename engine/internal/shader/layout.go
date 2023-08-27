@@ -244,15 +244,19 @@ func (l *MaterialLayout) SetFlags(flg uint32) { l[12] = *(*float32)(unsafe.Point
 // JointLayout is the layout of joint data.
 // It is defined as follows:
 //
-//	[0:16]  | joint matrix
-//	[16:28] | normal matrix (padded columns)
-type JointLayout [28]float32
+//	[0:12]  | joint matrix (1st, 2nd and 3rd rows)
+//	[12:24] | normal matrix (padded columns)
+type JointLayout [24]float32
 
 // SetJoint sets the joint matrix.
-func (l *JointLayout) SetJoint(m *linear.M4) { copyM4(l[:16], m) }
+func (l *JointLayout) SetJoint(m *linear.M4) {
+	var n linear.M4
+	n.Transpose(m)
+	copy(l[:12], unsafe.Slice((*float32)(unsafe.Pointer(&n)), 12))
+}
 
 // SetNormal sets the normal matrix.
-func (l *JointLayout) SetNormal(m *linear.M3) { copyM3(l[16:28], m) }
+func (l *JointLayout) SetNormal(m *linear.M3) { copyM3(l[12:24], m) }
 
 // Constants defining the maximum number of elements
 // for layouts that are aggregated into static arrays.
