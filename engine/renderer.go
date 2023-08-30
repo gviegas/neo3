@@ -16,6 +16,8 @@ type Renderer struct {
 
 	// TODO: Shadow maps.
 
+	drawables drawableMap
+
 	hdr *Texture
 	ds  *Texture
 
