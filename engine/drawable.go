@@ -3,20 +3,14 @@
 package engine
 
 import (
-	"sync"
-
 	"gviegas/neo3/engine/internal/shader"
 	"gviegas/neo3/linear"
 )
 
-// Global drawables.
-// TODO: These should live elsewhere.
-var (
-	drawableMap dataMap[Drawable, drawable]
-	drawableMu  sync.Mutex
-)
+// drawableMap is a dataMap for drawables.
+type drawableMap struct{ dataMap[Drawable, drawable] }
 
-// drawable is what drawableMap stores.
+// drawable is what a drawableMap stores.
 type drawable struct {
 	mesh   *Mesh
 	matl   []*Material
