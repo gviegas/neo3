@@ -48,8 +48,8 @@ type Presenter interface {
 // swapchain for presentation.
 // To present, one calls Next to obtain the index of an
 // image view to target, transitions the view to a valid
-// layout (e.g, from LUndefined to LColorTarget),
-// record commands as needed, transitions the view to
+// layout (e.g., from LUndefined to LColorTarget),
+// records commands as needed, transitions the view to
 // the LPresent layout, commits these commands and then
 // calls Present to present this image view.
 type Swapchain interface {
