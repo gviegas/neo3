@@ -28,6 +28,7 @@ type Renderer struct {
 type Onscreen struct {
 	Renderer
 	win wsi.Window
+	sc  driver.Swapchain
 }
 
 // Offscreen is a Renderer that targets a Texture.
