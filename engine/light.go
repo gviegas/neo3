@@ -24,16 +24,39 @@ type Light struct {
 	layout shader.LightLayout
 }
 
-// SetDirection sets the direction of the light.
+// SetDirection sets the direction of l.
 // It does not normalize d.
 // Only applies to sun and spot lights.
 func (l *Light) SetDirection(d *linear.V3) { l.layout.SetDirection(d) }
 
-// SetPosition sets the position of the light.
+// SetPosition sets the position of l.
 // Only applies to point and spot lights.
 func (l *Light) SetPosition(p *linear.V3) { l.layout.SetPosition(p) }
 
-// TODO: Maybe add more setters to Light.
+// SetIntensity sets the intensity of l.
+func (l *Light) SetIntensity(i float32) { l.layout.SetIntensity(max(0, i)) }
+
+// SetRange sets the falloff range of l.
+// Only applies to point and spot lights.
+func (l *Light) SetRange(r float32) { l.layout.SetRange(r) }
+
+// SetColor sets the RGB color of l.
+func (l *Light) SetColor(r, g, b float32) { l.layout.SetColor(&linear.V3{r, g, b}) }
+
+// SetConeAngles sets the inner/outer cone angles of l.
+// Only applies to spot lights.
+func (l *Light) SetConeAngles(inner, outer float32) {
+	var (
+		i      = max(0, min(float64(inner), math.Pi/2-1e-6))
+		o      = max(i+1e-6, min(float64(outer), math.Pi/2))
+		cosi   = math.Cos(i)
+		coso   = math.Cos(o)
+		scale  = 1 / (cosi - coso)
+		offset = scale * -coso
+	)
+	l.layout.SetAngScale(float32(scale))
+	l.layout.SetAngOffset(float32(offset))
+}
 
 // SunLight is a directional light.
 // The light is emitted in the given Direction.
