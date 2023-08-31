@@ -31,8 +31,14 @@ type Onscreen struct {
 	sc  driver.Swapchain
 }
 
+// Window returns the wsi.Window associated with r.
+func (r *Onscreen) Window() wsi.Window { return r.win }
+
 // Offscreen is a Renderer that targets a Texture.
 type Offscreen struct {
 	Renderer
 	rt *Texture
 }
+
+// Target returns the Texture into which r renders.
+func (r *Offscreen) Target() *Texture { return r.rt }
