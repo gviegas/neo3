@@ -71,16 +71,13 @@ type SunLight struct {
 // Light creates the light source described by t.
 // t.Direction must have length 1.
 // t.R/G/B must be in the range [0, 1].
-func (t *SunLight) Light() Light {
-	var l shader.LightLayout
-	l.SetType(shader.SunLight)
-	l.SetIntensity(max(0, t.Intensity))
-	l.SetColor(&linear.V3{t.R, t.G, t.B})
-	l.SetDirection(&t.Direction)
-	return Light{
-		typ:    sunLight,
-		layout: l,
-	}
+func (t *SunLight) Light() (light Light) {
+	light.typ = sunLight
+	light.layout.SetType(shader.SunLight)
+	light.SetIntensity(t.Intensity)
+	light.SetColor(t.R, t.G, t.B)
+	light.SetDirection(&t.Direction)
+	return
 }
 
 // PointLight is an omnidirectional, positional light.
@@ -99,17 +96,14 @@ type PointLight struct {
 // t.R/G/B must be in the range [0, 1].
 // t.Range may be set to 0 or less to indicate an
 // infinite range.
-func (t *PointLight) Light() Light {
-	var l shader.LightLayout
-	l.SetType(shader.PointLight)
-	l.SetIntensity(max(0, t.Intensity))
-	l.SetRange(t.Range)
-	l.SetColor(&linear.V3{t.R, t.G, t.B})
-	l.SetPosition(&t.Position)
-	return Light{
-		typ:    pointLight,
-		layout: l,
-	}
+func (t *PointLight) Light() (light Light) {
+	light.typ = pointLight
+	light.layout.SetType(shader.PointLight)
+	light.SetIntensity(t.Intensity)
+	light.SetRange(t.Range)
+	light.SetColor(t.R, t.G, t.B)
+	light.SetPosition(&t.Position)
+	return
 }
 
 // SpotLight is a directional, positional light.
@@ -133,25 +127,14 @@ type SpotLight struct {
 // t.R/G/B must be in the range [0, 1].
 // t.Range may be set to 0 or less to indicate an
 // infinite range.
-func (t *SpotLight) Light() Light {
-	var (
-		inner    = max(0, min(float64(t.InnerAngle), math.Pi/2-1e-6))
-		outer    = max(inner+1e-6, min(float64(t.OuterAngle), math.Pi/2))
-		innerCos = math.Cos(inner)
-		outerCos = math.Cos(outer)
-		scale    = 1 / (innerCos - outerCos)
-	)
-	var l shader.LightLayout
-	l.SetType(shader.SpotLight)
-	l.SetIntensity(max(0, t.Intensity))
-	l.SetRange(t.Range)
-	l.SetColor(&linear.V3{t.R, t.G, t.B})
-	l.SetAngScale(float32(scale))
-	l.SetPosition(&t.Position)
-	l.SetAngOffset(float32(scale * -outerCos))
-	l.SetDirection(&t.Direction)
-	return Light{
-		typ:    spotLight,
-		layout: l,
-	}
+func (t *SpotLight) Light() (light Light) {
+	light.typ = spotLight
+	light.layout.SetType(shader.SpotLight)
+	light.SetIntensity(t.Intensity)
+	light.SetRange(t.Range)
+	light.SetColor(t.R, t.G, t.B)
+	light.SetConeAngles(t.InnerAngle, t.OuterAngle)
+	light.SetPosition(&t.Position)
+	light.SetDirection(&t.Direction)
+	return
 }
