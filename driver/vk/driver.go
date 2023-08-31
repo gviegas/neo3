@@ -267,6 +267,9 @@ func (d *Driver) setFeatures(info *C.VkDeviceCreateInfo) (free func()) {
 	if fq.independentBlend == C.VK_TRUE {
 		d.feat.IndependentBlend = true
 	}
+	if fq.depthBiasClamp == C.VK_TRUE {
+		d.feat.DepthBiasClamp = true
+	}
 	if fq.fillModeNonSolid == C.VK_TRUE {
 		d.feat.FLines = true
 	}
