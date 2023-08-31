@@ -1126,6 +1126,8 @@ type Features struct {
 	// Whether BlendState.IndependentBlend
 	// is supported.
 	IndependentBlend bool
+	// Whether RasterState.BiasClamp is supported.
+	DepthBiasClamp bool
 	// Whether the FLines FillMode is supported.
 	FLines bool
 	// Whether ImageView of type IViewCubeArray
