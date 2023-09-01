@@ -48,14 +48,16 @@ func plTestNew(vert, frag driver.ShaderCode, desc driver.DescTable, color driver
 			DepthCmp:    driver.CLess,
 			StencilTest: true,
 			Front: driver.StencilT{
-				DSFail:    [2]driver.StencilOp{driver.SKeep, driver.SKeep},
+				FailS:     driver.SKeep,
+				FailD:     driver.SKeep,
 				Pass:      driver.SReplace,
 				ReadMask:  0,
 				WriteMask: 255,
 				Cmp:       driver.CAlways,
 			},
 			Back: driver.StencilT{
-				DSFail:    [2]driver.StencilOp{driver.SKeep, driver.SKeep},
+				FailS:     driver.SKeep,
+				FailD:     driver.SKeep,
 				Pass:      driver.SReplace,
 				ReadMask:  0,
 				WriteMask: 255,

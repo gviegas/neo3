@@ -262,17 +262,17 @@ func setGraphDS(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (fr
 	if gs.DS.StencilTest {
 		pds.stencilTestEnable = C.VK_TRUE
 		pds.front = C.VkStencilOpState{
-			failOp:      convStencilOp(gs.DS.Front.DSFail[1]),
+			failOp:      convStencilOp(gs.DS.Front.FailS),
 			passOp:      convStencilOp(gs.DS.Front.Pass),
-			depthFailOp: convStencilOp(gs.DS.Front.DSFail[0]),
+			depthFailOp: convStencilOp(gs.DS.Front.FailD),
 			compareOp:   convCmpFunc(gs.DS.Front.Cmp),
 			compareMask: C.uint32_t(gs.DS.Front.ReadMask),
 			writeMask:   C.uint32_t(gs.DS.Front.WriteMask),
 		}
 		pds.back = C.VkStencilOpState{
-			failOp:      convStencilOp(gs.DS.Back.DSFail[1]),
+			failOp:      convStencilOp(gs.DS.Back.FailS),
 			passOp:      convStencilOp(gs.DS.Back.Pass),
-			depthFailOp: convStencilOp(gs.DS.Back.DSFail[0]),
+			depthFailOp: convStencilOp(gs.DS.Back.FailD),
 			compareOp:   convCmpFunc(gs.DS.Back.Cmp),
 			compareMask: C.uint32_t(gs.DS.Back.ReadMask),
 			writeMask:   C.uint32_t(gs.DS.Back.WriteMask),

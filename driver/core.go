@@ -708,7 +708,8 @@ const (
 // StencilT defines stencil test parameters for the
 // depth/stencil state of a graphics pipeline.
 type StencilT struct {
-	DSFail    [2]StencilOp
+	FailS     StencilOp
+	FailD     StencilOp
 	Pass      StencilOp
 	ReadMask  uint32
 	WriteMask uint32
