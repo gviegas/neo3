@@ -730,16 +730,17 @@ type DSState struct {
 	Back        StencilT
 }
 
-// BlenOp is the type of blend operations.
-type BlendOp int
+// ColorMask is the type of a color write mask.
+type ColorMask int
 
-// Blend operations.
+// Color write masks.
 const (
-	BAdd BlendOp = iota
-	BSubtract
-	BRevSubtract
-	BMin
-	BMax
+	CRed ColorMask = 1 << iota
+	CGreen
+	CBlue
+	CAlpha
+	// Write to all channels.
+	CAll ColorMask = 1<<iota - 1
 )
 
 // BlendFac is the type of blend factors.
@@ -762,17 +763,16 @@ const (
 	BInvBlendColor
 )
 
-// ColorMask is the type of a color write mask.
-type ColorMask int
+// BlendOp is the type of blend operations.
+type BlendOp int
 
-// Color write masks.
+// Blend operations.
 const (
-	CRed ColorMask = 1 << iota
-	CGreen
-	CBlue
-	CAlpha
-	// Write to all channels.
-	CAll ColorMask = 1<<iota - 1
+	BAdd BlendOp = iota
+	BSubtract
+	BRevSubtract
+	BMin
+	BMax
 )
 
 // ColorBlend defines a render target's blend parameters
@@ -784,11 +784,12 @@ type ColorBlend struct {
 	// If blending is not enabled, the incoming samples
 	// are written unmodified to the specified channels.
 	WriteMask ColorMask
-	// In the arrays that follows, [0] is for color and
-	// [1] is for alpha.
-	Op     [2]BlendOp
-	SrcFac [2]BlendFac
-	DstFac [2]BlendFac
+	SrcFacRGB BlendFac
+	DstFacRGB BlendFac
+	OpRGB     BlendOp
+	SrcFacA   BlendFac
+	DstFacA   BlendFac
+	OpA       BlendOp
 }
 
 // BlendState defines the color blend state of a

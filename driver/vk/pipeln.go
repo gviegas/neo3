@@ -304,12 +304,12 @@ func setGraphBlend(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) 
 			}
 			sba[i] = C.VkPipelineColorBlendAttachmentState{
 				blendEnable:         blend,
-				srcColorBlendFactor: convBlendFac(gs.Blend.Color[i].SrcFac[0]),
-				dstColorBlendFactor: convBlendFac(gs.Blend.Color[i].DstFac[0]),
-				colorBlendOp:        convBlendOp(gs.Blend.Color[i].Op[0]),
-				srcAlphaBlendFactor: convBlendFac(gs.Blend.Color[i].SrcFac[1]),
-				dstAlphaBlendFactor: convBlendFac(gs.Blend.Color[i].DstFac[1]),
-				alphaBlendOp:        convBlendOp(gs.Blend.Color[i].Op[1]),
+				srcColorBlendFactor: convBlendFac(gs.Blend.Color[i].SrcFacRGB),
+				dstColorBlendFactor: convBlendFac(gs.Blend.Color[i].DstFacRGB),
+				colorBlendOp:        convBlendOp(gs.Blend.Color[i].OpRGB),
+				srcAlphaBlendFactor: convBlendFac(gs.Blend.Color[i].SrcFacA),
+				dstAlphaBlendFactor: convBlendFac(gs.Blend.Color[i].DstFacA),
+				alphaBlendOp:        convBlendOp(gs.Blend.Color[i].OpA),
 				colorWriteMask:      convColorMask(gs.Blend.Color[i].WriteMask),
 			}
 		}
@@ -323,12 +323,12 @@ func setGraphBlend(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) 
 		}
 		sba[0] = C.VkPipelineColorBlendAttachmentState{
 			blendEnable:         blend,
-			srcColorBlendFactor: convBlendFac(gs.Blend.Color[0].SrcFac[0]),
-			dstColorBlendFactor: convBlendFac(gs.Blend.Color[0].DstFac[0]),
-			colorBlendOp:        convBlendOp(gs.Blend.Color[0].Op[0]),
-			srcAlphaBlendFactor: convBlendFac(gs.Blend.Color[0].SrcFac[1]),
-			dstAlphaBlendFactor: convBlendFac(gs.Blend.Color[0].DstFac[1]),
-			alphaBlendOp:        convBlendOp(gs.Blend.Color[0].Op[1]),
+			srcColorBlendFactor: convBlendFac(gs.Blend.Color[0].SrcFacRGB),
+			dstColorBlendFactor: convBlendFac(gs.Blend.Color[0].DstFacRGB),
+			colorBlendOp:        convBlendOp(gs.Blend.Color[0].OpRGB),
+			srcAlphaBlendFactor: convBlendFac(gs.Blend.Color[0].SrcFacA),
+			dstAlphaBlendFactor: convBlendFac(gs.Blend.Color[0].DstFacA),
+			alphaBlendOp:        convBlendOp(gs.Blend.Color[0].OpA),
 			colorWriteMask:      convColorMask(gs.Blend.Color[0].WriteMask),
 		}
 		for i := 1; i < ncolor; i++ {
