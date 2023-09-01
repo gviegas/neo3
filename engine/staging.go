@@ -220,14 +220,15 @@ func (s *stagingBuffer) copyToView(t *Texture, view int, off int64) (err error) 
 	wk.Work[0].CopyBufToImg(&driver.BufImgCopy{
 		Buf:    s.buf,
 		BufOff: off,
-		// TODO: Stride[0] must be 256-byte aligned.
-		Stride: [2]int{t.param.Dim3D.Width, t.param.Dim3D.Height},
-		Img:    t.views[view].Image(),
-		ImgOff: driver.Off3D{},
-		Layer:  il,
-		Level:  0,
-		Size:   t.param.Dim3D,
-		Layers: nl,
+		// TODO: RowStrd must be 256-byte aligned.
+		RowStrd: t.param.Dim3D.Width,
+		SlcStrd: t.param.Dim3D.Height,
+		Img:     t.views[view].Image(),
+		ImgOff:  driver.Off3D{},
+		Layer:   il,
+		Level:   0,
+		Size:    t.param.Dim3D,
+		Layers:  nl,
 		// TODO: Handle depth/stencil formats.
 	})
 	for i := 0; i < nl; i++ {
@@ -347,14 +348,15 @@ func (s *stagingBuffer) copyFromView(t *Texture, view int, off int64) (err error
 	wk.Work[0].CopyImgToBuf(&driver.BufImgCopy{
 		Buf:    s.buf,
 		BufOff: off,
-		// TODO: Stride[0] must be 256-byte aligned.
-		Stride: [2]int{t.param.Dim3D.Width, t.param.Dim3D.Height},
-		Img:    t.views[view].Image(),
-		ImgOff: driver.Off3D{},
-		Layer:  il,
-		Level:  0,
-		Size:   t.param.Dim3D,
-		Layers: nl,
+		// TODO: RowStrd must be 256-byte aligned.
+		RowStrd: t.param.Dim3D.Width,
+		SlcStrd: t.param.Dim3D.Height,
+		Img:     t.views[view].Image(),
+		ImgOff:  driver.Off3D{},
+		Layer:   il,
+		Level:   0,
+		Size:    t.param.Dim3D,
+		Layers:  nl,
 		// TODO: Handle depth/stencil formats.
 	})
 	for i := 0; i < nl; i++ {
