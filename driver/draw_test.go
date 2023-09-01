@@ -226,16 +226,16 @@ func Example_draw() {
 			Height: dim.Height,
 		}
 		blit = driver.BufImgCopy{
-			Buf:    cpy,
-			BufOff: 0,
-			// Stride is given in pixels, not bytes.
-			Stride: [2]int{dim.Width, dim.Height},
-			Img:    img,
-			ImgOff: driver.Off3D{},
-			Layer:  0,
-			Level:  0,
-			Size:   dim,
-			Layers: 1,
+			Buf:     cpy,
+			BufOff:  0,
+			RowStrd: dim.Width,
+			SlcStrd: dim.Height,
+			Img:     img,
+			ImgOff:  driver.Off3D{},
+			Layer:   0,
+			Level:   0,
+			Size:    dim,
+			Layers:  1,
 		}
 		tdraw = [1]driver.Transition{
 			{

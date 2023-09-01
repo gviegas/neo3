@@ -649,8 +649,8 @@ func (cb *cmdBuffer) CopyBufToImg(param *driver.BufImgCopy) {
 	depth := max(1, param.Size.Depth)
 	cpy := C.VkBufferImageCopy{
 		bufferOffset:      C.VkDeviceSize(param.BufOff),
-		bufferRowLength:   C.uint32_t(param.Stride[0]),
-		bufferImageHeight: C.uint32_t(param.Stride[1]),
+		bufferRowLength:   C.uint32_t(param.RowStrd),
+		bufferImageHeight: C.uint32_t(param.SlcStrd),
 		imageSubresource: C.VkImageSubresourceLayers{
 			aspectMask:     aspect,
 			mipLevel:       C.uint32_t(param.Level),
@@ -692,8 +692,8 @@ func (cb *cmdBuffer) CopyImgToBuf(param *driver.BufImgCopy) {
 	depth := max(1, param.Size.Depth)
 	cpy := C.VkBufferImageCopy{
 		bufferOffset:      C.VkDeviceSize(param.BufOff),
-		bufferRowLength:   C.uint32_t(param.Stride[0]),
-		bufferImageHeight: C.uint32_t(param.Stride[1]),
+		bufferRowLength:   C.uint32_t(param.RowStrd),
+		bufferImageHeight: C.uint32_t(param.SlcStrd),
 		imageSubresource: C.VkImageSubresourceLayers{
 			aspectMask:     aspect,
 			mipLevel:       C.uint32_t(param.Level),

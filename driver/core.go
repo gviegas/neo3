@@ -305,15 +305,17 @@ type ImageCopy struct {
 type BufImgCopy struct {
 	Buf    Buffer
 	BufOff int64
-	// Stride specifies the addressing of image data
-	// in the buffer. It is given in pixels.
-	// Stride[0] refers to the row length and Stride[1]
-	// refers to the image height.
-	Stride [2]int
-	Img    Image
-	ImgOff Off3D
-	Layer  int
-	Level  int
+	// RowStrd and SlcStrd specify the addressing
+	// of image data in the buffer.
+	// RowStrd is the row length, in pixels.
+	// SlcStrd is the number of rows between
+	// adjacent slices.
+	RowStrd int
+	SlcStrd int
+	Img     Image
+	ImgOff  Off3D
+	Layer   int
+	Level   int
 	// Plane selects the plane/aspect of the image.
 	// The first plane/aspect is 0. For combined
 	// depth/stencil formats, depth is Plane 0 and

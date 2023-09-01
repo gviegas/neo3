@@ -285,11 +285,12 @@ func (t *T) samplingSetup() {
 		},
 	})
 	t.cb[0].CopyBufToImg(&driver.BufImgCopy{
-		Buf:    buf,
-		Stride: [2]int{size.Width, size.Height},
-		Img:    img,
-		Size:   size,
-		Layers: 1,
+		Buf:     buf,
+		RowStrd: size.Width,
+		SlcStrd: size.Height,
+		Img:     img,
+		Size:    size,
+		Layers:  1,
 	})
 	t.cb[0].Transition([]driver.Transition{
 		{

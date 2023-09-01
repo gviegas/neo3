@@ -171,11 +171,12 @@ func Example_dispatch() {
 			},
 		})
 		cbCopy.CopyImgToBuf(&driver.BufImgCopy{
-			Buf:    staging,
-			Stride: [2]int{dim.Width, dim.Height},
-			Img:    storage,
-			Size:   dim,
-			Layers: 1,
+			Buf:     staging,
+			RowStrd: dim.Width,
+			SlcStrd: dim.Height,
+			Img:     storage,
+			Size:    dim,
+			Layers:  1,
 		})
 		if err := cbCopy.End(); err != nil {
 			ch <- err
