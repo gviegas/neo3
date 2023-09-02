@@ -3,9 +3,14 @@
 package engine
 
 import (
+	"errors"
+
 	"gviegas/neo3/driver"
+	"gviegas/neo3/engine/internal/ctxt"
 	"gviegas/neo3/wsi"
 )
+
+func newRendErr(s string) error { return errors.New("renderer: " + s) }
 
 // Renderer is a real-time renderer.
 type Renderer struct {
@@ -29,6 +34,29 @@ type Onscreen struct {
 	Renderer
 	win wsi.Window
 	sc  driver.Swapchain
+}
+
+// NewOnscreen creates a new onscreen renderer.
+func NewOnscreen(win wsi.Window) (*Onscreen, error) {
+	if win == nil {
+		return nil, newRendErr("nil wsi.Window in call to NewOnscreen")
+	}
+	pres, ok := ctxt.GPU().(driver.Presenter)
+	if !ok {
+		return nil, newRendErr("NewOnscreen requires driver.Presenter")
+	}
+	var nframe int
+	if cfg.DoubleBuffered {
+		nframe = 2
+	} else {
+		nframe = MaxFrame
+	}
+	sc, err := pres.NewSwapchain(win, nframe+1)
+	if err != nil {
+		return nil, err
+	}
+	// TODO: Initialize Renderer.
+	return &Onscreen{sc: sc}, nil
 }
 
 // Window returns the wsi.Window associated with r.
