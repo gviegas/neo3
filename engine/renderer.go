@@ -95,3 +95,12 @@ func NewOffscreen(width, height int) (*Offscreen, error) {
 
 // Target returns the Texture into which r renders.
 func (r *Offscreen) Target() *Texture { return r.rt }
+
+// Free invalidates r and destroys/releases the
+// driver resources it holds.
+// It does call Free on its target Texture.
+func (r *Offscreen) Free() {
+	// TODO: Deinitialize Renderer.
+	r.rt.Free()
+	*r = Offscreen{}
+}
