@@ -66,6 +66,9 @@ func (r *Onscreen) Window() wsi.Window { return r.win }
 // driver resources it holds.
 // It does not call Close on the wsi.Window.
 func (r *Onscreen) Free() {
+	if r == nil {
+		return
+	}
 	// TODO: Deinitialize Renderer.
 	r.sc.Destroy()
 	*r = Onscreen{}
@@ -100,6 +103,9 @@ func (r *Offscreen) Target() *Texture { return r.rt }
 // driver resources it holds.
 // It does call Free on its target Texture.
 func (r *Offscreen) Free() {
+	if r == nil {
+		return
+	}
 	// TODO: Deinitialize Renderer.
 	r.rt.Free()
 	*r = Offscreen{}
