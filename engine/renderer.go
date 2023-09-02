@@ -62,6 +62,15 @@ func NewOnscreen(win wsi.Window) (*Onscreen, error) {
 // Window returns the wsi.Window associated with r.
 func (r *Onscreen) Window() wsi.Window { return r.win }
 
+// Free invalidates r and destroys/releases the
+// driver resources it holds.
+// It does not call Close on the wsi.Window.
+func (r *Onscreen) Free() {
+	// TODO: Deinitialize Renderer.
+	r.sc.Destroy()
+	*r = Onscreen{}
+}
+
 // Offscreen is a Renderer that targets a Texture.
 type Offscreen struct {
 	Renderer
