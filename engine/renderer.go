@@ -79,7 +79,7 @@ type Offscreen struct {
 
 // NewOffscreen creates a new offscreen renderer.
 func NewOffscreen(width, height int) (*Offscreen, error) {
-	rt, err := New2D(&TexParam{
+	rt, err := NewTarget(&TexParam{
 		PixelFmt: driver.RGBA8un,
 		Dim3D:    driver.Dim3D{width, height, 0},
 		Layers:   1,
