@@ -68,5 +68,21 @@ type Offscreen struct {
 	rt *Texture
 }
 
+// NewOffscreen creates a new offscreen renderer.
+func NewOffscreen(width, height int) (*Offscreen, error) {
+	rt, err := New2D(&TexParam{
+		PixelFmt: driver.RGBA8un,
+		Dim3D:    driver.Dim3D{width, height, 0},
+		Layers:   1,
+		Levels:   1,
+		Samples:  1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	// TODO: Initialize Renderer.
+	return &Offscreen{rt: rt}, nil
+}
+
 // Target returns the Texture into which r renders.
 func (r *Offscreen) Target() *Texture { return r.rt }
