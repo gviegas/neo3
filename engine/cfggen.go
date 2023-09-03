@@ -50,11 +50,13 @@ func (c *Const[T]) String() string {
 		if err != nil {
 			panic(fmt.Sprintf("cfggen.go: failed to convert env %s: %v", c.Env, err))
 		}
-		// TODO: Should warn if the value is clamped.
 		if c.Clamp != nil {
 			val = c.Clamp(c.Min, c.Max, T(x))
 		} else {
 			val = max(c.Min, min(c.Max, T(x)))
+		}
+		if val != T(x) {
+			fmt.Printf("cfggen.go: %s not valid (%v): using clamped value (%v)\n", c.Env, T(x), val)
 		}
 	} else {
 		fmt.Printf("cfggen.go: %s env not defined: using default (%v)\n", c.Env, c.Dfl)
@@ -147,7 +149,7 @@ var (
 			Dfl: 1 << 22,
 			Clamp: func(minv, maxv, val int64) int64 {
 				val = max(minv, min(maxv, val))
-				val = (val + 16383) & ^16383
+				val = (val + 16383) &^ 16383
 				return val
 			},
 		},
