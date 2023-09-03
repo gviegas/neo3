@@ -14,9 +14,9 @@ func newRendErr(s string) error { return errors.New("renderer: " + s) }
 
 // Renderer is a real-time renderer.
 type Renderer struct {
-	cb [MaxFrame]driver.CmdBuffer
+	cb [NFrame]driver.CmdBuffer
 
-	lights [MaxLight]Light
+	lights [NLight]Light
 	nlight int
 
 	// TODO: Shadow maps.
@@ -45,13 +45,7 @@ func NewOnscreen(win wsi.Window) (*Onscreen, error) {
 	if !ok {
 		return nil, newRendErr("NewOnscreen requires driver.Presenter")
 	}
-	var nframe int
-	if cfg.DoubleBuffered {
-		nframe = 2
-	} else {
-		nframe = MaxFrame
-	}
-	sc, err := pres.NewSwapchain(win, nframe+1)
+	sc, err := pres.NewSwapchain(win, NFrame+1)
 	if err != nil {
 		return nil, err
 	}
