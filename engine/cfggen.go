@@ -131,8 +131,8 @@ var (
 
 	NSkin = Const[int]{
 		Value: Value[int]{
-			Max: 0,
-			Min: 1 << 30,
+			Min: 0,
+			Max: 1 << 30,
 			Dfl: 1024,
 		},
 		Ident: "NSkin",
