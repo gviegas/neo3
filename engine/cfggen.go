@@ -2,6 +2,22 @@
 
 //go:build ignore
 
+// cfggen generates constants used in the engine.
+//
+// One may provide custom values to override the
+// defaults. The following environment variables
+// can be used for such:
+//
+//	environment        | overrides   | type
+//	-------------------|-------------|--------
+//	NEO3_N_FRAME       | NFrame      | integer
+//	NEO3_N_LIGHT       | NLight      | integer
+//	NEO3_N_SHADOW      | NShadow     | integer
+//	NEO3_N_JOINT       | NJoint      | integer
+//	NEO3_N_DRAWABLE    | NDrawable   | integer
+//	NEO3_N_MATERIAL    | NMaterial   | integer
+//	NEO3_N_SKIN        | NSkin       | integer
+//	NEO3_N_MESH_BUFFER | NMeshBuffer | integer
 package main
 
 import (
@@ -34,6 +50,7 @@ func (c *Const[T]) String() string {
 		if err != nil {
 			panic(fmt.Sprintf("cfggen.go: failed to convert env %s: %v", c.Env, err))
 		}
+		// TODO: Should warn if the value is clamped.
 		if c.Clamp != nil {
 			val = c.Clamp(c.Min, c.Max, T(x))
 		} else {
