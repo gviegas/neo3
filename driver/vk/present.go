@@ -85,6 +85,12 @@ type swapchain struct {
 	// It is expected that Recreate or Destroy will be
 	// called eventually.
 	broken bool
+
+	// If Present fails to enqueue the wait operation,
+	// badSem will be set to true. syncSetup will not
+	// attempt to reuse any elements of presSem in
+	// this case.
+	badSem bool
 }
 
 // queueSync contains additional synchronization data
@@ -335,7 +341,7 @@ func (s *swapchain) newViews() error {
 // syncSetup creates the synchronization data required for
 // presentation of s.
 // It sets the nextSem, presSem, queSync, viewSync, syncUsed,
-// pendOp and presInfo fields of s.
+// pendOp, presInfo and badSem fields of s.
 // The caller must ensure that no semaphores are in use before
 // calling this method.
 func (s *swapchain) syncSetup() error {
@@ -460,6 +466,13 @@ func (s *swapchain) syncSetup() error {
 
 	// We need an element in presSem for each view
 	// because presentation does not wait.
+	if s.badSem {
+		for _, x := range s.presSem {
+			C.vkDestroySemaphore(s.d.dev, x, nil)
+		}
+		s.presSem = s.presSem[:0]
+		s.badSem = false
+	}
 	n = len(s.views)
 	i = len(s.presSem)
 	switch {
@@ -514,14 +527,12 @@ func (s *swapchain) Next() (int, error) {
 	var null C.VkFence
 	res := C.vkAcquireNextImageKHR(s.d.dev, s.sc, C.UINT64_MAX, s.nextSem[sync], null, &idx)
 	switch res {
-	case C.VK_SUCCESS:
+	case C.VK_SUCCESS, C.VK_SUBOPTIMAL_KHR:
 		s.curImg++
 		s.viewSync[idx] = sync
 		s.syncUsed[sync] = true
+		s.broken = res == C.VK_SUBOPTIMAL_KHR
 		return int(idx), nil
-	case C.VK_SUBOPTIMAL_KHR:
-		s.curImg++
-		fallthrough
 	case C.VK_ERROR_OUT_OF_DATE_KHR:
 		s.broken = true
 		return -1, driver.ErrSwapchain
@@ -539,9 +550,6 @@ func (s *swapchain) Next() (int, error) {
 func (s *swapchain) Present(index int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.broken {
-		return driver.ErrSwapchain
-	}
 	*s.presInfo.pWaitSemaphores = s.presSem[index]
 	*s.presInfo.pSwapchains = s.sc
 	*s.presInfo.pImageIndices = C.uint32_t(index)
@@ -555,11 +563,18 @@ func (s *swapchain) Present(index int) error {
 	case C.VK_SUCCESS:
 		return nil
 	case C.VK_SUBOPTIMAL_KHR, C.VK_ERROR_OUT_OF_DATE_KHR:
+		s.broken = true
 		return driver.ErrSwapchain
+	case C.VK_ERROR_SURFACE_LOST_KHR, C.VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:
+		s.broken = true
+		return driver.ErrWindow
 	default:
 		if err := checkResult(res); err != nil {
-			// Cannot be called again.
 			s.broken = true
+			// Unlike the cases above, it cannot be assumed
+			// that the wait operation will happen, so the
+			// semaphores in presSem must be destroyed.
+			s.badSem = true
 			return err
 		}
 		// Should never happen.
