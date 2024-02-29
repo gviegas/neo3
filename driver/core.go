@@ -14,9 +14,8 @@ type GPU interface {
 	// If successful, this method arranges for commands to
 	// execute in the background, and ch is written to when
 	// all command buffers complete execution.
-	// In case that execution itself fails, wk.Err can be
-	// used to determine the cause, since Commit will set
-	// its value just before sending to ch.
+	// In case that execution itself fails, wk.Err will
+	// be set to indicate the cause.
 	// It is invalid to use any of the command buffers in
 	// wk.Work until ch is notified.
 	Commit(wk *WorkItem, ch chan<- *WorkItem) error
@@ -802,7 +801,8 @@ type BlendState struct {
 	IndependentBlend bool
 	// Color contains color blend parameters for each
 	// render target. If IndependentBlend is false,
-	// only Color[0] is used.
+	// only Color[0] is used. Otherwise, it uses one
+	// element per color render target.
 	Color []ColorBlend
 }
 
@@ -888,6 +888,7 @@ type Buffer interface {
 	// underlying data. If the buffer is not host visible,
 	// it returns nil instead.
 	// The slice is valid for the lifetime of the buffer.
+	// TODO: Consider replacing this with Map/Unmap.
 	Bytes() []byte
 
 	// Cap returns the capacity of the buffer in bytes,
