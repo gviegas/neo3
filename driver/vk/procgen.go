@@ -736,12 +736,12 @@ func (r *Registry) GenCCode() (hdr, src string) {
 
 func main() {
 	if len(os.Args) <= 1 {
-		os.Stderr.Write([]byte("missing argument: path/to/vk.xml\n"))
+		os.Stderr.Write([]byte("procgen.go: error: no XML input provided\n"))
 		os.Exit(1)
 	}
 	file, err := os.Open(os.Args[1])
 	if err != nil {
-		os.Stderr.Write([]byte(err.Error() + "\n"))
+		os.Stderr.Write([]byte("procgen.go: error: " + err.Error() + "\n"))
 		os.Exit(1)
 	}
 	defer file.Close()
@@ -749,7 +749,7 @@ func main() {
 	v := &Registry{}
 	err = xml.NewDecoder(file).Decode(v)
 	if err != nil {
-		os.Stderr.Write([]byte(err.Error() + "\n"))
+		os.Stderr.Write([]byte("procgen.go: error: " + err.Error() + "\n"))
 		os.Exit(1)
 	}
 	v.Commands.Filter()
@@ -758,12 +758,12 @@ func main() {
 	chdr, csrc := v.GenCCode()
 	err = os.WriteFile("proc.h", []byte(chdr), 0666)
 	if err != nil {
-		os.Stderr.Write([]byte(err.Error() + "\n"))
+		os.Stderr.Write([]byte("procgen.go: error: " + err.Error() + "\n"))
 		os.Exit(1)
 	}
 	err = os.WriteFile("proc.c", []byte(csrc), 0666)
 	if err != nil {
-		os.Stderr.Write([]byte(err.Error() + "\n"))
+		os.Stderr.Write([]byte("procgen.go: error: " + err.Error() + "\n"))
 		os.Exit(1)
 	}
 }
