@@ -912,21 +912,39 @@ const (
 	// Color, 8-bit channels.
 	RGBA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColor
 	RGBA8n    PixelFmt = iota | 4<<12 | 4<<20 | fColor
+	RGBA8ui   PixelFmt = iota | 4<<12 | 4<<20 | fColor
+	RGBA8i    PixelFmt = iota | 4<<12 | 4<<20 | fColor
 	RGBA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColor
 	BGRA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColor
 	BGRA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColor
 	RG8un     PixelFmt = iota | 2<<12 | 2<<20 | fColor
 	RG8n      PixelFmt = iota | 2<<12 | 2<<20 | fColor
+	RG8ui     PixelFmt = iota | 2<<12 | 2<<20 | fColor
+	RG8i      PixelFmt = iota | 2<<12 | 2<<20 | fColor
 	R8un      PixelFmt = iota | 1<<12 | 1<<20 | fColor
 	R8n       PixelFmt = iota | 1<<12 | 1<<20 | fColor
+	R8ui      PixelFmt = iota | 1<<12 | 1<<20 | fColor
+	R8i       PixelFmt = iota | 1<<12 | 1<<20 | fColor
 	// Color, 16-bit channels.
-	RGBA16f PixelFmt = iota | 8<<12 | 4<<20 | fColor
-	RG16f   PixelFmt = iota | 4<<12 | 2<<20 | fColor
-	R16f    PixelFmt = iota | 2<<12 | 1<<20 | fColor
+	RGBA16f  PixelFmt = iota | 8<<12 | 4<<20 | fColor
+	RGBA16ui PixelFmt = iota | 8<<12 | 4<<20 | fColor
+	RGBA16i  PixelFmt = iota | 8<<12 | 4<<20 | fColor
+	RG16f    PixelFmt = iota | 4<<12 | 2<<20 | fColor
+	RG16ui   PixelFmt = iota | 4<<12 | 2<<20 | fColor
+	RG16i    PixelFmt = iota | 4<<12 | 2<<20 | fColor
+	R16f     PixelFmt = iota | 2<<12 | 1<<20 | fColor
+	R16ui    PixelFmt = iota | 2<<12 | 1<<20 | fColor
+	R16i     PixelFmt = iota | 2<<12 | 1<<20 | fColor
 	// Color, 32-bit channels.
-	RGBA32f PixelFmt = iota | 16<<12 | 4<<20 | fColor
-	RG32f   PixelFmt = iota | 8<<12 | 2<<20 | fColor
-	R32f    PixelFmt = iota | 4<<12 | 1<<20 | fColor
+	RGBA32f  PixelFmt = iota | 16<<12 | 4<<20 | fColor
+	RGBA32ui PixelFmt = iota | 16<<12 | 4<<20 | fColor
+	RGBA32i  PixelFmt = iota | 16<<12 | 4<<20 | fColor
+	RG32f    PixelFmt = iota | 8<<12 | 2<<20 | fColor
+	RG32ui   PixelFmt = iota | 8<<12 | 2<<20 | fColor
+	RG32i    PixelFmt = iota | 8<<12 | 2<<20 | fColor
+	R32f     PixelFmt = iota | 4<<12 | 1<<20 | fColor
+	R32ui    PixelFmt = iota | 4<<12 | 1<<20 | fColor
+	R32i     PixelFmt = iota | 4<<12 | 1<<20 | fColor
 	// Depth/Stencil.
 	D16un     PixelFmt = iota | 2<<12 | 1<<20 | fDepth
 	D32f      PixelFmt = iota | 4<<12 | 1<<20 | fDepth
