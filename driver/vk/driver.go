@@ -109,9 +109,9 @@ func (d *Driver) initDevice() error {
 	if err := checkResult(C.vkEnumeratePhysicalDevices(d.inst, &n, nil)); err != nil {
 		return err
 	}
-	// The wording in the spec seems to indicate that vkEnumeratePhysicalDevices
-	// need not expose any devices at all. We assume that n could be zero here,
-	// in which case no suitable device can be found.
+	// The wording in the spec seems to indicate that
+	// vkEnumeratePhysicalDevices need not expose any
+	// devices at all.
 	if n == 0 {
 		return driver.ErrNoDevice
 	}
@@ -133,10 +133,11 @@ func (d *Driver) initDevice() error {
 		queProps[i] = unsafe.Slice(p, n)
 	}
 
-	// Select a suitable physical device to use. The bare minimum is a
-	// device with a queue supporting graphics and compute operations.
-	// Ideally, the device will be capable of creating swapchains and
-	// be hardware-accelerated.
+	// Select a suitable physical device to use.
+	// The bare minimum is a device with a queue supporting
+	// both graphics and compute operations.
+	// Ideally, the device will be capable of creating swapchains
+	// and be hardware-accelerated.
 	weight := 0
 	for i, dev := range devs {
 		if isVariant(devProps[i].apiVersion) {
@@ -185,10 +186,12 @@ func (d *Driver) initDevice() error {
 	C.vkGetPhysicalDeviceMemoryProperties(d.pdev, &d.mprop)
 	d.mused = make([]int64, d.mprop.memoryHeapCount)
 
-	// Create one queue of every family exposed by the device. For graphics
-	// and compute commands, the queue identified by d.qfam will be used.
-	// The remaining queues only exist to increase the likelihood of finding
-	// one that supports presentation.
+	// Create one queue of every family exposed by the device.
+	// For graphics and compute commands, the queue identified
+	// by d.qfam will be used. The remaining queues only exist
+	// to increase the likelihood of finding one that supports
+	// presentation.
+	// TODO: Consider changing the strategy here.
 	quePrio := (*C.float)(C.malloc(C.sizeof_float))
 	defer C.free(unsafe.Pointer(quePrio))
 	*quePrio = 1.0
@@ -255,6 +258,12 @@ func (d *Driver) setLimits(lim *C.VkPhysicalDeviceLimits) {
 			int(lim.maxComputeWorkGroupCount[1]),
 			int(lim.maxComputeWorkGroupCount[2]),
 		},
+		MaxWorkGroupSize: [3]int{
+			int(lim.maxComputeWorkGroupSize[0]),
+			int(lim.maxComputeWorkGroupSize[1]),
+			int(lim.maxComputeWorkGroupSize[2]),
+		},
+		MaxInvocations: int(lim.maxComputeWorkGroupInvocations),
 	}
 	d.aniso = max(1, int(lim.maxSamplerAnisotropy))
 }
@@ -457,8 +466,8 @@ func (d *Driver) newMemory(req C.VkMemoryRequirements, visible bool) (*memory, e
 }
 
 // mmap maps the memory for host access.
-// The memory must be host visible (m.vis) and must have been bound to a
-// resource (m.bound).
+// The memory must be host visible (m.vis) and must have been bound to
+// a resource (m.bound).
 func (m *memory) mmap() error {
 	if !m.vis {
 		panic("cannot map memory that is not host visible")

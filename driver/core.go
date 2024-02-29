@@ -1123,6 +1123,11 @@ type Limits struct {
 
 	// Maximum dispatch count.
 	MaxDispatch [3]int
+	// Maximum size of a work group.
+	MaxWorkGroupSize [3]int
+	// Maximum number of invocations in a
+	// work group.
+	MaxInvocations int
 }
 
 // Features describes available features.
