@@ -966,41 +966,41 @@ func (f PixelFmt) IsInternal() bool { return f < 0 }
 const (
 	FInvalid PixelFmt = iota
 	// Color, 8-bit channels.
-	RGBA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColor
-	RGBA8n    PixelFmt = iota | 4<<12 | 4<<20 | fColor
-	RGBA8ui   PixelFmt = iota | 4<<12 | 4<<20 | fColor
-	RGBA8i    PixelFmt = iota | 4<<12 | 4<<20 | fColor
-	RGBA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColor
-	BGRA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColor
-	BGRA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColor
-	RG8un     PixelFmt = iota | 2<<12 | 2<<20 | fColor
-	RG8n      PixelFmt = iota | 2<<12 | 2<<20 | fColor
-	RG8ui     PixelFmt = iota | 2<<12 | 2<<20 | fColor
-	RG8i      PixelFmt = iota | 2<<12 | 2<<20 | fColor
-	R8un      PixelFmt = iota | 1<<12 | 1<<20 | fColor
-	R8n       PixelFmt = iota | 1<<12 | 1<<20 | fColor
-	R8ui      PixelFmt = iota | 1<<12 | 1<<20 | fColor
-	R8i       PixelFmt = iota | 1<<12 | 1<<20 | fColor
+	RGBA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColorf
+	RGBA8n    PixelFmt = iota | 4<<12 | 4<<20 | fColorf
+	RGBA8ui   PixelFmt = iota | 4<<12 | 4<<20 | fColori
+	RGBA8i    PixelFmt = iota | 4<<12 | 4<<20 | fColori
+	RGBA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColorf
+	BGRA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColorf
+	BGRA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColorf
+	RG8un     PixelFmt = iota | 2<<12 | 2<<20 | fColorf
+	RG8n      PixelFmt = iota | 2<<12 | 2<<20 | fColorf
+	RG8ui     PixelFmt = iota | 2<<12 | 2<<20 | fColori
+	RG8i      PixelFmt = iota | 2<<12 | 2<<20 | fColori
+	R8un      PixelFmt = iota | 1<<12 | 1<<20 | fColorf
+	R8n       PixelFmt = iota | 1<<12 | 1<<20 | fColorf
+	R8ui      PixelFmt = iota | 1<<12 | 1<<20 | fColori
+	R8i       PixelFmt = iota | 1<<12 | 1<<20 | fColori
 	// Color, 16-bit channels.
-	RGBA16f  PixelFmt = iota | 8<<12 | 4<<20 | fColor
-	RGBA16ui PixelFmt = iota | 8<<12 | 4<<20 | fColor
-	RGBA16i  PixelFmt = iota | 8<<12 | 4<<20 | fColor
-	RG16f    PixelFmt = iota | 4<<12 | 2<<20 | fColor
-	RG16ui   PixelFmt = iota | 4<<12 | 2<<20 | fColor
-	RG16i    PixelFmt = iota | 4<<12 | 2<<20 | fColor
-	R16f     PixelFmt = iota | 2<<12 | 1<<20 | fColor
-	R16ui    PixelFmt = iota | 2<<12 | 1<<20 | fColor
-	R16i     PixelFmt = iota | 2<<12 | 1<<20 | fColor
+	RGBA16f  PixelFmt = iota | 8<<12 | 4<<20 | fColorf
+	RGBA16ui PixelFmt = iota | 8<<12 | 4<<20 | fColori
+	RGBA16i  PixelFmt = iota | 8<<12 | 4<<20 | fColori
+	RG16f    PixelFmt = iota | 4<<12 | 2<<20 | fColorf
+	RG16ui   PixelFmt = iota | 4<<12 | 2<<20 | fColori
+	RG16i    PixelFmt = iota | 4<<12 | 2<<20 | fColori
+	R16f     PixelFmt = iota | 2<<12 | 1<<20 | fColorf
+	R16ui    PixelFmt = iota | 2<<12 | 1<<20 | fColori
+	R16i     PixelFmt = iota | 2<<12 | 1<<20 | fColori
 	// Color, 32-bit channels.
-	RGBA32f  PixelFmt = iota | 16<<12 | 4<<20 | fColor
-	RGBA32ui PixelFmt = iota | 16<<12 | 4<<20 | fColor
-	RGBA32i  PixelFmt = iota | 16<<12 | 4<<20 | fColor
-	RG32f    PixelFmt = iota | 8<<12 | 2<<20 | fColor
-	RG32ui   PixelFmt = iota | 8<<12 | 2<<20 | fColor
-	RG32i    PixelFmt = iota | 8<<12 | 2<<20 | fColor
-	R32f     PixelFmt = iota | 4<<12 | 1<<20 | fColor
-	R32ui    PixelFmt = iota | 4<<12 | 1<<20 | fColor
-	R32i     PixelFmt = iota | 4<<12 | 1<<20 | fColor
+	RGBA32f  PixelFmt = iota | 16<<12 | 4<<20 | fColorf
+	RGBA32ui PixelFmt = iota | 16<<12 | 4<<20 | fColori
+	RGBA32i  PixelFmt = iota | 16<<12 | 4<<20 | fColori
+	RG32f    PixelFmt = iota | 8<<12 | 2<<20 | fColorf
+	RG32ui   PixelFmt = iota | 8<<12 | 2<<20 | fColori
+	RG32i    PixelFmt = iota | 8<<12 | 2<<20 | fColori
+	R32f     PixelFmt = iota | 4<<12 | 1<<20 | fColorf
+	R32ui    PixelFmt = iota | 4<<12 | 1<<20 | fColori
+	R32i     PixelFmt = iota | 4<<12 | 1<<20 | fColori
 	// Depth/Stencil.
 	D16un     PixelFmt = iota | 2<<12 | 1<<20 | fDepth
 	D32f      PixelFmt = iota | 4<<12 | 1<<20 | fDepth
@@ -1008,9 +1008,11 @@ const (
 	D24unS8ui PixelFmt = iota | 4<<12 | 2<<20 | fDS
 	D32fS8ui  PixelFmt = iota | 5<<12 | 2<<20 | fDS
 
-	fColor   = 1 << 24
-	fDepth   = 2 << 24
-	fStencil = 4 << 24
+	fColorf  = 1 << 24
+	fColori  = 2 << 24
+	fDepth   = 4 << 24
+	fStencil = 8 << 24
+	fColor   = fColorf | fColori
 	fDS      = fDepth | fStencil
 )
 
@@ -1025,6 +1027,11 @@ func (f PixelFmt) Channels() int { return int(f >> 20 & 0xf) }
 // IsColor returns whether f is a color format.
 // f must not be an internal format.
 func (f PixelFmt) IsColor() bool { return f&fColor != 0 }
+
+// IsNonfloatColor returns whether f is an integer
+// color format.
+// f must not be an internal format.
+func (f PixelFmt) IsNonfloatColor() bool { return f&fColori != 0 }
 
 // IsDS returns whether f is a depth/stencil format.
 // f must not be an internal format.
