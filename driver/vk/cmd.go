@@ -358,18 +358,17 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 			rmode := C.VkResolveModeFlagBitsKHR(C.VK_RESOLVE_MODE_NONE_KHR)
 			if color[i].Resolve != nil {
 				rview = color[i].Resolve.(*imageView).view[0]
-				// NOTE: Color formats are all fp currently.
+				// BUG: This is only valid for floating-point formats.
 				rmode = C.VK_RESOLVE_MODE_AVERAGE_BIT_KHR
 			}
 			var clear C.VkClearValue
-			fvalue := [4]C.float{
-				C.float(color[i].Clear[0]),
-				C.float(color[i].Clear[1]),
-				C.float(color[i].Clear[2]),
-				C.float(color[i].Clear[3]),
+			if color[i].Load == driver.LClear {
+				switch color[i].Clear.ClearFmt {
+				case driver.CFloat, driver.CUint, driver.CInt:
+					bval := (*byte)(unsafe.Pointer(&color[i].Clear.Value))
+					copy(clear[:], unsafe.Slice(bval, unsafe.Sizeof(color[i].Clear.Value)))
+				}
 			}
-			bclear := (*byte)(unsafe.Pointer(&fvalue[0]))
-			copy(clear[:], unsafe.Slice(bclear, unsafe.Sizeof(color[i].Clear)))
 			satt[i] = C.VkRenderingAttachmentInfoKHR{
 				sType:              C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
 				imageView:          cview,
@@ -403,6 +402,7 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 				rview = ds.Resolve.(*imageView).view[0]
 				// Implementations must support this mode
 				// (assuming the format itself supports MS).
+				// TODO: Investigate this; depth should be averaged.
 				rmode = C.VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR
 			}
 			var clear C.VkClearDepthStencilValue
