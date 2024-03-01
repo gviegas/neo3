@@ -66,7 +66,7 @@ func Example_draw() {
 		Resolve: nil,
 		Load:    driver.LClear,
 		Store:   driver.SStore,
-		Clear:   [4]float32{1, 1, 0, 1},
+		Clear:   driver.ClearFloat32(1, 1, 0, 1),
 	}
 
 	// Create vertex and fragment shader binaries.

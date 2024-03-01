@@ -2,6 +2,10 @@
 
 package driver
 
+import (
+	"unsafe"
+)
+
 // GPU is the main interface to an underlying driver
 // implementation.
 // It is used to create other types and to execute commands.
@@ -249,6 +253,58 @@ const (
 	SStore
 )
 
+// ClearFmt controls how clear color values are interpreted.
+type ClearFmt int
+
+// Clear color formats.
+const (
+	CFloat ClearFmt = iota
+	CUint
+	CInt
+)
+
+// ClearColor defines the color to use when clearing a
+// color render target.
+// The zero value is only valid when the ColorTarget's
+// LoadOp is not LClear. The ClearFloat32, ClearUint32
+// and ClearInt32 functions create valid clear values.
+type ClearColor struct {
+	ClearFmt
+	Value [4]int32
+}
+
+// ClearColor for PixelFmt constants whose name ends
+// in 'un', 'n', 'sRGB' and 'f'.
+func ClearFloat32(r, g, b, a float32) ClearColor {
+	return ClearColor{
+		ClearFmt: CFloat,
+		Value: [4]int32{
+			*(*int32)(unsafe.Pointer(&r)),
+			*(*int32)(unsafe.Pointer(&g)),
+			*(*int32)(unsafe.Pointer(&b)),
+			*(*int32)(unsafe.Pointer(&a)),
+		},
+	}
+}
+
+// ClearColor for PixelFmt constants whose name ends
+// in 'ui'.
+func ClearUint32(r, g, b, a uint32) ClearColor {
+	return ClearColor{
+		ClearFmt: CUint,
+		Value:    [4]int32{int32(r), int32(g), int32(b), int32(a)},
+	}
+}
+
+// ClearColor for PixelFmt constants whose name ends
+// in 'i'.
+func ClearInt32(r, g, b, a int32) ClearColor {
+	return ClearColor{
+		ClearFmt: CInt,
+		Value:    [4]int32{r, g, b, a},
+	}
+}
+
 // ColorTarget describes a single color attachment to use
 // as render target in a render pass.
 type ColorTarget struct {
@@ -256,7 +312,7 @@ type ColorTarget struct {
 	Resolve ImageView
 	Load    LoadOp
 	Store   StoreOp
-	Clear   [4]float32
+	Clear   ClearColor
 }
 
 // DSTarget describes a depth/stencil attachment to use

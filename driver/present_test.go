@@ -131,7 +131,7 @@ func (t *T) passSetup() {
 			Color: scViews[i],
 			Load:  driver.LClear,
 			Store: driver.SStore,
-			Clear: [4]float32{0.075, 0.075, 0.075, 1},
+			Clear: driver.ClearFloat32(0.075, 0.075, 0.075, 1),
 		}
 	}
 
