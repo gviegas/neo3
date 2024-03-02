@@ -326,6 +326,7 @@ type DSTarget struct {
 	StoreS  StoreOp
 	ClearD  float32
 	ClearS  uint32
+	DSRead  bool
 }
 
 // BufferCopy describes the parameters of a copy command
@@ -462,11 +463,17 @@ const (
 	LColorTarget
 	// Depth/stencil render target.
 	// Every DSTarget view that is used in a render
-	// pass must be transitioned to this layout.
+	// pass must be transitioned to this layout,
+	// unless DSTarget.DSRead is true, in which case
+	// DSTarget.DS must be transitioned to LDSRead
+	// instead.
 	LDSTarget
 	// Read-only depth/stencil.
-	// This layout should be used instead of LDSTarget
-	// if the image view is not going to be updated.
+	// This layout must be used instead of LDSTarget
+	// when DSTarget.DSRead is set to true. Note that
+	// this only pertains to the DSTarget.DS view -
+	// DSTarget.Resolve, if present, must be in the
+	// LDSTarget layout.
 	LDSRead
 	// Source of a copy command.
 	// The source image range defined in ImageCopy and
