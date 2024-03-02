@@ -13,14 +13,14 @@ import (
 )
 
 // Example_dispatch creates a checker pattern using
-// compute and outputs the result to a file.
+// compute and writes the result to a file.
 func Example_dispatch() {
 	// Each 2D group defines a cell where all pixels
 	// have the same color.
-	grpCntX := 6
-	grpCntY := 7
-	invCntX := 32 // From shader code.
-	invCntY := 32 // From shader code.
+	grpCntX := 8
+	grpCntY := 9
+	invCntX := 10 // From shader code.
+	invCntY := 10 // From shader code.
 	dim := driver.Dim3D{
 		Width:  grpCntX * invCntX,
 		Height: grpCntY * invCntY,
