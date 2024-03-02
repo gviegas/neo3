@@ -14,7 +14,7 @@ import (
 	"gviegas/neo3/driver"
 )
 
-// Example_draw renders a triangle and outputs the
+// Example_draw renders a triangle and writes the
 // result to a file.
 func Example_draw() {
 	// Create a buffer to store vertex data and constant data for
@@ -42,8 +42,8 @@ func Example_draw() {
 	pf := driver.RGBA8un
 	psz := 4
 	dim := driver.Dim3D{
-		Width:  512,
-		Height: 512,
+		Width:  256,
+		Height: 256,
 		Depth:  1,
 	}
 	img, err := gpu.NewImage(pf, dim, 1, 1, 1, driver.UCopySrc|driver.URenderTarget)
@@ -66,7 +66,7 @@ func Example_draw() {
 		Resolve: nil,
 		Load:    driver.LClear,
 		Store:   driver.SStore,
-		Clear:   driver.ClearFloat32(1, 1, 0, 1),
+		Clear:   driver.ClearFloat32(1, 1, 1, 1),
 	}
 
 	// Create vertex and fragment shader binaries.
@@ -175,7 +175,7 @@ func Example_draw() {
 					WriteMask: driver.CAll,
 					SrcFacRGB: driver.BBlendColor,
 					DstFacRGB: driver.BDstColor,
-					OpRGB:     driver.BSubtract,
+					OpRGB:     driver.BRevSubtract,
 					SrcFacA:   driver.BOne,
 					DstFacA:   driver.BZero,
 					OpA:       driver.BAdd,
@@ -282,7 +282,7 @@ func Example_draw() {
 	cb.SetPipeline(pl)
 	cb.SetViewport(vport)
 	cb.SetScissor(sciss)
-	cb.SetBlendColor(0, 0, 0.75, 0)
+	cb.SetBlendColor(0.25, 0.5, 0.75, 0)
 	cb.SetVertexBuf(0, []driver.Buffer{buf, buf}, []int64{0, int64(npos)})
 	cb.SetDescTableGraph(dtab, 0, []int{0})
 	cb.Draw(3, 1, 0, 0)
@@ -312,7 +312,7 @@ func Example_draw() {
 		log.Fatal(err)
 	}
 
-	// Write the results to file.
+	// Write the result to a file.
 	// Since the image uses a 8-bpc RGBA format and the data in the
 	// staging buffer is tightly packed, we can just copy the buffer
 	// contents directly.
@@ -333,22 +333,22 @@ func Example_draw() {
 
 // Vertex positions for the triangle (CCW).
 var trianglePos = [9]float32{
-	-1.0, +1.0, +0.5,
-	+1.0, +1.0, +0.5,
-	-0.0, -1.0, +0.5,
+	-1, 1, 0,
+	1, 1, 0,
+	0, -1, 0,
 }
 
 // Vertex colors for the triangle.
 var triangleCol = [12]float32{
-	0.0, 0.0, 0.1, 1.0,
-	0.0, 0.0, 0.7, 1.0,
-	0.0, 0.0, 0.4, 1.0,
+	0, 1, 1, 1,
+	1, 0, 1, 1,
+	1, 1, 0, 1,
 }
 
 // Transform for the triangle (column-major).
 var triangleM = [16]float32{
-	0.8, 0.0, 0.0, 0.0,
-	0.0, 0.8, 0.0, 0.0,
-	0.0, 0.0, 0.8, 0.0,
-	0.0, 0.0, 0.0, 1.0,
+	0.7, 0, 0, 0,
+	0, 0.7, 0, 0,
+	0, 0, 0.7, 0,
+	0, 0, 0, 1,
 }
