@@ -386,13 +386,19 @@ type Sync int
 
 // Synchronization scopes.
 const (
-	// Each graphics stage, in order.
+	// Inputs of vertex stage.
 	SVertexInput Sync = 1 << iota
+	// Vertex stage.
 	SVertexShading
+	// Fragment stage.
 	SFragmentShading
+	// Depth/stencil output.
 	SDSOutput
+	// Color output.
 	SColorOutput
-	// Any graphics stage.
+	// Multisample resolve.
+	SResolve
+	// All graphics stages.
 	SGraphics
 	// Compute stage.
 	SComputeShading

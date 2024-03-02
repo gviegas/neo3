@@ -1216,7 +1216,12 @@ func convSync(sync driver.Sync) C.VkPipelineStageFlags2KHR {
 			flags |= C.VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR
 			flags |= C.VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR
 		}
-		if sync&driver.SColorOutput != 0 {
+		// Render pass resolve for depth/stencil happen in
+		// this stage, including reads from the MS attachment.
+		// Exposing driver.SResolve seems less error-prone
+		// than expecting one to synchronize a DS view with
+		// driver.SColorOutput.
+		if sync&(driver.SColorOutput|driver.SResolve) != 0 {
 			flags |= C.VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR
 		}
 	}
