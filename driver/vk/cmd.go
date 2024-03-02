@@ -387,10 +387,16 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 		pdepth = &satt[natt-2]
 		pstencil = &satt[natt-1]
 		var dsview C.VkImageView
+		var dslayout C.VkImageLayout
+		if ds.DSRead {
+			dslayout = C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+		} else {
+			dslayout = C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		}
 		*pdepth = C.VkRenderingAttachmentInfoKHR{
 			sType:              C.VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
 			imageView:          dsview, // VK_NULL_HANDLE
-			imageLayout:        C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+			imageLayout:        dslayout,
 			resolveImageLayout: C.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 		}
 		*pstencil = *pdepth
