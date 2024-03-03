@@ -357,9 +357,13 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 			var rview C.VkImageView
 			rmode := C.VkResolveModeFlagBitsKHR(C.VK_RESOLVE_MODE_NONE_KHR)
 			if color[i].Resolve != nil {
-				rview = color[i].Resolve.(*imageView).view[0]
-				// BUG: This is only valid for floating-point formats.
-				rmode = C.VK_RESOLVE_MODE_AVERAGE_BIT_KHR
+				view := color[i].Resolve.(*imageView)
+				rview = view.view[0]
+				if view.i.nonfp {
+					rmode = C.VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR
+				} else {
+					rmode = C.VK_RESOLVE_MODE_AVERAGE_BIT_KHR
+				}
 			}
 			var clear C.VkClearValue
 			if color[i].Load == driver.LClear {
@@ -408,7 +412,7 @@ func (cb *cmdBuffer) BeginPass(width, height, layers int, color []driver.ColorTa
 				rview = ds.Resolve.(*imageView).view[0]
 				// Implementations must support this mode
 				// (assuming the format itself supports MS).
-				// TODO: Investigate this; depth should be averaged.
+				// TODO: Check support for other modes.
 				rmode = C.VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR
 			}
 			var clear C.VkClearDepthStencilValue
