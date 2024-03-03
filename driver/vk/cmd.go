@@ -1241,7 +1241,7 @@ func convAccess(acc driver.Access) C.VkAccessFlags2KHR {
 	}
 
 	var flags C.VkAccessFlags2KHR
-	if acc&driver.AAnyRead != 0 {
+	if acc&driver.ARead != 0 {
 		flags |= C.VK_ACCESS_2_MEMORY_READ_BIT_KHR
 	} else {
 		if acc&driver.AVertexBufRead != 0 {
@@ -1253,7 +1253,7 @@ func convAccess(acc driver.Access) C.VkAccessFlags2KHR {
 		if acc&driver.AShaderRead != 0 {
 			flags |= C.VK_ACCESS_2_SHADER_READ_BIT_KHR
 		}
-		if acc&driver.AColorRead != 0 {
+		if acc&(driver.AColorRead|driver.AResolveRead) != 0 {
 			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR
 		}
 		if acc&driver.ADSRead != 0 {
@@ -1264,13 +1264,13 @@ func convAccess(acc driver.Access) C.VkAccessFlags2KHR {
 		}
 	}
 
-	if acc&driver.AAnyWrite != 0 {
+	if acc&driver.AWrite != 0 {
 		flags |= C.VK_ACCESS_2_MEMORY_WRITE_BIT_KHR
 	} else {
 		if acc&driver.AShaderWrite != 0 {
 			flags |= C.VK_ACCESS_2_SHADER_WRITE_BIT_KHR
 		}
-		if acc&driver.AColorWrite != 0 {
+		if acc&(driver.AColorWrite|driver.AResolveWrite) != 0 {
 			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT_KHR
 		}
 		if acc&driver.ADSWrite != 0 {

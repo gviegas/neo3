@@ -431,14 +431,18 @@ const (
 	ADSRead
 	// Write to depth/stencil render target.
 	ADSWrite
+	// Read from resolve source or destination.
+	AResolveRead
+	// Write to resolve source or destination.
+	AResolveWrite
 	// Read in a copy command.
 	ACopyRead
 	// Write in a copy command.
 	ACopyWrite
 	// Any kind of read.
-	AAnyRead
+	ARead
 	// Any kind of write.
-	AAnyWrite
+	AWrite
 	// No access.
 	ANone Access = 0
 )
