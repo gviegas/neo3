@@ -63,6 +63,7 @@ func (d *Driver) newGraphics(gs *driver.GraphState) (driver.Pipeline, error) {
 	}
 	if fcode := gs.FragFunc.Code; fcode != nil {
 		if fmod, err := d.createModule(fcode); err != nil {
+			C.vkDestroyShaderModule(d.dev, p.mod[0], nil)
 			return nil, err
 		} else {
 			p.mod[1] = fmod
@@ -93,6 +94,7 @@ func (d *Driver) newGraphics(gs *driver.GraphState) (driver.Pipeline, error) {
 		f()
 	}
 	if err != nil {
+		p.Destroy()
 		return nil, err
 	}
 	return p, nil
@@ -305,15 +307,14 @@ func setGraphDS(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (fr
 func setGraphBlend(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (free func()) {
 	ncolor := len(gs.ColorFmt)
 	if ncolor == 0 {
-		// No color attachments in the subpass.
+		// No color attachments.
 		info.pColorBlendState = nil
 		return func() {}
 	}
 	pba := (*C.VkPipelineColorBlendAttachmentState)(C.malloc(C.size_t(ncolor) * C.sizeof_VkPipelineColorBlendAttachmentState))
 	sba := unsafe.Slice(pba, ncolor)
 	if gs.Blend.IndependentBlend {
-		// gs.Blend.Color contains one element for every
-		// color attachment in the subpass.
+		// gs.Blend.Color matches gs.ColorFmt.
 		for i := range sba {
 			var blend C.VkBool32
 			if gs.Blend.Color[i].Blend {
@@ -331,9 +332,7 @@ func setGraphBlend(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) 
 			}
 		}
 	} else {
-		// gs.Blend.Color[0] contains the color blend
-		// parameters to use for all color attachments
-		// in the subpass.
+		// gs.Blend.Color[0] only.
 		var blend C.VkBool32
 		if gs.Blend.Color[0].Blend {
 			blend = C.VK_TRUE
@@ -479,6 +478,7 @@ func (d *Driver) newCompute(cs *driver.CompState) (driver.Pipeline, error) {
 	var cache C.VkPipelineCache
 	err := checkResult(C.vkCreateComputePipelines(d.dev, cache, 1, &info, nil, &p.pl))
 	if err != nil {
+		p.Destroy()
 		return nil, err
 	}
 	return p, nil
@@ -517,10 +517,7 @@ func (p *pipeline) Destroy() {
 	}
 	if p.d != nil {
 		C.vkDestroyPipeline(p.d.dev, p.pl, nil)
-	}
-	for _, mod := range p.mod {
-		var null C.VkShaderModule
-		if mod != null {
+		for _, mod := range p.mod {
 			C.vkDestroyShaderModule(p.d.dev, mod, nil)
 		}
 	}
