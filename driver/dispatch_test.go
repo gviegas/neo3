@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"strings"
 
 	"gviegas/neo3/driver"
 )
@@ -71,20 +72,30 @@ func Example_dispatch() {
 	// per work group, which determines the cell size.
 	// Each invocation stores either white or black to
 	// the image, based on its group ID.
-	file, err := os.Open("testdata/checker_cs.spv")
+	var shd struct {
+		fileName, funcName string
+	}
+	switch name := drv.Name(); {
+	case strings.Contains(strings.ToLower(name), "vulkan"):
+		shd.fileName = "checker_cs.spv"
+		shd.funcName = "main"
+	default:
+		log.Fatalf("no shader for %s driver", name)
+	}
+	file, err := os.Open("testdata/" + shd.fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer file.Close()
 	var b bytes.Buffer
 	if _, err := b.ReadFrom(file); err != nil {
 		log.Fatal(err)
 	}
-	file.Close()
 	cs := b.Bytes()
 
 	// Create the compute pipeline.
 	cpl, err := gpu.NewPipeline(&driver.CompState{
-		Func: driver.ShaderFunc{cs, "main"},
+		Func: driver.ShaderFunc{cs, shd.funcName},
 		Desc: dtab,
 	})
 	if err != nil {
@@ -198,7 +209,7 @@ func Example_dispatch() {
 		log.Fatal(wk.Err)
 	}
 
-	// Write the results to file.
+	// Write the result to file.
 	nrgba := image.NewNRGBA(image.Rect(0, 0, dim.Width, dim.Height))
 	copy(nrgba.Pix, staging.Bytes())
 	file, err = os.Create("testdata/checker.png")
