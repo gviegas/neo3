@@ -30,9 +30,10 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 	var flags C.VkImageCreateFlags
 	switch {
 	case size.Depth >= 1:
-		if d.dvers >= C.VK_API_VERSION_1_1 {
-			flags |= C.VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT
-		}
+		// NOTE: This is disallowed currently.
+		//if d.dvers >= C.VK_API_VERSION_1_1 {
+		//	flags |= C.VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT
+		//}
 		typ = C.VK_IMAGE_TYPE_3D
 		extent = C.VkExtent3D{
 			width:  C.uint32_t(size.Width),
