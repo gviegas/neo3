@@ -27,9 +27,6 @@ type GPU interface {
 	// NewCmdBuffer creates a new command buffer.
 	NewCmdBuffer() (CmdBuffer, error)
 
-	// NewShaderCode creates a new shader code.
-	NewShaderCode(data []byte) (ShaderCode, error)
-
 	// NewDescHeap creates a new descriptor heap.
 	NewDescHeap(ds []Descriptor) (DescHeap, error)
 
@@ -37,8 +34,8 @@ type GPU interface {
 	NewDescTable(dh []DescHeap) (DescTable, error)
 
 	// NewPipeline creates a new pipeline.
-	// The state parameter must be a pointer to a GraphState or
-	// a pointer to a CompState.
+	// The state parameter must be a pointer to a GraphState
+	// or a pointer to a CompState.
 	NewPipeline(state any) (Pipeline, error)
 
 	// NewBuffer creates a new buffer.
@@ -522,15 +519,9 @@ type Transition struct {
 	Levels       int
 }
 
-// ShaderCode is the interface that defines a shader binary
-// for execution in a programmable pipeline stage.
-type ShaderCode interface {
-	Destroyer
-}
-
-// ShaderFunc specifies a function within a shader binary.
+// ShaderFunc defines the shader code of a programmable stage.
 type ShaderFunc struct {
-	Code ShaderCode
+	Code []byte
 	Name string
 }
 

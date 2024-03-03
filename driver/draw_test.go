@@ -69,8 +69,7 @@ func Example_draw() {
 		Clear:   driver.ClearFloat32(1, 1, 1, 1),
 	}
 
-	// Create vertex and fragment shader binaries.
-	// Shaders are platform-specific.
+	// Get the shaders.
 	var shd [2]struct {
 		fileName, funcName string
 	}
@@ -83,24 +82,22 @@ func Example_draw() {
 	default:
 		log.Fatalf("no shaders for %s driver", name)
 	}
-	bb := bytes.Buffer{}
-	scode := [2]driver.ShaderCode{}
-	for i := range scode {
+	var bb bytes.Buffer
+	var offc [2]int
+	for i := range shd {
 		file, err := os.Open("testdata/" + shd[i].fileName)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer file.Close()
-		_, err = bb.ReadFrom(file)
-		if err != nil {
+		offc[i] = bb.Len()
+		if _, err = bb.ReadFrom(file); err != nil {
 			log.Fatal(err)
 		}
-		scode[i], err = gpu.NewShaderCode(bb.Bytes())
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer scode[i].Destroy()
-		bb.Reset()
+	}
+	scode := [2][]byte{
+		bb.Bytes()[offc[0]:offc[1]],
+		bb.Bytes()[offc[1]:],
 	}
 
 	// Define descriptors, create a descriptor heap and
@@ -123,14 +120,12 @@ func Example_draw() {
 	defer dtab.Destroy()
 	// Since we are rendering a single instance of the triangle,
 	// one copy of the descriptor heap is enough.
-	err = dheap.New(1)
-	if err != nil {
+	if err = dheap.New(1); err != nil {
 		log.Fatal(err)
 	}
 	dheap.SetBuffer(0, 0, 0, []driver.Buffer{buf}, []int64{int64(offm)}, []int64{int64(nm)})
 
 	// Define states and create a graphics pipeline.
-	// The bulk of the configuration is done here.
 	gs := driver.GraphState{
 		VertFunc: driver.ShaderFunc{
 			Code: scode[0],

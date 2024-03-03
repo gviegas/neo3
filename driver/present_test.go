@@ -156,7 +156,7 @@ func (t *T) passSetup() {
 	t.dsView = dsView
 }
 
-// shaderSetup creates the vertex and fragment shaders.
+// shaderSetup sets the vertex and fragment functions.
 func (t *T) shaderSetup() {
 	var shd [2]struct {
 		fileName, funcName string
@@ -171,23 +171,22 @@ func (t *T) shaderSetup() {
 		log.Fatalf("no shaders for %s driver", name)
 	}
 
-	buf := bytes.Buffer{}
-	code := [2]driver.ShaderCode{}
-	for i := range code {
+	var buf bytes.Buffer
+	var off [2]int
+	for i := range shd {
 		file, err := os.Open("testdata/" + shd[i].fileName)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer file.Close()
-		_, err = buf.ReadFrom(file)
-		if err != nil {
+		off[i] = buf.Len()
+		if _, err = buf.ReadFrom(file); err != nil {
 			log.Fatal(err)
 		}
-		code[i], err = gpu.NewShaderCode(buf.Bytes())
-		if err != nil {
-			log.Fatal(err)
-		}
-		buf.Reset()
+	}
+	code := [2][]byte{
+		buf.Bytes()[off[0]:off[1]],
+		buf.Bytes()[off[1]:],
 	}
 
 	t.vertFunc = driver.ShaderFunc{
@@ -606,8 +605,6 @@ func (t *T) destroy() {
 	t.splr.Destroy()
 	t.vertBuf.Destroy()
 	t.constBuf.Destroy()
-	t.vertFunc.Code.Destroy()
-	t.fragFunc.Code.Destroy()
 	t.dsView.Destroy()
 	t.dsImg.Destroy()
 	t.sc.Destroy()

@@ -13,11 +13,15 @@ import (
 	"gviegas/neo3/driver"
 )
 
+// Up to two modules for a graphics pipeline currently.
+const maxMod = 2
+
 // pipeline implements driver.Pipeline.
 type pipeline struct {
 	d     *Driver
 	pl    C.VkPipeline
 	bindp C.VkPipelineBindPoint
+	mod   [maxMod]C.VkShaderModule
 }
 
 // NewPipeline creates a new pipeline.
@@ -51,13 +55,26 @@ func (d *Driver) newGraphics(gs *driver.GraphState) (driver.Pipeline, error) {
 	} else {
 		layout = gs.Desc.(*descTable).layout
 	}
+	// TODO: Skip module creation if maintenance5 is supported.
+	if vmod, err := d.createModule(gs.VertFunc.Code); err != nil {
+		return nil, err
+	} else {
+		p.mod[0] = vmod
+	}
+	if fcode := gs.FragFunc.Code; fcode != nil {
+		if fmod, err := d.createModule(fcode); err != nil {
+			return nil, err
+		} else {
+			p.mod[1] = fmod
+		}
+	}
 	info := C.VkGraphicsPipelineCreateInfo{
 		sType:             C.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 		layout:            layout,
 		basePipelineIndex: -1,
 	}
 	free := [...]func(){
-		setGraphStages(gs, &info),
+		setGraphStages(gs, &info, p.mod),
 		setGraphInput(gs, &info),
 		setGraphIA(gs, &info),
 		setGraphTess(gs, &info),
@@ -82,13 +99,13 @@ func (d *Driver) newGraphics(gs *driver.GraphState) (driver.Pipeline, error) {
 }
 
 // setGraphStages sets the shader stages for graphics pipeline creation.
-func setGraphStages(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo) (free func()) {
+func setGraphStages(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo, mod [maxMod]C.VkShaderModule) (free func()) {
 	nstg := 2
 	pstg := (*C.VkPipelineShaderStageCreateInfo)(C.malloc(C.size_t(nstg) * C.sizeof_VkPipelineShaderStageCreateInfo))
 	*pstg = C.VkPipelineShaderStageCreateInfo{
 		sType:  C.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 		stage:  C.VK_SHADER_STAGE_VERTEX_BIT,
-		module: gs.VertFunc.Code.(*shaderCode).mod,
+		module: mod[0],
 		pName:  C.CString(gs.VertFunc.Name),
 	}
 	if gs.FragFunc.Code == nil {
@@ -102,7 +119,7 @@ func setGraphStages(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo)
 		*fstg = C.VkPipelineShaderStageCreateInfo{
 			sType:  C.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 			stage:  C.VK_SHADER_STAGE_FRAGMENT_BIT,
-			module: gs.FragFunc.Code.(*shaderCode).mod,
+			module: mod[1],
 			pName:  C.CString(gs.FragFunc.Name),
 		}
 		free = func() {
@@ -440,12 +457,18 @@ func (d *Driver) newCompute(cs *driver.CompState) (driver.Pipeline, error) {
 	} else {
 		layout = cs.Desc.(*descTable).layout
 	}
+	// TODO: Skip module creation if maintenance5 is supported.
+	if cmod, err := d.createModule(cs.Func.Code); err != nil {
+		return nil, err
+	} else {
+		p.mod[0] = cmod
+	}
 	info := C.VkComputePipelineCreateInfo{
 		sType: C.VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 		stage: C.VkPipelineShaderStageCreateInfo{
 			sType:  C.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 			stage:  C.VK_SHADER_STAGE_COMPUTE_BIT,
-			module: cs.Func.Code.(*shaderCode).mod,
+			module: p.mod[0],
 			pName:  C.CString(cs.Func.Name),
 		},
 		layout:            layout,
@@ -461,6 +484,32 @@ func (d *Driver) newCompute(cs *driver.CompState) (driver.Pipeline, error) {
 	return p, nil
 }
 
+// createModule creates a VkShaderModule from data.
+func (d *Driver) createModule(data []byte) (C.VkShaderModule, error) {
+	n := len(data)
+	var mod C.VkShaderModule // VK_NULL_HANDLE
+	// This assumes a SPIR-V binary.
+	if n == 0 || n&3 != 0 {
+		return mod, errors.New("vk: invalid shader code size")
+	}
+	// NOTE: No need to enforce this since we are copying data
+	// over to malloc's storage (should consider issuing a
+	// warning though).
+	//if uintptr(unsafe.Pointer(unsafe.SliceData(data)))&3 != 0 {
+	//	return mod, errors.New("vk: misaligned shader code data")
+	//}
+	p := C.malloc(C.size_t(n))
+	defer C.free(p)
+	copy(unsafe.Slice((*byte)(p), n), data)
+	info := C.VkShaderModuleCreateInfo{
+		sType:    C.VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+		codeSize: C.size_t(n),
+		pCode:    (*C.uint32_t)(p),
+	}
+	err := checkResult(C.vkCreateShaderModule(d.dev, &info, nil, &mod))
+	return mod, err
+}
+
 // Destroy destroys the pipeline.
 func (p *pipeline) Destroy() {
 	if p == nil {
@@ -468,6 +517,12 @@ func (p *pipeline) Destroy() {
 	}
 	if p.d != nil {
 		C.vkDestroyPipeline(p.d.dev, p.pl, nil)
+	}
+	for _, mod := range p.mod {
+		var null C.VkShaderModule
+		if mod != null {
+			C.vkDestroyShaderModule(p.d.dev, mod, nil)
+		}
 	}
 	*p = pipeline{}
 }

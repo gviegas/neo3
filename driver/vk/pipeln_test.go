@@ -10,7 +10,7 @@ import (
 )
 
 // plTestNew creates a graphics pipeline for testing.
-func plTestNew(vert, frag driver.ShaderCode, desc driver.DescTable, color driver.PixelFmt, ds driver.PixelFmt) (driver.Pipeline, error) {
+func plTestNew(vert, frag []byte, desc driver.DescTable, color driver.PixelFmt, ds driver.PixelFmt) (driver.Pipeline, error) {
 	gs := driver.GraphState{
 		VertFunc: driver.ShaderFunc{
 			Code: vert,
@@ -86,7 +86,7 @@ func plTestNew(vert, frag driver.ShaderCode, desc driver.DescTable, color driver
 }
 
 // plTestNewColorOnly creates a graphics pipeline for testing.
-func plTestNewColorOnly(vert, frag driver.ShaderCode, desc driver.DescTable, color driver.PixelFmt) (driver.Pipeline, error) {
+func plTestNewColorOnly(vert, frag []byte, desc driver.DescTable, color driver.PixelFmt) (driver.Pipeline, error) {
 	gs := driver.GraphState{
 		VertFunc: driver.ShaderFunc{
 			Code: vert,
@@ -145,7 +145,7 @@ func plTestNewColorOnly(vert, frag driver.ShaderCode, desc driver.DescTable, col
 }
 
 // plTestNewDepthOnly creates a graphics pipeline for testing.
-func plTestNewDepthOnly(vert driver.ShaderCode, ds driver.PixelFmt) (driver.Pipeline, error) {
+func plTestNewDepthOnly(vert []byte, ds driver.PixelFmt) (driver.Pipeline, error) {
 	gs := driver.GraphState{
 		VertFunc: driver.ShaderFunc{
 			Code: vert,
@@ -191,7 +191,7 @@ func plTestNewDepthOnly(vert driver.ShaderCode, ds driver.PixelFmt) (driver.Pipe
 }
 
 // plTestNewComp creates a compute pipeline for testing.
-func plTestNewComp(comp driver.ShaderCode, desc driver.DescTable) (driver.Pipeline, error) {
+func plTestNewComp(comp []byte, desc driver.DescTable) (driver.Pipeline, error) {
 	cs := driver.CompState{
 		Func: driver.ShaderFunc{
 			Code: comp,
@@ -203,7 +203,6 @@ func plTestNewComp(comp driver.ShaderCode, desc driver.DescTable) (driver.Pipeli
 }
 
 func TestPipeline(t *testing.T) {
-	// Descriptors.
 	dtex := driver.Descriptor{
 		Type:   driver.DTexture,
 		Stages: driver.SFragment,
@@ -265,53 +264,14 @@ func TestPipeline(t *testing.T) {
 	}
 	defer desc3.Destroy()
 
-	// Shaders.
-	vert, err := tDrv.NewShaderCode(tPlVert[:])
-	if err != nil {
-		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
-		return
-	}
-	defer vert.Destroy()
-	frag, err := tDrv.NewShaderCode(tPlFrag[:])
-	if err != nil {
-		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
-		return
-	}
-	defer frag.Destroy()
-	vert2, err := tDrv.NewShaderCode(tPlVert2[:])
-	if err != nil {
-		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
-		return
-	}
-	defer vert2.Destroy()
-	frag2, err := tDrv.NewShaderCode(tPlFrag2[:])
-	if err != nil {
-		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
-		return
-	}
-	defer frag2.Destroy()
-	vert3, err := tDrv.NewShaderCode(tPlVert3[:])
-	if err != nil {
-		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
-		return
-	}
-	defer vert3.Destroy()
-	comp, err := tDrv.NewShaderCode(tPlComp[:])
-	if err != nil {
-		t.Fatal("NewShaderCode failed, cannot test NewPipeline")
-		return
-	}
-	defer comp.Destroy()
-
-	// Pipeline.
 	pl := [4]struct {
 		pl  driver.Pipeline
 		err error
 	}{}
-	pl[0].pl, pl[0].err = plTestNew(vert, frag, desc, driver.RGBA8un, driver.D32fS8ui)
-	pl[1].pl, pl[1].err = plTestNewColorOnly(vert2, frag2, desc2, driver.BGRA8sRGB)
-	pl[2].pl, pl[2].err = plTestNewDepthOnly(vert3, driver.D16un)
-	pl[3].pl, pl[3].err = plTestNewComp(comp, desc3)
+	pl[0].pl, pl[0].err = plTestNew(tPlVert[:], tPlFrag[:], desc, driver.RGBA8un, driver.D32fS8ui)
+	pl[1].pl, pl[1].err = plTestNewColorOnly(tPlVert2[:], tPlFrag2[:], desc2, driver.BGRA8sRGB)
+	pl[2].pl, pl[2].err = plTestNewDepthOnly(tPlVert3[:], driver.D16un)
+	pl[3].pl, pl[3].err = plTestNewComp(tPlComp[:], desc3)
 	zp := pipeline{}
 	for i, p := range pl {
 		call := fmt.Sprintf("tDrv.NewPipeline(state) [%d]", i)

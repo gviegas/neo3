@@ -66,7 +66,7 @@ func Example_dispatch() {
 	}
 	dheap.SetImage(0, 0, 0, []driver.ImageView{sview}, nil)
 
-	// Create the compute shader.
+	// Get the compute shader.
 	// This shader has (invCntX, invCntY, 1) invocations
 	// per work group, which determines the cell size.
 	// Each invocation stores either white or black to
@@ -80,11 +80,7 @@ func Example_dispatch() {
 		log.Fatal(err)
 	}
 	file.Close()
-	cs, err := gpu.NewShaderCode(b.Bytes())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer cs.Destroy()
+	cs := b.Bytes()
 
 	// Create the compute pipeline.
 	cpl, err := gpu.NewPipeline(&driver.CompState{
