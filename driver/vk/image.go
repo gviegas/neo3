@@ -15,6 +15,7 @@ type image struct {
 	s      *swapchain // Created by Driver.NewSwapchain (m field is nil).
 	img    C.VkImage
 	fmt    C.VkFormat
+	nonfp  bool // Need to be aware of ui/i color formats in some cases.
 	subres C.VkImageSubresourceRange
 	usg    C.VkImageUsageFlags
 }
@@ -138,9 +139,10 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 	m.bound = true
 
 	im := &image{
-		m:   m,
-		img: img,
-		fmt: format,
+		m:     m,
+		img:   img,
+		fmt:   format,
+		nonfp: pf.IsNonfloatColor(),
 		subres: C.VkImageSubresourceRange{
 			aspectMask: aspect,
 			levelCount: C.uint32_t(levels),

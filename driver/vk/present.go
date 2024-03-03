@@ -311,6 +311,8 @@ func (s *swapchain) newViews() error {
 	img := image{
 		s:   s,
 		fmt: convPixelFmt(s.pf),
+		// BUG: Need to check the internal format's numeric type.
+		nonfp: !s.pf.IsInternal() && s.pf.IsNonfloatColor(),
 		subres: C.VkImageSubresourceRange{
 			aspectMask: C.VK_IMAGE_ASPECT_COLOR_BIT,
 			levelCount: 1,
