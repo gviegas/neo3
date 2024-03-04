@@ -77,7 +77,6 @@ func (d *Driver) newCmdBuffer(qfam C.uint32_t) (driver.CmdBuffer, error) {
 	var pool C.VkCommandPool
 	poolInfo := C.VkCommandPoolCreateInfo{
 		sType:            C.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-		flags:            C.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 		queueFamilyIndex: qfam,
 	}
 	err := checkResult(C.vkCreateCommandPool(d.dev, &poolInfo, nil, &pool))
@@ -108,11 +107,15 @@ func (d *Driver) newCmdBuffer(qfam C.uint32_t) (driver.CmdBuffer, error) {
 func (cb *cmdBuffer) Begin() error {
 	switch cb.status {
 	case cbIdle:
+		err := checkResult(C.vkResetCommandPool(cb.d.dev, cb.pool, 0))
+		if err != nil {
+			return err
+		}
 		info := C.VkCommandBufferBeginInfo{
 			sType: C.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 			flags: C.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 		}
-		err := checkResult(C.vkBeginCommandBuffer(cb.cb, &info))
+		err = checkResult(C.vkBeginCommandBuffer(cb.cb, &info))
 		if err != nil {
 			return err
 		}
@@ -131,7 +134,7 @@ func (cb *cmdBuffer) End() error {
 	switch cb.status {
 	case cbBegun:
 		if err := checkResult(C.vkEndCommandBuffer(cb.cb)); err != nil {
-			// Calling Begin implicitly resets cb.cb.
+			// This suffices since cb.pool is reset on Begin.
 			cb.status = cbIdle
 			cb.detachSC()
 			return err
@@ -142,7 +145,6 @@ func (cb *cmdBuffer) End() error {
 		return nil
 	case cbFailed:
 		C.vkEndCommandBuffer(cb.cb)
-		C.vkResetCommandBuffer(cb.cb, 0)
 		cb.status = cbIdle
 		cb.detachSC()
 		if cb.err == nil {
@@ -165,14 +167,9 @@ func (cb *cmdBuffer) Reset() error {
 		C.vkEndCommandBuffer(cb.cb)
 		fallthrough
 	default:
-		// In case of failure here, we can rely on the implicit
-		// reset done during Begin.
+		// The actual reset happens on Begin.
 		cb.status = cbIdle
 		cb.detachSC()
-		err := checkResult(C.vkResetCommandBuffer(cb.cb, 0))
-		if err != nil {
-			return err
-		}
 		return nil
 	}
 }
