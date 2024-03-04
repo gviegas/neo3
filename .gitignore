@@ -10,3 +10,4 @@ tmp/
 *.test
 *.tmp
 go.work
+ssa.html
