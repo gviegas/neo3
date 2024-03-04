@@ -40,11 +40,9 @@ func Example_draw() {
 	// Create an image resource and a 2D image view to use as
 	// render target.
 	pf := driver.RGBA8un
-	psz := 4
 	dim := driver.Dim3D{
 		Width:  256,
 		Height: 256,
-		Depth:  1,
 	}
 	img, err := gpu.NewImage(pf, dim, 1, 1, 1, driver.UCopySrc|driver.URenderTarget)
 	if err != nil {
@@ -189,7 +187,7 @@ func Example_draw() {
 	// Create a second buffer to copy image data into.
 	// Image memory is GPU-private, so a staging buffer is required
 	// if we are going to access image data from the CPU side.
-	cpy, err := gpu.NewBuffer(int64(dim.Width*dim.Height*dim.Depth*psz), true, driver.UCopyDst)
+	cpy, err := gpu.NewBuffer(int64(dim.Width*dim.Height*pf.Size()), true, driver.UCopyDst)
 	if err != nil {
 		log.Fatal(err)
 	}
