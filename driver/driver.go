@@ -8,7 +8,6 @@ package driver
 
 import (
 	"errors"
-	"log"
 	"sync"
 )
 
@@ -81,17 +80,14 @@ func Register(drv Driver) {
 	for i := range drivers {
 		if drivers[i].Name() == drv.Name() {
 			drivers[i] = drv
-			log.Printf("[!] driver '%s' replaced", drv.Name())
 			return
 		}
 	}
 	drivers = append(drivers, drv)
-	log.Printf("driver '%s' registered", drv.Name())
 }
 
-// Variables used for driver registration.
+// Variables for driver registration.
 var (
-	// NOTE: Currently, this mutex is unnecessary.
-	mu      sync.Mutex
-	drivers []Driver = make([]Driver, 0, 1)
+	mu      sync.Mutex // Unnecessary currently.
+	drivers = make([]Driver, 0, 1)
 )
