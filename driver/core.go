@@ -20,6 +20,7 @@ type GPU interface {
 	// all command buffers complete execution.
 	// In case that execution itself fails, wk.Err will
 	// be set to indicate the cause.
+	//
 	// NOTE: Commit will retain wk and may update it at
 	// at any. In particular, calling methods on committed
 	// command buffers is not safe. Accesses to wk must
@@ -874,7 +875,6 @@ type BlendState struct {
 
 // GraphState defines the combination of programmable and
 // fixed stages of a graphics pipeline.
-// Graphics pipelines are created from graphics states.
 // The ColorFmt and DSFmt fields define the valid usage
 // for a graphics pipeline - it must only be used with
 // render passes whose views match these formats.
@@ -892,11 +892,8 @@ type GraphState struct {
 	DSFmt    PixelFmt
 }
 
-// CompState defines the state of a compute pipeline.
-// Compute pipelines are created from compute states.
-// The state is comprised of a single compute shader and a
-// descriptor table describing the resources accessible to
-// this shader.
+// CompState defines the single programmable stage of a
+// compute pipeline.
 type CompState struct {
 	Func ShaderFunc
 	Desc DescTable
@@ -954,13 +951,15 @@ type Buffer interface {
 	// underlying data. If the buffer is not host visible,
 	// it returns nil instead.
 	// The slice is valid for the lifetime of the buffer.
+	//
 	// TODO: Consider replacing this with Map/Unmap.
 	Bytes() []byte
 
-	// Cap returns the capacity of the buffer in bytes,
-	// which may be greater than the size requested during
-	// buffer creation.
-	// This value is immutable.
+	// Cap returns the capacity of the buffer in bytes.
+	// The capacity will be at least the size specified
+	// during buffer creation.
+	// This value is immutable for the lifetime of the
+	// buffer.
 	Cap() int64
 }
 
