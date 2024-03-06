@@ -20,7 +20,7 @@ var (
 var errNoDriver = errors.New("ctxt: driver not found")
 
 // loadDriver attempts to load any driver whose name
-// contains the name string. It is case-sensitive.
+// contains the name string. It is case insensitive.
 // If name is the empty string, then all registered
 // drivers are considered.
 // It assumes that the drv and gpu vars hold invalid
@@ -30,8 +30,9 @@ var errNoDriver = errors.New("ctxt: driver not found")
 func loadDriver(name string) error {
 	drivers := driver.Drivers()
 	err := errNoDriver
+	name = strings.ToLower(name)
 	for i := range drivers {
-		if !strings.Contains(drivers[i].Name(), name) {
+		if !strings.Contains(strings.ToLower(drivers[i].Name()), name) {
 			continue
 		}
 		var u driver.GPU
