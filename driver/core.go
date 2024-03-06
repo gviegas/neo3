@@ -16,12 +16,14 @@ type GPU interface {
 
 	// Commit commits a work item to the GPU for execution.
 	// If successful, this method arranges for commands to
-	// execute in the background, and ch is written to when
+	// execute in another goroutine, and sends on ch when
 	// all command buffers complete execution.
 	// In case that execution itself fails, wk.Err will
 	// be set to indicate the cause.
-	// It is invalid to use any of the command buffers in
-	// wk.Work until ch is notified.
+	// NOTE: Commit will retain wk and may update it at
+	// at any. In particular, calling methods on committed
+	// command buffers is not safe. Accesses to wk must
+	// synchronize with the receive on ch.
 	Commit(wk *WorkItem, ch chan<- *WorkItem) error
 
 	// NewCmdBuffer creates a new command buffer.
