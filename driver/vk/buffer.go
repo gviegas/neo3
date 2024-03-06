@@ -17,7 +17,6 @@ type buffer struct {
 
 // NewBuffer creates a new buffer.
 func (d *Driver) NewBuffer(size int64, visible bool, usg driver.Usage) (driver.Buffer, error) {
-	// TODO: Some of these usages may not be required.
 	var u C.VkBufferUsageFlags
 	if usg&driver.UCopySrc != 0 {
 		u |= C.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
@@ -25,13 +24,16 @@ func (d *Driver) NewBuffer(size int64, visible bool, usg driver.Usage) (driver.B
 	if usg&driver.UCopyDst != 0 {
 		u |= C.VK_BUFFER_USAGE_TRANSFER_DST_BIT
 	}
-	u |= C.VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+	// Not exposed.
+	//u |= C.VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
 	if usg&(driver.UShaderRead|driver.UShaderWrite) != 0 {
-		u |= C.VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
+		// Not exposed.
+		//u |= C.VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
 		u |= C.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 	}
 	if usg&driver.UShaderConst != 0 {
-		u |= C.VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT
+		// Not exposed.
+		//u |= C.VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT
 		u |= C.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
 	}
 	if usg&driver.UVertexData != 0 {
