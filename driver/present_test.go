@@ -588,7 +588,8 @@ func (t *T) renderLoop() {
 		// the next one.
 		frame = (frame + 1) % NFrame
 	}
-	for len(t.ch) != cap(t.ch) {
+	for range cap(t.ch) {
+		<-t.ch
 	}
 }
 
@@ -856,8 +857,13 @@ func (t *T) KeyboardKey(key wsi.Key, pressed bool) {
 // recreateSwapchain recreates the swapchain and all
 // framebuffers.
 func (t *T) recreateSwapchain() {
-	// Ensure that any calls to Commit have completed.
-	for len(t.ch) < NFrame-1 {
+	// Wait for ongoing Commit calls to complete.
+	var wk [NFrame - 1]*driver.WorkItem
+	for i := range NFrame - 1 {
+		wk[i] = <-t.ch
+	}
+	for _, wk := range wk {
+		t.ch <- wk
 	}
 	var err error
 	pf := t.sc.Format()
