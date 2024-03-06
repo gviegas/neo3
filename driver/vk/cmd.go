@@ -159,19 +159,20 @@ func (cb *cmdBuffer) End() error {
 // Reset discards all recorded commands from the command buffer.
 func (cb *cmdBuffer) Reset() error {
 	switch cb.status {
-	case cbCommitted:
-		// Client error.
-		panic("invalid call to CmdBuffer.Reset")
 	case cbBegun, cbFailed:
 		// Need to end recording before resetting.
 		C.vkEndCommandBuffer(cb.cb)
 		fallthrough
-	default:
-		// The actual reset happens on Begin.
+	case cbEnded:
 		cb.status = cbIdle
 		cb.detachSC()
+		fallthrough
+	case cbIdle:
+		// The actual reset happens on Begin.
 		return nil
 	}
+	// Client error (data race in this case).
+	panic("invalid call to CmdBuffer.Reset")
 }
 
 // IsRecording returns whether the command buffer has begun
@@ -748,8 +749,9 @@ func (cb *cmdBuffer) Destroy() {
 	}
 	cb.detachSC()
 	if cb.d != nil {
-		// TODO: Skip wait if not in pending state.
-		C.vkQueueWaitIdle(cb.d.ques[cb.qfam])
+		// The caller must ensure that this method is
+		// not called while the command buffer is
+		// executing.
 		C.vkDestroyCommandPool(cb.d.dev, cb.pool, nil)
 	}
 	*cb = cmdBuffer{}
@@ -1174,8 +1176,15 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 		}
 	}
 
-	// Wait in the background for queue submissions to
-	// complete execution.
+	// Change the status to cbCommitted and return
+	// to the caller.
+	// We launch a new goroutine to wait on the
+	// fence(s) as it may take an arbitrary amount
+	// of time for execution to complete.
+	// Note that cbStatus will be set (to cbIdle)
+	// by the new goroutine, and thus will race
+	// with any other accesses that happen before
+	// ch receives wk.
 	for i := range rend {
 		rend[i].cb.status = cbCommitted
 		rend[i].cb.detachSC()
