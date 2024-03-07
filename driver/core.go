@@ -951,8 +951,6 @@ type Buffer interface {
 	// underlying data. If the buffer is not host visible,
 	// it returns nil instead.
 	// The slice is valid for the lifetime of the buffer.
-	//
-	// TODO: Consider replacing this with Map/Unmap.
 	Bytes() []byte
 
 	// Cap returns the capacity of the buffer in bytes.
