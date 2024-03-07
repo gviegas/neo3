@@ -623,44 +623,47 @@ type VertexFmt int
 // Vertex formats.
 const (
 	// Signed 8-bit integer, 1-4 components.
-	Int8   VertexFmt = iota | 1<<16
-	Int8x2 VertexFmt = iota | 2<<16
-	Int8x3 VertexFmt = iota | 3<<16
-	Int8x4 VertexFmt = iota | 4<<16
+	Int8   VertexFmt = iota | 1<<12 | 1<<24
+	Int8x2 VertexFmt = iota | 2<<12 | 2<<24
+	Int8x3 VertexFmt = iota | 3<<12 | 3<<24
+	Int8x4 VertexFmt = iota | 4<<12 | 4<<24
 	// Signed 16-bit integer, 1-4 components.
-	Int16   VertexFmt = iota | 2<<16
-	Int16x2 VertexFmt = iota | 4<<16
-	Int16x3 VertexFmt = iota | 6<<16
-	Int16x4 VertexFmt = iota | 8<<16
+	Int16   VertexFmt = iota | 2<<12 | 1<<24
+	Int16x2 VertexFmt = iota | 4<<12 | 2<<24
+	Int16x3 VertexFmt = iota | 6<<12 | 3<<24
+	Int16x4 VertexFmt = iota | 8<<12 | 4<<24
 	// Signed 32-bit integer, 1-4 components.
-	Int32   VertexFmt = iota | 4<<16
-	Int32x2 VertexFmt = iota | 8<<16
-	Int32x3 VertexFmt = iota | 12<<16
-	Int32x4 VertexFmt = iota | 16<<16
+	Int32   VertexFmt = iota | 4<<12 | 1<<24
+	Int32x2 VertexFmt = iota | 8<<12 | 2<<24
+	Int32x3 VertexFmt = iota | 12<<12 | 3<<24
+	Int32x4 VertexFmt = iota | 16<<12 | 4<<24
 	// Unsigned 8-bit integer, 1-4 components.
-	Uint8   VertexFmt = iota | 1<<16
-	Uint8x2 VertexFmt = iota | 2<<16
-	Uint8x3 VertexFmt = iota | 3<<16
-	Uint8x4 VertexFmt = iota | 4<<16
+	Uint8   VertexFmt = iota | 1<<12 | 1<<24
+	Uint8x2 VertexFmt = iota | 2<<12 | 2<<24
+	Uint8x3 VertexFmt = iota | 3<<12 | 3<<24
+	Uint8x4 VertexFmt = iota | 4<<12 | 4<<24
 	// Unsigned 16-bit integer, 1-4 components.
-	Uint16   VertexFmt = iota | 2<<16
-	Uint16x2 VertexFmt = iota | 4<<16
-	Uint16x3 VertexFmt = iota | 6<<16
-	Uint16x4 VertexFmt = iota | 8<<16
+	Uint16   VertexFmt = iota | 2<<12 | 1<<24
+	Uint16x2 VertexFmt = iota | 4<<12 | 2<<24
+	Uint16x3 VertexFmt = iota | 6<<12 | 3<<24
+	Uint16x4 VertexFmt = iota | 8<<12 | 4<<24
 	// Unsigned 32-bit integer, 1-4 components.
-	Uint32   VertexFmt = iota | 4<<16
-	Uint32x2 VertexFmt = iota | 8<<16
-	Uint32x3 VertexFmt = iota | 12<<16
-	Uint32x4 VertexFmt = iota | 16<<16
+	Uint32   VertexFmt = iota | 4<<12 | 1<<24
+	Uint32x2 VertexFmt = iota | 8<<12 | 2<<24
+	Uint32x3 VertexFmt = iota | 12<<12 | 3<<24
+	Uint32x4 VertexFmt = iota | 16<<12 | 4<<24
 	// Single precision floating-point, 1-4 components.
-	Float32   VertexFmt = iota | 4<<16
-	Float32x2 VertexFmt = iota | 8<<16
-	Float32x3 VertexFmt = iota | 12<<16
-	Float32x4 VertexFmt = iota | 16<<16
+	Float32   VertexFmt = iota | 4<<12 | 1<<24
+	Float32x2 VertexFmt = iota | 8<<12 | 2<<24
+	Float32x3 VertexFmt = iota | 12<<12 | 3<<24
+	Float32x4 VertexFmt = iota | 16<<12 | 4<<24
 )
 
-// Size returns the VertexFmt's size in bytes.
-func (f VertexFmt) Size() int { return int(f >> 16) }
+// Size returns the size of f, in bytes.
+func (f VertexFmt) Size() int { return int(f >> 12 & 0xfff) }
+
+// Components returns the number of components in f.
+func (f VertexFmt) Components() int { return int(f >> 24 & 0xff) }
 
 // VertexIn describes a vertex input.
 // Consecutive vertices are fetched Stride bytes apart.
@@ -947,13 +950,13 @@ type Buffer interface {
 	// Non-visible memory cannot be accessed by the CPU.
 	Visible() bool
 
-	// Bytes returns a slice of length Cap referring to the
-	// underlying data. If the buffer is not host visible,
-	// it returns nil instead.
+	// Bytes returns a slice of length Cap referring to
+	// the underlying data. If the buffer is not host
+	// visible, it returns nil instead.
 	// The slice is valid for the lifetime of the buffer.
 	Bytes() []byte
 
-	// Cap returns the capacity of the buffer in bytes.
+	// Cap returns the capacity of the buffer, in bytes.
 	// The capacity will be at least the size specified
 	// during buffer creation.
 	// This value is immutable for the lifetime of the
@@ -1023,7 +1026,7 @@ const (
 	fDS      = fDepth | fStencil
 )
 
-// Size returns the PixelFmt's size in bytes.
+// Size returns the size of f, in bytes.
 // f must not be an internal format.
 func (f PixelFmt) Size() int { return int(f >> 12 & 0xff) }
 
