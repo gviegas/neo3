@@ -215,6 +215,9 @@ type Table struct {
 	// a lower numbered heap comes before the
 	// copies of subsequent heaps.
 	coff [maxHeap]int64
+	// Cached cbuf.Bytes().
+	// Note that it has no offset applied.
+	cs []byte
 }
 
 // NewTable creates a new descriptor table.
@@ -268,6 +271,7 @@ func (t *Table) ConstSize() int {
 // off must be aligned to 256 bytes.
 // It returns the previously set buffer/offset, if any.
 func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64) {
+	var cs []byte
 	switch {
 	case buf == nil:
 		off = 0
@@ -279,6 +283,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		panic("constant buffer range out of bounds")
 
 	default:
+		cs = buf.Bytes()
 		var dh driver.DescHeap
 		var n int
 		buf, off, sz := []driver.Buffer{buf}, []int64{off}, []int64{0}
@@ -339,6 +344,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 	poff := t.coff[globalHeap]
 	t.cbuf = buf
 	t.coff[globalHeap] = off
+	t.cs = cs
 	return pbuf, poff
 }
 
@@ -450,8 +456,8 @@ func (t *Table) Frame(cpy int) *FrameLayout {
 		panic("frame descriptor out of bounds")
 	}
 	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
-	b := t.cbuf.Bytes()[off:]
-	return (*FrameLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+	s := t.cs[off:]
+	return (*FrameLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
 
 // Light returns a pointer to GPU memory mapping to a
@@ -466,8 +472,8 @@ func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
 	}
 	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan) * blockSize
-	b := t.cbuf.Bytes()[off:]
-	return (*[MaxLight]LightLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+	s := t.cs[off:]
+	return (*[MaxLight]LightLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
 
 // Shadow returns a pointer to GPU memory mapping to a
@@ -482,8 +488,8 @@ func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
 	}
 	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan+lightSpan) * blockSize
-	b := t.cbuf.Bytes()[off:]
-	return (*[MaxShadow]ShadowLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+	s := t.cs[off:]
+	return (*[MaxShadow]ShadowLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
 
 // Drawable returns a pointer to GPU memory mapping to a
@@ -497,8 +503,8 @@ func (t *Table) Drawable(cpy int) *DrawableLayout {
 		panic("drawable descriptor out of bounds")
 	}
 	off := t.coff[drawableHeap] + int64(drawableSpan)*blockSize*int64(cpy)
-	b := t.cbuf.Bytes()[off:]
-	return (*DrawableLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+	s := t.cs[off:]
+	return (*DrawableLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
 
 // Material returns a pointer to GPU memory mapping to a
@@ -512,8 +518,8 @@ func (t *Table) Material(cpy int) *MaterialLayout {
 		panic("material descriptor out of bounds")
 	}
 	off := t.coff[materialHeap] + int64(materialSpan)*blockSize*int64(cpy)
-	b := t.cbuf.Bytes()[off:]
-	return (*MaterialLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+	s := t.cs[off:]
+	return (*MaterialLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
 
 // Joint returns a pointer to GPU memory mapping to a
@@ -527,8 +533,8 @@ func (t *Table) Joint(cpy int) *[MaxJoint]JointLayout {
 		panic("joint descriptor out of bounds")
 	}
 	off := t.coff[jointHeap] + int64(jointSpan)*blockSize*int64(cpy)
-	b := t.cbuf.Bytes()[off:]
-	return (*[MaxJoint]JointLayout)(unsafe.Pointer(unsafe.SliceData(b)))
+	s := t.cs[off:]
+	return (*[MaxJoint]JointLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
 
 // Free invalidates t and destroys the driver resources.
