@@ -21,10 +21,23 @@ type GPU interface {
 	// In case that execution itself fails, wk.Err will
 	// be set to indicate the cause.
 	//
+	// Concurrent calls to Commit are allowed if they
+	// contain unrelated work sets. In practice, this means
+	// that if multiple Commit calls will access the same
+	// resource and at least one access is a write,
+	// then the calls must be serialized.
+	//
+	// Waiting that the Commit call returns is sufficient
+	// to guarantee execution order.
+	// Waiting that the command buffers complete execution
+	// guarantees that all writes they perform are made
+	// visible to any accesses that happen in subsequent
+	// Commit calls.
+	//
 	// NOTE: Commit will retain wk and may update it at
-	// at any. In particular, calling methods on committed
-	// command buffers is not safe. Accesses to wk must
-	// synchronize with the receive on ch.
+	// at any time. In particular, calling methods on
+	// committed command buffers is not safe - accesses
+	// to wk must synchronize with the receive on ch.
 	Commit(wk *WorkItem, ch chan<- *WorkItem) error
 
 	// NewCmdBuffer creates a new command buffer.
@@ -497,7 +510,9 @@ const (
 	LCopyDst
 	// Presentation.
 	// A swapchain's view must be transitioned to this
-	// layout prior to presentation.
+	// layout prior to presentation. Transitioning away
+	// from this layout is only valid after the view has
+	// been presented.
 	LPresent
 )
 
