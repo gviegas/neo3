@@ -281,7 +281,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			presAcq := sc.getQueSync(viewIdx).presAcq.(*cmdBuffer)
+			presAcq := sc.getQueSync(viewIdx).presAcq
 			if err := presAcq.Begin(); err != nil {
 				cb.status = cbFailed
 				continue
@@ -305,7 +305,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			presRel := sc.getQueSync(viewIdx).presRel.(*cmdBuffer)
+			presRel := sc.getQueSync(viewIdx).presRel
 			if err := presRel.Begin(); err != nil {
 				cb.status = cbFailed
 				continue
@@ -979,7 +979,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 				if cb.pres[i].qrel {
 					qs := sc.getQueSync(view)
 					presRel = append(presRel, submit{
-						cb:     qs.presRel.(*cmdBuffer),
+						cb:     qs.presRel,
 						wait:   sem,
 						signal: []C.VkSemaphore{qs.rendWait},
 					})
@@ -997,7 +997,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 					// TODO: Reuse the previous qs if possible.
 					qs := sc.getQueSync(view)
 					presAcq = append(presAcq, submit{
-						cb:     qs.presAcq.(*cmdBuffer),
+						cb:     qs.presAcq,
 						wait:   []C.VkSemaphore{qs.presWait},
 						signal: sem,
 					})

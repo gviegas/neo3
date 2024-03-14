@@ -102,10 +102,10 @@ type queueSync struct {
 	presWait C.VkSemaphore
 	// Where the queue transfer from presentation
 	// to rendering occurs.
-	presRel driver.CmdBuffer
+	presRel *cmdBuffer
 	// Where the queue transfer from rendering to
 	// presentation occurs.
-	presAcq driver.CmdBuffer
+	presAcq *cmdBuffer
 }
 
 // NewSwapchain creates a new swapchain.
