@@ -67,13 +67,20 @@ type presentOp struct {
 // NewCmdBuffer creates a new command buffer.
 // Its pool is created using d.qfam.
 func (d *Driver) NewCmdBuffer() (driver.CmdBuffer, error) {
-	return d.newCmdBuffer(d.qfam)
+	cb, err := d.newCmdBuffer(d.qfam)
+	if err != nil {
+		// In case the caller decides to check
+		// the command buffer rather than the
+		// error.
+		return nil, err
+	}
+	return cb, nil
 }
 
 // newCmdBuffer creates a new command buffer.
 // The command buffer handle is allocated from an exclusive command pool.
 // It must only be submitted to d.ques[qfam].
-func (d *Driver) newCmdBuffer(qfam C.uint32_t) (driver.CmdBuffer, error) {
+func (d *Driver) newCmdBuffer(qfam C.uint32_t) (*cmdBuffer, error) {
 	var pool C.VkCommandPool
 	poolInfo := C.VkCommandPoolCreateInfo{
 		sType:            C.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
