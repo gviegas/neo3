@@ -34,8 +34,9 @@ type swapchain struct {
 
 	// nextSem contains semaphores that are signaled when the
 	// presentation engine is done presenting the images.
-	// It has 1 + len(views) - minImg elements and is indexed
-	// by viewSync[viewIdx], with viewIdx obtained from Next.
+	// It has 1 + len(views) - minImg elements initially and
+	// is indexed by viewSync[viewIdx], with viewIdx obtained
+	// from Next.
 	nextSem []C.VkSemaphore
 
 	// presSem contains semaphores that are waited on by the
@@ -46,8 +47,7 @@ type swapchain struct {
 	presSem []C.VkSemaphore
 
 	// queSync contain additional data for queue transfers.
-	// It has 1 + len(views) - minImg elements and is indexed
-	// by viewSync[viewIdx], with viewIdx obtained from Next.
+	// Its elements correspond to nextSem's.
 	// If the same queue is used for both rendering and
 	// presentation, queSync is nil.
 	queSync []queueSync
@@ -61,16 +61,12 @@ type swapchain struct {
 
 	// syncUsed indicates which indices in nextSem and queSync
 	// are currently in use.
-	// Its length is equal to the maximum number of images
-	// that can be acquired (i.e., 1 + len(views) - minImg).
+	// Its length matches that of nexSem and non-nil queSync.
 	syncUsed []bool
 
-	// pendOp is used to mark that the first rendering
-	// command buffer that uses a given view was set to wait
-	// on its semaphore.
+	// pendOp is used by cmdBuffer to track synchronization
+	// state across multiple command buffers and Commit calls.
 	// Its indices match those of the views slice.
-	// NOTE: cmdBuffer code is responsible for keeping
-	// this data up to date.
 	pendOp []bool
 
 	// presInfo contains C-allocated memory used during a call
@@ -224,10 +220,8 @@ fmtLoop:
 	}
 	if ifmt == -1 {
 		if len(fmts) == 1 && fmts[0].format == C.VK_FORMAT_UNDEFINED {
-			// This is a thing apparently, and it means that we can
-			// pick whatever format we want. However, accordingly to
-			// v1.3 of the spec, advertising undefined format is not
-			// allowed, but here it is just in case.
+			// XXX: This is non-conformant behavior - advertising
+			// undefined format is disallowed.
 			fmts[0].format = prefFmts[0].fmt
 			fmts[0].colorSpace = C.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
 			s.pf = prefFmts[0].pf
@@ -340,6 +334,46 @@ func (s *swapchain) newViews() error {
 	return nil
 }
 
+func (s *swapchain) createSem() (sem C.VkSemaphore, err error) {
+	info := C.VkSemaphoreCreateInfo{
+		sType: C.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+	}
+	res := C.vkCreateSemaphore(s.d.dev, &info, nil, &sem)
+	err = checkResult(res)
+	return
+}
+
+func (s *swapchain) createQueSync() (qs queueSync, err error) {
+	if qs.rendWait, err = s.createSem(); err != nil {
+		return
+	}
+	if qs.presWait, err = s.createSem(); err != nil {
+		goto fail
+	}
+	if qs.presRel, err = s.d.newCmdBuffer(s.qfam); err != nil {
+		goto fail
+	}
+	if qs.presAcq, err = s.d.newCmdBuffer(s.qfam); err != nil {
+		goto fail
+	}
+	return
+fail:
+	s.destroyQueSync(&qs)
+	return
+}
+
+func (s *swapchain) destroyQueSync(qs *queueSync) {
+	C.vkDestroySemaphore(s.d.dev, qs.rendWait, nil)
+	C.vkDestroySemaphore(s.d.dev, qs.presWait, nil)
+	if qs.presRel != nil {
+		qs.presRel.Destroy()
+	}
+	if qs.presAcq != nil {
+		qs.presAcq.Destroy()
+	}
+	*qs = queueSync{}
+}
+
 // syncSetup creates the synchronization data required for
 // presentation of s.
 // It sets the nextSem, presSem, queSync, viewSync, syncUsed,
@@ -375,31 +409,12 @@ func (s *swapchain) syncSetup() error {
 		}
 	}
 
-	createSem := func() (C.VkSemaphore, error) {
-		info := C.VkSemaphoreCreateInfo{
-			sType: C.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-		}
-		var sem C.VkSemaphore
-		res := C.vkCreateSemaphore(s.d.dev, &info, nil, &sem)
-		return sem, checkResult(res)
-	}
-	destroyQueSync := func(qs queueSync) {
-		C.vkDestroySemaphore(s.d.dev, qs.rendWait, nil)
-		C.vkDestroySemaphore(s.d.dev, qs.presWait, nil)
-		if qs.presRel != nil {
-			qs.presRel.Destroy()
-		}
-		if qs.presAcq != nil {
-			qs.presAcq.Destroy()
-		}
-	}
-
 	if s.qfam == s.d.qfam {
 		// Single queue. The rendering command buffer
 		// waits a nextSem and signals a presSem.
 		// queSync is not needed.
 		for i := range s.queSync {
-			destroyQueSync(s.queSync[i])
+			s.destroyQueSync(&s.queSync[i])
 		}
 		s.queSync = nil
 	} else {
@@ -413,47 +428,28 @@ func (s *swapchain) syncSetup() error {
 		i := len(s.queSync)
 		switch {
 		case i < n:
-			var qs queueSync
-			var err error
 			for ; i < n; i++ {
-				qs.rendWait, err = createSem()
-				if err != nil {
-					destroyQueSync(qs)
-					return err
-				}
-				qs.presWait, err = createSem()
-				if err != nil {
-					destroyQueSync(qs)
-					return err
-				}
-				qs.presRel, err = s.d.newCmdBuffer(s.qfam)
-				if err != nil {
-					destroyQueSync(qs)
-					return err
-				}
-				qs.presAcq, err = s.d.newCmdBuffer(s.qfam)
-				if err != nil {
-					destroyQueSync(qs)
+				var qs queueSync
+				var err error
+				if qs, err = s.createQueSync(); err != nil {
 					return err
 				}
 				s.queSync = append(s.queSync, qs)
 			}
 		case i > n:
 			for ; i > n; i-- {
-				destroyQueSync(s.queSync[i-1])
+				s.destroyQueSync(&s.queSync[i-1])
 			}
 			s.queSync = s.queSync[:n]
 		}
 	}
 
-	// We only need enough nextSem elements to
-	// handle max acquisitions, since rendering
-	// does wait completion.
+	// nextSem elements never become invalid.
 	i := len(s.nextSem)
 	switch {
 	case i < n:
 		for ; i < n; i++ {
-			sem, err := createSem()
+			sem, err := s.createSem()
 			if err != nil {
 				return err
 			}
@@ -466,8 +462,8 @@ func (s *swapchain) syncSetup() error {
 		s.nextSem = s.nextSem[:n]
 	}
 
-	// We need an element in presSem for each view
-	// because presentation does not wait.
+	// presSem elements may become invalid if Present
+	// fails to enqueue the operation.
 	if s.badSem {
 		for _, x := range s.presSem {
 			C.vkDestroySemaphore(s.d.dev, x, nil)
@@ -480,7 +476,7 @@ func (s *swapchain) syncSetup() error {
 	switch {
 	case i < n:
 		for ; i < n; i++ {
-			sem, err := createSem()
+			sem, err := s.createSem()
 			if err != nil {
 				return err
 			}
@@ -504,6 +500,26 @@ func (s *swapchain) Views() []driver.ImageView {
 	return append(views, s.views...)
 }
 
+// moreSync appends a new element to s.nextSem, s.queSync
+// (if needed) and s.syncUsed.
+func (s *swapchain) moreSync() error {
+	sem, err := s.createSem()
+	if err != nil {
+		return err
+	}
+	if s.qfam != s.d.qfam {
+		qs, err := s.createQueSync()
+		if err != nil {
+			C.vkDestroySemaphore(s.d.dev, sem, nil)
+			return err
+		}
+		s.queSync = append(s.queSync, qs)
+	}
+	s.nextSem = append(s.nextSem, sem)
+	s.syncUsed = append(s.syncUsed, false)
+	return nil
+}
+
 // Next returns the index of the next writable image view.
 func (s *swapchain) Next() (int, error) {
 	s.mu.Lock()
@@ -514,16 +530,16 @@ func (s *swapchain) Next() (int, error) {
 	if s.curImg > len(s.views)-s.minImg {
 		return -1, driver.ErrNoBackbuffer
 	}
-	sync := -1
-	for i := range s.syncUsed {
-		if !s.syncUsed[i] {
-			sync = i
+	var sync int
+	for ; sync < len(s.syncUsed); sync++ {
+		if !s.syncUsed[sync] {
 			break
 		}
 	}
-	if sync == -1 {
-		// Should never happen.
-		panic("no swapchain sync data to use")
+	if sync == len(s.syncUsed) {
+		if err := s.moreSync(); err != nil {
+			return -1, err
+		}
 	}
 	var idx C.uint32_t
 	var null C.VkFence
@@ -548,7 +564,52 @@ func (s *swapchain) Next() (int, error) {
 	}
 }
 
+func (s *swapchain) getNextSem(index int) C.VkSemaphore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sync := s.viewSync[index]
+	if !s.syncUsed[sync] {
+		panic("invalid call to swapchain.getNextSem")
+	}
+	return s.nextSem[sync]
+}
+
+func (s *swapchain) getPresSem(index int) C.VkSemaphore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.syncUsed[s.viewSync[index]] {
+		panic("invalid call to swapchain.getPresSem")
+	}
+	return s.presSem[index]
+}
+
+func (s *swapchain) getQueSync(index int) queueSync {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sync := s.viewSync[index]
+	if !s.syncUsed[sync] {
+		panic("invalid call to swapchain.getQueSync")
+	}
+	return s.queSync[sync]
+}
+
+func (s *swapchain) getViewSync(index int) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sync := s.viewSync[index]
+	if !s.syncUsed[sync] {
+		panic("invalida call to swapchain.getViewSync")
+	}
+	return sync
+}
+
 // Present presents the image view identified by index.
+//
+// NOTE: Next may return this index as soon as Present
+// completes, which would mean that s.viewSync[index]
+// was overwritten. getViewSync must be called before
+// this method to ensure that the correct data is made
+// available by yieldSync.
 func (s *swapchain) Present(index int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -559,8 +620,6 @@ func (s *swapchain) Present(index int) error {
 	res := C.vkQueuePresentKHR(s.d.ques[s.qfam], s.presInfo)
 	s.d.qmus[s.qfam].Unlock()
 	s.curImg--
-	s.syncUsed[s.viewSync[index]] = false
-	s.viewSync[index] = -1 // Unnecessary currently.
 	switch res {
 	case C.VK_SUCCESS:
 		return nil
@@ -583,6 +642,34 @@ func (s *swapchain) Present(index int) error {
 		println(res)
 		panic("unexpected result in Swapchain.Present")
 	}
+}
+
+// yieldSync yields synchronization data retained by Next.
+// It must be called after Present.
+func (s *swapchain) yieldSync(sync int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.syncUsed[sync] {
+		panic("invalid call to swapchain.yieldSync")
+	}
+	s.syncUsed[sync] = false
+}
+
+func (s *swapchain) casPendOp(index int, old bool, new bool) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.pendOp[index] == old {
+		s.pendOp[index] = new
+		return true
+	}
+	return false
+}
+
+func (s *swapchain) setPendOp(index int, new bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.pendOp[index] = new
+	return
 }
 
 // Recreate recreates the swapchain.
@@ -621,14 +708,7 @@ func (s *swapchain) Destroy() {
 			C.free(unsafe.Pointer(s.presInfo))
 		}
 		for _, x := range s.queSync {
-			C.vkDestroySemaphore(s.d.dev, x.rendWait, nil)
-			C.vkDestroySemaphore(s.d.dev, x.presWait, nil)
-			if x.presRel != nil {
-				x.presRel.Destroy()
-			}
-			if x.presAcq != nil {
-				x.presAcq.Destroy()
-			}
+			s.destroyQueSync(&x)
 		}
 		for _, x := range s.presSem {
 			C.vkDestroySemaphore(s.d.dev, x, nil)

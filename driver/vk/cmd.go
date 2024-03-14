@@ -58,7 +58,7 @@ const (
 type presentOp struct {
 	sc     *swapchain
 	view   int
-	wait   bool // Rendering must wait on semaphore.
+	sync   int
 	signal bool // Rendering must signal semaphore.
 	qrel   bool // Queue released by sc.qfam.
 	qacq   bool // Queue acquired by sc.qfam.
@@ -237,14 +237,13 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 		// perform queue transfers if rendering and
 		// presentation queues differ.
 		sc := img.s
-		viewIdx := -1
-		for i := range sc.views {
-			if sc.views[i].(*imageView).i == img {
-				viewIdx = i
+		var viewIdx int
+		for ; viewIdx < len(sc.views); viewIdx++ {
+			if sc.views[viewIdx].(*imageView).i == img {
 				break
 			}
 		}
-		presIdx := 0
+		var presIdx int
 		for ; presIdx < len(cb.pres); presIdx++ {
 			if cb.pres[presIdx].sc == sc && cb.pres[presIdx].view == viewIdx {
 				break
@@ -253,13 +252,10 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 		if presIdx == len(cb.pres) {
 			cb.pres = append(cb.pres, presentOp{sc: sc, view: viewIdx})
 		}
-		if !sc.pendOp[viewIdx] {
-			sc.pendOp[viewIdx] = true
-			cb.pres[presIdx].wait = true
-		}
+		pres := &cb.pres[presIdx]
 		if cb.qfam == sc.qfam {
 			if t[i].LayoutAfter == driver.LPresent {
-				cb.pres[presIdx].signal = true
+				pres.signal = true
 			}
 			// Just the layout transitions from/to
 			// driver.LPresent, which the client is
@@ -267,7 +263,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 			continue
 		}
 		if t[i].LayoutAfter == driver.LPresent {
-			cb.pres[presIdx].signal = true
+			pres.signal = true
 			// Queue transfer from rendering to presentation.
 			// This transfer must always be performed when
 			// using different queues.
@@ -278,8 +274,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			syncIdx := sc.viewSync[viewIdx]
-			presAcq := sc.queSync[syncIdx].presAcq.(*cmdBuffer)
+			presAcq := sc.getQueSync(viewIdx).presAcq.(*cmdBuffer)
 			if err := presAcq.Begin(); err != nil {
 				cb.status = cbFailed
 				continue
@@ -289,7 +284,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 				cb.status = cbFailed
 				continue
 			}
-			cb.pres[presIdx].qacq = true
+			pres.qacq = true
 			continue
 		}
 		if t[i].LayoutBefore == driver.LPresent {
@@ -303,8 +298,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 				imageMemoryBarrierCount: 1,
 				pImageMemoryBarriers:    &sib[i],
 			}
-			syncIdx := sc.viewSync[viewIdx]
-			presRel := sc.queSync[syncIdx].presRel.(*cmdBuffer)
+			presRel := sc.getQueSync(viewIdx).presRel.(*cmdBuffer)
 			if err := presRel.Begin(); err != nil {
 				cb.status = cbFailed
 				continue
@@ -314,7 +308,7 @@ func (cb *cmdBuffer) Transition(t []driver.Transition) {
 				cb.status = cbFailed
 				continue
 			}
-			cb.pres[presIdx].qrel = true
+			pres.qrel = true
 			continue
 		}
 	}
@@ -735,9 +729,32 @@ func (cb *cmdBuffer) Fill(buf driver.Buffer, off int64, value byte, size int64) 
 // cb.pres is set to contain no elements.
 func (cb *cmdBuffer) detachSC() {
 	for i := range cb.pres {
-		if cb.pres[i].wait {
-			cb.pres[i].sc.pendOp[cb.pres[i].view] = false
+		cb.pres[i].sc.setPendOp(cb.pres[i].view, false)
+		cb.pres[i].sc = nil
+	}
+	cb.pres = cb.pres[:0]
+}
+
+// unpendSC prepares cb.pres for yielding.
+// It is called just before Commit returns.
+func (cb *cmdBuffer) unpendSC() {
+	for i := range cb.pres {
+		if cb.pres[i].signal {
+			cb.pres[i].sync = cb.pres[i].sc.getViewSync(cb.pres[i].view)
+			cb.pres[i].sc.setPendOp(cb.pres[i].view, false)
 		}
+	}
+}
+
+// yieldSC yields the synchronization data in cb.pres.
+// It is called just before Commit sends to the channel.
+// cb.pres is set to contain no elements.
+func (cb *cmdBuffer) yieldSC() {
+	for i := range cb.pres {
+		if cb.pres[i].signal {
+			cb.pres[i].sc.yieldSync(cb.pres[i].sync)
+		}
+		cb.pres[i].sc = nil
 	}
 	cb.pres = cb.pres[:0]
 }
@@ -944,26 +961,37 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 			var (
 				sc   = cb.pres[i].sc
 				view = cb.pres[i].view
-				sync = sc.viewSync[view]
 			)
-			if cb.pres[i].wait {
-				sem := sc.nextSem[sync : sync+1]
+			// We only care about the first rendering
+			// command buffer that uses the view.
+			// The client is responsible for
+			// synchronizing its own accesses using
+			// memory barriers.
+			if sc.casPendOp(view, false, true) {
+				sem := []C.VkSemaphore{sc.getNextSem(view)}
 				if cb.pres[i].qrel {
+					qs := sc.getQueSync(view)
 					presRel = append(presRel, submit{
-						cb:     sc.queSync[sync].presRel.(*cmdBuffer),
+						cb:     qs.presRel.(*cmdBuffer),
 						wait:   sem,
-						signal: []C.VkSemaphore{sc.queSync[sync].rendWait},
+						signal: []C.VkSemaphore{qs.rendWait},
 					})
 					sem = presRel[len(presRel)-1].signal
 				}
 				rend[i].wait = append(rend[i].wait, sem...)
 			}
+			// This means there was a transition to
+			// LPresent in this command buffer.
+			// We assume that a call to Present will
+			// follow.
 			if cb.pres[i].signal {
-				sem := sc.presSem[view : view+1]
+				sem := []C.VkSemaphore{sc.getPresSem(view)}
 				if cb.pres[i].qacq {
+					// TODO: Reuse the previous qs if possible.
+					qs := sc.getQueSync(view)
 					presAcq = append(presAcq, submit{
-						cb:     sc.queSync[sync].presAcq.(*cmdBuffer),
-						wait:   []C.VkSemaphore{sc.queSync[sync].presWait},
+						cb:     qs.presAcq.(*cmdBuffer),
+						wait:   []C.VkSemaphore{qs.presWait},
 						signal: sem,
 					})
 					sem = presAcq[len(presAcq)-1].wait
@@ -1187,12 +1215,13 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 	// ch receives wk.
 	for i := range rend {
 		rend[i].cb.status = cbCommitted
-		rend[i].cb.detachSC()
+		rend[i].cb.unpendSC()
 	}
 	go func() {
 		wk.Err = d.waitCommitFence(cs, fenceN)
 		for i := range rend {
 			rend[i].cb.status = cbIdle
+			rend[i].cb.yieldSC()
 		}
 		ch <- wk
 		d.csync <- cs
