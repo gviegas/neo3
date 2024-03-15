@@ -22,8 +22,8 @@ const NFrame = 3
 const DepthFmt = driver.D16un
 
 var dim = driver.Dim3D{
-	Width:  480,
-	Height: 270,
+	Width:  768,
+	Height: 432,
 }
 
 var brokenSC bool
@@ -131,7 +131,7 @@ func (t *T) passSetup() {
 			Color: scViews[i],
 			Load:  driver.LClear,
 			Store: driver.SStore,
-			Clear: driver.ClearFloat32(0.075, 0.075, 0.075, 1),
+			Clear: driver.ClearFloat32(0.025, 0.025, 0.025, 1),
 		}
 	}
 
@@ -833,7 +833,7 @@ func (t *T) updateTransform(dt time.Duration) {
 	}
 	proj.frustum(-w, w, -h, h, 1, 100)
 
-	eye := V{3, -3, -4}
+	eye := V{2, -3, -4}
 	center := V{0}
 	up := V{0, -1, 0}
 	view.lookAt(&center, &eye, &up)
