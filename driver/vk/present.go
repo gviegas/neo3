@@ -22,6 +22,7 @@ type swapchain struct {
 	sf    C.VkSurfaceKHR
 	sc    C.VkSwapchainKHR
 	pf    driver.PixelFmt
+	usg   driver.Usage
 	views []driver.ImageView
 	mu    sync.Mutex
 
@@ -235,6 +236,41 @@ fmtLoop:
 		return driver.ErrCannotPresent
 	}
 
+	// Image usage.
+	usage := C.VkFlags(C.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+	s.usg = driver.URenderTarget
+	if !s.pf.IsInternal() {
+		var fprop C.VkFormatProperties
+		C.vkGetPhysicalDeviceFormatProperties(s.d.pdev, convPixelFmt(s.pf), &fprop)
+		feat := fprop.optimalTilingFeatures
+		// TODO: Consider exposing format features so
+		// we can be more flexible here.
+		spld := C.VkFlags(C.VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)
+		stor := C.VkFlags(C.VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)
+		if s.pf.IsNonfloatColor() {
+			spld = C.VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT
+			if s.pf.Size()&3 == 0 {
+				stor = C.VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
+			}
+		}
+		if feat&spld != 0 && capab.supportedUsageFlags&C.VK_IMAGE_USAGE_SAMPLED_BIT != 0 {
+			usage |= C.VK_IMAGE_USAGE_SAMPLED_BIT
+			s.usg |= driver.UShaderSample
+		}
+		if feat&stor != 0 && capab.supportedUsageFlags&C.VK_IMAGE_USAGE_STORAGE_BIT != 0 {
+			usage |= C.VK_IMAGE_USAGE_STORAGE_BIT
+			s.usg |= driver.UShaderRead | driver.UShaderWrite
+		}
+		if capab.supportedUsageFlags&C.VK_IMAGE_USAGE_TRANSFER_SRC_BIT != 0 {
+			usage |= C.VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+			s.usg |= driver.UCopySrc
+		}
+		if capab.supportedUsageFlags&C.VK_IMAGE_USAGE_TRANSFER_DST_BIT != 0 {
+			usage |= C.VK_IMAGE_USAGE_TRANSFER_DST_BIT
+			s.usg |= driver.UCopyDst
+		}
+	}
+
 	// Present mode.
 	var nmode C.uint32_t
 	res = C.vkGetPhysicalDeviceSurfacePresentModesKHR(s.d.pdev, s.sf, &nmode, nil)
@@ -255,7 +291,6 @@ fmtLoop:
 	//}
 
 	// Swapchain.
-	// TODO: Additional usage.
 	defer C.vkDestroySwapchainKHR(s.d.dev, s.sc, nil)
 	info := C.VkSwapchainCreateInfoKHR{
 		sType:            C.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -265,7 +300,7 @@ fmtLoop:
 		imageColorSpace:  fmts[ifmt].colorSpace,
 		imageExtent:      extent,
 		imageArrayLayers: 1,
-		imageUsage:       C.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		imageUsage:       usage,
 		imageSharingMode: C.VK_SHARING_MODE_EXCLUSIVE,
 		preTransform:     xform,
 		compositeAlpha:   calpha,
@@ -690,6 +725,9 @@ func (s *swapchain) Recreate() error {
 
 // Format returns the image views' driver.PixelFmt.
 func (s *swapchain) Format() driver.PixelFmt { return s.pf }
+
+// Usage returns the image views' driver.Usage.
+func (s *swapchain) Usage() driver.Usage { return s.usg }
 
 // Destroy destroys the swapchain.
 func (s *swapchain) Destroy() {
