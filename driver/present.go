@@ -51,7 +51,7 @@ type Presenter interface {
 // layout (e.g., from LUndefined to LColorTarget),
 // records commands as needed, transitions the view to
 // the LPresent layout, commits these commands and then
-// calls Present to present this image view.
+// calls Present to present the image view.
 type Swapchain interface {
 	Destroyer
 
@@ -61,7 +61,7 @@ type Swapchain interface {
 	// swapchain's Destroy or Recreate methods are
 	// not called.
 	// Swapchain image views are in the LUndefined
-	// layout when (re)created.
+	// layout when created/recreated.
 	Views() []ImageView
 
 	// Next returns the index of the next writable
@@ -89,4 +89,8 @@ type Swapchain interface {
 
 	// Format returns the image views' PixelFmt.
 	Format() PixelFmt
+
+	// Usage returns the image views' Usage.
+	// URenderTarget is guaranteed to be set.
+	Usage() Usage
 }
