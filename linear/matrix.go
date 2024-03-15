@@ -243,10 +243,10 @@ func (m *M4) LookAt(center, eye, up *V3) {
 	s.Norm(&s)
 	u.Cross(&f, &s)
 	*m = M4{
-		{s[0], u[0], -f[0]},
-		{s[1], u[1], -f[1]},
-		{s[2], u[2], -f[2]},
-		{-s.Dot(eye), -u.Dot(eye), f.Dot(eye), 1},
+		{s[0], u[0], f[0]},
+		{s[1], u[1], f[1]},
+		{s[2], u[2], f[2]},
+		{-s.Dot(eye), -u.Dot(eye), -f.Dot(eye), 1},
 	}
 }
 
@@ -256,29 +256,28 @@ func (m *M4) Perspective(yfov, aspectRatio, znear, zfar float32) {
 	*m = M4{
 		{0: ct / aspectRatio},
 		{1: ct},
-		{2: (zfar + znear) / (znear - zfar), 3: -1},
-		{2: (zfar * znear * 2) / (znear - zfar)},
+		{2: zfar / (zfar - znear), 3: 1},
+		{2: -(zfar * znear) / (zfar - znear)},
 	}
 }
 
-// InfPerspective sets m to contain an infinite perspective projection.
-func (m *M4) InfPerspective(yfov, aspectRatio, znear float32) {
-	ct := 1 / float32(math.Tan(float64(yfov/2)))
+// Frustum sets m to contain a perspective projection.
+func (m *M4) Frustum(left, right, top, bottom, znear, zfar float32) {
 	*m = M4{
-		{0: ct / aspectRatio},
-		{1: ct},
-		{2: -1, 3: -1},
-		{2: znear * -2},
+		{0: 2 * znear / (right - left)},
+		{1: 2 * znear / (bottom - top)},
+		{0: -(right + left) / (right - left), 1: -(bottom + top) / (bottom - top), 2: zfar / (zfar - znear), 3: 1},
+		{2: -(zfar * znear) / (zfar - znear)},
 	}
 }
 
-// Ortho sets m to contain a nonperspective projection.
-func (m *M4) Ortho(xmag, ymag, znear, zfar float32) {
+// Ortho sets m to contain a non-perspective projection.
+func (m *M4) Ortho(left, right, top, bottom, znear, zfar float32) {
 	*m = M4{
-		{0: 1 / xmag},
-		{1: 1 / ymag},
-		{2: 2 / (znear - zfar)},
-		{2: (zfar + znear) / (znear - zfar), 3: 1},
+		{0: 2 / (right - left)},
+		{1: 2 / (bottom - top)},
+		{2: 1 / (zfar - znear)},
+		{0: -(right + left) / (right - left), 1: -(bottom + top) / (bottom - top), 2: -znear / (zfar - znear), 3: 1},
 	}
 }
 
