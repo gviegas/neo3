@@ -756,14 +756,15 @@ func (m *M) multiply(m1, m2 *M) {
 	}
 }
 
-func (m *M) infPerspective(yfov, aspectRatio, znear float32) {
+func (m *M) frustum(left, right, top, bottom, znear, zfar float32) {
 	*m = M{}
-	ct := float32(1 / math.Tan(float64(yfov)*0.5))
-	m[0] = ct / aspectRatio
-	m[5] = ct
-	m[10] = -1
-	m[11] = -1
-	m[14] = -2 * znear
+	m[0] = 2 * znear / (right - left)
+	m[5] = 2 * znear / (bottom - top)
+	m[8] = -(right + left) / (right - left)
+	m[9] = -(bottom + top) / (bottom - top)
+	m[10] = zfar / (zfar - znear)
+	m[11] = 1
+	m[14] = -(zfar * znear) / (zfar - znear)
 }
 
 func (m *M) lookAt(center, eye, up *V) {
@@ -775,19 +776,19 @@ func (m *M) lookAt(center, eye, up *V) {
 	u.cross(&f, &s)
 	m[0] = s[0]
 	m[1] = u[0]
-	m[2] = -f[0]
+	m[2] = f[0]
 	m[3] = 0
 	m[4] = s[1]
 	m[5] = u[1]
-	m[6] = -f[1]
+	m[6] = f[1]
 	m[7] = 0
 	m[8] = s[2]
 	m[9] = u[2]
-	m[10] = -f[2]
+	m[10] = f[2]
 	m[11] = 0
 	m[12] = -s.dot(eye)
 	m[13] = -u.dot(eye)
-	m[14] = f.dot(eye)
+	m[14] = -f.dot(eye)
 	m[15] = 1
 }
 
@@ -822,7 +823,15 @@ func (m *M) rotate(axis *V, angle float32) {
 // transform matrix used by the cube.
 func (t *T) updateTransform(dt time.Duration) {
 	var proj, view, model, vp M
-	proj.infPerspective(math.Pi/4, float32(t.win.Width())/float32(t.win.Height()), 0.01)
+
+	w := float32(t.win.Width())
+	h := float32(t.win.Height())
+	if w < h {
+		w, h = w/h, 1
+	} else {
+		w, h = 1, h/w
+	}
+	proj.frustum(-w, w, -h, h, 1, 100)
 
 	eye := V{3, -3, -4}
 	center := V{0}
