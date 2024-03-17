@@ -1,6 +1,6 @@
 // Copyright 2022 Gustavo C. Viegas. All rights reserved.
 
-//go:build !final
+//go:build !notest
 
 package vk
 
@@ -39,7 +39,7 @@ func checkCStrings(strs []string, cstrs unsafe.Pointer) error {
 // checkProcOpen checks that C.getInstanceProcAddr is not nil.
 func checkProcOpen() error {
 	if C.getInstanceProcAddr == nil {
-		return errors.New("checkInstanceProc(): C.getInstanceProcAddr is nil")
+		return errors.New("checkInstanceProc: C.getInstanceProcAddr is nil")
 	}
 	return nil
 }
@@ -51,13 +51,13 @@ func checkProcInstance() error {
 		return err
 	}
 	if C.destroyInstance == nil {
-		return errors.New("checkProcInstance(): C.destroyInstance is nil")
+		return errors.New("checkProcInstance: C.destroyInstance is nil")
 	}
 	if C.createDevice == nil {
-		return errors.New("checkProcInstance(): C.createDevice is nil")
+		return errors.New("checkProcInstance: C.createDevice is nil")
 	}
 	if C.getDeviceProcAddr == nil {
-		return errors.New("checkProcInstance(): C.getDeviceProcAddr is nil")
+		return errors.New("checkProcInstance: C.getDeviceProcAddr is nil")
 	}
 	return nil
 }
@@ -69,13 +69,13 @@ func checkProcDevice() error {
 		return err
 	}
 	if C.getDeviceQueue == nil {
-		return errors.New("checkProcDevice(): C.getDeviceQueue is nil")
+		return errors.New("checkProcDevice: C.getDeviceQueue is nil")
 	}
 	if C.queueSubmit == nil {
-		return errors.New("checkProcDevice(): C.queueSubmit is nil")
+		return errors.New("checkProcDevice: C.queueSubmit is nil")
 	}
 	if C.cmdDraw == nil {
-		return errors.New("checkProcDevice(): C.cmdDraw is nil")
+		return errors.New("checkProcDevice: C.cmdDraw is nil")
 	}
 	return nil
 }
@@ -84,13 +84,13 @@ func checkProcDevice() error {
 // be invalid after deinitialization.
 func checkProcClear() error {
 	if C.getDeviceQueue != nil {
-		return errors.New("checkProcClear(): C.getDeviceQueue is not nil")
+		return errors.New("checkProcClear: C.getDeviceQueue is not nil")
 	}
 	if C.queueSubmit != nil {
-		return errors.New("checkProcClear(): C.queueSubmit is not nil")
+		return errors.New("checkProcClear: C.queueSubmit is not nil")
 	}
 	if C.cmdDraw != nil {
-		return errors.New("checkProcClear(): C.cmdDraw is not nil")
+		return errors.New("checkProcClear: C.cmdDraw is not nil")
 	}
 	return nil
 }
