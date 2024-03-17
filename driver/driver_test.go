@@ -39,7 +39,8 @@ func TestDriverName(t *testing.T) {
 	if drv.Name() != name {
 		t.Error("Driver.Name: unexpected name after call to Close")
 	}
-	_, err := drv.Open()
+	var err error
+	gpu, err = drv.Open()
 	if err != nil {
 		t.Fatal("Failed to re-Open drv - cannot continue")
 	}
