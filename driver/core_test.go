@@ -192,3 +192,48 @@ func TestDescTable(t *testing.T) {
 		}
 	}
 }
+
+func TestBuffer(t *testing.T) {
+	cases := [...]struct {
+		size    int64
+		visible bool
+		usage   driver.Usage
+	}{
+		{2048, true, driver.UCopySrc},
+		{4096, true, driver.UCopyDst},
+		{8192, true, driver.UShaderRead | driver.UShaderWrite | driver.UShaderConst | driver.UVertexData | driver.UIndexData},
+		{512, true, 0},
+		{16, true, driver.UShaderRead | driver.UShaderWrite},
+		{1 << 20, false, driver.UGeneric},
+		{1 << 20, false, driver.UShaderConst | driver.UVertexData | driver.UIndexData},
+		{1 << 20, true, driver.UVertexData | driver.UIndexData},
+		{100 << 20, true, driver.UGeneric},
+		{1, true, driver.UGeneric},
+		//{0, true, 0},
+	}
+	for _, c := range cases {
+		buf, err := gpu.NewBuffer(c.size, c.visible, c.usage)
+		if err != nil {
+			t.Errorf("GPU.NewBuffer failed: %#v", err)
+			continue
+		}
+		defer buf.Destroy()
+		if c.visible && !buf.Visible() {
+			// Private memory is optional, shared memory is not.
+			t.Errorf("Buffer.Visible:\nhave false\nwant true")
+		}
+		switch b := buf.Bytes(); {
+		case buf.Visible():
+			if len := len(b); int64(len) < c.size {
+				t.Errorf("len(Buffer.Bytes):\nhave %d\nwant >= %d", len, c.size)
+			}
+		default:
+			if b != nil {
+				t.Error("Buffer.Bytes:\nhave non-nil\nwant nil")
+			}
+		}
+		if cap := buf.Cap(); cap < c.size {
+			t.Errorf("Buffer.Cap:\nhave %d\nwant >= %d", cap, c.size)
+		}
+	}
+}
