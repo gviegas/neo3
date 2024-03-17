@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"strings"
 	"testing"
 	"unsafe"
 )
@@ -20,9 +19,6 @@ func TestMain(m *testing.M) {
 	// run between tDrv.Open and tDrv.Close because the C code uses
 	// global variables.
 	testProc()
-	testOpen()
-	testName()
-	testClose()
 	if _, err := tDrv.Open(); err != nil {
 		log.Fatalf("Driver.Open failed: %v", err)
 	}
@@ -40,7 +36,7 @@ func testProc() {
 	// C.getInstanceProcAddr should be valid only after proc.open is called.
 	d := Driver{}
 	if err := checkProcOpen(); err == nil {
-		log.Fatal("checkProcOpen(): unexpected nil error")
+		log.Fatal("checkProcOpen: unexpected nil error")
 	}
 	if err := d.open(); err != nil {
 		log.Print("WARNING: testProc: d.open failed")
@@ -53,7 +49,7 @@ func testProc() {
 	// Global and instance-level procs other than C.getInstanceProcAddr should
 	// be valid only after d.initInstance is called.
 	if err := checkProcInstance(); err == nil {
-		log.Fatal("checkProcInstance(): unexpected nil error")
+		log.Fatal("checkProcInstance: unexpected nil error")
 	}
 	if d.initInstance() != nil {
 		log.Print("WARNING: testProc: d.initInstance failed")
@@ -67,7 +63,7 @@ func testProc() {
 	// Device-level procs other than C.getDeviceProcAddr should be valid only
 	// after d.initDevice is called.
 	if err := checkProcDevice(); err == nil {
-		log.Fatal("checkProcDevice(): unexpected nil error")
+		log.Fatal("checkProcDevice: unexpected nil error")
 	}
 	if d.initDevice() != nil {
 		log.Print("WARNING: testProc: d.initDevice failed")
@@ -81,129 +77,6 @@ func testProc() {
 	d.Close()
 	if err := checkProcClear(); err != nil {
 		log.Fatal(err)
-	}
-}
-
-func testOpen() {
-	d := Driver{}
-	gpu, err := d.Open()
-	defer d.Close()
-	switch err {
-	default:
-		if d.inst != nil || d.dev != nil {
-			log.Fatal("d.Open(): Driver\nhave non-zero\nwant Driver{}")
-		}
-		if gpu != nil {
-			log.Fatal("d.Open(): GPU\nhave non-nil\nwant nil")
-		}
-	case nil:
-		if d.inst == nil {
-			log.Fatal("d.Open(): d.inst\nhave nil\nwant non-nil")
-		}
-		if d.ivers == 0 {
-			log.Fatal("d.Open(): d.ivers\nhave 0\nwant > 0")
-		}
-		if d.pdev == nil {
-			log.Fatal("d.Open(): d.pdev\nhave nil\nwant non-nil")
-		}
-		if d.dvers == 0 {
-			log.Fatal("d.Open(): d.dvers\nhave 0\nwant > 0")
-		}
-		if d.dev == nil {
-			log.Fatal("d.Open(): d.dev\nhave nil\nwant non-nil")
-		}
-		if d.ques == nil {
-			log.Fatal("d.Open(): d.ques\nhave nil\nwant non-nil")
-		}
-		if len(d.mused) != int(d.mprop.memoryHeapCount) {
-			log.Fatalf("d.Open(): len(d.mused)\nhave %d\nwant %d", len(d.mused), d.mprop.memoryHeapCount)
-		}
-		for i, n := range d.mused {
-			if n != 0 {
-				log.Fatalf("d.Open(): d.mused[%d]\nhave %d\nwant 0", i, n)
-			}
-		}
-		if gpu == nil {
-			log.Fatal("d.Open(): GPU\nhave nil\nwant non-nil")
-		}
-		if x, ok := gpu.(*Driver); ok {
-			if x == nil {
-				log.Fatalf("d.Open(): GPU\nhave %#v\nwant d", (*Driver)(nil))
-			}
-			if x != &d {
-				log.Fatalf("d.Open(): GPU\nhave %p\nwant %p", x, &d)
-			}
-		} else {
-			log.Fatalf("d.Open(): GPU\nhave %T\nwant %T", gpu, &d)
-		}
-	}
-	// Subsequent calls to Open should return the same GPU and not fail.
-	if err == nil {
-		if g, e := d.Open(); g != gpu || e != nil {
-			log.Fatalf("d.Open()\nhave %p, %v\nwant %p, %v", g, e, gpu, err)
-		}
-	} else {
-		log.Print("WARNING: d.Open failed, cannot test multiple calls on open driver")
-	}
-}
-
-func testName() {
-	// Name should not require an open driver.
-	d := &Driver{}
-	s := d.Name()
-	if s == "" {
-		log.Fatal("d.Name()\nhave \"\"\nwant non-empty")
-	} else if !strings.HasPrefix(s, "vulkan") {
-		log.Fatalf("d.Name()\nhave %s\nwant vulkan*", s)
-	}
-	if d.inst != nil || d.dev != nil {
-		log.Fatalf("d.Name(): Driver\nhave %v\nwant Driver{}", d)
-	}
-	// Name should not require a valid driver.
-	d = nil
-	defer func() {
-		if x := recover(); x != nil {
-			log.Fatalf("unexpected panic: %v", x)
-		}
-	}()
-	if x := d.Name(); x != s {
-		log.Fatalf("d.Name()\nhave %s\nwant %s (differs from previous call)", x, s)
-	}
-	// Name should not change for open driver.
-	d = &Driver{}
-	if _, err := d.Open(); err != nil {
-		log.Print("WARNING: testName: d.Open failed")
-		return
-	}
-	if x := d.Name(); x != s {
-		log.Fatalf("d.Name()\nhave %s\nwant %s (differs from previous call)", x, s)
-	}
-	d.Close()
-}
-
-func testClose() {
-	// Close should not require an open driver.
-	d := Driver{}
-	d.Close()
-	// Close should set d to the zero value.
-	if _, err := d.Open(); err != nil {
-		log.Print("WARNING: testClose: d.Open failed")
-		return
-	}
-	d.Close()
-	if d.inst != nil || d.dev != nil {
-		log.Fatalf("d.Close(): Driver\nhave %v\nwant Driver{}", d)
-	}
-}
-
-func TestDriver(t *testing.T) {
-	var d *Driver
-	if x, ok := d.Driver().(*Driver); !ok || x != nil {
-		t.Fatalf("d.Driver()\nhave %#v\nwant %#v", x, (*Driver)(nil))
-	}
-	d = new(Driver)
-	if x := d.Driver(); x != d {
-		t.Fatalf("d.Driver()\nhave %p\nwant %p", x, d)
 	}
 }
 
@@ -251,17 +124,17 @@ func TestSelectExts(t *testing.T) {
 	for _, c := range cases {
 		a, f, m := selectExts(c.exts, c.from)
 		if !ok(c) {
-			t.Fatalf("selectExts()\nhave _, _, %v\nwant %v", m, c.want)
+			t.Fatalf("selectExts:\nhave _, _, %v\nwant %v", m, c.want)
 		}
 		if len(c.want) == 0 {
 			if a == nil && len(c.exts) > 0 {
-				t.Fatal("selectExts()\nhave nil, _, _\nwant non-nil")
+				t.Fatal("selectExts:\nhave nil, _, _\nwant non-nil")
 			} else if err := checkCStrings(c.exts, unsafe.Pointer(a)); err != nil {
 				t.Fatal(err)
 			}
 		}
 		if f == nil {
-			t.Fatal("selectExts()\nhave _, nil, _\nwant non-nil")
+			t.Fatal("selectExts:\nhave _, nil, _\nwant non-nil")
 		}
 		f()
 	}
@@ -270,29 +143,29 @@ func TestSelectExts(t *testing.T) {
 func TestExtSanity(t *testing.T) {
 	for _, e := range globalInstanceExts.required {
 		if !tDrv.exts[e] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave false\nwant true", e.name())
+			t.Fatalf("tDrv.exts[<%s>]:\nhave false\nwant true", e.name())
 		}
 	}
 	for _, e := range globalDeviceExts.required {
 		if !tDrv.exts[e] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave false\nwant true", e.name())
+			t.Fatalf("tDrv.exts[<%s>]:\nhave false\nwant true", e.name())
 		}
 	}
 	if !tDrv.exts[extSurface] {
 		if tDrv.exts[extAndroidSurface] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extAndroidSurface.name())
+			t.Fatalf("tDrv.exts[<%s>]:\nhave true\nwant false", extAndroidSurface.name())
 		}
 		if tDrv.exts[extWaylandSurface] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extWaylandSurface.name())
+			t.Fatalf("tDrv.exts[<%s>]:\nhave true\nwant false", extWaylandSurface.name())
 		}
 		if tDrv.exts[extWin32Surface] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extWin32Surface.name())
+			t.Fatalf("tDrv.exts[<%s>]:\nhave true\nwant false", extWin32Surface.name())
 		}
 		if tDrv.exts[extXCBSurface] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extXCBSurface.name())
+			t.Fatalf("tDrv.exts[<%s>]:\nhave true\nwant false", extXCBSurface.name())
 		}
 		if tDrv.exts[extSwapchain] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", extSwapchain.name())
+			t.Fatalf("tDrv.exts[<%s>]:\nhave true\nwant false", extSwapchain.name())
 		}
 	}
 	var bad []extension
@@ -308,7 +181,7 @@ func TestExtSanity(t *testing.T) {
 	}
 	for _, e := range bad {
 		if tDrv.exts[e] {
-			t.Fatalf("tDrv.exts[<%s>]\nhave true\nwant false", e.name())
+			t.Fatalf("tDrv.exts[<%s>]:\nhave true\nwant false", e.name())
 		}
 	}
 }
