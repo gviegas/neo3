@@ -47,3 +47,14 @@ func TestDriverName(t *testing.T) {
 		t.Error("Driver.Name: unexpected name after call to Open")
 	}
 }
+
+func TestDriverOpen(t *testing.T) {
+	// Note that drv is already open.
+	g, err := drv.Open()
+	if err != nil {
+		t.Errorf("Driver.Open: unexpected non-nil error: %v", err)
+	}
+	if g != gpu {
+		t.Fatal("Driver.Open: unexpected GPU value")
+	}
+}
