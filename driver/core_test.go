@@ -237,3 +237,82 @@ func TestBuffer(t *testing.T) {
 		}
 	}
 }
+
+func TestImageView(t *testing.T) {
+	type iview struct {
+		typ    driver.ViewType
+		layer  int
+		layers int
+		level  int
+		levels int
+	}
+	cases := [...]struct {
+		pf      driver.PixelFmt
+		size    driver.Dim3D
+		layers  int
+		levels  int
+		samples int
+		usage   driver.Usage
+		iv      []iview
+	}{
+		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 1024}, 1, 11, 1, driver.UShaderSample, []iview{
+			{driver.IView2D, 0, 1, 0, 1},
+			{driver.IView2D, 0, 1, 0, 11},
+			{driver.IView2D, 0, 1, 4, 5},
+		}},
+		{driver.RGBA16f, driver.Dim3D{Width: 1024, Height: 1024}, 1, 6, 1, driver.UGeneric, []iview{
+			{driver.IView2D, 0, 1, 0, 1},
+			{driver.IView2D, 0, 1, 2, 1},
+			{driver.IView2D, 0, 1, 3, 3},
+		}},
+		{driver.BGRA8sRGB, driver.Dim3D{Width: 1280, Height: 768}, 1, 1, 8, driver.URenderTarget, []iview{
+			{driver.IView2DMS, 0, 1, 0, 1},
+			{driver.IView2D, 0, 1, 0, 1},
+		}},
+		{driver.D24unS8ui, driver.Dim3D{Width: 1280, Height: 768}, 2, 1, 1, driver.URenderTarget, []iview{
+			{driver.IView2D, 0, 1, 0, 1},
+			{driver.IView2DArray, 0, 2, 0, 1},
+		}},
+		{driver.D16un, driver.Dim3D{Width: 1280, Height: 768}, 2, 1, 1, driver.URenderTarget, []iview{
+			{driver.IView2D, 0, 1, 0, 1},
+			{driver.IView2D, 1, 1, 0, 1},
+		}},
+		{driver.S8ui, driver.Dim3D{Width: 1280, Height: 768}, 3, 1, 1, driver.URenderTarget, []iview{
+			{driver.IView2D, 2, 1, 0, 1},
+			{driver.IView2DArray, 0, 3, 0, 1},
+		}},
+		{driver.R8un, driver.Dim3D{Width: 4096}, 4, 1, 1, driver.UGeneric, []iview{
+			{driver.IView1D, 0, 1, 0, 1},
+			{driver.IView1D, 3, 1, 0, 1},
+			{driver.IView1DArray, 0, 4, 0, 1},
+		}},
+		{driver.RG16f, driver.Dim3D{Width: 480, Height: 720, Depth: 5}, 1, 1, 1, driver.UGeneric, []iview{
+			{driver.IView3D, 0, 1, 0, 1},
+		}},
+		{driver.RGBA8un, driver.Dim3D{Width: 512, Height: 512}, 16, 10, 1, driver.UShaderSample, []iview{
+			{driver.IViewCube, 0, 6, 0, 1},
+			{driver.IViewCube, 4, 6, 0, 10},
+			// TODO: Check cube array feature.
+			//{driver.IViewCubeArray, 0, 12, 0, 10},
+		}},
+	}
+	for _, c := range cases {
+		img, err := gpu.NewImage(c.pf, c.size, c.layers, c.levels, c.samples, c.usage)
+		if err != nil {
+			t.Errorf("GPU.NewImage failed: %#v", err)
+			continue
+		}
+		defer img.Destroy()
+		for _, c := range c.iv {
+			iv, err := img.NewView(c.typ, c.layer, c.layers, c.level, c.levels)
+			if err != nil {
+				t.Errorf("Image.NewView failed: %s", err)
+				continue
+			}
+			defer iv.Destroy()
+			if im := iv.Image(); im != img {
+				t.Errorf("ImageView.Image:\nhave %v\nwant %v", im, img)
+			}
+		}
+	}
+}
