@@ -176,15 +176,12 @@ func (s *swapchain) initSwapchain(imageCount int) error {
 	xform := capab.currentTransform
 
 	// Composite alpha.
-	var calpha C.VkCompositeAlphaFlagBitsKHR
-	switch ca := capab.supportedCompositeAlpha; true {
-	case ca&C.VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR != 0:
-		calpha = C.VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR
-	case ca&C.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR != 0:
-		calpha = C.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
-	default:
-		// TODO: Consider choosing whichever is available instead.
-		return driver.ErrCompositor
+	calpha := C.VkCompositeAlphaFlagBitsKHR(1)
+	for range 32 {
+		if C.VkFlags(calpha)&capab.supportedCompositeAlpha != 0 {
+			break
+		}
+		calpha <<= 1
 	}
 
 	// Image format and color space.
