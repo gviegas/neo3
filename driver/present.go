@@ -18,12 +18,6 @@ var ErrCannotPresent = errors.New("driver: presentation not supported")
 // may require a visible window to create a swapchain.
 var ErrWindow = errors.New("driver: window-related error")
 
-// ErrCompositor represents an error related to the compositor.
-// This error usually indicates that the compositor behavior
-// is preventing correct operation. For instance, the driver
-// may require support for opaque composition.
-var ErrCompositor = errors.New("driver: compositor-related error")
-
 // ErrSwapchain represents an error related to a specific
 // swapchain.
 // This error usually indicates that changes to the window or
