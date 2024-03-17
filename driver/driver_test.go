@@ -29,3 +29,21 @@ func TestDrivers(t *testing.T) {
 		}
 	}
 }
+
+func TestDriverName(t *testing.T) {
+	name := drv.Name()
+	if name == "" {
+		t.Error("Driver.Name: name is empty")
+	}
+	drv.Close()
+	if drv.Name() != name {
+		t.Error("Driver.Name: unexpected name after call to Close")
+	}
+	_, err := drv.Open()
+	if err != nil {
+		t.Fatal("Failed to re-Open drv - cannot continue")
+	}
+	if drv.Name() != name {
+		t.Error("Driver.Name: unexpected name after call to Open")
+	}
+}
