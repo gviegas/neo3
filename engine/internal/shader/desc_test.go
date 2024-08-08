@@ -348,9 +348,9 @@ func TestGlobalWrite(t *testing.T) {
 
 	var v, p linear.M4
 	v.Translate(-1, -2, -3)
-	p.Ortho(-1, 1, -1, 1)
+	p.Ortho(-1, 1, -1, 1, -1, 1)
 	rnd := float32(0.25)
-	vport := driver.Viewport{0, 0, 1920, 1080, 0.01, 1000.0}
+	vport := driver.Viewport{0, 0, 600, 360, 0, 1}
 
 	tb.Frame(0).SetV(&v)
 	tb.Frame(0).SetP(&p)
@@ -407,9 +407,9 @@ func TestGlobalWriteN(t *testing.T) {
 
 	var v, p linear.M4
 	v.Translate(-1, -2, -3)
-	p.Ortho(-1, 1, -1, 1)
+	p.Ortho(-1, 1, -1, 1, -1, 1)
 	rnd := float32(0.25)
-	vport := driver.Viewport{0, 0, 1920, 1080, 0.01, 1000.0}
+	vport := driver.Viewport{0, 0, 600, 360, 0, 1}
 
 	tb.Frame(0).SetV(&v)
 	tb.Frame(0).SetP(&p)

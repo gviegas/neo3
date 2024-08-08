@@ -45,7 +45,7 @@ func TestFrameLayout(t *testing.T) {
 	rnd := rand.Float32()
 
 	// [50:56]
-	bnd := driver.Viewport{X: 1, Y: 2, Width: 800, Height: 600, Znear: 0.1, Zfar: 100}
+	bnd := driver.Viewport{X: 64, Y: 32, Width: 800, Height: 600, Znear: 1, Zfar: 1e-6}
 
 	var l FrameLayout
 	l.SetVP(&vp)
@@ -165,7 +165,7 @@ func TestShadowLayout(t *testing.T) {
 
 	// [16:32]
 	var shdw linear.M4
-	shdw.Ortho(-1, 1, -1, 1)
+	shdw.Frustum(-1, 1, -1, 1, 1, 100)
 	shdw.Mul(&linear.M4{{0.5}, {1: -0.5}, {2: 1}, {0.5, 0.5, 0, 1}}, &shdw)
 
 	var l ShadowLayout
