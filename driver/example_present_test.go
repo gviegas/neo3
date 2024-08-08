@@ -20,6 +20,8 @@ import (
 
 const NFrame = 3
 
+const Samples = 4
+
 const DepthFmt = driver.D16un
 
 var dim = driver.Dim3D{
@@ -35,6 +37,8 @@ type T struct {
 	win      wsi.Window
 	sc       driver.Swapchain
 	rt       []driver.ColorTarget
+	rtImg    driver.Image
+	rtView   driver.ImageView
 	ds       driver.DSTarget
 	dsImg    driver.Image
 	dsView   driver.ImageView
@@ -122,21 +126,30 @@ func (t *T) swapchainSetup() {
 	t.sc = sc
 }
 
-// passSetup creates the depth image/view and sets the
-// render targets to be used during render passes.
+// passSetup creates the color and depth images/views and sets
+// the render targets to be used during render passes.
 func (t *T) passSetup() {
+	rtImg, err := gpu.NewImage(t.sc.Format(), dim, 1, 1, Samples, driver.URenderTarget)
+	if err != nil {
+		log.Fatal(err)
+	}
+	rtView, err := rtImg.NewView(driver.IView2D, 0, 1, 0, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
 	scViews := t.sc.Views()
 	rt := make([]driver.ColorTarget, len(scViews))
 	for i := range rt {
 		rt[i] = driver.ColorTarget{
-			Color: scViews[i],
-			Load:  driver.LClear,
-			Store: driver.SStore,
-			Clear: driver.ClearFloat32(0.025, 0.025, 0.025, 1),
+			Color:   rtView,
+			Resolve: scViews[i],
+			Load:    driver.LClear,
+			Store:   driver.SDontCare,
+			Clear:   driver.ClearFloat32(0.025, 0.025, 0.025, 1),
 		}
 	}
 
-	dsImg, err := gpu.NewImage(DepthFmt, dim, 1, 1, 1, driver.URenderTarget)
+	dsImg, err := gpu.NewImage(DepthFmt, dim, 1, 1, Samples, driver.URenderTarget)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -152,6 +165,8 @@ func (t *T) passSetup() {
 	}
 
 	t.rt = rt
+	t.rtImg = rtImg
+	t.rtView = rtView
 	t.ds = ds
 	t.dsImg = dsImg
 	t.dsView = dsView
@@ -415,7 +430,7 @@ func (t *T) pipelineSetup() {
 			Fill:      driver.FFill,
 			DepthBias: false,
 		},
-		Samples: 1,
+		Samples: Samples,
 		DS: driver.DSState{
 			DepthTest:   true,
 			DepthWrite:  true,
@@ -505,9 +520,22 @@ func (t *T) renderLoop() {
 			}
 		}
 
-		// After acquiring a backbuffer that we can use as
-		// render target, we transition it to a valid layout.
+		// The render targets must be in a valid layout when
+		// they are accessed by the GPU.
 		cb.Transition([]driver.Transition{
+			{
+				Barrier: driver.Barrier{
+					SyncBefore:   driver.SColorOutput,
+					SyncAfter:    driver.SColorOutput,
+					AccessBefore: driver.AColorWrite,
+					AccessAfter:  driver.AColorWrite,
+				},
+				LayoutBefore: driver.LUndefined,
+				LayoutAfter:  driver.LColorTarget,
+				Img:          t.rt[next].Color.Image(),
+				Layers:       1,
+				Levels:       1,
+			},
 			{
 				Barrier: driver.Barrier{
 					SyncBefore:  driver.SColorOutput,
@@ -516,7 +544,7 @@ func (t *T) renderLoop() {
 				},
 				LayoutBefore: driver.LUndefined,
 				LayoutAfter:  driver.LColorTarget,
-				Img:          t.rt[next].Color.Image(),
+				Img:          t.rt[next].Resolve.Image(),
 				Layers:       1,
 				Levels:       1,
 			},
@@ -535,8 +563,7 @@ func (t *T) renderLoop() {
 			},
 		})
 
-		// We now record a render pass that draws the cube
-		// in the image view we acquired previously.
+		// Now we can draw the cube.
 		cb.BeginPass(dim.Width, dim.Height, 1, []driver.ColorTarget{t.rt[next]}, &t.ds)
 		cb.SetPipeline(t.pipeln)
 		cb.SetViewport(t.vport)
@@ -546,19 +573,18 @@ func (t *T) renderLoop() {
 		cb.Draw(36, 1, 0, 0)
 		cb.EndPass()
 
-		// When done writing to the image, we transition it
-		// to driver.LPresent so we can present the result.
+		// The backbuffer must be in the driver.LPresent layout
+		// to be presented.
 		cb.Transition([]driver.Transition{
 			{
 				Barrier: driver.Barrier{
 					SyncBefore:   driver.SColorOutput,
 					SyncAfter:    driver.SColorOutput,
 					AccessBefore: driver.AColorWrite,
-					AccessAfter:  driver.AColorRead,
 				},
 				LayoutBefore: driver.LColorTarget,
 				LayoutAfter:  driver.LPresent,
-				Img:          t.rt[next].Color.Image(),
+				Img:          t.rt[next].Resolve.Image(),
 				Layers:       1,
 				Levels:       1,
 			},
@@ -609,6 +635,8 @@ func (t *T) destroy() {
 	t.constBuf.Destroy()
 	t.dsView.Destroy()
 	t.dsImg.Destroy()
+	t.rtView.Destroy()
+	t.rtImg.Destroy()
 	t.sc.Destroy()
 	t.win.Close()
 }
@@ -758,6 +786,7 @@ func (t *T) recreateSwapchain() {
 	for _, wk := range wk {
 		t.ch <- wk
 	}
+
 	var err error
 	pf := t.sc.Format()
 	if err = t.sc.Recreate(); err != nil {
@@ -769,14 +798,30 @@ func (t *T) recreateSwapchain() {
 		// which is expensive.
 		log.Fatal("recreate swapchain mismatch")
 	}
+
 	width := t.win.Width()
 	height := t.win.Height()
 	if dim.Width != width || dim.Height != height {
 		dim.Width = width
 		dim.Height = height
+
+		t.rtView.Destroy()
+		t.rtImg.Destroy()
+		t.rtImg, err = gpu.NewImage(pf, dim, 1, 1, Samples, driver.URenderTarget)
+		if err != nil {
+			log.Fatal(err)
+		}
+		t.rtView, err = t.rtImg.NewView(driver.IView2D, 0, 1, 0, 1)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for i := range t.rt {
+			t.rt[i].Color = t.rtView
+		}
+
 		t.dsView.Destroy()
 		t.dsImg.Destroy()
-		t.dsImg, err = gpu.NewImage(DepthFmt, dim, 1, 1, 1, driver.URenderTarget)
+		t.dsImg, err = gpu.NewImage(DepthFmt, dim, 1, 1, Samples, driver.URenderTarget)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -785,12 +830,14 @@ func (t *T) recreateSwapchain() {
 			log.Fatal(err)
 		}
 		t.ds.DS = t.dsView
+
 		t.vport.Width = float32(width)
 		t.vport.Height = float32(height)
 		t.sciss.Width = width
 		t.sciss.Height = height
 	}
+
 	for i := range t.rt {
-		t.rt[i].Color = scViews[i]
+		t.rt[i].Resolve = scViews[i]
 	}
 }
