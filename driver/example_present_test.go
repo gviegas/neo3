@@ -14,6 +14,7 @@ import (
 	"unsafe"
 
 	"gviegas/neo3/driver"
+	"gviegas/neo3/linear"
 	"gviegas/neo3/wsi"
 )
 
@@ -49,7 +50,7 @@ type T struct {
 	pipeln   driver.Pipeline
 	vport    driver.Viewport
 	sciss    driver.Scissor
-	xform    M
+	xform    linear.M4
 	angle    float32
 	quit     bool
 }
@@ -218,7 +219,7 @@ func (t *T) bufferSetup() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	t.xform.identity()
+	t.xform.I()
 	copy(constBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), len(t.xform)*4))
 
 	t.vertBuf = vertBuf
@@ -702,127 +703,10 @@ var cubeTexCoord = [36 * 2]float32{
 	1, 0,
 }
 
-// Vector.
-type V [3]float32
-
-func (v *V) normalize() {
-	length := float32(math.Sqrt(float64(v.dot(v))))
-	for i := range v {
-		v[i] /= length
-	}
-}
-
-func (v *V) dot(u *V) float32 {
-	d := float32(0)
-	for i := range v {
-		d += v[i] * u[i]
-	}
-	return d
-}
-
-func (v *V) cross(v1, v2 *V) {
-	v[0] = v1[1]*v2[2] - v1[2]*v2[1]
-	v[1] = v1[2]*v2[0] - v1[0]*v2[2]
-	v[2] = v1[0]*v2[1] - v1[1]*v2[0]
-}
-
-func (v *V) subtract(v1, v2 *V) {
-	for i := range v {
-		v[i] = v1[i] - v2[i]
-	}
-}
-
-// Matrix.
-type M [16]float32
-
-func (m *M) identity() {
-	*m = M{
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1,
-	}
-}
-
-func (m *M) multiply(m1, m2 *M) {
-	m.identity()
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
-			m[4*i+j] = 0
-			for k := 0; k < 4; k++ {
-				m[4*i+j] += m1[4*k+j] * m2[4*i+k]
-			}
-		}
-	}
-}
-
-func (m *M) frustum(left, right, top, bottom, znear, zfar float32) {
-	*m = M{}
-	m[0] = 2 * znear / (right - left)
-	m[5] = 2 * znear / (bottom - top)
-	m[8] = -(right + left) / (right - left)
-	m[9] = -(bottom + top) / (bottom - top)
-	m[10] = zfar / (zfar - znear)
-	m[11] = 1
-	m[14] = -(zfar * znear) / (zfar - znear)
-}
-
-func (m *M) lookAt(center, eye, up *V) {
-	var f, s, u V
-	f.subtract(center, eye)
-	f.normalize()
-	s.cross(&f, up)
-	s.normalize()
-	u.cross(&f, &s)
-	m[0] = s[0]
-	m[1] = u[0]
-	m[2] = f[0]
-	m[3] = 0
-	m[4] = s[1]
-	m[5] = u[1]
-	m[6] = f[1]
-	m[7] = 0
-	m[8] = s[2]
-	m[9] = u[2]
-	m[10] = f[2]
-	m[11] = 0
-	m[12] = -s.dot(eye)
-	m[13] = -u.dot(eye)
-	m[14] = -f.dot(eye)
-	m[15] = 1
-}
-
-func (m *M) rotate(axis *V, angle float32) {
-	m.identity()
-	cos := float32(math.Cos(float64(angle)))
-	sin := float32(math.Sin(float64(angle)))
-	v := *axis
-	v.normalize()
-	xx := v[0] * v[0]
-	xy := v[0] * v[1]
-	xz := v[0] * v[2]
-	yy := v[1] * v[1]
-	yz := v[1] * v[2]
-	zz := v[2] * v[2]
-	icos := 1 - cos
-	sinx := sin * v[0]
-	siny := sin * v[1]
-	sinz := sin * v[2]
-	m[0] = cos + icos*xx
-	m[1] = icos*xy + sinz
-	m[2] = icos*xz - siny
-	m[4] = icos*xy - sinz
-	m[5] = cos + icos*yy
-	m[6] = icos*yz + sinx
-	m[8] = icos*xz + siny
-	m[9] = icos*yz - sinx
-	m[10] = cos + icos*zz
-}
-
 // updateTransform is called every frame to update the
 // transform matrix used by the cube.
 func (t *T) updateTransform(dt time.Duration) {
-	var proj, view, model, vp M
+	var proj, view, model, vp linear.M4
 
 	w := float32(t.win.Width())
 	h := float32(t.win.Height())
@@ -831,22 +715,22 @@ func (t *T) updateTransform(dt time.Duration) {
 	} else {
 		w, h = 1, h/w
 	}
-	proj.frustum(-w, w, -h, h, 1, 100)
+	proj.Frustum(-w, w, -h, h, 1, 100)
 
-	eye := V{2, -3, -4}
-	center := V{0}
-	up := V{0, -1, 0}
-	view.lookAt(&center, &eye, &up)
+	eye := linear.V3{2, -3, -4}
+	center := linear.V3{0}
+	up := linear.V3{0, 1, 0}
+	view.LookAt(&center, &eye, &up)
 
 	axis := &up
-	model.rotate(axis, t.angle)
+	model.Rotate(t.angle, axis)
 	t.angle += float32(dt.Seconds()) * 5
 	if t.angle > 2*math.Pi {
 		t.angle = t.angle - 2*math.Pi
 	}
 
-	vp.multiply(&proj, &view)
-	t.xform.multiply(&vp, &model)
+	vp.Mul(&proj, &view)
+	t.xform.Mul(&vp, &model)
 }
 
 func (t *T) WindowClose(win wsi.Window) {
