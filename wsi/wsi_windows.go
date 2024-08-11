@@ -30,7 +30,7 @@ func initWin32() error {
 	if hinst = C.GetModuleHandle(nil); hinst == nil {
 		return errors.New("wsi: failed to obtain Win32 instance handle")
 	}
-	className = stringToLPCWSTR("scene/wsi")
+	className = stringToLPCWSTR("neo3/wsi")
 	wc := C.WNDCLASS{
 		style:         C.CS_HREDRAW | C.CS_VREDRAW,
 		lpfnWndProc:   C.WNDPROC(C.wndProcWrapper),
