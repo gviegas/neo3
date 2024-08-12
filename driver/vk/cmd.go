@@ -1253,7 +1253,7 @@ func convSync(sync driver.Sync) C.VkPipelineStageFlags2KHR {
 			flags |= C.VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT_KHR
 		}
 		if sync&driver.SVertexShading != 0 {
-			flags |= C.VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT_KHR
+			flags |= C.VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR
 		}
 		if sync&driver.SFragmentShading != 0 {
 			flags |= C.VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR
@@ -1262,7 +1262,7 @@ func convSync(sync driver.Sync) C.VkPipelineStageFlags2KHR {
 			flags |= C.VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT_KHR
 			flags |= C.VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT_KHR
 		}
-		// Render pass resolve for depth/stencil happen in
+		// Render pass resolve for depth/stencil happens in
 		// this stage, including reads from the MS attachment.
 		// Exposing driver.SResolve seems less error-prone
 		// than expecting one to synchronize a DS view with
@@ -1297,7 +1297,10 @@ func convAccess(acc driver.Access) C.VkAccessFlags2KHR {
 			flags |= C.VK_ACCESS_2_INDEX_READ_BIT_KHR
 		}
 		if acc&driver.AShaderRead != 0 {
+			// TODO: Consider defining separate access
+			// scopes for these.
 			flags |= C.VK_ACCESS_2_SHADER_READ_BIT_KHR
+			flags |= C.VK_ACCESS_2_UNIFORM_READ_BIT
 		}
 		if acc&(driver.AColorRead|driver.AResolveRead) != 0 {
 			flags |= C.VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT_KHR
