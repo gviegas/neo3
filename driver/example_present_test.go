@@ -18,11 +18,11 @@ import (
 	"gviegas/neo3/wsi"
 )
 
-const NFrame = 3
-
-const Samples = 4
-
-const DepthFmt = driver.D16un
+const (
+	NFrame   = 3
+	Samples  = 4
+	DepthFmt = driver.D16un
+)
 
 var dim = driver.Dim3D{
 	Width:  768,
@@ -44,6 +44,7 @@ type T struct {
 	dsView   driver.ImageView
 	vertFunc driver.ShaderFunc
 	fragFunc driver.ShaderFunc
+	stgBuf   driver.Buffer
 	vertBuf  driver.Buffer
 	constBuf driver.Buffer
 	splImg   driver.Image
@@ -218,25 +219,54 @@ func (t *T) shaderSetup() {
 // bufferSetup creates the vertex buffer to store vertex data
 // and the constant buffer to store shader constants (uniforms).
 func (t *T) bufferSetup() {
-	// Since vertex data is not going to change, we could have
-	// created the buffer as GPU private instead and used a
-	// staging buffer to do the copying.
-	vertBuf, err := gpu.NewBuffer(1024, true, driver.UVertexData)
+	const (
+		vbSize = cubePosSize + cubeUVSize
+		cbSize = int64(512 * NFrame)
+		sbSize = max(vbSize, cbSize)
+	)
+	stgBuf, err := gpu.NewBuffer(sbSize, true, driver.UCopySrc)
 	if err != nil {
 		log.Fatal(err)
 	}
-	copy(vertBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&cubePos[0])), len(cubePos)*4))
-	copy(vertBuf.Bytes()[512:], unsafe.Slice((*byte)(unsafe.Pointer(&cubeTexCoord[0])), len(cubeTexCoord)*4))
-
-	// Shader data is going to change every frame, so it makes
-	// more sense to have it as CPU visible.
-	constBuf, err := gpu.NewBuffer(512*NFrame, true, driver.UShaderConst)
+	vertBuf, err := gpu.NewBuffer(vbSize, false, driver.UCopyDst|driver.UVertexData)
 	if err != nil {
 		log.Fatal(err)
 	}
-	t.xform.I()
-	copy(constBuf.Bytes(), unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), len(t.xform)*4))
+	constBuf, err := gpu.NewBuffer(cbSize, false, driver.UCopyDst|driver.UShaderConst)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	// Since vertex data is not going to change,
+	// we can copy it upfront.
+	stg := stgBuf.Bytes()
+	pos := unsafe.Slice((*byte)(unsafe.Pointer(&cubePos[0])), cubePosSize)
+	uv := unsafe.Slice((*byte)(unsafe.Pointer(&cubeUV[0])), cubeUVSize)
+	copy(stg, pos)
+	copy(stg[cubePosSize:], uv)
+	if err := t.cb[0].Begin(); err != nil {
+		log.Fatal(err)
+	}
+	t.cb[0].CopyBuffer(&driver.BufferCopy{
+		From:    stgBuf,
+		FromOff: 0,
+		To:      vertBuf,
+		ToOff:   0,
+		Size:    vbSize,
+	})
+	if err := t.cb[0].End(); err != nil {
+		log.Fatal(err)
+	}
+	wk := driver.WorkItem{Work: []driver.CmdBuffer{t.cb[0]}}
+	ch := make(chan *driver.WorkItem)
+	if err := gpu.Commit(&wk, ch); err != nil {
+		log.Fatal(err)
+	}
+	if err := (<-ch).Err; err != nil {
+		log.Fatal(err)
+	}
+
+	t.stgBuf = stgBuf
 	t.vertBuf = vertBuf
 	t.constBuf = constBuf
 }
@@ -286,19 +316,17 @@ func (t *T) samplingSetup() {
 	if err = t.cb[0].Begin(); err != nil {
 		log.Fatal(err)
 	}
-	t.cb[0].Transition([]driver.Transition{
-		{
-			Barrier: driver.Barrier{
-				SyncAfter:   driver.SCopy,
-				AccessAfter: driver.ACopyWrite,
-			},
-			LayoutBefore: driver.LUndefined,
-			LayoutAfter:  driver.LCopyDst,
-			Img:          img,
-			Layers:       1,
-			Levels:       1,
+	t.cb[0].Transition([]driver.Transition{{
+		Barrier: driver.Barrier{
+			SyncAfter:   driver.SCopy,
+			AccessAfter: driver.ACopyWrite,
 		},
-	})
+		LayoutBefore: driver.LUndefined,
+		LayoutAfter:  driver.LCopyDst,
+		Img:          img,
+		Layers:       1,
+		Levels:       1,
+	}})
 	t.cb[0].CopyBufToImg(&driver.BufImgCopy{
 		Buf:     buf,
 		RowStrd: size.Width,
@@ -307,19 +335,17 @@ func (t *T) samplingSetup() {
 		Size:    size,
 		Layers:  1,
 	})
-	t.cb[0].Transition([]driver.Transition{
-		{
-			Barrier: driver.Barrier{
-				SyncBefore:   driver.SCopy,
-				AccessBefore: driver.ACopyWrite,
-			},
-			LayoutBefore: driver.LCopyDst,
-			LayoutAfter:  driver.LShaderRead,
-			Img:          img,
-			Layers:       1,
-			Levels:       1,
+	t.cb[0].Transition([]driver.Transition{{
+		Barrier: driver.Barrier{
+			SyncBefore:   driver.SCopy,
+			AccessBefore: driver.ACopyWrite,
 		},
-	})
+		LayoutBefore: driver.LCopyDst,
+		LayoutAfter:  driver.LShaderRead,
+		Img:          img,
+		Layers:       1,
+		Levels:       1,
+	}})
 	if err := t.cb[0].End(); err != nil {
 		log.Fatal(err)
 	}
@@ -439,12 +465,10 @@ func (t *T) pipelineSetup() {
 		},
 		Blend: driver.BlendState{
 			IndependentBlend: false,
-			Color: []driver.ColorBlend{
-				{
-					Blend:     false,
-					WriteMask: driver.CAll,
-				},
-			},
+			Color: []driver.ColorBlend{{
+				Blend:     false,
+				WriteMask: driver.CAll,
+			}},
 		},
 		ColorFmt: []driver.PixelFmt{t.sc.Format()},
 		DSFmt:    DepthFmt,
@@ -460,9 +484,8 @@ func (t *T) pipelineSetup() {
 // renderLoop renders the cube in a loop.
 func (t *T) renderLoop() {
 	var err error
-	var frame int
 	for i := 0; i < cap(t.ch); i++ {
-		wk := &driver.WorkItem{Work: []driver.CmdBuffer{t.cb[i]}}
+		wk := &driver.WorkItem{Work: []driver.CmdBuffer{t.cb[i]}, Custom: i}
 		t.ch <- wk
 	}
 	t0 := time.Now()
@@ -478,6 +501,7 @@ func (t *T) renderLoop() {
 			}
 		}
 		cb := wk.Work[0]
+		frame := wk.Custom.(int)
 
 		wsi.Dispatch()
 		if brokenSC {
@@ -487,11 +511,6 @@ func (t *T) renderLoop() {
 
 		dt := t1.Sub(t0)
 		t0, t1 = t1, time.Now()
-
-		// Note that, as long as we use the same buffer range,
-		// we need not set the descriptor heap again.
-		t.updateTransform(dt)
-		copy(t.constBuf.Bytes()[512*frame:], unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
 
 		// Begin must come before anything else.
 		if err = cb.Begin(); err != nil {
@@ -519,6 +538,29 @@ func (t *T) renderLoop() {
 				log.Fatal(err)
 			}
 		}
+
+		// Update per-frame constant data and copy it into the
+		// GPU private buffer.
+		// Note that, as long as we use the same buffer range,
+		// we need not set the descriptor heap again.
+		t.updateTransform(dt)
+		copy(t.stgBuf.Bytes()[512*frame:], unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
+		cb.CopyBuffer(&driver.BufferCopy{
+			From:    t.stgBuf,
+			FromOff: int64(512 * frame),
+			To:      t.constBuf,
+			ToOff:   int64(512 * frame),
+			Size:    64,
+		})
+
+		// Make sure that the above copy happens before the
+		// vertex shader executes.
+		cb.Barrier([]driver.Barrier{{
+			SyncBefore:   driver.SCopy,
+			SyncAfter:    driver.SVertexShading,
+			AccessBefore: driver.ACopyWrite,
+			AccessAfter:  driver.AShaderRead,
+		}})
 
 		// The render targets must be in a valid layout when
 		// they are accessed by the GPU.
@@ -568,27 +610,25 @@ func (t *T) renderLoop() {
 		cb.SetPipeline(t.pipeln)
 		cb.SetViewport(t.vport)
 		cb.SetScissor(t.sciss)
-		cb.SetVertexBuf(0, []driver.Buffer{t.vertBuf, t.vertBuf}, []int64{0, 512})
+		cb.SetVertexBuf(0, []driver.Buffer{t.vertBuf, t.vertBuf}, []int64{0, cubePosSize})
 		cb.SetDescTableGraph(t.dtab, 0, []int{frame})
 		cb.Draw(36, 1, 0, 0)
 		cb.EndPass()
 
 		// The backbuffer must be in the driver.LPresent layout
 		// to be presented.
-		cb.Transition([]driver.Transition{
-			{
-				Barrier: driver.Barrier{
-					SyncBefore:   driver.SColorOutput,
-					SyncAfter:    driver.SColorOutput,
-					AccessBefore: driver.AColorWrite,
-				},
-				LayoutBefore: driver.LColorTarget,
-				LayoutAfter:  driver.LPresent,
-				Img:          t.rt[next].Resolve.Image(),
-				Layers:       1,
-				Levels:       1,
+		cb.Transition([]driver.Transition{{
+			Barrier: driver.Barrier{
+				SyncBefore:   driver.SColorOutput,
+				SyncAfter:    driver.SColorOutput,
+				AccessBefore: driver.AColorWrite,
 			},
-		})
+			LayoutBefore: driver.LColorTarget,
+			LayoutAfter:  driver.LPresent,
+			Img:          t.rt[next].Resolve.Image(),
+			Layers:       1,
+			Levels:       1,
+		}})
 
 		// End must be called when done recording commands.
 		if err := cb.End(); err != nil {
@@ -613,7 +653,6 @@ func (t *T) renderLoop() {
 
 		// We are done with this frame, so start working on
 		// the next one.
-		frame = (frame + 1) % NFrame
 	}
 	for range cap(t.ch) {
 		<-t.ch
@@ -631,6 +670,7 @@ func (t *T) destroy() {
 	t.splView.Destroy()
 	t.splImg.Destroy()
 	t.splr.Destroy()
+	t.stgBuf.Destroy()
 	t.vertBuf.Destroy()
 	t.constBuf.Destroy()
 	t.dsView.Destroy()
@@ -686,8 +726,8 @@ var cubePos = [36 * 3]float32{
 	+1, -1, -1,
 }
 
-// Cube texture coordinates.
-var cubeTexCoord = [36 * 2]float32{
+// Cube UVs.
+var cubeUV = [36 * 2]float32{
 	0, 1,
 	1, 0,
 	1, 1,
@@ -730,6 +770,11 @@ var cubeTexCoord = [36 * 2]float32{
 	1, 1,
 	1, 0,
 }
+
+const (
+	cubePosSize = int64(unsafe.Sizeof(cubePos))
+	cubeUVSize  = int64(unsafe.Sizeof(cubeUV))
+)
 
 // updateTransform is called every frame to update the
 // transform matrix used by the cube.
