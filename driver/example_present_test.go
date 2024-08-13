@@ -46,6 +46,7 @@ type T struct {
 	fragFunc driver.ShaderFunc
 	stgBuf   driver.Buffer
 	vertBuf  driver.Buffer
+	idxBuf   driver.Buffer
 	constBuf driver.Buffer
 	splImg   driver.Image
 	splView  driver.ImageView
@@ -216,13 +217,14 @@ func (t *T) shaderSetup() {
 	}
 }
 
-// bufferSetup creates the vertex buffer to store vertex data
-// and the constant buffer to store shader constants (uniforms).
+// bufferSetup creates GPU buffers to store vertex, index and
+// constant data.
 func (t *T) bufferSetup() {
 	const (
 		vbSize = cubePosSize + cubeUVSize
+		ibSize = cubeIdxSize
 		cbSize = int64(512 * NFrame)
-		sbSize = max(vbSize, cbSize)
+		sbSize = max(vbSize+ibSize, cbSize)
 	)
 	stgBuf, err := gpu.NewBuffer(sbSize, true, driver.UCopySrc)
 	if err != nil {
@@ -232,18 +234,24 @@ func (t *T) bufferSetup() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	idxBuf, err := gpu.NewBuffer(ibSize, false, driver.UCopyDst|driver.UIndexData)
+	if err != nil {
+		log.Fatal(err)
+	}
 	constBuf, err := gpu.NewBuffer(cbSize, false, driver.UCopyDst|driver.UShaderConst)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Since vertex data is not going to change,
+	// Since vertex/index data is not going to change,
 	// we can copy it upfront.
 	stg := stgBuf.Bytes()
 	pos := unsafe.Slice((*byte)(unsafe.Pointer(&cubePos[0])), cubePosSize)
 	uv := unsafe.Slice((*byte)(unsafe.Pointer(&cubeUV[0])), cubeUVSize)
+	idx := unsafe.Slice((*byte)(unsafe.Pointer(&cubeIdx[0])), cubeIdxSize)
 	copy(stg, pos)
 	copy(stg[cubePosSize:], uv)
+	copy(stg[vbSize:], idx)
 	if err := t.cb[0].Begin(); err != nil {
 		log.Fatal(err)
 	}
@@ -253,6 +261,13 @@ func (t *T) bufferSetup() {
 		To:      vertBuf,
 		ToOff:   0,
 		Size:    vbSize,
+	})
+	t.cb[0].CopyBuffer(&driver.BufferCopy{
+		From:    stgBuf,
+		FromOff: vbSize,
+		To:      idxBuf,
+		ToOff:   0,
+		Size:    ibSize,
 	})
 	if err := t.cb[0].End(); err != nil {
 		log.Fatal(err)
@@ -268,6 +283,7 @@ func (t *T) bufferSetup() {
 
 	t.stgBuf = stgBuf
 	t.vertBuf = vertBuf
+	t.idxBuf = idxBuf
 	t.constBuf = constBuf
 }
 
@@ -611,8 +627,9 @@ func (t *T) renderLoop() {
 		cb.SetViewport(t.vport)
 		cb.SetScissor(t.sciss)
 		cb.SetVertexBuf(0, []driver.Buffer{t.vertBuf, t.vertBuf}, []int64{0, cubePosSize})
+		cb.SetIndexBuf(driver.Index32, t.idxBuf, 0)
 		cb.SetDescTableGraph(t.dtab, 0, []int{frame})
-		cb.Draw(36, 1, 0, 0)
+		cb.DrawIndexed(len(cubeIdx), 1, 0, 0, 0)
 		cb.EndPass()
 
 		// The backbuffer must be in the driver.LPresent layout
@@ -672,6 +689,7 @@ func (t *T) destroy() {
 	t.splr.Destroy()
 	t.stgBuf.Destroy()
 	t.vertBuf.Destroy()
+	t.idxBuf.Destroy()
 	t.constBuf.Destroy()
 	t.dsView.Destroy()
 	t.dsImg.Destroy()
@@ -682,98 +700,91 @@ func (t *T) destroy() {
 }
 
 // Cube positions.
-var cubePos = [36 * 3]float32{
-	-1, +1, -1,
-	+1, +1, +1,
-	+1, +1, -1,
-	+1, +1, +1,
+var cubePos = [24 * 3]float32{
 	-1, -1, +1,
-	+1, -1, +1,
-
+	-1, -1, -1,
+	-1, +1, -1,
 	-1, +1, +1,
-	-1, -1, -1,
-	-1, -1, +1,
-	+1, -1, -1,
-	-1, -1, +1,
-	-1, -1, -1,
 
-	+1, +1, -1,
-	+1, -1, +1,
 	+1, -1, -1,
-	-1, +1, -1,
+	+1, -1, +1,
+	+1, +1, +1,
+	+1, +1, -1,
+
+	-1, -1, +1,
+	+1, -1, +1,
 	+1, -1, -1,
 	-1, -1, -1,
 
 	-1, +1, -1,
-	-1, +1, +1,
+	+1, +1, -1,
 	+1, +1, +1,
-	+1, +1, +1,
 	-1, +1, +1,
-	-1, -1, +1,
 
-	-1, +1, +1,
-	-1, +1, -1,
 	-1, -1, -1,
 	+1, -1, -1,
+	+1, +1, -1,
+	-1, +1, -1,
+
 	+1, -1, +1,
 	-1, -1, +1,
-
-	+1, +1, -1,
+	-1, +1, +1,
 	+1, +1, +1,
-	+1, -1, +1,
-	-1, +1, -1,
-	+1, +1, -1,
-	+1, -1, -1,
 }
 
 // Cube UVs.
-var cubeUV = [36 * 2]float32{
+var cubeUV = [24 * 2]float32{
 	0, 1,
-	1, 0,
 	1, 1,
-	1, 1,
-	0, 0,
 	1, 0,
-
-	0, 1,
-	1, 0,
-	0, 0,
-	1, 1,
-	0, 0,
-	0, 1,
-
-	1, 1,
-	0, 0,
-	1, 0,
-	0, 1,
-	1, 0,
-	0, 0,
-
-	0, 1,
-	0, 0,
-	1, 0,
-	1, 1,
-	0, 1,
 	0, 0,
 
 	0, 1,
 	1, 1,
 	1, 0,
+	0, 0,
+
+	0, 1,
 	1, 1,
 	1, 0,
 	0, 0,
 
-	1, 1,
-	0, 1,
-	0, 0,
 	0, 1,
 	1, 1,
 	1, 0,
+	0, 0,
+
+	0, 1,
+	1, 1,
+	1, 0,
+	0, 0,
+
+	0, 1,
+	1, 1,
+	1, 0,
+	0, 0,
+}
+
+// Cube indices.
+var cubeIdx = [36]uint32{
+	0, 1, 2,
+	0, 2, 3,
+	4, 5, 6,
+	4, 6, 7,
+	8, 9, 10,
+	8, 10, 11,
+	12, 13, 14,
+	12, 14, 15,
+	16, 17, 18,
+	16, 18, 19,
+	20, 21, 22,
+	20, 22, 23,
 }
 
 const (
 	cubePosSize = int64(unsafe.Sizeof(cubePos))
 	cubeUVSize  = int64(unsafe.Sizeof(cubeUV))
+	cubeIdxSize = int64(unsafe.Sizeof(cubeIdx))
 )
 
 // updateTransform is called every frame to update the
@@ -790,7 +801,7 @@ func (t *T) updateTransform(dt time.Duration) {
 	}
 	proj.Frustum(-w, w, -h, h, 1, 100)
 
-	eye := linear.V3{2, -3, -4}
+	eye := linear.V3{2, 3, -4}
 	center := linear.V3{0}
 	up := linear.V3{0, 1, 0}
 	view.LookAt(&center, &eye, &up)
