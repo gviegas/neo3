@@ -223,7 +223,7 @@ func (t *T) bufferSetup() {
 	const (
 		vbSize = cubePosSize + cubeUVSize
 		ibSize = cubeIdxSize
-		cbSize = int64(512 * NFrame)
+		cbSize = int64(256 * NFrame)
 		sbSize = max(vbSize+ibSize, cbSize)
 	)
 	stgBuf, err := gpu.NewBuffer(sbSize, true, driver.UCopySrc)
@@ -437,7 +437,7 @@ func (t *T) descriptorSetup() {
 		log.Fatal(err)
 	}
 	for i := 0; i < NFrame; i++ {
-		dheap.SetBuffer(i, 0, 0, []driver.Buffer{t.constBuf}, []int64{int64(512 * i)}, []int64{64})
+		dheap.SetBuffer(i, 0, 0, []driver.Buffer{t.constBuf}, []int64{int64(256 * i)}, []int64{64})
 		dheap.SetImage(i, 1, 0, []driver.ImageView{t.splView}, nil)
 		dheap.SetSampler(i, 2, 0, []driver.Sampler{t.splr})
 	}
@@ -560,12 +560,12 @@ func (t *T) renderLoop() {
 		// Note that, as long as we use the same buffer range,
 		// we need not set the descriptor heap again.
 		t.updateTransform(dt)
-		copy(t.stgBuf.Bytes()[512*frame:], unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
+		copy(t.stgBuf.Bytes()[256*frame:], unsafe.Slice((*byte)(unsafe.Pointer(&t.xform[0])), 64))
 		cb.CopyBuffer(&driver.BufferCopy{
 			From:    t.stgBuf,
-			FromOff: int64(512 * frame),
+			FromOff: int64(256 * frame),
 			To:      t.constBuf,
-			ToOff:   int64(512 * frame),
+			ToOff:   int64(256 * frame),
 			Size:    64,
 		})
 
