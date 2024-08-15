@@ -31,7 +31,7 @@ func (tex *Texture) check(t *testing.T) {
 
 func Test2D(t *testing.T) {
 	tex, err := New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -60,7 +60,7 @@ func Test2D(t *testing.T) {
 
 	// Depth must be 0.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -79,7 +79,7 @@ func Test2D(t *testing.T) {
 
 	// Layers must be greater than 0.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -98,7 +98,7 @@ func Test2D(t *testing.T) {
 
 	// Levels must be greater than 0.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -117,7 +117,7 @@ func Test2D(t *testing.T) {
 
 	// Samples must be greater than 0.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -136,7 +136,7 @@ func Test2D(t *testing.T) {
 
 	// Width must be no greater than the driver-imposed limit.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1 + ctxt.Limits().MaxImage2D,
 			Height: 1024,
@@ -155,7 +155,7 @@ func Test2D(t *testing.T) {
 
 	// Height must be no greater than the driver-imposed limit.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1 + ctxt.Limits().MaxImage2D,
@@ -174,7 +174,7 @@ func Test2D(t *testing.T) {
 
 	// Layers must be no greater than the driver-imposed limit.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -193,7 +193,7 @@ func Test2D(t *testing.T) {
 
 	// Levels must be less than 1 + log₂(maxDim).
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -212,7 +212,7 @@ func Test2D(t *testing.T) {
 
 	// Samples must be a power of two.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -231,7 +231,7 @@ func Test2D(t *testing.T) {
 
 	// Either Levels or Samples must be 1.
 	_, err = New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -251,7 +251,7 @@ func Test2D(t *testing.T) {
 
 func TestCube(t *testing.T) {
 	tex, err := NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -280,7 +280,7 @@ func TestCube(t *testing.T) {
 
 	// Depth must be 0.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -299,7 +299,7 @@ func TestCube(t *testing.T) {
 
 	// Layers must be greater than 0.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -318,7 +318,7 @@ func TestCube(t *testing.T) {
 
 	// Levels must be greater than 0.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -337,7 +337,7 @@ func TestCube(t *testing.T) {
 
 	// Width must be no greater than the driver-imposed limit.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1 + ctxt.Limits().MaxImageCube,
 			Height: 1024,
@@ -356,7 +356,7 @@ func TestCube(t *testing.T) {
 
 	// Height must be no greater than the driver-imposed limit.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1 + ctxt.Limits().MaxImageCube,
@@ -375,7 +375,7 @@ func TestCube(t *testing.T) {
 
 	// Width and Height must be equal.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 512,
@@ -394,7 +394,7 @@ func TestCube(t *testing.T) {
 
 	// Layers must be no greater than the driver-imposed limit.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -413,7 +413,7 @@ func TestCube(t *testing.T) {
 
 	// Layers must be a multiple of 6.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -432,7 +432,7 @@ func TestCube(t *testing.T) {
 
 	// Levels must be less than 1 + log₂(maxDim).
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -451,7 +451,7 @@ func TestCube(t *testing.T) {
 
 	// Samples must be 1.
 	_, err = NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1024,
 			Height: 1024,
@@ -471,7 +471,7 @@ func TestCube(t *testing.T) {
 
 func TestTarget(t *testing.T) {
 	tex, err := NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -500,7 +500,7 @@ func TestTarget(t *testing.T) {
 
 	// Depth must be 0.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -519,7 +519,7 @@ func TestTarget(t *testing.T) {
 
 	// Layers must be greater than 0.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -538,7 +538,7 @@ func TestTarget(t *testing.T) {
 
 	// Levels must be greater than 0.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -557,7 +557,7 @@ func TestTarget(t *testing.T) {
 
 	// Samples must be greater than 0.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -576,7 +576,7 @@ func TestTarget(t *testing.T) {
 
 	// Width must be no greater than the driver-imposed limit.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1 + ctxt.Limits().MaxRenderSize[0],
 			Height: 720,
@@ -595,7 +595,7 @@ func TestTarget(t *testing.T) {
 
 	// Height must be no greater than the driver-imposed limit.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 1 + ctxt.Limits().MaxRenderSize[1],
@@ -614,7 +614,7 @@ func TestTarget(t *testing.T) {
 
 	// Layers must be no greater than the driver-imposed limit.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -633,7 +633,7 @@ func TestTarget(t *testing.T) {
 
 	// Levels must be less than 1 + log₂(maxDim).
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -652,7 +652,7 @@ func TestTarget(t *testing.T) {
 
 	// Samples must be a power of two.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -671,7 +671,7 @@ func TestTarget(t *testing.T) {
 
 	// Either Levels or Samples must be 1.
 	_, err = NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D: driver.Dim3D{
 			Width:  1280,
 			Height: 720,
@@ -831,7 +831,7 @@ func TestTextureFree(t *testing.T) {
 	texs := make([]*Texture, 0, 4)
 	for i, x := range [4]TexParam{
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D: driver.Dim3D{
 				Width:  1024,
 				Height: 1024,
@@ -842,7 +842,7 @@ func TestTextureFree(t *testing.T) {
 			Samples: 1,
 		},
 		{
-			PixelFmt: driver.RGBA8sRGB,
+			PixelFmt: driver.RGBA8SRGB,
 			Dim3D: driver.Dim3D{
 				Width:  512,
 				Height: 512,
@@ -853,7 +853,7 @@ func TestTextureFree(t *testing.T) {
 			Samples: 1,
 		},
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D: driver.Dim3D{
 				Width:  1024,
 				Height: 1024,
@@ -864,7 +864,7 @@ func TestTextureFree(t *testing.T) {
 			Samples: 1,
 		},
 		{
-			PixelFmt: driver.RGBA16f,
+			PixelFmt: driver.RGBA16Float,
 			Dim3D: driver.Dim3D{
 				Width:  1920,
 				Height: 1080,
@@ -1081,49 +1081,49 @@ func TestViewCopy(t *testing.T) {
 	// One layer.
 	for _, param := range [...]TexParam{
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{256, 256, 0},
 			Layers:   1,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{512, 512, 0},
 			Layers:   1,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8sRGB,
+			PixelFmt: driver.RGBA8SRGB,
 			Dim3D:    driver.Dim3D{256, 256, 0},
 			Layers:   1,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{1024, 1024, 0},
 			Layers:   1,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{1024, 1024, 0},
 			Layers:   10,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{2048, 2048, 0},
 			Layers:   6,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{800, 600, 0},
 			Layers:   2,
 			Levels:   1,
@@ -1159,21 +1159,21 @@ func TestViewCopy(t *testing.T) {
 	// Each layer.
 	for _, param := range [...]TexParam{
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{1024, 1024, 0},
 			Layers:   5,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8sRGB,
+			PixelFmt: driver.RGBA8SRGB,
 			Dim3D:    driver.Dim3D{256, 256, 0},
 			Layers:   2,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{1600, 900, 0},
 			Layers:   8,
 			Levels:   1,
@@ -1212,14 +1212,14 @@ func TestViewCopy(t *testing.T) {
 	// Layer array.
 	for _, param := range [...]TexParam{
 		{
-			PixelFmt: driver.RGBA8un,
+			PixelFmt: driver.RGBA8Unorm,
 			Dim3D:    driver.Dim3D{1024, 1024, 0},
 			Layers:   6,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
-			PixelFmt: driver.RGBA8sRGB,
+			PixelFmt: driver.RGBA8SRGB,
 			Dim3D:    driver.Dim3D{2048, 1024, 0},
 			Layers:   3,
 			Levels:   1,
@@ -1257,7 +1257,7 @@ func TestViewCopy(t *testing.T) {
 
 func TestViewCopyPending(t *testing.T) {
 	param := TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{1024, 512, 0},
 		Layers:   1,
 		Levels:   1,
@@ -1324,7 +1324,7 @@ func TestViewCopyPending(t *testing.T) {
 
 func TestViewCopyPendingNoPanic(t *testing.T) {
 	param := TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{1024, 512, 0},
 		Layers:   1,
 		Levels:   1,
@@ -1383,7 +1383,7 @@ func TestCommitStaging(t *testing.T) {
 	concCommit()
 
 	param := TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{1024, 1024, 0},
 		Layers:   1,
 		Levels:   1,
@@ -1486,7 +1486,7 @@ func TestCommitStaging(t *testing.T) {
 
 func TestTransition(t *testing.T) {
 	tex1, err := NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{1024, 768, 0},
 		Layers:   3,
 		Levels:   1,
@@ -1496,7 +1496,7 @@ func TestTransition(t *testing.T) {
 		t.Fatalf("NewTarget failed:\n%#v", err)
 	}
 	tex2, err := NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{256, 256, 0},
 		Layers:   6,
 		Levels:   1,
@@ -1596,7 +1596,7 @@ func TestTransition(t *testing.T) {
 
 func TestTransitionPanic(t *testing.T) {
 	tex, err := NewTarget(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{1024, 768, 0},
 		Layers:   10,
 		Levels:   1,
@@ -1649,7 +1649,7 @@ func TestTransitionPanic(t *testing.T) {
 
 func TestSetLayoutPanic(t *testing.T) {
 	tex, err := NewCube(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{512, 512, 0},
 		Layers:   12,
 		Levels:   1,

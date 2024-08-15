@@ -195,15 +195,16 @@ func (s *swapchain) initSwapchain(imageCount int) error {
 	if err := checkResult(res); err != nil {
 		return err
 	}
+	// TODO: Refine this.
 	prefFmts := []struct {
 		pf  driver.PixelFmt
 		fmt C.VkFormat
 	}{
-		{driver.RGBA8sRGB, C.VK_FORMAT_R8G8B8A8_SRGB},
-		{driver.BGRA8sRGB, C.VK_FORMAT_B8G8R8A8_SRGB},
-		{driver.RGBA8un, C.VK_FORMAT_R8G8B8A8_UNORM},
-		{driver.BGRA8un, C.VK_FORMAT_B8G8R8A8_UNORM},
-		{driver.RGBA16f, C.VK_FORMAT_R16G16B16A16_SFLOAT},
+		{driver.RGBA8SRGB, C.VK_FORMAT_R8G8B8A8_SRGB},
+		{driver.BGRA8SRGB, C.VK_FORMAT_B8G8R8A8_SRGB},
+		{driver.RGBA8Unorm, C.VK_FORMAT_R8G8B8A8_UNORM},
+		{driver.BGRA8Unorm, C.VK_FORMAT_B8G8R8A8_UNORM},
+		{driver.RGBA16Float, C.VK_FORMAT_R16G16B16A16_SFLOAT},
 	}
 	ifmt := -1
 fmtLoop:

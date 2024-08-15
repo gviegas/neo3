@@ -21,7 +21,7 @@ import (
 const (
 	NFrame   = 3
 	Samples  = 4
-	DepthFmt = driver.D16un
+	DepthFmt = driver.D16Unorm
 )
 
 var dim = driver.Dim3D{
@@ -318,7 +318,7 @@ func (t *T) samplingSetup() {
 		Width:  decImg.Bounds().Max.X,
 		Height: decImg.Bounds().Max.Y,
 	}
-	img, err := gpu.NewImage(driver.RGBA8sRGB, size, 1, 1, 1, driver.UCopyDst|driver.UShaderSample)
+	img, err := gpu.NewImage(driver.RGBA8SRGB, size, 1, 1, 1, driver.UCopyDst|driver.UShaderSample)
 	if err != nil {
 		log.Fatal(err)
 	}

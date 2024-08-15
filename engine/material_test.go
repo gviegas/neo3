@@ -11,7 +11,7 @@ import (
 
 func TestMaterial(t *testing.T) {
 	color, err := New2D(&TexParam{
-		PixelFmt: driver.RGBA8sRGB,
+		PixelFmt: driver.RGBA8SRGB,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   4,
 		Levels:   1,
@@ -22,7 +22,7 @@ func TestMaterial(t *testing.T) {
 	}
 
 	occMetal, err := New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   3,
 		Levels:   1,
@@ -33,7 +33,7 @@ func TestMaterial(t *testing.T) {
 	}
 
 	normal, err := New2D(&TexParam{
-		PixelFmt: driver.RGBA8un,
+		PixelFmt: driver.RGBA8Unorm,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   2,
 		Levels:   1,
@@ -44,7 +44,7 @@ func TestMaterial(t *testing.T) {
 	}
 
 	emissive, err := New2D(&TexParam{
-		PixelFmt: driver.RGBA8sRGB,
+		PixelFmt: driver.RGBA8SRGB,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   1,
 		Levels:   1,
@@ -55,7 +55,7 @@ func TestMaterial(t *testing.T) {
 	}
 
 	oneChTex, err := New2D(&TexParam{
-		PixelFmt: driver.R8un,
+		PixelFmt: driver.R8Unorm,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   1,
 		Levels:   1,
@@ -66,7 +66,7 @@ func TestMaterial(t *testing.T) {
 	}
 
 	twoChTex, err := New2D(&TexParam{
-		PixelFmt: driver.RG8un,
+		PixelFmt: driver.RG8Unorm,
 		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   1,
 		Levels:   1,

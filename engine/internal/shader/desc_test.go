@@ -763,7 +763,7 @@ func TestSetTSFail(t *testing.T) {
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
-	img, err := ctxt.GPU().NewImage(driver.RGBA8un, driver.Dim3D{256, 256, 0}, 1, 1, 1, driver.UShaderSample)
+	img, err := ctxt.GPU().NewImage(driver.RGBA8Unorm, driver.Dim3D{256, 256, 0}, 1, 1, 1, driver.UShaderSample)
 	if err != nil {
 		t.Fatalf("driver.GPU.NewImage failed:\n%#v", err)
 	}

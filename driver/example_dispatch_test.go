@@ -26,7 +26,7 @@ func Example_dispatch() {
 		Width:  grpCntX * invCntX,
 		Height: grpCntY * invCntY,
 	}
-	pf := driver.RGBA8un // From shader code.
+	pf := driver.RGBA8Unorm // From shader code.
 	sz := int64(dim.Width * dim.Height * pf.Size())
 
 	// Create the storage image/view (write-only).

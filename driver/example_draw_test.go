@@ -19,7 +19,7 @@ import (
 func Example_draw() {
 	// Create an image resource and a 2D image view
 	// to use as render target.
-	pf := driver.RGBA8un
+	pf := driver.RGBA8Unorm
 	dim := driver.Dim3D{
 		Width:  256,
 		Height: 256,

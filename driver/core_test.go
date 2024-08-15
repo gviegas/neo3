@@ -255,41 +255,41 @@ func TestImageView(t *testing.T) {
 		usage   driver.Usage
 		iv      []iview
 	}{
-		{driver.RGBA8un, driver.Dim3D{Width: 1024, Height: 1024}, 1, 11, 1, driver.UShaderSample, []iview{
+		{driver.RGBA8Unorm, driver.Dim3D{Width: 1024, Height: 1024}, 1, 11, 1, driver.UShaderSample, []iview{
 			{driver.IView2D, 0, 1, 0, 1},
 			{driver.IView2D, 0, 1, 0, 11},
 			{driver.IView2D, 0, 1, 4, 5},
 		}},
-		{driver.RGBA16f, driver.Dim3D{Width: 1024, Height: 1024}, 1, 6, 1, driver.UGeneric, []iview{
+		{driver.RGBA16Float, driver.Dim3D{Width: 1024, Height: 1024}, 1, 6, 1, driver.UGeneric, []iview{
 			{driver.IView2D, 0, 1, 0, 1},
 			{driver.IView2D, 0, 1, 2, 1},
 			{driver.IView2D, 0, 1, 3, 3},
 		}},
-		{driver.BGRA8sRGB, driver.Dim3D{Width: 1280, Height: 768}, 1, 1, 8, driver.URenderTarget, []iview{
+		{driver.BGRA8SRGB, driver.Dim3D{Width: 1280, Height: 768}, 1, 1, 8, driver.URenderTarget, []iview{
 			{driver.IView2DMS, 0, 1, 0, 1},
 			{driver.IView2D, 0, 1, 0, 1},
 		}},
-		{driver.D24unS8ui, driver.Dim3D{Width: 1280, Height: 768}, 2, 1, 1, driver.URenderTarget, []iview{
+		{driver.D24UnormS8Uint, driver.Dim3D{Width: 1280, Height: 768}, 2, 1, 1, driver.URenderTarget, []iview{
 			{driver.IView2D, 0, 1, 0, 1},
 			{driver.IView2DArray, 0, 2, 0, 1},
 		}},
-		{driver.D16un, driver.Dim3D{Width: 1280, Height: 768}, 2, 1, 1, driver.URenderTarget, []iview{
+		{driver.D16Unorm, driver.Dim3D{Width: 1280, Height: 768}, 2, 1, 1, driver.URenderTarget, []iview{
 			{driver.IView2D, 0, 1, 0, 1},
 			{driver.IView2D, 1, 1, 0, 1},
 		}},
-		{driver.S8ui, driver.Dim3D{Width: 1280, Height: 768}, 3, 1, 1, driver.URenderTarget, []iview{
+		{driver.S8Uint, driver.Dim3D{Width: 1280, Height: 768}, 3, 1, 1, driver.URenderTarget, []iview{
 			{driver.IView2D, 2, 1, 0, 1},
 			{driver.IView2DArray, 0, 3, 0, 1},
 		}},
-		{driver.R8un, driver.Dim3D{Width: 4096}, 4, 1, 1, driver.UGeneric, []iview{
+		{driver.R8Unorm, driver.Dim3D{Width: 4096}, 4, 1, 1, driver.UGeneric, []iview{
 			{driver.IView1D, 0, 1, 0, 1},
 			{driver.IView1D, 3, 1, 0, 1},
 			{driver.IView1DArray, 0, 4, 0, 1},
 		}},
-		{driver.RG16f, driver.Dim3D{Width: 480, Height: 720, Depth: 5}, 1, 1, 1, driver.UGeneric, []iview{
+		{driver.RG16Float, driver.Dim3D{Width: 480, Height: 720, Depth: 5}, 1, 1, 1, driver.UGeneric, []iview{
 			{driver.IView3D, 0, 1, 0, 1},
 		}},
-		{driver.RGBA8un, driver.Dim3D{Width: 512, Height: 512}, 16, 10, 1, driver.UShaderSample, []iview{
+		{driver.RGBA8Unorm, driver.Dim3D{Width: 512, Height: 512}, 16, 10, 1, driver.UShaderSample, []iview{
 			{driver.IViewCube, 0, 6, 0, 1},
 			{driver.IViewCube, 4, 6, 0, 10},
 			// TODO: Check cube array feature.

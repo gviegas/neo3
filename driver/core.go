@@ -287,7 +287,7 @@ type ClearColor struct {
 }
 
 // ClearColor for PixelFmt constants whose name ends
-// in 'un', 'n', 'sRGB' and 'f'.
+// in 'Unorm', 'Norm', 'SRGB' and 'Float'.
 func ClearFloat32(r, g, b, a float32) ClearColor {
 	return ClearColor{
 		ClearFmt: CFloat,
@@ -301,7 +301,7 @@ func ClearFloat32(r, g, b, a float32) ClearColor {
 }
 
 // ClearColor for PixelFmt constants whose name ends
-// in 'ui'.
+// in 'Uint'.
 func ClearUint32(r, g, b, a uint32) ClearColor {
 	return ClearColor{
 		ClearFmt: CUint,
@@ -310,7 +310,7 @@ func ClearUint32(r, g, b, a uint32) ClearColor {
 }
 
 // ClearColor for PixelFmt constants whose name ends
-// in 'i'.
+// in 'Int'.
 func ClearInt32(r, g, b, a int32) ClearColor {
 	return ClearColor{
 		ClearFmt: CInt,
@@ -991,53 +991,53 @@ func (f PixelFmt) IsInternal() bool { return f < 0 }
 const (
 	FInvalid PixelFmt = iota
 	// Color, 8-bit channels.
-	RGBA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColorf
-	RGBA8n    PixelFmt = iota | 4<<12 | 4<<20 | fColorf
-	RGBA8ui   PixelFmt = iota | 4<<12 | 4<<20 | fColori
-	RGBA8i    PixelFmt = iota | 4<<12 | 4<<20 | fColori
-	RGBA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColorf
-	BGRA8un   PixelFmt = iota | 4<<12 | 4<<20 | fColorf
-	BGRA8sRGB PixelFmt = iota | 4<<12 | 4<<20 | fColorf
-	RG8un     PixelFmt = iota | 2<<12 | 2<<20 | fColorf
-	RG8n      PixelFmt = iota | 2<<12 | 2<<20 | fColorf
-	RG8ui     PixelFmt = iota | 2<<12 | 2<<20 | fColori
-	RG8i      PixelFmt = iota | 2<<12 | 2<<20 | fColori
-	R8un      PixelFmt = iota | 1<<12 | 1<<20 | fColorf
-	R8n       PixelFmt = iota | 1<<12 | 1<<20 | fColorf
-	R8ui      PixelFmt = iota | 1<<12 | 1<<20 | fColori
-	R8i       PixelFmt = iota | 1<<12 | 1<<20 | fColori
+	RGBA8Unorm PixelFmt = iota | 4<<12 | 4<<20 | fColorF
+	RGBA8Norm  PixelFmt = iota | 4<<12 | 4<<20 | fColorF
+	RGBA8Uint  PixelFmt = iota | 4<<12 | 4<<20 | fColorI
+	RGBA8Int   PixelFmt = iota | 4<<12 | 4<<20 | fColorI
+	RGBA8SRGB  PixelFmt = iota | 4<<12 | 4<<20 | fColorF
+	BGRA8Unorm PixelFmt = iota | 4<<12 | 4<<20 | fColorF
+	BGRA8SRGB  PixelFmt = iota | 4<<12 | 4<<20 | fColorF
+	RG8Unorm   PixelFmt = iota | 2<<12 | 2<<20 | fColorF
+	RG8Norm    PixelFmt = iota | 2<<12 | 2<<20 | fColorF
+	RG8Uint    PixelFmt = iota | 2<<12 | 2<<20 | fColorI
+	RG8Int     PixelFmt = iota | 2<<12 | 2<<20 | fColorI
+	R8Unorm    PixelFmt = iota | 1<<12 | 1<<20 | fColorF
+	R8Norm     PixelFmt = iota | 1<<12 | 1<<20 | fColorF
+	R8Uint     PixelFmt = iota | 1<<12 | 1<<20 | fColorI
+	R8Int      PixelFmt = iota | 1<<12 | 1<<20 | fColorI
 	// Color, 16-bit channels.
-	RGBA16f  PixelFmt = iota | 8<<12 | 4<<20 | fColorf
-	RGBA16ui PixelFmt = iota | 8<<12 | 4<<20 | fColori
-	RGBA16i  PixelFmt = iota | 8<<12 | 4<<20 | fColori
-	RG16f    PixelFmt = iota | 4<<12 | 2<<20 | fColorf
-	RG16ui   PixelFmt = iota | 4<<12 | 2<<20 | fColori
-	RG16i    PixelFmt = iota | 4<<12 | 2<<20 | fColori
-	R16f     PixelFmt = iota | 2<<12 | 1<<20 | fColorf
-	R16ui    PixelFmt = iota | 2<<12 | 1<<20 | fColori
-	R16i     PixelFmt = iota | 2<<12 | 1<<20 | fColori
+	RGBA16Float PixelFmt = iota | 8<<12 | 4<<20 | fColorF
+	RGBA16Uint  PixelFmt = iota | 8<<12 | 4<<20 | fColorI
+	RGBA16Int   PixelFmt = iota | 8<<12 | 4<<20 | fColorI
+	RG16Float   PixelFmt = iota | 4<<12 | 2<<20 | fColorF
+	RG16Uint    PixelFmt = iota | 4<<12 | 2<<20 | fColorI
+	RG16Int     PixelFmt = iota | 4<<12 | 2<<20 | fColorI
+	R16Float    PixelFmt = iota | 2<<12 | 1<<20 | fColorF
+	R16Uint     PixelFmt = iota | 2<<12 | 1<<20 | fColorI
+	R16Int      PixelFmt = iota | 2<<12 | 1<<20 | fColorI
 	// Color, 32-bit channels.
-	RGBA32f  PixelFmt = iota | 16<<12 | 4<<20 | fColorf
-	RGBA32ui PixelFmt = iota | 16<<12 | 4<<20 | fColori
-	RGBA32i  PixelFmt = iota | 16<<12 | 4<<20 | fColori
-	RG32f    PixelFmt = iota | 8<<12 | 2<<20 | fColorf
-	RG32ui   PixelFmt = iota | 8<<12 | 2<<20 | fColori
-	RG32i    PixelFmt = iota | 8<<12 | 2<<20 | fColori
-	R32f     PixelFmt = iota | 4<<12 | 1<<20 | fColorf
-	R32ui    PixelFmt = iota | 4<<12 | 1<<20 | fColori
-	R32i     PixelFmt = iota | 4<<12 | 1<<20 | fColori
+	RGBA32Float PixelFmt = iota | 16<<12 | 4<<20 | fColorF
+	RGBA32Uint  PixelFmt = iota | 16<<12 | 4<<20 | fColorI
+	RGBA32Int   PixelFmt = iota | 16<<12 | 4<<20 | fColorI
+	RG32Float   PixelFmt = iota | 8<<12 | 2<<20 | fColorF
+	RG32Uint    PixelFmt = iota | 8<<12 | 2<<20 | fColorI
+	RG32Int     PixelFmt = iota | 8<<12 | 2<<20 | fColorI
+	R32Float    PixelFmt = iota | 4<<12 | 1<<20 | fColorF
+	R32Uint     PixelFmt = iota | 4<<12 | 1<<20 | fColorI
+	R32Int      PixelFmt = iota | 4<<12 | 1<<20 | fColorI
 	// Depth/Stencil.
-	D16un     PixelFmt = iota | 2<<12 | 1<<20 | fDepth
-	D32f      PixelFmt = iota | 4<<12 | 1<<20 | fDepth
-	S8ui      PixelFmt = iota | 1<<12 | 1<<20 | fStencil
-	D24unS8ui PixelFmt = iota | 4<<12 | 2<<20 | fDS
-	D32fS8ui  PixelFmt = iota | 5<<12 | 2<<20 | fDS
+	D16Unorm       PixelFmt = iota | 2<<12 | 1<<20 | fDepth
+	D32Float       PixelFmt = iota | 4<<12 | 1<<20 | fDepth
+	S8Uint         PixelFmt = iota | 1<<12 | 1<<20 | fStencil
+	D24UnormS8Uint PixelFmt = iota | 4<<12 | 2<<20 | fDS
+	D32FloatS8Uint PixelFmt = iota | 5<<12 | 2<<20 | fDS
 
-	fColorf  = 1 << 24
-	fColori  = 2 << 24
+	fColorF  = 1 << 24
+	fColorI  = 2 << 24
 	fDepth   = 4 << 24
 	fStencil = 8 << 24
-	fColor   = fColorf | fColori
+	fColor   = fColorF | fColorI
 	fDS      = fDepth | fStencil
 )
 
@@ -1056,7 +1056,7 @@ func (f PixelFmt) IsColor() bool { return f&fColor != 0 }
 // IsNonfloatColor returns whether f is an integer
 // color format.
 // f must not be an internal format.
-func (f PixelFmt) IsNonfloatColor() bool { return f&fColori != 0 }
+func (f PixelFmt) IsNonfloatColor() bool { return f&fColorI != 0 }
 
 // IsDS returns whether f is a depth/stencil format.
 // f must not be an internal format.

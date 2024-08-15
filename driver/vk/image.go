@@ -290,84 +290,84 @@ func convPixelFmt(pf driver.PixelFmt) C.VkFormat {
 	case driver.FInvalid:
 		return C.VK_FORMAT_UNDEFINED
 
-	case driver.RGBA8un:
+	case driver.RGBA8Unorm:
 		return C.VK_FORMAT_R8G8B8A8_UNORM
-	case driver.RGBA8n:
+	case driver.RGBA8Norm:
 		return C.VK_FORMAT_R8G8B8A8_SNORM
-	case driver.RGBA8ui:
+	case driver.RGBA8Uint:
 		return C.VK_FORMAT_R8G8B8A8_UINT
-	case driver.RGBA8i:
+	case driver.RGBA8Int:
 		return C.VK_FORMAT_R8G8B8A8_SINT
-	case driver.RGBA8sRGB:
+	case driver.RGBA8SRGB:
 		return C.VK_FORMAT_R8G8B8A8_SRGB
-	case driver.BGRA8un:
+	case driver.BGRA8Unorm:
 		return C.VK_FORMAT_B8G8R8A8_UNORM
-	case driver.BGRA8sRGB:
+	case driver.BGRA8SRGB:
 		return C.VK_FORMAT_B8G8R8A8_SRGB
-	case driver.RG8un:
+	case driver.RG8Unorm:
 		return C.VK_FORMAT_R8G8_UNORM
-	case driver.RG8n:
+	case driver.RG8Norm:
 		return C.VK_FORMAT_R8G8_SNORM
-	case driver.RG8ui:
+	case driver.RG8Uint:
 		return C.VK_FORMAT_R8G8_UINT
-	case driver.RG8i:
+	case driver.RG8Int:
 		return C.VK_FORMAT_R8G8_SINT
-	case driver.R8un:
+	case driver.R8Unorm:
 		return C.VK_FORMAT_R8_UNORM
-	case driver.R8n:
+	case driver.R8Norm:
 		return C.VK_FORMAT_R8_SNORM
-	case driver.R8ui:
+	case driver.R8Uint:
 		return C.VK_FORMAT_R8_UINT
-	case driver.R8i:
+	case driver.R8Int:
 		return C.VK_FORMAT_R8_SINT
 
-	case driver.RGBA16f:
+	case driver.RGBA16Float:
 		return C.VK_FORMAT_R16G16B16A16_SFLOAT
-	case driver.RGBA16ui:
+	case driver.RGBA16Uint:
 		return C.VK_FORMAT_R16G16B16A16_UINT
-	case driver.RGBA16i:
+	case driver.RGBA16Int:
 		return C.VK_FORMAT_R16G16B16A16_SINT
-	case driver.RG16f:
+	case driver.RG16Float:
 		return C.VK_FORMAT_R16G16_SFLOAT
-	case driver.RG16ui:
+	case driver.RG16Uint:
 		return C.VK_FORMAT_R16G16_UINT
-	case driver.RG16i:
+	case driver.RG16Int:
 		return C.VK_FORMAT_R16G16_SINT
-	case driver.R16f:
+	case driver.R16Float:
 		return C.VK_FORMAT_R16_SFLOAT
-	case driver.R16ui:
+	case driver.R16Uint:
 		return C.VK_FORMAT_R16_UINT
-	case driver.R16i:
+	case driver.R16Int:
 		return C.VK_FORMAT_R16_SINT
 
-	case driver.RGBA32f:
+	case driver.RGBA32Float:
 		return C.VK_FORMAT_R32G32B32A32_SFLOAT
-	case driver.RGBA32ui:
+	case driver.RGBA32Uint:
 		return C.VK_FORMAT_R32G32B32A32_UINT
-	case driver.RGBA32i:
+	case driver.RGBA32Int:
 		return C.VK_FORMAT_R32G32B32A32_SINT
-	case driver.RG32f:
+	case driver.RG32Float:
 		return C.VK_FORMAT_R32G32_SFLOAT
-	case driver.RG32ui:
+	case driver.RG32Uint:
 		return C.VK_FORMAT_R32G32_UINT
-	case driver.RG32i:
+	case driver.RG32Int:
 		return C.VK_FORMAT_R32G32_SINT
-	case driver.R32f:
+	case driver.R32Float:
 		return C.VK_FORMAT_R32_SFLOAT
-	case driver.R32ui:
+	case driver.R32Uint:
 		return C.VK_FORMAT_R32_UINT
-	case driver.R32i:
+	case driver.R32Int:
 		return C.VK_FORMAT_R32_SINT
 
-	case driver.D16un:
+	case driver.D16Unorm:
 		return C.VK_FORMAT_D16_UNORM
-	case driver.D32f:
+	case driver.D32Float:
 		return C.VK_FORMAT_D32_SFLOAT
-	case driver.S8ui:
+	case driver.S8Uint:
 		return C.VK_FORMAT_S8_UINT
-	case driver.D24unS8ui:
+	case driver.D24UnormS8Uint:
 		return C.VK_FORMAT_D24_UNORM_S8_UINT
-	case driver.D32fS8ui:
+	case driver.D32FloatS8Uint:
 		return C.VK_FORMAT_D32_SFLOAT_S8_UINT
 	}
 
@@ -407,11 +407,11 @@ func aspectOf(pf driver.PixelFmt) C.VkImageAspectFlags {
 	switch pf {
 	case driver.FInvalid:
 		return 0
-	case driver.D24unS8ui, driver.D32fS8ui:
+	case driver.D24UnormS8Uint, driver.D32FloatS8Uint:
 		return C.VK_IMAGE_ASPECT_DEPTH_BIT | C.VK_IMAGE_ASPECT_STENCIL_BIT
-	case driver.D16un, driver.D32f:
+	case driver.D16Unorm, driver.D32Float:
 		return C.VK_IMAGE_ASPECT_DEPTH_BIT
-	case driver.S8ui:
+	case driver.S8Uint:
 		return C.VK_IMAGE_ASPECT_STENCIL_BIT
 	}
 	return C.VK_IMAGE_ASPECT_COLOR_BIT
