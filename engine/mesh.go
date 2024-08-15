@@ -246,9 +246,9 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 		b = x.Bytes()[:cnt*fmt.Size()]
 	default:
 		b = make([]byte, cnt*fmt.Size())
-	}
-	if _, err := io.ReadFull(src, b); err != nil {
-		return nil, err
+		if _, err := io.ReadFull(src, b); err != nil {
+			return nil, err
+		}
 	}
 
 	// IEEE-754 binary => float32
