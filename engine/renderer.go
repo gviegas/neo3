@@ -78,7 +78,7 @@ type Offscreen struct {
 func NewOffscreen(width, height int) (*Offscreen, error) {
 	rt, err := NewTarget(&TexParam{
 		PixelFmt: driver.RGBA8Unorm,
-		Dim3D:    driver.Dim3D{width, height, 0},
+		Dim3D:    driver.Dim3D{Width: width, Height: height},
 		Layers:   1,
 		Levels:   1,
 		Samples:  1,

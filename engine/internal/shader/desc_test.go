@@ -350,7 +350,14 @@ func TestGlobalWrite(t *testing.T) {
 	v.Translate(-1, -2, -3)
 	p.Ortho(-1, 1, -1, 1, -1, 1)
 	rnd := float32(0.25)
-	vport := driver.Viewport{0, 0, 600, 360, 0, 1}
+	vport := driver.Viewport{
+		X:      0,
+		Y:      0,
+		Width:  600,
+		Height: 360,
+		Znear:  0,
+		Zfar:   1,
+	}
 
 	tb.Frame(0).SetV(&v)
 	tb.Frame(0).SetP(&p)
@@ -409,7 +416,14 @@ func TestGlobalWriteN(t *testing.T) {
 	v.Translate(-1, -2, -3)
 	p.Ortho(-1, 1, -1, 1, -1, 1)
 	rnd := float32(0.25)
-	vport := driver.Viewport{0, 0, 600, 360, 0, 1}
+	vport := driver.Viewport{
+		X:      0,
+		Y:      0,
+		Width:  600,
+		Height: 360,
+		Znear:  0,
+		Zfar:   1,
+	}
 
 	tb.Frame(0).SetV(&v)
 	tb.Frame(0).SetP(&p)
@@ -763,7 +777,8 @@ func TestSetTSFail(t *testing.T) {
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
-	img, err := ctxt.GPU().NewImage(driver.RGBA8Unorm, driver.Dim3D{256, 256, 0}, 1, 1, 1, driver.UShaderSample)
+	img, err := ctxt.GPU().NewImage(driver.RGBA8Unorm, driver.Dim3D{Width: 256, Height: 256},
+		1, 1, 1, driver.UShaderSample)
 	if err != nil {
 		t.Fatalf("driver.GPU.NewImage failed:\n%#v", err)
 	}

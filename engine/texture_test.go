@@ -1082,49 +1082,49 @@ func TestViewCopy(t *testing.T) {
 	for _, param := range [...]TexParam{
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{256, 256, 0},
+			Dim3D:    driver.Dim3D{Width: 256, Height: 256},
 			Layers:   1,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{512, 512, 0},
+			Dim3D:    driver.Dim3D{Width: 512, Height: 512},
 			Layers:   1,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8SRGB,
-			Dim3D:    driver.Dim3D{256, 256, 0},
+			Dim3D:    driver.Dim3D{Width: 256, Height: 256},
 			Layers:   1,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{1024, 1024, 0},
+			Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 			Layers:   1,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{1024, 1024, 0},
+			Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 			Layers:   10,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{2048, 2048, 0},
+			Dim3D:    driver.Dim3D{Width: 2048, Height: 2048},
 			Layers:   6,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{800, 600, 0},
+			Dim3D:    driver.Dim3D{Width: 800, Height: 600},
 			Layers:   2,
 			Levels:   1,
 			Samples:  1,
@@ -1160,21 +1160,21 @@ func TestViewCopy(t *testing.T) {
 	for _, param := range [...]TexParam{
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{1024, 1024, 0},
+			Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 			Layers:   5,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8SRGB,
-			Dim3D:    driver.Dim3D{256, 256, 0},
+			Dim3D:    driver.Dim3D{Width: 256, Height: 256},
 			Layers:   2,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{1600, 900, 0},
+			Dim3D:    driver.Dim3D{Width: 1600, Height: 900},
 			Layers:   8,
 			Levels:   1,
 			Samples:  1,
@@ -1213,14 +1213,14 @@ func TestViewCopy(t *testing.T) {
 	for _, param := range [...]TexParam{
 		{
 			PixelFmt: driver.RGBA8Unorm,
-			Dim3D:    driver.Dim3D{1024, 1024, 0},
+			Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 			Layers:   6,
 			Levels:   1,
 			Samples:  1,
 		},
 		{
 			PixelFmt: driver.RGBA8SRGB,
-			Dim3D:    driver.Dim3D{2048, 1024, 0},
+			Dim3D:    driver.Dim3D{Width: 2048, Height: 1024},
 			Layers:   3,
 			Levels:   1,
 			Samples:  1,
@@ -1258,7 +1258,7 @@ func TestViewCopy(t *testing.T) {
 func TestViewCopyPending(t *testing.T) {
 	param := TexParam{
 		PixelFmt: driver.RGBA8Unorm,
-		Dim3D:    driver.Dim3D{1024, 512, 0},
+		Dim3D:    driver.Dim3D{Width: 1024, Height: 512},
 		Layers:   1,
 		Levels:   1,
 		Samples:  1,
@@ -1325,7 +1325,7 @@ func TestViewCopyPending(t *testing.T) {
 func TestViewCopyPendingNoPanic(t *testing.T) {
 	param := TexParam{
 		PixelFmt: driver.RGBA8Unorm,
-		Dim3D:    driver.Dim3D{1024, 512, 0},
+		Dim3D:    driver.Dim3D{Width: 1024, Height: 512},
 		Layers:   1,
 		Levels:   1,
 		Samples:  1,
@@ -1384,7 +1384,7 @@ func TestCommitStaging(t *testing.T) {
 
 	param := TexParam{
 		PixelFmt: driver.RGBA8Unorm,
-		Dim3D:    driver.Dim3D{1024, 1024, 0},
+		Dim3D:    driver.Dim3D{Width: 1024, Height: 1024},
 		Layers:   1,
 		Levels:   1,
 		Samples:  1,
@@ -1487,7 +1487,7 @@ func TestCommitStaging(t *testing.T) {
 func TestTransition(t *testing.T) {
 	tex1, err := NewTarget(&TexParam{
 		PixelFmt: driver.RGBA8Unorm,
-		Dim3D:    driver.Dim3D{1024, 768, 0},
+		Dim3D:    driver.Dim3D{Width: 1024, Height: 768},
 		Layers:   3,
 		Levels:   1,
 		Samples:  1,
@@ -1497,7 +1497,7 @@ func TestTransition(t *testing.T) {
 	}
 	tex2, err := NewCube(&TexParam{
 		PixelFmt: driver.RGBA8Unorm,
-		Dim3D:    driver.Dim3D{256, 256, 0},
+		Dim3D:    driver.Dim3D{Width: 256, Height: 256},
 		Layers:   6,
 		Levels:   1,
 		Samples:  1,
@@ -1597,7 +1597,7 @@ func TestTransition(t *testing.T) {
 func TestTransitionPanic(t *testing.T) {
 	tex, err := NewTarget(&TexParam{
 		PixelFmt: driver.RGBA8Unorm,
-		Dim3D:    driver.Dim3D{1024, 768, 0},
+		Dim3D:    driver.Dim3D{Width: 1024, Height: 768},
 		Layers:   10,
 		Levels:   1,
 		Samples:  1,
@@ -1650,7 +1650,7 @@ func TestTransitionPanic(t *testing.T) {
 func TestSetLayoutPanic(t *testing.T) {
 	tex, err := NewCube(&TexParam{
 		PixelFmt: driver.RGBA8Unorm,
-		Dim3D:    driver.Dim3D{512, 512, 0},
+		Dim3D:    driver.Dim3D{Width: 512, Height: 512},
 		Layers:   12,
 		Levels:   1,
 		Samples:  1,
