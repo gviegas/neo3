@@ -43,17 +43,17 @@ func TestSemantic(t *testing.T) {
 
 func TestSetMeshBuffer(t *testing.T) {
 	setMeshBuffer(nil)
-	if storage.buf != nil {
-		t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
+	if meshes.buf != nil {
+		t.Fatalf("setMeshBuffer: meshes.buf\nhave %v\nwant nil", meshes.buf)
 	}
-	if x := storage.spanMap.Len(); x != 0 {
-		t.Fatalf("setMeshBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
+	if x := meshes.spanMap.Len(); x != 0 {
+		t.Fatalf("setMeshBuffer: meshes.spanMap.Len\nhave %d\nwant 0", x)
 	}
-	if x := storage.primMap.Len(); x != 0 {
-		t.Fatalf("setMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+	if x := meshes.primMap.Len(); x != 0 {
+		t.Fatalf("setMeshBuffer: meshes.primMap.Len\nhave %d\nwant 0", x)
 	}
-	if x := len(storage.prims); x != 0 {
-		t.Fatalf("setMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+	if x := len(meshes.prims); x != 0 {
+		t.Fatalf("setMeshBuffer: len(meshes.prims)\nhave %d\nwant 0", x)
 	}
 	// Set to non-nil.
 	var prev driver.Buffer
@@ -63,44 +63,44 @@ func TestSetMeshBuffer(t *testing.T) {
 			panic("could not create a driver.Buffer for testing")
 		}
 		if x := setMeshBuffer(buf); x != prev {
-			t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant %v", x, prev)
+			t.Fatalf("setMeshBuffer: meshes.buf\nhave %v\nwant %v", x, prev)
 		} else {
 			if x != nil {
 				x.Destroy()
 			}
 			prev = buf
 		}
-		if storage.buf != buf {
-			t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant %v", storage.buf, buf)
+		if meshes.buf != buf {
+			t.Fatalf("setMeshBuffer: meshes.buf\nhave %v\nwant %v", meshes.buf, buf)
 		}
-		n := storage.spanMap.Len()
+		n := meshes.spanMap.Len()
 		if x := s / spanBlock; int(x) != n {
-			t.Fatalf("setMeshBuffer: storage.spanMap.Len\nhave %d\nwant %d", n, x)
+			t.Fatalf("setMeshBuffer: meshes.spanMap.Len\nhave %d\nwant %d", n, x)
 		}
-		if x := storage.primMap.Len(); x != 0 {
-			t.Fatalf("setMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+		if x := meshes.primMap.Len(); x != 0 {
+			t.Fatalf("setMeshBuffer: meshes.primMap.Len\nhave %d\nwant 0", x)
 		}
-		if x := len(storage.prims); x != 0 {
-			t.Fatalf("setMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+		if x := len(meshes.prims); x != 0 {
+			t.Fatalf("setMeshBuffer: len(meshes.prims)\nhave %d\nwant 0", x)
 		}
 	}
 	// Set to nil again.
 	if x := setMeshBuffer(nil); x != prev {
-		t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant %v", x, prev)
+		t.Fatalf("setMeshBuffer: meshes.buf\nhave %v\nwant %v", x, prev)
 	} else {
 		x.Destroy()
 	}
-	if storage.buf != nil {
-		t.Fatalf("setMeshBuffer: storage.buf\nhave %v\nwant nil", storage.buf)
+	if meshes.buf != nil {
+		t.Fatalf("setMeshBuffer: meshes.buf\nhave %v\nwant nil", meshes.buf)
 	}
-	if x := storage.spanMap.Len(); x != 0 {
-		t.Fatalf("setMeshBuffer: storage.spanMap.Len\nhave %d\nwant 0", x)
+	if x := meshes.spanMap.Len(); x != 0 {
+		t.Fatalf("setMeshBuffer: meshes.spanMap.Len\nhave %d\nwant 0", x)
 	}
-	if x := storage.primMap.Len(); x != 0 {
-		t.Fatalf("setMeshBuffer: storage.primMap.Len\nhave %d\nwant 0", x)
+	if x := meshes.primMap.Len(); x != 0 {
+		t.Fatalf("setMeshBuffer: meshes.primMap.Len\nhave %d\nwant 0", x)
 	}
-	if x := len(storage.prims); x != 0 {
-		t.Fatalf("setMeshBuffer: len(storage.prims)\nhave %d\nwant 0", x)
+	if x := len(meshes.prims); x != 0 {
+		t.Fatalf("setMeshBuffer: len(meshes.prims)\nhave %d\nwant 0", x)
 	}
 }
 
@@ -573,30 +573,30 @@ func checkDummyData1(m *Mesh, ntris int, t *testing.T) {
 	if x := m.Len(); x != 1 {
 		t.Fatalf("Mesh.Len:\nhave %d\nwant 1", x)
 	}
-	p := storage.prims[m.primIdx]
+	p := meshes.prims[m.primIdx]
 	if p.topology != driver.TTriangle {
-		t.Fatalf("storage.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
+		t.Fatalf("meshes.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
 	}
 	if x := ntris * 3; p.count != x {
-		t.Fatalf("storage.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
+		t.Fatalf("meshes.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
 	}
 	if x := Position | Normal | TexCoord0; p.mask != x {
-		t.Fatalf("storage.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
+		t.Fatalf("meshes.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
 	}
 	if p.next >= 0 {
-		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
+		t.Fatalf("meshes.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
 	}
-	b := storage.buf.Bytes()
+	b := meshes.buf.Bytes()
 	for _, s := range [3]Semantic{Position, Normal, TexCoord0} {
 		n := p.vertex[s.I()].format.Size() * ntris * 3
 		spn := p.vertex[s.I()].span
 		if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
-			t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
+			t.Fatalf("meshes.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
 		}
 		x := ^byte(s.I())
 		for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
 			if b[i] != x {
-				t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+				t.Fatalf("meshes.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
 			}
 		}
 	}
@@ -644,34 +644,34 @@ func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
 	if x := m.Len(); x != 1 {
 		t.Fatalf("Mesh.Len:\nhave %d\nwant 1", x)
 	}
-	p := storage.prims[m.primIdx]
+	p := meshes.prims[m.primIdx]
 	if p.topology != driver.TTriangle {
-		t.Fatalf("storage.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
+		t.Fatalf("meshes.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
 	}
 	if x := ntris * 6; p.count != x {
-		t.Fatalf("storage.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
+		t.Fatalf("meshes.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
 	}
 	if x := Position | Color0; p.mask != x {
-		t.Fatalf("storage.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
+		t.Fatalf("meshes.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
 	}
 	if p.index.format != driver.Index16 {
-		t.Fatalf("storage.prims[%d].next:\nhave %v\nwant %v", m.primIdx, p.index.format, driver.Index16)
+		t.Fatalf("meshes.prims[%d].next:\nhave %v\nwant %v", m.primIdx, p.index.format, driver.Index16)
 	}
 	if p.next >= 0 {
-		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
+		t.Fatalf("meshes.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
 	}
-	b := storage.buf.Bytes()
+	b := meshes.buf.Bytes()
 
 	s := Position
 	n := p.vertex[s.I()].format.Size() * ntris * 3
 	spn := p.vertex[s.I()].span
 	if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
-		t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
+		t.Fatalf("meshes.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
 	}
 	x := ^byte(s.I())
 	for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
 		if b[i] != x {
-			t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+			t.Fatalf("meshes.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
 		}
 	}
 
@@ -679,29 +679,29 @@ func checkDummyData2(m *Mesh, ntris int, t *testing.T) {
 	n = p.vertex[s.I()].format.Size() * ntris * 3
 	spn = p.vertex[s.I()].span
 	if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
-		t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
+		t.Fatalf("meshes.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
 	}
 	x = ^byte(s.I())
 	for i := spn.byteStart(); i < spn.byteStart()+n; i += 16 {
 		for j := i; j < 12; j++ {
 			if b[j] != x {
-				t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+				t.Fatalf("meshes.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
 			}
 		}
 		if f := *(*float32)(unsafe.Pointer(unsafe.SliceData(b[i+12:]))); f != 1 {
-			t.Fatalf("storage.buf.Bytes()[%d:%d]:\nhave %f\nwant float32(1)", i+12, i+16, f)
+			t.Fatalf("meshes.buf.Bytes()[%d:%d]:\nhave %f\nwant float32(1)", i+12, i+16, f)
 		}
 	}
 
 	n = 2 * ntris * 6
 	spn = p.index.span
 	if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
-		t.Fatalf("storage.prims[%d].index.span: end - start\nhave %d\nwant %d", m.primIdx, x, y)
+		t.Fatalf("meshes.prims[%d].index.span: end - start\nhave %d\nwant %d", m.primIdx, x, y)
 	}
 	x = byte(p.index.format + 1)
 	for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
 		if b[i] != x {
-			t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+			t.Fatalf("meshes.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
 		}
 	}
 }
@@ -753,35 +753,35 @@ func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
 	if x := m.Len(); x != 1 {
 		t.Fatalf("Mesh.Len:\nhave %d\nwant 1", x)
 	}
-	p := storage.prims[m.primIdx]
+	p := meshes.prims[m.primIdx]
 	if p.topology != driver.TTriangle {
-		t.Fatalf("storage.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
+		t.Fatalf("meshes.prims[%d].topology:\nhave %v\nwant %v", m.primIdx, p.topology, driver.TTriangle)
 	}
 	if x := ntris*6 + 15; p.count != x {
-		t.Fatalf("storage.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
+		t.Fatalf("meshes.prims[%d].count:\nhave %d\nwant %d", m.primIdx, p.count, x)
 	}
 	if x := Position | Normal | Tangent | TexCoord0 | TexCoord1 | Color0 | Joints0 | Weights0; p.mask != x {
-		t.Fatalf("storage.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
+		t.Fatalf("meshes.prims[%d].mask:\nhave %x\nwant %x", m.primIdx, p.mask, x)
 	}
 	if p.index.format != driver.Index32 {
-		t.Fatalf("storage.prims[%d].next:\nhave %v\nwant %v", m.primIdx, p.index.format, driver.Index32)
+		t.Fatalf("meshes.prims[%d].next:\nhave %v\nwant %v", m.primIdx, p.index.format, driver.Index32)
 	}
 	if p.next >= 0 {
-		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
+		t.Fatalf("meshes.prims[%d].next:\nhave %d\nwant < 0", m.primIdx, p.next)
 	}
-	b := storage.buf.Bytes()
+	b := meshes.buf.Bytes()
 
 	for i := 0; i < MaxSemantic; i++ {
 		s := Semantic(1 << i)
 		n := p.vertex[s.I()].format.Size() * ntris * 3
 		spn := p.vertex[s.I()].span
 		if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
-			t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
+			t.Fatalf("meshes.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", m.primIdx, s, x, y)
 		}
 		x := ^byte(s.I())
 		for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
 			if b[i] != x {
-				t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+				t.Fatalf("meshes.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
 			}
 		}
 	}
@@ -789,12 +789,12 @@ func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
 	n := 4*ntris*6 + 60
 	spn := p.index.span
 	if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
-		t.Fatalf("storage.prims[%d].index.span: end - start\nhave %d\nwant %d", m.primIdx, x, y)
+		t.Fatalf("meshes.prims[%d].index.span: end - start\nhave %d\nwant %d", m.primIdx, x, y)
 	}
 	x := byte(p.index.format + 1)
 	for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
 		if b[i] != x {
-			t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+			t.Fatalf("meshes.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
 		}
 	}
 }
@@ -855,17 +855,17 @@ func checkDummyData4(m *Mesh, ntris int, t *testing.T) {
 	if x := m.Len(); x != 3 {
 		t.Fatalf("Mesh.Len:\nhave %d\nwant 3", x)
 	}
-	ps := [3]*primitive{&storage.prims[m.primIdx]}
+	ps := [3]*primitive{&meshes.prims[m.primIdx]}
 	if ps[0].next < 0 {
-		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant >= 0", m.primIdx, ps[0].next)
+		t.Fatalf("meshes.prims[%d].next:\nhave %d\nwant >= 0", m.primIdx, ps[0].next)
 	}
-	ps[1] = &storage.prims[ps[0].next]
+	ps[1] = &meshes.prims[ps[0].next]
 	if ps[1].next < 0 {
-		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant >= 0", ps[0].next, ps[1].next)
+		t.Fatalf("meshes.prims[%d].next:\nhave %d\nwant >= 0", ps[0].next, ps[1].next)
 	}
-	ps[2] = &storage.prims[ps[1].next]
+	ps[2] = &meshes.prims[ps[1].next]
 	if ps[2].next >= 0 {
-		t.Fatalf("storage.prims[%d].next:\nhave %d\nwant < 0", ps[1].next, ps[2].next)
+		t.Fatalf("meshes.prims[%d].next:\nhave %d\nwant < 0", ps[1].next, ps[2].next)
 	}
 	ss := [3][]Semantic{
 		{Position, Normal, TexCoord0, TexCoord1},
@@ -873,31 +873,31 @@ func checkDummyData4(m *Mesh, ntris int, t *testing.T) {
 		{Position},
 	}
 	is := [3]int{m.primIdx, ps[0].next, ps[1].next}
-	b := storage.buf.Bytes()
+	b := meshes.buf.Bytes()
 	for i, p := range ps {
 		if p.topology != driver.TTriangle {
-			t.Fatalf("storage.prims[%d].topology:\nhave %v\nwant %v", is[i], p.topology, driver.TTriangle)
+			t.Fatalf("meshes.prims[%d].topology:\nhave %v\nwant %v", is[i], p.topology, driver.TTriangle)
 		}
 		if x := ntris * 3; p.count != x {
-			t.Fatalf("storage.prims[%d].count:\nhave %d\nwant %d", is[i], p.count, x)
+			t.Fatalf("meshes.prims[%d].count:\nhave %d\nwant %d", is[i], p.count, x)
 		}
 		var mask Semantic
 		for _, s := range ss[i] {
 			mask |= s
 		}
 		if p.mask != mask {
-			t.Fatalf("storage.prims[%d].mask:\nhave %x\nwant %x", is[1], p.mask, mask)
+			t.Fatalf("meshes.prims[%d].mask:\nhave %x\nwant %x", is[1], p.mask, mask)
 		}
 		for _, s := range ss[i] {
 			n := p.vertex[s.I()].format.Size() * ntris * 3
 			spn := p.vertex[s.I()].span
 			if x, y := spn.end-spn.start, (n+(spanBlock-1))/spanBlock; x != y {
-				t.Fatalf("storage.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", is[i], s, x, y)
+				t.Fatalf("meshes.prims[%d].vertex[%s.I()].span: end - start\nhave %d\nwant %d", is[i], s, x, y)
 			}
 			x := ^byte(s.I())
 			for i := spn.byteStart(); i < spn.byteStart()+n; i++ {
 				if b[i] != x {
-					t.Fatalf("storage.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
+					t.Fatalf("meshes.buf.Bytes()[%d]:\nhave %d\nwant %d", i, b[i], x)
 				}
 			}
 		}
@@ -975,11 +975,11 @@ func TestMesh(t *testing.T) {
 		cases[i].check(res[i].mesh, cases[i].ntris, t)
 	}
 
-	cap := storage.buf.Cap()
-	if cap < n || cap == n && storage.buf != buf {
-		t.Fatal("New: unexpected storage.buf state")
+	cap := meshes.buf.Cap()
+	if cap < n || cap == n && meshes.buf != buf {
+		t.Fatal("New: unexpected meshes.buf state")
 	}
-	t.Logf("final storage.buf.Cap() is %.2f MiB", float64(cap)/(1<<20))
+	t.Logf("final meshes.buf.Cap() is %.2f MiB", float64(cap)/(1<<20))
 }
 
 func TestMeshInputs(t *testing.T) {
@@ -1096,10 +1096,10 @@ func TestMeshFree(t *testing.T) {
 	take := func(m *Mesh, s *snapshot) {
 		s.spans = s.spans[:0]
 		s.nspan, s.nprim = 0, m.primLen
-		s.rspan, s.rprim = storage.spanMap.Rem(), storage.primMap.Rem()
+		s.rspan, s.rprim = meshes.spanMap.Rem(), meshes.primMap.Rem()
 		p := m.primIdx
 		for {
-			prim := &storage.prims[p]
+			prim := &meshes.prims[p]
 			for i := 0; i < MaxSemantic; i++ {
 				if prim.mask&(1<<i) != 0 {
 					s.spans = append(s.spans, prim.vertex[i].span)
@@ -1111,21 +1111,21 @@ func TestMeshFree(t *testing.T) {
 				s.nspan += prim.index.end - prim.index.start
 			}
 			var ok bool
-			if p, ok = storage.next(p); !ok {
+			if p, ok = meshes.next(p); !ok {
 				break
 			}
 		}
 	}
 	check := func(s *snapshot) {
-		if x, y := storage.spanMap.Rem(), s.rspan+s.nspan; x != y {
+		if x, y := meshes.spanMap.Rem(), s.rspan+s.nspan; x != y {
 			t.Fatalf("Mesh.Free: spanMap.Rem()\nhave %d\nwant %d\n(should remove %d block(s))", x, y, s.nspan)
 		}
-		if x, y := storage.primMap.Rem(), s.rprim+s.nprim; x != y {
+		if x, y := meshes.primMap.Rem(), s.rprim+s.nprim; x != y {
 			t.Fatalf("Mesh.Free: primMap.Rem()\nhave %d\nwant %d\n(should remove %d primitive(s))", x, y, s.nprim)
 		}
 		for _, x := range s.spans {
 			for i := x.start; i < x.end; i++ {
-				if storage.spanMap.IsSet(i) {
+				if meshes.spanMap.IsSet(i) {
 					t.Fatalf("Mesh.Free: spanMap.IsSet(%d)\nhave true\nwant false", i)
 				}
 			}
@@ -1335,7 +1335,7 @@ const (
 	ntrisBench = 1000
 )
 
-// TODO: NewMesh locks the storage for writing during
+// TODO: NewMesh locks the meshes for writing during
 // span searching, buffer growth and copying, and
 // new data copying. The last step (new data copying)
 // can be done with just a reading lock.
@@ -1354,7 +1354,7 @@ func BenchmarkMeshGrow(b *testing.B) {
 		// Expected to be very slow.
 		b.RunParallel(func(bp *testing.PB) {
 			for bp.Next() {
-				if storage.buf != nil && storage.buf.Cap() > nbufBench {
+				if meshes.buf != nil && meshes.buf.Cap() > nbufBench {
 					continue
 				}
 				for i := range data.Srcs {
@@ -1366,9 +1366,9 @@ func BenchmarkMeshGrow(b *testing.B) {
 			}
 		})
 	})
-	b.Log("buf.Cap():", storage.buf.Cap())
-	b.Log("spanMap.Rem()/Len():", storage.spanMap.Rem(), storage.spanMap.Len())
-	b.Log("primMap.Rem()/Len():", storage.primMap.Rem(), storage.primMap.Len())
+	b.Log("buf.Cap():", meshes.buf.Cap())
+	b.Log("spanMap.Rem()/Len():", meshes.spanMap.Rem(), meshes.spanMap.Len())
+	b.Log("primMap.Rem()/Len():", meshes.primMap.Rem(), meshes.primMap.Len())
 }
 
 func BenchmarkMeshPre(b *testing.B) {
@@ -1385,7 +1385,7 @@ func BenchmarkMeshPre(b *testing.B) {
 		// Expected to be fast.
 		b.RunParallel(func(bp *testing.PB) {
 			for bp.Next() {
-				if storage.buf != nil && storage.buf.Cap() > nbufBench {
+				if meshes.buf != nil && meshes.buf.Cap() > nbufBench {
 					continue
 				}
 				for i := range data.Srcs {
@@ -1397,9 +1397,9 @@ func BenchmarkMeshPre(b *testing.B) {
 			}
 		})
 	})
-	b.Log("buf.Cap():", storage.buf.Cap())
-	b.Log("spanMap.Rem()/Len():", storage.spanMap.Rem(), storage.spanMap.Len())
-	b.Log("primMap.Rem()/Len():", storage.primMap.Rem(), storage.primMap.Len())
+	b.Log("buf.Cap():", meshes.buf.Cap())
+	b.Log("spanMap.Rem()/Len():", meshes.spanMap.Rem(), meshes.spanMap.Len())
+	b.Log("primMap.Rem()/Len():", meshes.primMap.Rem(), meshes.primMap.Len())
 }
 
 func BenchmarkMeshFree(b *testing.B) {
@@ -1413,7 +1413,7 @@ func BenchmarkMeshFree(b *testing.B) {
 		// Expected to be reasonably fast.
 		b.RunParallel(func(bp *testing.PB) {
 			for bp.Next() {
-				if storage.buf != nil && storage.buf.Cap() > nbufBench {
+				if meshes.buf != nil && meshes.buf.Cap() > nbufBench {
 					continue
 				}
 				for i := range data.Srcs {
@@ -1427,7 +1427,7 @@ func BenchmarkMeshFree(b *testing.B) {
 			}
 		})
 	})
-	b.Log("buf.Cap():", storage.buf.Cap())
-	b.Log("spanMap.Rem()/Len():", storage.spanMap.Rem(), storage.spanMap.Len())
-	b.Log("primMap.Rem()/Len():", storage.primMap.Rem(), storage.primMap.Len())
+	b.Log("buf.Cap():", meshes.buf.Cap())
+	b.Log("spanMap.Rem()/Len():", meshes.spanMap.Rem(), meshes.spanMap.Len())
+	b.Log("primMap.Rem()/Len():", meshes.primMap.Rem(), meshes.primMap.Len())
 }
