@@ -714,6 +714,7 @@ const (
 )
 
 // Viewport defines the bounds of a viewport.
+// Its origin is at the upper-left corner.
 type Viewport struct {
 	X, Y, Width, Height, Znear, Zfar float32
 }
