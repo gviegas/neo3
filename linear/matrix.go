@@ -253,31 +253,38 @@ func (m *M4) LookAt(center, eye, up *V3) {
 // Perspective sets m to contain a perspective projection.
 func (m *M4) Perspective(yfov, aspectRatio, znear, zfar float32) {
 	ct := 1 / float32(math.Tan(float64(yfov/2)))
+	fr := zfar / (zfar - znear)
 	*m = M4{
 		{0: ct / aspectRatio},
 		{1: ct},
-		{2: zfar / (zfar - znear), 3: 1},
-		{2: -(zfar * znear) / (zfar - znear)},
+		{2: fr, 3: 1},
+		{2: -znear * fr},
 	}
 }
 
 // Frustum sets m to contain a perspective projection.
 func (m *M4) Frustum(left, right, top, bottom, znear, zfar float32) {
+	iw := 1 / (right - left)
+	ih := 1 / (bottom - top)
+	fr := zfar / (zfar - znear)
 	*m = M4{
-		{0: 2 * znear / (right - left)},
-		{1: 2 * znear / (bottom - top)},
-		{0: -(right + left) / (right - left), 1: -(bottom + top) / (bottom - top), 2: zfar / (zfar - znear), 3: 1},
-		{2: -(zfar * znear) / (zfar - znear)},
+		{0: 2 * znear * iw},
+		{1: 2 * znear * ih},
+		{0: -(right + left) * iw, 1: -(bottom + top) * ih, 2: fr, 3: 1},
+		{2: -znear * fr},
 	}
 }
 
 // Ortho sets m to contain a non-perspective projection.
 func (m *M4) Ortho(left, right, top, bottom, znear, zfar float32) {
+	iw := 1 / (right - left)
+	ih := 1 / (bottom - top)
+	fr := 1 / (zfar - znear)
 	*m = M4{
-		{0: 2 / (right - left)},
-		{1: 2 / (bottom - top)},
-		{2: 1 / (zfar - znear)},
-		{0: -(right + left) / (right - left), 1: -(bottom + top) / (bottom - top), 2: -znear / (zfar - znear), 3: 1},
+		{0: 2 * iw},
+		{1: 2 * ih},
+		{2: fr},
+		{0: -(right + left) * iw, 1: -(bottom + top) * ih, 2: -znear * fr, 3: 1},
 	}
 }
 
