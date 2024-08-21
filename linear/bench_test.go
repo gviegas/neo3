@@ -61,7 +61,7 @@ func bCrossValue(l, r V3) (v V3) {
 	return
 }
 
-// v updated in-place.
+// v updated in place.
 func (v *V3) bCrossNoAlias(l, r *V3) {
 	v[0] = l[1]*r[2] - l[2]*r[1]
 	v[1] = l[2]*r[0] - l[0]*r[2]
@@ -156,7 +156,7 @@ func BenchmarkMulM3(b *testing.B) {
 	b.Log("\n", m, "\n", n)
 }
 
-// m updated in-place.
+// m updated in place.
 func (m *M3) bMulNoAlias(l, r *M3) {
 	for i := range m {
 		for j := range m {
@@ -195,7 +195,7 @@ func BenchmarkMulM4(b *testing.B) {
 	b.Log("\n", m, "\n", n)
 }
 
-// m updated in-place.
+// m updated in place.
 func (m *M4) bMulNoAlias(l, r *M4) {
 	for i := range m {
 		for j := range m {
@@ -205,6 +205,42 @@ func (m *M4) bMulNoAlias(l, r *M4) {
 			}
 		}
 	}
+}
+
+func BenchmarkMulQ(b *testing.B) {
+	l := Q{
+		V: V3{0.5, 0.5, -0.5},
+		R: 0.5,
+	}
+	r := Q{
+		V: V3{-0.5, -0.5, 0.5},
+		R: 0.5,
+	}
+	var q, p Q
+	b.Run("Q.Mul", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			q.Mul(&l, &r)
+		}
+	})
+	b.Run("Q.bMulQValue", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			p = bMulQValue(l, r)
+		}
+	})
+	b.Log(q, p)
+}
+
+// l, r and q passed on the stack.
+func bMulQValue(l, r Q) (q Q) {
+	var v, w V3
+	v.Scale(r.R, &l.V)
+	w.Scale(l.R, &r.V)
+	v.Add(&v, &w)
+	w.Cross(&l.V, &r.V)
+	d := l.V.Dot(&r.V)
+	q.V.Add(&v, &w)
+	q.R = l.R*r.R - d
+	return
 }
 
 func BenchmarkInvert3(b *testing.B) {
@@ -227,7 +263,7 @@ func BenchmarkInvert3(b *testing.B) {
 	b.Log("\n", m, "\n", n)
 }
 
-// m updated in-place.
+// m updated in place.
 func (m *M3) bInvertNoAlias(n *M3) {
 	s0 := n[1][1]*n[2][2] - n[1][2]*n[2][1]
 	s1 := n[1][0]*n[2][2] - n[1][2]*n[2][0]
@@ -265,7 +301,7 @@ func BenchmarkInvert4(b *testing.B) {
 	b.Log("\n", m, "\n", n)
 }
 
-// m updated in-place.
+// m updated in place.
 func (m *M4) bInvertNoAlias(n *M4) {
 	s0 := n[0][0]*n[1][1] - n[0][1]*n[1][0]
 	s1 := n[0][0]*n[1][2] - n[0][2]*n[1][0]
