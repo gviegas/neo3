@@ -239,7 +239,7 @@ func (m *M4) LookAt(center, eye, up *V3) {
 	var f, s, u V3
 	f.Sub(center, eye)
 	f.Norm(&f)
-	s.Cross(up, &f)
+	s.Cross(&f, up)
 	s.Norm(&s)
 	u.Cross(&f, &s)
 	*m = M4{
