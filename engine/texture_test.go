@@ -964,7 +964,7 @@ func TestSamplerFree(t *testing.T) {
 }
 
 func TestStaging(t *testing.T) {
-	var s *stagingBuffer
+	var s *texStgBuffer
 	var err error
 
 	check := func(nbuf, nbm int) {
@@ -972,93 +972,93 @@ func TestStaging(t *testing.T) {
 			t.Fatalf("driver.NewBuffer failed:\n%#v", err)
 		}
 		if x := int(s.buf.Cap()); x != nbuf {
-			t.Fatalf("newStaging: buf.Cap\nhave %d\nwant %d", x, nbuf)
+			t.Fatalf("newTexStg: buf.Cap\nhave %d\nwant %d", x, nbuf)
 		}
 		if x := s.bm.Len(); x != nbm {
-			t.Fatalf("newStaging: bm.Len\nhave %d\nwant %d", x, nbm)
+			t.Fatalf("newTexStg: bm.Len\nhave %d\nwant %d", x, nbm)
 		}
 	}
 	checkFree := func() {
 		if s.buf != nil {
-			t.Fatalf("stagingBuffer.free: buf\nhave %v\nwant nil", s.buf)
+			t.Fatalf("texStgBuffer.free: buf\nhave %v\nwant nil", s.buf)
 		}
 		if x := s.bm.Len(); x != 0 {
-			t.Fatalf("stagingBuffer.free: bm.Len\nhave %d\nwant 0", x)
+			t.Fatalf("texStgBuffer.free: bm.Len\nhave %d\nwant 0", x)
 		}
 	}
 
-	const n = stagingBlock * stagingNBit
+	const n = texStgBlock * texStgNBit
 
-	s, err = newStaging(n)
-	check(n, stagingNBit)
+	s, err = newTexStg(n)
+	check(n, texStgNBit)
 	s.free()
 	checkFree()
 
-	s, err = newStaging(n - 1)
-	check(n, stagingNBit)
+	s, err = newTexStg(n - 1)
+	check(n, texStgNBit)
 	s.free()
 	checkFree()
 
-	s, err = newStaging(n + 1)
-	check(n*2, stagingNBit*2)
+	s, err = newTexStg(n + 1)
+	check(n*2, texStgNBit*2)
 	s.free()
 	checkFree()
 
-	s, err = newStaging(1)
-	check(n, stagingNBit)
+	s, err = newTexStg(1)
+	check(n, texStgNBit)
 	s.free()
 	checkFree()
 
-	s, err = newStaging(n + n - 1)
-	check(n*2, stagingNBit*2)
+	s, err = newTexStg(n + n - 1)
+	check(n*2, texStgNBit*2)
 	s.free()
 	checkFree()
 
 	x := 2048 * 2048 * 4
-	s, err = newStaging(x)
+	s, err = newTexStg(x)
 	x = (x + n - 1) &^ (n - 1)
-	check(x, x/stagingBlock)
+	check(x, x/texStgBlock)
 	s.free()
 	checkFree()
 }
 
 func TestStagingInit(t *testing.T) {
-	var s []*stagingBuffer
-	for i := 0; i < cap(staging); i++ {
+	var s []*texStgBuffer
+	for i := 0; i < cap(texStg); i++ {
 		select {
-		case x := <-staging:
+		case x := <-texStg:
 			if x.wk == nil || x.buf == nil {
 				if x.wk != nil || x.buf != nil {
-					t.Fatal("staging: unexpected non-nil wk or buf")
+					t.Fatal("texStg: unexpected non-nil wk or buf")
 				}
 				continue
 			}
 			if cap(x.wk) != 1 {
-				t.Fatalf("staging: cap(wk)\nhave %d\nwant 1", cap(x.wk))
+				t.Fatalf("texStg: cap(wk)\nhave %d\nwant 1", cap(x.wk))
 			}
 			wk := <-x.wk
 			if len(wk.Work) != 1 {
-				t.Fatalf("staging: len((<-wk).Work)\nhave %d\nwant 1", len(wk.Work))
+				t.Fatalf("texStg: len((<-wk).Work)\nhave %d\nwant 1", len(wk.Work))
 			}
 			if wk.Work[0] == nil {
-				t.Fatal("staging: (<-wk).Work[0]\nhave nil\nwant non-nil")
+				t.Fatal("texStg: (<-wk).Work[0]\nhave nil\nwant non-nil")
 			}
 			if wk.Err != nil {
-				t.Fatalf("staging: (<-wk).Err\nhave %#v\nwant nil", wk.Err)
+				t.Fatalf("texStg: (<-wk).Err\nhave %#v\nwant nil", wk.Err)
 			}
-			if x.buf.Cap() != stagingBlock*stagingNBit {
-				t.Fatalf("staging: buf.Cap:\nhave %d\nwant %d", x.buf.Cap(), stagingBlock*stagingNBit)
+			if x.buf.Cap() != texStgBlock*texStgNBit {
+				t.Fatalf("texStg: buf.Cap:\nhave %d\nwant %d", x.buf.Cap(), texStgBlock*texStgNBit)
 			}
 			x.wk <- wk
 			s = append(s, x)
 		default:
 		}
 	}
-	if len(s) != cap(staging) {
-		t.Fatalf("staging: unexpected len != cap\nhave %d\nwant %d", len(s), cap(staging))
+	if len(s) != cap(texStg) {
+		t.Fatalf("texStg: unexpected len != cap\nhave %d\nwant %d", len(s), cap(texStg))
 	}
 	for i := range s {
-		staging <- s[i]
+		texStg <- s[i]
 	}
 }
 
@@ -1263,7 +1263,7 @@ func TestViewCopyPending(t *testing.T) {
 		Levels:   1,
 		Samples:  1,
 	}
-	for param.Size()*param.Width*param.Height > stagingBlock*stagingNBit {
+	for param.Size()*param.Width*param.Height > texStgBlock*texStgNBit {
 		param.Width /= 2
 		param.Height /= 2
 	}
@@ -1293,25 +1293,25 @@ func TestViewCopyPending(t *testing.T) {
 
 		// Panicking corrupts the global state;
 		// reset it so other tests can run safely.
-		stagingMu.Lock()
+		texStgMu.Lock()
 		// Likely to block forever.
-		//for i := 0; i < cap(staging); i++ {
-		//	(<-staging).free()
+		//for i := 0; i < cap(texStg); i++ {
+		//	(<-texStg).free()
 		//}
-		staging = make(chan *stagingBuffer, cap(staging))
-		for i := 0; i < cap(staging); i++ {
-			s, err := newStaging(stagingBlock * stagingNBit)
+		texStg = make(chan *texStgBuffer, cap(texStg))
+		for i := 0; i < cap(texStg); i++ {
+			s, err := newTexStg(texStgBlock * texStgNBit)
 			if err != nil {
-				s = &stagingBuffer{}
+				s = &texStgBuffer{}
 			}
-			staging <- s
+			texStg <- s
 		}
-		stagingCache = stagingCache[:0]
-		wk := <-stagingWk
+		texStgCache = texStgCache[:0]
+		wk := <-texStgWk
 		wk.Work = wk.Work[:0]
 		wk.Err = nil
-		stagingWk <- wk
-		stagingMu.Unlock()
+		texStgWk <- wk
+		texStgMu.Unlock()
 
 		tex.Free()
 	}()
@@ -1330,7 +1330,7 @@ func TestViewCopyPendingNoPanic(t *testing.T) {
 		Levels:   1,
 		Samples:  1,
 	}
-	for param.Size()*param.Width*param.Height > stagingBlock*stagingNBit {
+	for param.Size()*param.Width*param.Height > texStgBlock*texStgNBit {
 		param.Width /= 2
 		param.Height /= 2
 	}
@@ -1370,12 +1370,12 @@ func TestCommitStaging(t *testing.T) {
 		for i := 0; i < n; i++ {
 			go func() {
 				time.Sleep(time.Nanosecond * 20)
-				errs <- commitStaging()
+				errs <- commitTexStg()
 			}()
 		}
 		for i := n; i > 0; i-- {
 			if err := <-errs; err != nil {
-				t.Fatalf("commitStaging failed:\n%#v", err)
+				t.Fatalf("commitTexStg failed:\n%#v", err)
 			}
 		}
 	}
@@ -1389,7 +1389,7 @@ func TestCommitStaging(t *testing.T) {
 		Levels:   1,
 		Samples:  1,
 	}
-	for param.Size()*param.Width*param.Height*2 > stagingBlock*stagingNBit {
+	for param.Size()*param.Width*param.Height*2 > texStgBlock*texStgNBit {
 		param.Width /= 2
 		param.Height /= 2
 	}
@@ -1420,7 +1420,7 @@ func TestCommitStaging(t *testing.T) {
 	}
 	concCommit()
 	if tex1.layouts[0].Load() == invalLayout {
-		t.Fatalf("commitStaging: should have set a valid layout")
+		t.Fatalf("commitTexStg: should have set a valid layout")
 	}
 	n := tex1.ViewSize(0)
 	if x, err := tex1.CopyFromView(0, dst); err != nil || x != n {
@@ -1441,7 +1441,7 @@ func TestCommitStaging(t *testing.T) {
 	}
 	concCommit()
 	if tex2.layouts[1].Load() == invalLayout || tex1.layouts[0].Load() == invalLayout {
-		t.Fatalf("commitStaging: should have set a valid layout")
+		t.Fatalf("commitTexStg: should have set a valid layout")
 	}
 	n = tex2.ViewSize(1)
 	if x, err := tex2.CopyFromView(1, dst); err != nil || x != n {
@@ -1467,7 +1467,7 @@ func TestCommitStaging(t *testing.T) {
 	}
 	concCommit()
 	if tex2.layouts[0].Load() == invalLayout || tex2.layouts[1].Load() == invalLayout {
-		t.Fatalf("commitStaging: should have set a valid layout")
+		t.Fatalf("commitTexStg: should have set a valid layout")
 	}
 	n = tex2.ViewSize(0)
 	if x, err := tex2.CopyFromView(0, dst); err != nil || x != n {
