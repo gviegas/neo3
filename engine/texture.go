@@ -316,6 +316,8 @@ func (t *Texture) ViewLayers(view int) int {
 // view's memory.
 // It does not consider the memory consumed by
 // additional mip levels.
+// TODO: Provide a method that actually considers
+// the whole mip chain.
 func (t *Texture) ViewSize(view int) int {
 	nl := t.ViewLayers(view)
 	n := t.param.Size() * t.param.Width * t.param.Height
@@ -328,6 +330,7 @@ func (t *Texture) ViewSize(view int) int {
 // data must contain the first level of every layer,
 // in order and tightly packed.
 // Unless commit is true, the copy may be delayed.
+// TODO: Allow copying data to any mip level.
 func (t *Texture) CopyToView(view int, data []byte, commit bool) error {
 	if x := t.ViewSize(view); x < len(data) {
 		data = data[:x]
