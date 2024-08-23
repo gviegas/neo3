@@ -136,7 +136,7 @@ func TestSpan(t *testing.T) {
 	check(p.vertex[Normal.I()].span, want{spanBlock * 2, spanBlock * 5, spanBlock * 3})
 }
 
-func TestStorage(t *testing.T) {
+func TestMeshBuffer(t *testing.T) {
 	var b meshBuffer
 
 	newSrc := func(byteLen int, mark byte) io.ReadSeeker {

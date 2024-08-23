@@ -963,7 +963,7 @@ func TestSamplerFree(t *testing.T) {
 	}
 }
 
-func TestStaging(t *testing.T) {
+func TestTexStgBuffer(t *testing.T) {
 	var s *texStgBuffer
 	var err error
 
@@ -1022,7 +1022,7 @@ func TestStaging(t *testing.T) {
 	checkFree()
 }
 
-func TestStagingInit(t *testing.T) {
+func TestTexStgInit(t *testing.T) {
 	var s []*texStgBuffer
 	for i := 0; i < cap(texStg); i++ {
 		select {
@@ -1363,7 +1363,7 @@ func TestViewCopyPendingNoPanic(t *testing.T) {
 	//tex.Free()
 }
 
-func TestCommitStaging(t *testing.T) {
+func TestCommitTexStg(t *testing.T) {
 	concCommit := func() {
 		const n = 8
 		errs := make(chan error, n)
