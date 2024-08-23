@@ -57,7 +57,11 @@ type T struct {
 	vport    driver.Viewport
 	sciss    driver.Scissor
 	xform    linear.M4
-	angle    float32
+	angleX   float32
+	angleY   float32
+	turnX    float32
+	turnY    float32
+	auto     bool
 	quit     bool
 }
 
@@ -506,6 +510,7 @@ func (t *T) renderLoop() {
 	}
 	t0 := time.Now()
 	t1 := t0
+	t.auto = true
 	for !t.quit {
 		wk := <-t.ch
 		if err = wk.Err; err != nil {
@@ -808,29 +813,32 @@ func (t *T) updateTransform(dt time.Duration) {
 	up := linear.V3{0, -1, 0}
 	view.LookAt(&center, &eye, &up)
 
-	axis := &up
-	model.Rotate(t.angle, axis)
-	t.angle += float32(dt.Seconds()) * 4
-	if t.angle > 2*math.Pi {
-		t.angle = t.angle - 2*math.Pi
+	if t.auto {
+		model.Rotate(t.angleY, &up)
+		t.angleY += float32(dt.Seconds()) * 5
+		if t.angleY > 2*math.Pi {
+			t.angleY = t.angleY - 2*math.Pi
+		}
+	} else {
+		x := float32(math.Cos(float64(t.angleY)))
+		z := float32(math.Sin(float64(t.angleY)))
+		model.Rotate(t.angleX, &linear.V3{x, 0, z})
+		var yaw linear.M4
+		yaw.Rotate(t.angleY, &up)
+		model.Mul(&model, &yaw)
+		t.angleX += float32(dt.Seconds()) * t.turnX
+		t.angleY += float32(dt.Seconds()) * t.turnY
+		for _, angle := range [2]*float32{&t.angleX, &t.angleY} {
+			if *angle > 2*math.Pi {
+				*angle = *angle - 2*math.Pi
+			} else if *angle < -2*math.Pi {
+				*angle = *angle + 2*math.Pi
+			}
+		}
 	}
 
 	vp.Mul(&proj, &view)
 	t.xform.Mul(&vp, &model)
-}
-
-func (t *T) WindowClose(win wsi.Window) {
-	if win == t.win {
-		t.quit = true
-	}
-}
-
-func (*T) WindowResize(wsi.Window, int, int) { brokenSC = true }
-
-func (t *T) KeyboardKey(key wsi.Key, pressed bool) {
-	if pressed && key == wsi.KeyEsc {
-		t.quit = true
-	}
 }
 
 // recreateSwapchain recreates the swapchain and all
@@ -897,5 +905,51 @@ func (t *T) recreateSwapchain() {
 
 	for i := range t.rt {
 		t.rt[i].Resolve = scViews[i]
+	}
+}
+
+func (t *T) WindowClose(win wsi.Window) {
+	if win == t.win {
+		t.quit = true
+	}
+}
+
+func (*T) WindowResize(wsi.Window, int, int) { brokenSC = true }
+
+func (t *T) KeyboardKey(key wsi.Key, pressed bool) {
+	switch key {
+	case wsi.KeyEsc:
+		t.quit = t.quit || pressed
+	case wsi.KeyUp:
+		t.auto = false
+		if pressed {
+			t.turnX = -1
+		} else {
+			t.turnX = 0
+		}
+	case wsi.KeyDown:
+		t.auto = false
+		if pressed {
+			t.turnX = 1
+		} else {
+			t.turnX = 0
+		}
+	case wsi.KeyLeft:
+		t.auto = false
+		if pressed {
+			t.turnY = -1
+		} else {
+			t.turnY = 0
+		}
+	case wsi.KeyRight:
+		t.auto = false
+		if pressed {
+			t.turnY = 1
+		} else {
+			t.turnY = 0
+		}
+	default:
+		t.turnX = 0
+		t.turnY = 0
 	}
 }
