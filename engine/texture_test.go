@@ -967,23 +967,23 @@ func TestTexStgBuffer(t *testing.T) {
 	var s *texStgBuffer
 	var err error
 
-	check := func(nbuf, nbm int) {
+	check := func(nbuf, nbv int) {
 		if err != nil {
 			t.Fatalf("driver.NewBuffer failed:\n%#v", err)
 		}
 		if x := int(s.buf.Cap()); x != nbuf {
 			t.Fatalf("newTexStg: buf.Cap\nhave %d\nwant %d", x, nbuf)
 		}
-		if x := s.bm.Len(); x != nbm {
-			t.Fatalf("newTexStg: bm.Len\nhave %d\nwant %d", x, nbm)
+		if x := s.bv.Len(); x != nbv {
+			t.Fatalf("newTexStg: bv.Len\nhave %d\nwant %d", x, nbv)
 		}
 	}
 	checkFree := func() {
 		if s.buf != nil {
 			t.Fatalf("texStgBuffer.free: buf\nhave %v\nwant nil", s.buf)
 		}
-		if x := s.bm.Len(); x != 0 {
-			t.Fatalf("texStgBuffer.free: bm.Len\nhave %d\nwant 0", x)
+		if x := s.bv.Len(); x != 0 {
+			t.Fatalf("texStgBuffer.free: bv.Len\nhave %d\nwant 0", x)
 		}
 	}
 

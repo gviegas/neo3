@@ -3,7 +3,7 @@
 package engine
 
 import (
-	"gviegas/neo3/internal/bitm"
+	"gviegas/neo3/internal/bitvec"
 )
 
 // dataID identifies a dataMap.data element.
@@ -21,7 +21,7 @@ type dataEntry[T any] struct {
 // of type I.
 type dataMap[I ~int, D any] struct {
 	ids   []dataID
-	idMap bitm.Bitm[uint32]
+	idMap bitvec.V[uint32]
 	data  []dataEntry[D]
 }
 

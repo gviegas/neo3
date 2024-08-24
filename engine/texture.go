@@ -10,7 +10,7 @@ import (
 
 	"gviegas/neo3/driver"
 	"gviegas/neo3/engine/internal/ctxt"
-	"gviegas/neo3/internal/bitm"
+	"gviegas/neo3/internal/bitvec"
 )
 
 const texPrefix = "texture: "
@@ -673,7 +673,7 @@ func commitTexStg() (err error) {
 	// buffers are reset if necessary.
 	defer func() {
 		for _, x := range texStgCache {
-			x.bm.Clear()
+			x.bv.Clear()
 			x.drainPending(err != nil)
 			texStg <- x
 		}
@@ -732,7 +732,7 @@ func commitTexStg() (err error) {
 type texStgBuffer struct {
 	wk   chan *driver.WorkItem
 	buf  driver.Buffer
-	bm   bitm.Bitm[uint32]
+	bv   bitvec.V[uint32]
 	pend []pendingCopy
 }
 
@@ -749,7 +749,7 @@ type pendingCopy struct {
 // Use a large block size since textures usually
 // need large allocations.
 // 1024x1024 32-bit textures (no mip) will take
-// one bitmap word with this configuration.
+// one bit vector word with this configuration.
 const (
 	texStgBlock = 131072
 	texStgNBit  = 32
@@ -775,9 +775,9 @@ func newTexStg(n int) (*texStgBuffer, error) {
 		cb.Destroy()
 		return nil, err
 	}
-	var bm bitm.Bitm[uint32]
-	bm.Grow(n / texStgBlock / texStgNBit)
-	return &texStgBuffer{wk, buf, bm, nil}, nil
+	var bv bitvec.V[uint32]
+	bv.Grow(n / texStgBlock / texStgNBit)
+	return &texStgBuffer{wk, buf, bv, nil}, nil
 }
 
 // copyToView records a copy command that copies
@@ -818,7 +818,7 @@ func (s *texStgBuffer) copyToView(t *Texture, view int, off int64) (err error) {
 	wk := <-s.wk
 	if !wk.Work[0].IsRecording() {
 		if err = wk.Work[0].Begin(); err != nil {
-			s.bm.Clear()
+			s.bv.Clear()
 			s.wk <- wk
 			return
 		}
@@ -921,7 +921,7 @@ func (s *texStgBuffer) copyFromView(t *Texture, view int, off int64) (err error)
 	wk := <-s.wk
 	if !wk.Work[0].IsRecording() {
 		if err = wk.Work[0].Begin(); err != nil {
-			s.bm.Clear()
+			s.bv.Clear()
 			s.wk <- wk
 			return
 		}
@@ -1015,7 +1015,7 @@ func (s *texStgBuffer) stage(data []byte) (off int64, err error) {
 // It returns the number of bytes written.
 //
 // NOTE: Since texStgBuffer methods may flush
-// the command buffer and/or clear the bitmap,
+// the command buffer and/or clear the bit vector,
 // unstage usually should be called right after a
 // copy-back command is committed and before
 // staging new copy commands.
@@ -1030,7 +1030,7 @@ func (s *texStgBuffer) unstage(off int64, dst []byte) (n int) {
 	ib := int(off) / texStgBlock
 	nb := (n + texStgBlock - 1) / texStgBlock
 	for i := 0; i < nb; i++ {
-		s.bm.Unset(ib + i)
+		s.bv.Unset(ib + i)
 	}
 	return
 }
@@ -1046,15 +1046,15 @@ func (s *texStgBuffer) reserve(n int) (off int64, err error) {
 		panic("texStgBuffer.reserve: n <= 0")
 	}
 	n = (n + texStgBlock - 1) / texStgBlock
-	idx, ok := s.bm.SearchRange(n)
+	idx, ok := s.bv.SearchRange(n)
 	if !ok {
 		if err = s.commit(); err != nil {
 			return
 		}
 		// TODO: Consider using idx 0 instead.
-		idx = s.bm.Len()
+		idx = s.bv.Len()
 		n := (n + texStgNBit - 1) / texStgNBit
-		s.bm.Grow(n)
+		s.bv.Grow(n)
 		// TODO: Make buffer cap bounds configurable.
 		n = n * texStgBlock * texStgNBit
 		if s.buf != nil {
@@ -1064,12 +1064,12 @@ func (s *texStgBuffer) reserve(n int) (off int64, err error) {
 		if s.buf, err = ctxt.GPU().NewBuffer(int64(n), true, 0); err != nil {
 			// TODO: Try again ignoring previous
 			// s.buf.Cap() value (if not 0).
-			s.bm = bitm.Bitm[uint32]{}
+			s.bv = bitvec.V[uint32]{}
 			return
 		}
 	}
 	for i := 0; i < n; i++ {
-		s.bm.Set(idx + i)
+		s.bv.Set(idx + i)
 	}
 	off = int64(idx) * texStgBlock
 	return
@@ -1088,8 +1088,8 @@ func (s *texStgBuffer) commit() (err error) {
 		return
 	}
 	// TODO: May have to clear the
-	// bitmap unconditionally.
-	s.bm.Clear()
+	// bit vector unconditionally.
+	s.bv.Clear()
 	if err = wk.Work[0].End(); err != nil {
 		s.drainPending(true)
 		s.wk <- wk

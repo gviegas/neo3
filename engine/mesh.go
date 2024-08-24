@@ -14,7 +14,7 @@ import (
 
 	"gviegas/neo3/driver"
 	"gviegas/neo3/engine/internal/ctxt"
-	"gviegas/neo3/internal/bitm"
+	"gviegas/neo3/internal/bitvec"
 )
 
 const meshPrefix = "mesh: "
@@ -582,8 +582,8 @@ func setMeshBuffer(buf driver.Buffer) driver.Buffer {
 	case meshes.buf:
 		return nil
 	case nil:
-		meshes.spanMap = bitm.Bitm[uint32]{}
-		meshes.primMap = bitm.Bitm[uint16]{}
+		meshes.spanMap = bitvec.V[uint32]{}
+		meshes.primMap = bitvec.V[uint16]{}
 		meshes.prims = nil
 	default:
 		c := buf.Cap()
@@ -591,9 +591,9 @@ func setMeshBuffer(buf driver.Buffer) driver.Buffer {
 		if n > int64(^uint(0)>>1) || c != n*(spanBlock*spanMapNBit) {
 			panic("invalid mesh buffer capacity")
 		}
-		meshes.spanMap = bitm.Bitm[uint32]{}
+		meshes.spanMap = bitvec.V[uint32]{}
 		meshes.spanMap.Grow(int(n))
-		meshes.primMap = bitm.Bitm[uint16]{}
+		meshes.primMap = bitvec.V[uint16]{}
 		meshes.prims = meshes.prims[:0]
 	}
 	prev := meshes.buf
@@ -604,8 +604,8 @@ func setMeshBuffer(buf driver.Buffer) driver.Buffer {
 // meshBuffer manages vertex/index data of created meshes.
 type meshBuffer struct {
 	buf     driver.Buffer
-	spanMap bitm.Bitm[uint32]
-	primMap bitm.Bitm[uint16]
+	spanMap bitvec.V[uint32]
+	primMap bitvec.V[uint16]
 	prims   []primitive
 	sync.RWMutex
 }
