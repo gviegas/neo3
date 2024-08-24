@@ -4,7 +4,7 @@
 package node
 
 import (
-	"gviegas/neo3/internal/bitm"
+	"gviegas/neo3/internal/bitvec"
 	"gviegas/neo3/linear"
 )
 
@@ -58,7 +58,7 @@ type Graph struct {
 	wasSet  bool
 	changed bool
 	nodes   []node
-	nodeMap bitm.Bitm[uint32]
+	nodeMap bitvec.V[uint32]
 	data    []data
 	cache   struct {
 		nodes   []Node
@@ -124,7 +124,7 @@ func (g *Graph) Insert(n Interface, prev Node) Node {
 		newn = Node(idx + 1)
 	} else {
 		// Should never happen.
-		panic("unexpected failure from bitm.Bitm.Search")
+		panic("unexpected failure from bitvec.V.Search")
 	}
 	// Do not assume that g.nodes[newn-1] is the
 	// zero value.
