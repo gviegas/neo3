@@ -6,6 +6,7 @@
 package bitvec
 
 import (
+	"iter"
 	"unsafe"
 )
 
@@ -227,4 +228,20 @@ func (v *V[T]) Clear() {
 	}
 	clear(v.s)
 	v.rem = n
+}
+
+// All returns an iterator over all bits of the vector.
+// The first value in the pair represents the index of the
+// bit, while the second indicates whether the bit is set.
+func (v *V[T]) All() iter.Seq2[int, bool] {
+	return func(yield func(int, bool) bool) {
+		n := v.nbit()
+		for i, x := range v.s {
+			for b := range n {
+				if !yield(i*n+b, x&(1<<b) != 0) {
+					return
+				}
+			}
+		}
+	}
 }

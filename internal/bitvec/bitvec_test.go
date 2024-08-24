@@ -3,6 +3,7 @@
 package bitvec
 
 import (
+	"iter"
 	"strconv"
 	"testing"
 	"unsafe"
@@ -397,7 +398,7 @@ func TestClear(t *testing.T) {
 		}
 		for i, x := range vu.s {
 			if x != 0 {
-				t.Fatalf("vu.Clear: m[%d]\nhave %d\nwant 0", i, x)
+				t.Fatalf("vu.Clear: s[%d]\nhave %d\nwant 0", i, x)
 			}
 		}
 	}
@@ -426,6 +427,68 @@ func TestClear(t *testing.T) {
 	}
 	vu.Clear()
 	checkClear()
+}
+
+// checkAll checks that v.All() produces the expected result.
+func (v *V[T]) checkAll(t *testing.T) {
+	checkWith := func(it func() iter.Seq2[int, bool]) {
+		for _, last := range [...]int{
+			v.Len() - 1,
+			v.Len()/2 - 1,
+			v.Len()/3 - 1,
+		} {
+			prev := -1
+			for i, x := range it() {
+				if prev == last {
+					break
+				}
+				if i-1 != prev {
+					t.Fatalf("v.All:\nhave %d, _\nwant %d, _", i, prev+1)
+				}
+				if x != v.IsSet(i) {
+					t.Fatalf("v.All:\nhave %d, %t\nwant %d, %t", i, x, i, !x)
+				}
+				prev = i
+			}
+		}
+	}
+
+	checkWith(func() iter.Seq2[int, bool] { return v.All() })
+
+	it := v.All()
+	checkWith(func() iter.Seq2[int, bool] { return it })
+}
+
+func TestAll(t *testing.T) {
+	var v16 V[uint16]
+	v16.checkAll(t)
+	v16.Grow(1)
+	v16.checkAll(t)
+	v16.Set(0)
+	v16.checkAll(t)
+	v16.Unset(0)
+	v16.checkAll(t)
+	v16.Set(1)
+	v16.Set(15)
+	v16.checkAll(t)
+	v16.Grow(10)
+	v16.checkAll(t)
+	v16.Set(100)
+	v16.Set(101)
+	v16.Set(102)
+	v16.checkAll(t)
+	v16.Set(0)
+	v16.checkAll(t)
+	v16.Set(v16.Len() - 1)
+	v16.checkAll(t)
+	for i := range v16.Len() {
+		v16.Set(i)
+	}
+	v16.checkAll(t)
+	v16.Shrink(5)
+	v16.checkAll(t)
+	v16.Clear()
+	v16.checkAll(t)
 }
 
 // printVec is for debug printing of V.s.
