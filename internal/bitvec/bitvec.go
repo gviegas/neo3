@@ -245,3 +245,28 @@ func (v *V[T]) All() iter.Seq2[int, bool] {
 		}
 	}
 }
+
+// Only returns an iterator over the bits of the vector
+// that match the given state - true for set bits and
+// false for unset bits.
+// The value represents the index of the bit.
+func (v *V[T]) Only(set bool) iter.Seq[int] {
+	var skip, flag T
+	if !set {
+		skip = ^T(0)
+		flag = 1
+	}
+	return func(yield func(int) bool) {
+		n := v.nbit()
+		for i, x := range v.s {
+			if x == skip {
+				continue
+			}
+			for b := range n {
+				if x&(1<<b)>>b != flag && !yield(i*n+b) {
+					return
+				}
+			}
+		}
+	}
+}

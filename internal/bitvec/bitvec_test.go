@@ -452,9 +452,7 @@ func (v *V[T]) checkAll(t *testing.T) {
 			}
 		}
 	}
-
 	checkWith(func() iter.Seq2[int, bool] { return v.All() })
-
 	it := v.All()
 	checkWith(func() iter.Seq2[int, bool] { return it })
 }
@@ -489,6 +487,76 @@ func TestAll(t *testing.T) {
 	v16.checkAll(t)
 	v16.Clear()
 	v16.checkAll(t)
+}
+
+// checkOnly checks that v.Only() produces the expected result.
+func (v *V[T]) checkOnly(t *testing.T) {
+	checkWith := func(it func() iter.Seq[int], set bool) {
+		n := v.Rem()
+		if set {
+			n = v.Len() - n
+		}
+		for _, max := range [...]int{
+			n,
+			n / 2,
+			n / 3,
+		} {
+			var n int
+			prev := -1
+			for i := range it() {
+				if n == max {
+					break
+				}
+				n++
+				if i <= prev {
+					t.Fatalf("v.Only:\nhave %d\nwant > %d", i, prev)
+				}
+				if isSet := v.IsSet(i); set && !isSet || !set && isSet {
+					printVec(v)
+					println(set)
+					t.Fatalf("v.Only: IsSet(%d)\nhave %t\nwant %t", i, isSet, !isSet)
+				}
+				prev = i
+			}
+			if n != max {
+				t.Fatalf("v.Only: wrong number of iterations\nhave %d\nwant %d", n, max)
+			}
+		}
+	}
+	for _, x := range [2]bool{true, false} {
+		checkWith(func() iter.Seq[int] { return v.Only(x) }, x)
+		it := v.Only(x)
+		checkWith(func() iter.Seq[int] { return it }, x)
+	}
+}
+
+func TestOnly(t *testing.T) {
+	var v32 V[uint32]
+	v32.checkOnly(t)
+	v32.Grow(1)
+	v32.checkOnly(t)
+	v32.Set(0)
+	v32.checkOnly(t)
+	v32.Set(1)
+	v32.checkOnly(t)
+	v32.Unset(0)
+	v32.checkOnly(t)
+	v32.Grow(9)
+	v32.checkOnly(t)
+	v32.Set(32)
+	v32.Set(33)
+	v32.Set(66)
+	v32.Set(v32.Len() - 1)
+	v32.Set(0)
+	v32.checkOnly(t)
+	for i := range v32.Len() {
+		v32.Set(i)
+	}
+	v32.checkOnly(t)
+	v32.Shrink(5)
+	v32.checkOnly(t)
+	v32.Clear()
+	v32.checkOnly(t)
 }
 
 // printVec is for debug printing of V.s.
