@@ -4,6 +4,8 @@
 package node
 
 import (
+	"iter"
+
 	"gviegas/neo3/internal/bitvec"
 	"gviegas/neo3/linear"
 )
@@ -348,3 +350,34 @@ func (g *Graph) Update() {
 
 // Len returns the number of nodes in the graph.
 func (g *Graph) Len() int { return len(g.data) }
+
+// All returns an iterator over all nodes in g.
+// The order is depth-first. Parent nodes are yielded
+// before their children.
+func (g *Graph) All() iter.Seq[Node] {
+	return func(yield func(Node) bool) { g.visitDepth(g.next, yield) }
+}
+
+// Descendants returns an iterator over all nodes in g
+// that descend from n.
+// The order is depth-first. Parent nodes are yielded
+// before their children.
+func (g *Graph) Descendants(n Node) iter.Seq[Node] {
+	return func(yield func(Node) bool) {
+		if n == Nil {
+			return
+		}
+		g.visitDepth(g.nodes[n-1].sub, yield)
+	}
+}
+
+// visitDepth is used by iterators.
+func (g *Graph) visitDepth(n Node, yield func(Node) bool) bool {
+	if n == Nil {
+		return true
+	}
+	if !yield(n) {
+		return false
+	}
+	return g.visitDepth(g.nodes[n-1].sub, yield) && g.visitDepth(g.nodes[n-1].next, yield)
+}

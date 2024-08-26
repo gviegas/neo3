@@ -3,6 +3,7 @@
 package node
 
 import (
+	"iter"
 	"strconv"
 	"testing"
 
@@ -226,8 +227,8 @@ func TestNodesGrowth(t *testing.T) {
 	var g Graph
 
 	// Graph.nodes needs to grow by a multiple of
-	// 32 elements due to bitmap granularity.
-	// This means an extra 1KB per bitmap word
+	// 32 elements due to bit vector granularity.
+	// This means an extra 1KB per bit vector word
 	// when int is 64-bit.
 	g.check(want{}, t)
 	n1 := g.Insert(new(inode), Nil)
@@ -352,7 +353,7 @@ func TestGet(t *testing.T) {
 	check(g.Get(n3), &i3)
 	check(g.Get(n1), &i1)
 
-	i311 := inode{name: "3/1/1"}
+	i311 := inode{name: "/3/1/1"}
 	n311 := g.Insert(&i311, n31)
 	check(g.Get(n311), &i311)
 
@@ -364,7 +365,7 @@ func TestGet(t *testing.T) {
 	check(g.Get(n11), &i11)
 	check(g.Get(n1), &i1)
 
-	g.checkRemoval(g.Remove(n31), 2, []string{"/3/1", "3/1/1"}, t)
+	g.checkRemoval(g.Remove(n31), 2, []string{"/3/1", "/3/1/1"}, t)
 	check(g.Get(n3), &i3)
 	check(g.Get(n11), &i11)
 	check(g.Get(n1), &i1)
@@ -946,7 +947,7 @@ func TestIgnored(t *testing.T) {
 	n1 := g.Insert(&inode{"/1", m1, true}, Nil)
 	n11 := g.Insert(&inode{"/1/1", m2, true}, n1)
 	n12 := g.Insert(&inode{"/1/2", m3, true}, n1)
-	n121 := g.Insert(&inode{"1/2/1", m4, true}, n12)
+	n121 := g.Insert(&inode{"/1/2/1", m4, true}, n12)
 
 	n2 := g.Insert(&inode{"/2", m2, true}, Nil)
 
@@ -1168,4 +1169,134 @@ func TestIgnored(t *testing.T) {
 	check(n31, m1, m3, m2)
 	check(n311, m1, m3, m2, m5)
 	check(n3111, m1, m3, m2, m5, m6)
+}
+
+func TestIter(t *testing.T) {
+	var g Graph
+
+	set := make(map[string]struct{})
+
+	// These indicate early return.
+	const (
+		doneLen  = -1
+		doneName = "bye"
+	)
+
+	check := func(it iter.Seq[Node], wantLen int, ancestor Node, methodName string) {
+		clear(set)
+		call := "Graph." + methodName
+		nsup := 2
+		if ancestor != Nil {
+			nsup += len(g.Get(ancestor).(*inode).name)
+		}
+		for x := range it {
+			i := g.Get(x).(*inode)
+			if i.name == doneName {
+				if wantLen != doneLen {
+					t.Fatalf("%s: early return mismatch", call)
+				}
+				return
+			}
+			if _, ok := set[i.name]; ok {
+				t.Fatalf("%s: non-unique value\n%v", call, i)
+			}
+			// XXX: This assumes that each scope has a single digit.
+			for sup := len(i.name) - 2; sup >= nsup; sup -= 2 {
+				if _, ok := set[i.name[:sup]]; !ok {
+					t.Fatalf("%s: invalid order\n%s before %s", call, i.name, i.name[:sup])
+				}
+			}
+			set[i.name] = struct{}{}
+		}
+		if len := len(set); len != wantLen {
+			t.Fatalf("%s: wrong number of iterations\nhave %d\nwant %d", call, len, wantLen)
+		}
+	}
+
+	checkAll := func(wantLen int) {
+		all := g.All()
+		check(all, wantLen, Nil, "All")
+		check(all, wantLen, Nil, "All")
+	}
+
+	checkDescend := func(n Node, wantLen int) {
+		descend := g.Descendants(n)
+		check(descend, wantLen, n, "Descendants")
+		check(descend, wantLen, n, "Descendants")
+	}
+
+	checkAll(0)
+	checkDescend(Nil, 0)
+
+	n1 := g.Insert(&inode{name: "/1"}, Nil)
+	checkAll(1)
+	checkDescend(Nil, 0)
+	checkDescend(n1, 0)
+
+	n2 := g.Insert(&inode{name: "/2"}, Nil)
+	checkAll(2)
+	checkDescend(Nil, 0)
+	checkDescend(n1, 0)
+	checkDescend(n2, 0)
+
+	n21 := g.Insert(&inode{name: "/2/1"}, n2)
+	checkAll(3)
+	checkDescend(Nil, 0)
+	checkDescend(n1, 0)
+	checkDescend(n2, 1)
+	checkDescend(n21, 0)
+
+	n11 := g.Insert(&inode{name: "/1/1"}, n1)
+	checkAll(4)
+	checkDescend(Nil, 0)
+	checkDescend(n1, 1)
+	checkDescend(n2, 1)
+	checkDescend(n21, 0)
+	checkDescend(n11, 0)
+
+	n111 := g.Insert(&inode{name: "/1/1/1"}, n11)
+	checkAll(5)
+	checkDescend(Nil, 0)
+	checkDescend(n1, 2)
+	checkDescend(n2, 1)
+	checkDescend(n21, 0)
+	checkDescend(n11, 1)
+	checkDescend(n111, 0)
+
+	bye := g.Insert(&inode{name: doneName}, n1)
+	checkAll(doneLen)
+	checkDescend(Nil, 0)
+	checkDescend(n1, doneLen)
+	checkDescend(n2, 1)
+	checkDescend(n21, 0)
+
+	g.Remove(bye)
+
+	n112 := g.Insert(&inode{name: "/1/1/2"}, n11)
+	checkAll(6)
+	checkDescend(Nil, 0)
+	checkDescend(n1, 3)
+	checkDescend(n2, 1)
+	checkDescend(n21, 0)
+	checkDescend(n11, 2)
+	checkDescend(n111, 0)
+	checkDescend(n112, 0)
+
+	n113 := g.Insert(&inode{name: "/1/1/3"}, n11)
+	bye = g.Insert(&inode{name: doneName}, n113)
+	checkAll(doneLen)
+	checkDescend(Nil, 0)
+	checkDescend(n1, doneLen)
+	checkDescend(n11, doneLen)
+	checkDescend(n113, doneLen)
+
+	g.Remove(bye)
+
+	bye = g.Insert(&inode{name: doneName}, n112)
+	checkAll(doneLen)
+	checkDescend(Nil, 0)
+	checkDescend(n1, doneLen)
+	checkDescend(n11, doneLen)
+	checkDescend(n112, doneLen)
+	checkDescend(n113, 0)
 }
