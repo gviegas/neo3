@@ -46,7 +46,7 @@ func (m *dataMap[I, D]) insert(data D) I {
 		id = I(idx)
 	} else {
 		// Should never happen.
-		panic("unexpected failure from bitm.Bitm.Search")
+		panic("unexpected failure from bitvec.V.Search")
 	}
 	m.ids[id] = dataID{data: len(m.data)}
 	m.data = append(m.data, dataEntry[D]{data, int(id)})
