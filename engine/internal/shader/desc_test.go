@@ -809,6 +809,27 @@ func TestSetTSFail(t *testing.T) {
 			"nil shadow map sampler",
 		},
 		{
+			"Irradiance",
+			(*Table).SetIrradiance,
+			"irradiance descriptor out of bounds",
+			"nil irradiance texture",
+			"nil irradiance sampler",
+		},
+		{
+			"LD",
+			(*Table).SetLD,
+			"LD descriptor out of bounds",
+			"nil LD texture",
+			"nil LD sampler",
+		},
+		{
+			"DFG",
+			(*Table).SetDFG,
+			"DFG descriptor out of bounds",
+			"nil DFG texture",
+			"nil DFG sampler",
+		},
+		{
 			"BaseColor",
 			(*Table).SetBaseColor,
 			"base color descriptor out of bounds",

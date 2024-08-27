@@ -32,11 +32,17 @@ const (
 )
 
 const (
-	frameNr    = 0
-	lightNr    = 1
-	shadowNr   = 2
-	shdwTexNr  = 3
-	shdwSplrNr = 4
+	frameNr     = 0
+	lightNr     = 1
+	shadowNr    = 2
+	shdwTexNr   = 3
+	shdwSplrNr  = 4
+	irradTexNr  = 5
+	irradSplrNr = 6
+	ldTexNr     = 7
+	ldSplrNr    = 8
+	dfgTexNr    = 9
+	dfgSplrNr   = 10
 
 	drawableNr = 0
 
@@ -110,6 +116,14 @@ func newDescHeap0() (driver.DescHeap, error) {
 		// TODO: Texture array.
 		textureDesc(shdwTexNr),
 		samplerDesc(shdwSplrNr),
+		// IBL.
+		// TODO: Texture array.
+		textureDesc(irradTexNr),
+		samplerDesc(irradSplrNr),
+		textureDesc(ldTexNr),
+		samplerDesc(ldSplrNr),
+		textureDesc(dfgTexNr),
+		samplerDesc(dfgSplrNr),
 	})
 }
 
@@ -363,6 +377,54 @@ func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler)
 	}
 	t.dt.Heap(globalHeap).SetImage(cpy, shdwTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(globalHeap).SetSampler(cpy, shdwSplrNr, 0, []driver.Sampler{splr})
+}
+
+// SetIrradiance sets a diffuse irradiance texture/sampler
+// pair in the global heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetIrradiance(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[globalHeap]):
+		panic("irradiance descriptor out of bounds")
+	case tex == nil:
+		panic("nil irradiance texture")
+	case splr == nil:
+		panic("nil irradiance sampler")
+	}
+	t.dt.Heap(globalHeap).SetImage(cpy, irradTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(globalHeap).SetSampler(cpy, irradSplrNr, 0, []driver.Sampler{splr})
+}
+
+// SetLD sets a specular LD texture/sampler pair in the
+// global heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetLD(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[globalHeap]):
+		panic("LD descriptor out of bounds")
+	case tex == nil:
+		panic("nil LD texture")
+	case splr == nil:
+		panic("nil LD sampler")
+	}
+	t.dt.Heap(globalHeap).SetImage(cpy, ldTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(globalHeap).SetSampler(cpy, ldSplrNr, 0, []driver.Sampler{splr})
+}
+
+// SetDFG sets a specular DFG texture/sampler pair in
+// the global heap.
+// tex.Image() must support driver.UShaderSample.
+func (t *Table) SetDFG(cpy int, tex driver.ImageView, splr driver.Sampler) {
+	switch {
+	case uint(cpy) >= uint(t.dcpy[globalHeap]):
+		panic("DFG descriptor out of bounds")
+	case tex == nil:
+		panic("nil DFG texture")
+	case splr == nil:
+		panic("nil DFG sampler")
+	}
+	t.dt.Heap(globalHeap).SetImage(cpy, dfgTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(globalHeap).SetSampler(cpy, dfgSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetBaseColor sets a base color texture/sampler pair in
