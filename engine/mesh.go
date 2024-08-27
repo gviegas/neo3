@@ -174,7 +174,7 @@ func (s Semantic) String() string {
 	case Weights0:
 		return "Weights0"
 	default:
-		return "!mesh.Semantic"
+		return "!engine.Semantic"
 	}
 }
 
@@ -280,7 +280,7 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 		return uint16(u)
 	}
 
-	var err = errors.New(meshPrefix + "unsupported vertex format for " + s.String())
+	err := errors.New(meshPrefix + "unsupported vertex format for " + s.String())
 	var p *byte
 
 	switch s {
@@ -492,7 +492,7 @@ func NewMesh(data *MeshData) (m *Mesh, err error) {
 	return
 }
 
-// validateData checks whether data is valid.
+// validateMeshData checks whether data is valid.
 func validateMeshData(data *MeshData) error {
 	newErr := func(reason string) error { return errors.New(meshPrefix + reason) }
 
@@ -507,6 +507,7 @@ func validateMeshData(data *MeshData) error {
 
 	for i := range data.Primitives {
 		pdata := &data.Primitives[i]
+
 		switch {
 		case pdata.VertexCount < 0:
 			return newErr("invalid vertex count")
@@ -515,11 +516,11 @@ func validateMeshData(data *MeshData) error {
 		case pdata.IndexCount > 0 && uint(pdata.Index.Src) >= uint(len(data.Srcs)):
 			return newErr("index data source out of bounds")
 		}
-		// Back-ends usually can handle wrong counts
-		// (e.g., by dropping excess vertices), but
-		// this is likely a caller's mistake that
-		// should be fixed.
-		var cnt = pdata.VertexCount
+
+		// While back-ends usually can handle wrong counts
+		// (e.g., by dropping excess vertices), this is
+		// likely a mistake.
+		cnt := pdata.VertexCount
 		if x := pdata.IndexCount; x > 0 {
 			cnt = x
 		}
@@ -544,9 +545,7 @@ func validateMeshData(data *MeshData) error {
 		default:
 			return newErr("undefined driver.Topology constant")
 		}
-		// It is fairly easy to make a primitive refer
-		// to an invalid source, and we rather not
-		// panic at out of bounds indexing.
+
 		for i := range pdata.Semantics {
 			if pdata.SemanticMask&(1<<i) == 0 {
 				continue
@@ -603,11 +602,11 @@ func setMeshBuffer(buf driver.Buffer) driver.Buffer {
 
 // meshBuffer manages vertex/index data of created meshes.
 type meshBuffer struct {
+	sync.RWMutex
 	buf     driver.Buffer
 	spanMap bitvec.V[uint32]
 	primMap bitvec.V[uint16]
 	prims   []primitive
-	sync.RWMutex
 }
 
 const (
@@ -636,8 +635,6 @@ func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
 			return span{}, err
 		}
 		if b.buf != nil {
-			// TODO: Do this copy through the GPU
-			// (requires driver.UCopySrc/UCopyDst).
 			copy(buf.Bytes(), b.buf.Bytes())
 			b.buf.Destroy()
 		}
