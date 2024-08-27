@@ -51,7 +51,8 @@ const (
 // makes the driver.ImageView slice that Texture expects.
 // It assumes that the parameters are valid.
 func makeViews(param *TexParam, usage driver.Usage, texType int) (v []driver.ImageView, err error) {
-	img, err := ctxt.GPU().NewImage(param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usage)
+	img, err := ctxt.GPU().NewImage(
+		param.PixelFmt, param.Dim3D, param.Layers, param.Levels, param.Samples, usage)
 	if err != nil {
 		return
 	}
@@ -316,6 +317,7 @@ func (t *Texture) ViewLayers(view int) int {
 // view's memory.
 // It does not consider the memory consumed by
 // additional mip levels.
+//
 // TODO: Provide a method that actually considers
 // the whole mip chain.
 func (t *Texture) ViewSize(view int) int {
@@ -330,6 +332,7 @@ func (t *Texture) ViewSize(view int) int {
 // data must contain the first level of every layer,
 // in order and tightly packed.
 // Unless commit is true, the copy may be delayed.
+//
 // TODO: Allow copying data to any mip level.
 func (t *Texture) CopyToView(view int, data []byte, commit bool) error {
 	if x := t.ViewSize(view); x < len(data) {
@@ -398,7 +401,7 @@ func (t *Texture) unsetPending(layer int, layout driver.Layout) {
 // completes execution.
 // The caller is also responsible for calling
 // t.setLayout after the transition executes to
-// update t's state. Not doing so may cause a panic.
+// update t's state.
 func (t *Texture) transition(view int, cb driver.CmdBuffer, layout driver.Layout, barrier driver.Barrier) {
 	if !t.IsValidView(view) {
 		panic("not a valid view of Texture")
@@ -423,8 +426,10 @@ func (t *Texture) transition(view int, cb driver.CmdBuffer, layout driver.Layout
 			nl = 6
 		}
 	}
-	// Need separate transitions if not all
-	// layers are in the same layout.
+	// Need to split the transition if the
+	// layouts of any two layers differ.
+	// TODO: Maybe try to merge contiguous
+	// layers that share the same layout.
 	var differ bool
 	before := []driver.Layout{t.setPending(il)}
 	for i := 1; i < nl; i++ {
@@ -450,18 +455,16 @@ func (t *Texture) transition(view int, cb driver.CmdBuffer, layout driver.Layout
 		}
 		cb.Transition(xs)
 	} else {
-		cb.Transition([]driver.Transition{
-			{
-				Barrier:      barrier,
-				LayoutBefore: before[0],
-				LayoutAfter:  layout,
-				Img:          t.views[view].Image(),
-				Layer:        il,
-				Layers:       nl,
-				Level:        0,
-				Levels:       t.param.Levels,
-			},
-		})
+		cb.Transition([]driver.Transition{{
+			Barrier:      barrier,
+			LayoutBefore: before[0],
+			LayoutAfter:  layout,
+			Img:          t.views[view].Image(),
+			Layer:        il,
+			Layers:       nl,
+			Level:        0,
+			Levels:       t.param.Levels,
+		}})
 	}
 }
 
@@ -472,7 +475,7 @@ func (t *Texture) transition(view int, cb driver.CmdBuffer, layout driver.Layout
 // be driver.LUndefined (in case of failure to execute
 // the layout transition command).
 // Calling this method with no preceding transition is
-// invalid and may cause a panic.
+// not allowed.
 func (t *Texture) setLayout(view int, layout driver.Layout) {
 	if !t.IsValidView(view) {
 		panic("not a valid view of Texture")
@@ -824,23 +827,21 @@ func (s *texStgBuffer) copyToView(t *Texture, view int, off int64) (err error) {
 		}
 	}
 
-	wk.Work[0].Transition([]driver.Transition{
-		{
-			Barrier: driver.Barrier{
-				SyncBefore:   driver.SNone,
-				SyncAfter:    driver.SCopy,
-				AccessBefore: driver.ANone,
-				AccessAfter:  driver.ACopyWrite,
-			},
-			LayoutBefore: driver.LUndefined,
-			LayoutAfter:  driver.LCopyDst,
-			Img:          t.views[view].Image(),
-			Layer:        il,
-			Layers:       nl,
-			Level:        0,
-			Levels:       1, // TODO
+	wk.Work[0].Transition([]driver.Transition{{
+		Barrier: driver.Barrier{
+			SyncBefore:   driver.SNone,
+			SyncAfter:    driver.SCopy,
+			AccessBefore: driver.ANone,
+			AccessAfter:  driver.ACopyWrite,
 		},
-	})
+		LayoutBefore: driver.LUndefined,
+		LayoutAfter:  driver.LCopyDst,
+		Img:          t.views[view].Image(),
+		Layer:        il,
+		Layers:       nl,
+		Level:        0,
+		Levels:       1, // TODO
+	}})
 
 	wk.Work[0].CopyBufToImg(&driver.BufImgCopy{
 		Buf:    s.buf,
@@ -906,8 +907,8 @@ func (s *texStgBuffer) copyFromView(t *Texture, view int, off int64) (err error)
 	if off+int64(n*nl) > s.buf.Cap() {
 		return errors.New(texPrefix + "not enough buffer capacity for copying")
 	}
-	// Need separate transitions if not all
-	// layers are in the same layout.
+	// Need to split the transition if the
+	// layouts of any two layers differ.
 	// TODO: Maybe try to merge contiguous
 	// layers that share the same layout.
 	var differ bool
@@ -951,23 +952,21 @@ func (s *texStgBuffer) copyFromView(t *Texture, view int, off int64) (err error)
 		}
 		wk.Work[0].Transition(xs)
 	} else {
-		wk.Work[0].Transition([]driver.Transition{
-			{
-				Barrier: driver.Barrier{
-					SyncBefore:   driver.SNone,
-					SyncAfter:    driver.SCopy,
-					AccessBefore: driver.ANone,
-					AccessAfter:  driver.ACopyRead,
-				},
-				LayoutBefore: before[0],
-				LayoutAfter:  driver.LCopySrc,
-				Img:          t.views[view].Image(),
-				Layer:        il,
-				Layers:       nl,
-				Level:        0,
-				Levels:       1, // TODO
+		wk.Work[0].Transition([]driver.Transition{{
+			Barrier: driver.Barrier{
+				SyncBefore:   driver.SNone,
+				SyncAfter:    driver.SCopy,
+				AccessBefore: driver.ANone,
+				AccessAfter:  driver.ACopyRead,
 			},
-		})
+			LayoutBefore: before[0],
+			LayoutAfter:  driver.LCopySrc,
+			Img:          t.views[view].Image(),
+			Layer:        il,
+			Layers:       nl,
+			Level:        0,
+			Levels:       1, // TODO
+		}})
 	}
 
 	wk.Work[0].CopyImgToBuf(&driver.BufImgCopy{
