@@ -74,28 +74,28 @@ const (
 	jointSpan    = (MaxJoint*unsafe.Sizeof(JointLayout{}) + blockSize - 1) &^ (blockSize - 1) / blockSize
 )
 
-func constantDesc(nr int) driver.Descriptor {
+func constantDesc(nr int, stages driver.Stage) driver.Descriptor {
 	return driver.Descriptor{
 		Type:   driver.DConstant,
-		Stages: driver.SVertex | driver.SFragment,
+		Stages: stages,
 		Nr:     nr,
 		Len:    1,
 	}
 }
 
-func textureDesc(nr int) driver.Descriptor {
+func textureDesc(nr int, stages driver.Stage) driver.Descriptor {
 	return driver.Descriptor{
 		Type:   driver.DTexture,
-		Stages: driver.SVertex | driver.SFragment,
+		Stages: stages,
 		Nr:     nr,
 		Len:    1,
 	}
 }
 
-func samplerDesc(nr int) driver.Descriptor {
+func samplerDesc(nr int, stages driver.Stage) driver.Descriptor {
 	return driver.Descriptor{
 		Type:   driver.DSampler,
-		Stages: driver.SVertex | driver.SFragment,
+		Stages: stages,
 		Nr:     nr,
 		Len:    1,
 	}
@@ -104,26 +104,22 @@ func samplerDesc(nr int) driver.Descriptor {
 // newDescHeap0 creates a new driver.DescHeap suitable for
 // frame (FrameLayout), light (LightLayout) and shadow
 // (ShadowLayout) data plus textures/samplers.
+//
+// TODO: Texture arrays.
 func newDescHeap0() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
-		// Frame.
-		constantDesc(frameNr),
-		// Light.
-		constantDesc(lightNr),
-		// Shadow.
-		constantDesc(shadowNr),
-		// Shadow map.
-		// TODO: Texture array.
-		textureDesc(shdwTexNr),
-		samplerDesc(shdwSplrNr),
-		// IBL.
-		// TODO: Texture array.
-		textureDesc(irradTexNr),
-		samplerDesc(irradSplrNr),
-		textureDesc(ldTexNr),
-		samplerDesc(ldSplrNr),
-		textureDesc(dfgTexNr),
-		samplerDesc(dfgSplrNr),
+		// TODO: driver.SCompute may be necessary.
+		constantDesc(frameNr, driver.SVertex|driver.SFragment),
+		constantDesc(lightNr, driver.SFragment),
+		constantDesc(shadowNr, driver.SVertex|driver.SFragment),
+		textureDesc(shdwTexNr, driver.SFragment),
+		samplerDesc(shdwSplrNr, driver.SFragment),
+		textureDesc(irradTexNr, driver.SFragment),
+		samplerDesc(irradSplrNr, driver.SFragment),
+		textureDesc(ldTexNr, driver.SFragment),
+		samplerDesc(ldSplrNr, driver.SFragment),
+		textureDesc(dfgTexNr, driver.SFragment),
+		samplerDesc(dfgSplrNr, driver.SFragment),
 	})
 }
 
@@ -131,7 +127,8 @@ func newDescHeap0() (driver.DescHeap, error) {
 // drawable (DrawableLayout) data.
 func newDescHeap1() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
-		constantDesc(drawableNr),
+		// TODO: driver.SFragment may be unnecessary.
+		constantDesc(drawableNr, driver.SVertex|driver.SFragment),
 	})
 }
 
@@ -139,22 +136,17 @@ func newDescHeap1() (driver.DescHeap, error) {
 // material (MaterialLayout) data plus textures/samplers.
 func newDescHeap2() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
-		constantDesc(materialNr),
-		// Base color.
-		textureDesc(colorTexNr),
-		samplerDesc(colorSplrNr),
-		// Metallic-roughness.
-		textureDesc(metalTexNr),
-		samplerDesc(metalSplrNr),
-		// Normal map.
-		textureDesc(normTexNr),
-		samplerDesc(normSplrNr),
-		// Occlusion map.
-		textureDesc(occTexNr),
-		samplerDesc(occSplrNr),
-		// Emissive map.
-		textureDesc(emisTexNr),
-		samplerDesc(emisSplrNr),
+		constantDesc(materialNr, driver.SFragment),
+		textureDesc(colorTexNr, driver.SFragment),
+		samplerDesc(colorSplrNr, driver.SFragment),
+		textureDesc(metalTexNr, driver.SFragment),
+		samplerDesc(metalSplrNr, driver.SFragment),
+		textureDesc(normTexNr, driver.SFragment),
+		samplerDesc(normSplrNr, driver.SFragment),
+		textureDesc(occTexNr, driver.SFragment),
+		samplerDesc(occSplrNr, driver.SFragment),
+		textureDesc(emisTexNr, driver.SFragment),
+		samplerDesc(emisSplrNr, driver.SFragment),
 	})
 }
 
@@ -162,7 +154,7 @@ func newDescHeap2() (driver.DescHeap, error) {
 // joint (JointLayout) data.
 func newDescHeap3() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
-		constantDesc(jointNr),
+		constantDesc(jointNr, driver.SVertex),
 	})
 }
 
