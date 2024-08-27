@@ -13,7 +13,7 @@ type drawableMap struct{ dataMap[Drawable, drawable] }
 // drawable is what a drawableMap stores.
 type drawable struct {
 	mesh   *Mesh
-	matl   []*Material
+	mat    []*Material
 	skin   *Skin
 	layout shader.DrawableLayout
 	// TODO...
@@ -23,14 +23,14 @@ type drawable struct {
 type Drawable int
 
 // DrawParam describes how to render a Drawable.
-// Matl is a list of non-nil materials where each
+// Mat is a list of non-nil materials where each
 // element corresponds to a primitive in Mesh.
 // Skinning is optional so Skin need not be set.
 type DrawParam struct {
 	World  linear.M4
 	Normal linear.M3
 	Mesh   *Mesh
-	Matl   []*Material
+	Mat    []*Material
 	Skin   *Skin
 	// TODO...
 }
