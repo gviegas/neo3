@@ -15,6 +15,8 @@ import (
 
 const texPrefix = "texture: "
 
+func newTexErr(reason string) error { return errors.New(texPrefix + reason) }
+
 // Texture wraps a driver.Image.
 type Texture struct {
 	// One view per layer (or every 6th, in case
@@ -163,7 +165,7 @@ func New2D(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(texPrefix + reason)
+	err = newTexErr(reason)
 	return
 validParam:
 	// TODO: Consider removing driver.UCopySrc and
@@ -208,7 +210,7 @@ func NewCube(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(texPrefix + reason)
+	err = newTexErr(reason)
 	return
 validParam:
 	// TODO: Consider removing driver.UCopySrc and
@@ -248,7 +250,7 @@ func NewTarget(param *TexParam) (t *Texture, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(texPrefix + reason)
+	err = newTexErr(reason)
 	return
 validParam:
 	// TODO: Consider removing driver.UCopyDst and
@@ -577,7 +579,7 @@ func NewSampler(param *SplrParam) (s *Sampler, err error) {
 	default:
 		goto validParam
 	}
-	err = errors.New(texPrefix + reason)
+	err = newTexErr(reason)
 	return
 validParam:
 	splr, err := ctxt.GPU().NewSampler(param)
@@ -794,10 +796,10 @@ func newTexStg(n int) (*texStgBuffer, error) {
 // every layer, in order and tightly packed.
 func (s *texStgBuffer) copyToView(t *Texture, view int, off int64) (err error) {
 	if t.param.Samples != 1 {
-		return errors.New(texPrefix + "cannot copy data to MS texture")
+		return newTexErr("cannot copy data to MS texture")
 	}
 	if view < 0 || view >= len(t.views) {
-		return errors.New(texPrefix + "view index out of bounds")
+		return newTexErr("view index out of bounds")
 	}
 
 	il := view
@@ -815,7 +817,7 @@ func (s *texStgBuffer) copyToView(t *Texture, view int, off int64) (err error) {
 	}
 	n := t.param.PixelFmt.Size() * t.param.Dim3D.Width * t.param.Dim3D.Height
 	if off+int64(n*nl) > s.buf.Cap() {
-		return errors.New(texPrefix + "not enough buffer capacity for copying")
+		return newTexErr("not enough buffer capacity for copying")
 	}
 
 	wk := <-s.wk
@@ -882,10 +884,10 @@ func (s *texStgBuffer) copyToView(t *Texture, view int, off int64) (err error) {
 // texStgBlock).
 func (s *texStgBuffer) copyFromView(t *Texture, view int, off int64) (err error) {
 	if t.param.Samples != 1 {
-		return errors.New(texPrefix + "cannot copy data from MS texture")
+		return newTexErr("cannot copy data from MS texture")
 	}
 	if view < 0 || view >= len(t.views) {
-		return errors.New(texPrefix + "view index out of bounds")
+		return newTexErr("view index out of bounds")
 	}
 
 	il := view
@@ -905,7 +907,7 @@ func (s *texStgBuffer) copyFromView(t *Texture, view int, off int64) (err error)
 	// all mip levels.
 	n := t.param.PixelFmt.Size() * t.param.Dim3D.Width * t.param.Dim3D.Height
 	if off+int64(n*nl) > s.buf.Cap() {
-		return errors.New(texPrefix + "not enough buffer capacity for copying")
+		return newTexErr("not enough buffer capacity for copying")
 	}
 	// Need to split the transition if the
 	// layouts of any two layers differ.

@@ -11,6 +11,8 @@ import (
 
 const matPrefix = "material: "
 
+func newMatErr(reason string) error { return errors.New(matPrefix + reason) }
+
 // Material defines the material properties to be applied
 // to geometry during rendering.
 type Material struct {
@@ -178,8 +180,6 @@ func NewUnlit(prop *Unlit) (*Material, error) {
 }
 
 // Parameter validation for New* functions.
-
-func newMatErr(reason string) error { return errors.New(matPrefix + reason) }
 
 func (p *TexRef) validate(optional bool) error {
 	// TODO: Should ensure somehow that the Texture

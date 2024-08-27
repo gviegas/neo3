@@ -10,7 +10,9 @@ import (
 	"gviegas/neo3/wsi"
 )
 
-func newRendErr(s string) error { return errors.New("renderer: " + s) }
+const rendPrefix = "renderer: "
+
+func newRendErr(reason string) error { return errors.New(rendPrefix + reason) }
 
 // Renderer is a real-time renderer.
 type Renderer struct {

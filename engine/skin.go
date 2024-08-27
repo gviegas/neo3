@@ -11,6 +11,8 @@ import (
 
 const skinPrefix = "skin: "
 
+func newSkinErr(reason string) error { return errors.New(skinPrefix + reason) }
+
 // Skin defines skinning data.
 type Skin struct {
 	joints []joint
@@ -50,7 +52,7 @@ type Joint struct {
 func NewSkin(joints []Joint) (*Skin, error) {
 	n := len(joints)
 	if n == 0 {
-		return nil, errors.New(skinPrefix + "[]Joint length is 0")
+		return nil, newSkinErr("[]Joint length is 0")
 	}
 
 	js := make([]joint, 0, n)
@@ -62,9 +64,9 @@ func NewSkin(joints []Joint) (*Skin, error) {
 		pnt := joints[i].Parent
 		switch {
 		case pnt >= n:
-			return nil, errors.New(skinPrefix + "Joint.Parent out of bounds")
+			return nil, newSkinErr("Joint.Parent out of bounds")
 		case pnt == i:
-			return nil, errors.New(skinPrefix + "Joint.Parent refers to itself")
+			return nil, newSkinErr("Joint.Parent refers to itself")
 		case pnt < 0:
 			pnt = -1
 		}

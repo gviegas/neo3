@@ -19,6 +19,8 @@ import (
 
 const meshPrefix = "mesh: "
 
+func newMeshErr(reason string) error { return errors.New(meshPrefix + reason) }
+
 // Mesh is a collection of primitives.
 // Each primitive defines the data for a draw call.
 type Mesh struct {
@@ -280,7 +282,7 @@ func (s Semantic) conv(fmt driver.VertexFmt, src io.Reader, cnt int) (io.Reader,
 		return uint16(u)
 	}
 
-	err := errors.New(meshPrefix + "unsupported vertex format for " + s.String())
+	err := newMeshErr("unsupported vertex format for " + s.String())
 	var p *byte
 
 	switch s {
@@ -494,15 +496,13 @@ func NewMesh(data *MeshData) (m *Mesh, err error) {
 
 // validateMeshData checks whether data is valid.
 func validateMeshData(data *MeshData) error {
-	newErr := func(reason string) error { return errors.New(meshPrefix + reason) }
-
 	switch {
 	case data == nil:
-		return newErr("nil data")
+		return newMeshErr("nil data")
 	case len(data.Primitives) == 0:
-		return newErr("no primitive data")
+		return newMeshErr("no primitive data")
 	case len(data.Srcs) == 0:
-		return newErr("no data source")
+		return newMeshErr("no data source")
 	}
 
 	for i := range data.Primitives {
@@ -510,11 +510,11 @@ func validateMeshData(data *MeshData) error {
 
 		switch {
 		case pdata.VertexCount < 0:
-			return newErr("invalid vertex count")
+			return newMeshErr("invalid vertex count")
 		case pdata.SemanticMask&Position == 0:
-			return newErr("no position semantic")
+			return newMeshErr("no position semantic")
 		case pdata.IndexCount > 0 && uint(pdata.Index.Src) >= uint(len(data.Srcs)):
-			return newErr("index data source out of bounds")
+			return newMeshErr("index data source out of bounds")
 		}
 
 		// While back-ends usually can handle wrong counts
@@ -528,22 +528,22 @@ func validateMeshData(data *MeshData) error {
 		case driver.TPoint:
 		case driver.TLine:
 			if cnt&1 != 0 {
-				return newErr("invalid count for driver.TLine")
+				return newMeshErr("invalid count for driver.TLine")
 			}
 		case driver.TLnStrip:
 			if cnt < 2 {
-				return newErr("invalid count for driver.TLnStrip")
+				return newMeshErr("invalid count for driver.TLnStrip")
 			}
 		case driver.TTriangle:
 			if cnt%3 != 0 {
-				return newErr("invalid count for driver.TTriangle")
+				return newMeshErr("invalid count for driver.TTriangle")
 			}
 		case driver.TTriStrip:
 			if cnt < 3 {
-				return newErr("invalid count for driver.TTriStrip")
+				return newMeshErr("invalid count for driver.TTriStrip")
 			}
 		default:
-			return newErr("undefined driver.Topology constant")
+			return newMeshErr("undefined driver.Topology constant")
 		}
 
 		for i := range pdata.Semantics {
@@ -551,7 +551,7 @@ func validateMeshData(data *MeshData) error {
 				continue
 			}
 			if uint(pdata.Semantics[i].Src) >= uint(len(data.Srcs)) {
-				return newErr("semantic data source out of bounds")
+				return newMeshErr("semantic data source out of bounds")
 			}
 		}
 	}
@@ -674,7 +674,7 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p int,
 		case driver.Index32:
 			isz = 4
 		default:
-			err = errors.New(meshPrefix + "undefined driver.IndexFmt constant")
+			err = newMeshErr("undefined driver.IndexFmt constant")
 		}
 		src := srcs[data.Index.Src]
 		off := data.Index.Offset
