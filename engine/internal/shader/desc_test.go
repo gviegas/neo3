@@ -23,10 +23,10 @@ func (tb *Table) check(globalN, drawableN, materialN, jointN int, t *testing.T) 
 		i, n int
 		spn  uintptr
 	}{
-		{"globalHeap", globalHeap, globalN, frameSpan + lightSpan + shadowSpan},
-		{"drawableHeap", drawableHeap, drawableN, drawableSpan},
-		{"materialHeap", materialHeap, materialN, materialSpan},
-		{"jointHeap", jointHeap, jointN, jointSpan},
+		{"GlobalHeap", GlobalHeap, globalN, frameSpan + lightSpan + shadowSpan},
+		{"DrawableHeap", DrawableHeap, drawableN, drawableSpan},
+		{"MaterialHeap", MaterialHeap, materialN, materialSpan},
+		{"JointHeap", JointHeap, jointN, jointSpan},
 	} {
 		if n := tb.dt.Heap(x.i).Len(); n != x.n {
 			t.Fatalf("Table.dt.Heap(%s).Len:\nhave %d\nwant %d", x.s, n, x.n)
@@ -41,7 +41,7 @@ func (tb *Table) check(globalN, drawableN, materialN, jointN int, t *testing.T) 
 		t.Fatalf("Table.ConstSize:\nhave %d\nwant %d", x, csz)
 	} else if x%blockSize != 0 {
 		t.Fatal("Table.ConstSize: misaligned size")
-	} else if tb.cbuf != nil && tb.cbuf.Cap()-tb.coff[globalHeap] < int64(x) {
+	} else if tb.cbuf != nil && tb.cbuf.Cap()-tb.coff[GlobalHeap] < int64(x) {
 		t.Fatal("Table.cbuf/coff: range out of bounds")
 	}
 }
@@ -96,20 +96,20 @@ func TestSetConstBuf(t *testing.T) {
 	if buf, off := tb.SetConstBuf(nil, 0); buf != nil || off != 0 {
 		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant <nil>, 0", buf, off)
 	}
-	if tb.coff[globalHeap] != 0 {
-		t.Fatalf("Table.coff[globalHeap]:\nhave %d\nwant 0", tb.coff[globalHeap])
+	if tb.coff[GlobalHeap] != 0 {
+		t.Fatalf("Table.coff[GlobalHeap]:\nhave %d\nwant 0", tb.coff[GlobalHeap])
 	}
 	if buf, off := tb.SetConstBuf(buf, blockSize); buf != nil || off != 0 {
 		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant <nil>, 0", buf, off)
 	}
-	if tb.coff[globalHeap] != blockSize {
-		t.Fatalf("Table.coff[globalHeap]:\nhave %d\nwant %d", tb.coff[globalHeap], blockSize)
+	if tb.coff[GlobalHeap] != blockSize {
+		t.Fatalf("Table.coff[GlobalHeap]:\nhave %d\nwant %d", tb.coff[GlobalHeap], blockSize)
 	}
 	if buf_, off := tb.SetConstBuf(nil, blockSize*2); buf_ != buf || off != blockSize {
 		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant %v, %d", buf_, off, buf, blockSize)
 	}
-	if tb.coff[globalHeap] != 0 {
-		t.Fatalf("Table.coff[globalHeap]:\nhave %d\nwant 0", tb.coff[globalHeap])
+	if tb.coff[GlobalHeap] != 0 {
+		t.Fatalf("Table.coff[GlobalHeap]:\nhave %d\nwant 0", tb.coff[GlobalHeap])
 	}
 
 	tb.Free()
@@ -145,17 +145,17 @@ func TestSetConstBuf(t *testing.T) {
 			if hbuf, hoff := tb.SetConstBuf(buf, x); wbuf != hbuf || woff != hoff {
 				t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant %v, %d", hbuf, hoff, wbuf, woff)
 			}
-			if x := goff + x; tb.coff[globalHeap] != x {
-				t.Fatalf("Table.coff[globalHeap]:\nhave %d\nwant %d", tb.coff[globalHeap], x)
+			if x := goff + x; tb.coff[GlobalHeap] != x {
+				t.Fatalf("Table.coff[GlobalHeap]:\nhave %d\nwant %d", tb.coff[GlobalHeap], x)
 			}
-			if x := doff + x; tb.coff[drawableHeap] != x {
-				t.Fatalf("Table.coff[drawableHeap]:\nhave %d\nwant %d", tb.coff[drawableHeap], x)
+			if x := doff + x; tb.coff[DrawableHeap] != x {
+				t.Fatalf("Table.coff[DrawableHeap]:\nhave %d\nwant %d", tb.coff[DrawableHeap], x)
 			}
-			if x := moff + x; tb.coff[materialHeap] != x {
-				t.Fatalf("Table.coff[materialHeap]:\nhave %d\nwant %d", tb.coff[materialHeap], x)
+			if x := moff + x; tb.coff[MaterialHeap] != x {
+				t.Fatalf("Table.coff[MaterialHeap]:\nhave %d\nwant %d", tb.coff[MaterialHeap], x)
 			}
-			if x := joff + x; tb.coff[jointHeap] != x {
-				t.Fatalf("Table.coff[jointHeap]:\nhave %d\nwant %d", tb.coff[jointHeap], x)
+			if x := joff + x; tb.coff[JointHeap] != x {
+				t.Fatalf("Table.coff[JointHeap]:\nhave %d\nwant %d", tb.coff[JointHeap], x)
 			}
 			wbuf = buf
 			woff = x

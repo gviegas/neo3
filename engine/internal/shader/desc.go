@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	globalHeap = iota
-	drawableHeap
-	materialHeap
-	jointHeap
+	GlobalHeap = iota
+	DrawableHeap
+	MaterialHeap
+	JointHeap
 
 	maxHeap
 )
@@ -261,10 +261,10 @@ func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
 // ConstSize returns the number of bytes consumed by
 // all constant descriptors of t.
 func (t *Table) ConstSize() int {
-	spn0 := t.dt.Heap(globalHeap).Len() * int(frameSpan+lightSpan+shadowSpan)
-	spn1 := t.dt.Heap(drawableHeap).Len() * int(drawableSpan)
-	spn2 := t.dt.Heap(materialHeap).Len() * int(materialSpan)
-	spn3 := t.dt.Heap(jointHeap).Len() * int(jointSpan)
+	spn0 := t.dt.Heap(GlobalHeap).Len() * int(frameSpan+lightSpan+shadowSpan)
+	spn1 := t.dt.Heap(DrawableHeap).Len() * int(drawableSpan)
+	spn2 := t.dt.Heap(MaterialHeap).Len() * int(materialSpan)
+	spn3 := t.dt.Heap(JointHeap).Len() * int(jointSpan)
 	return (spn0 + spn1 + spn2 + spn3) * blockSize
 }
 
@@ -298,7 +298,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 		//	0 | FrameLayout
 		//	1 | [MaxLight]LightLayout
 		//	2 | [MaxShadow]ShadowLayout
-		dh = t.dt.Heap(globalHeap)
+		dh = t.dt.Heap(GlobalHeap)
 		n = dh.Len()
 		for i := 0; i < n; i++ {
 			sz[0] = int64(frameSpan * blockSize)
@@ -314,9 +314,9 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 
 		// Drawable heap constants:
 		//	0 | DrawableLayout
-		dh = t.dt.Heap(drawableHeap)
+		dh = t.dt.Heap(DrawableHeap)
 		n = dh.Len()
-		t.coff[drawableHeap] = off[0]
+		t.coff[DrawableHeap] = off[0]
 		sz[0] = int64(drawableSpan * blockSize)
 		for i := 0; i < n; i++ {
 			dh.SetBuffer(i, drawableNr, 0, buf, off, sz)
@@ -325,9 +325,9 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 
 		// Material heap constants:
 		//	0 | MaterialLayout
-		dh = t.dt.Heap(materialHeap)
+		dh = t.dt.Heap(MaterialHeap)
 		n = dh.Len()
-		t.coff[materialHeap] = off[0]
+		t.coff[MaterialHeap] = off[0]
 		sz[0] = int64(materialSpan * blockSize)
 		for i := 0; i < n; i++ {
 			dh.SetBuffer(i, materialNr, 0, buf, off, sz)
@@ -336,9 +336,9 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 
 		// Joint heap constants:
 		//	0 | [MaxJoint]JointLayout
-		dh = t.dt.Heap(jointHeap)
+		dh = t.dt.Heap(JointHeap)
 		n = dh.Len()
-		t.coff[jointHeap] = off[0]
+		t.coff[JointHeap] = off[0]
 		sz[0] = int64(jointSpan * blockSize)
 		for i := 0; i < n; i++ {
 			dh.SetBuffer(i, jointNr, 0, buf, off, sz)
@@ -347,9 +347,9 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 	}
 
 	pbuf := t.cbuf
-	poff := t.coff[globalHeap]
+	poff := t.coff[GlobalHeap]
 	t.cbuf = buf
-	t.coff[globalHeap] = off
+	t.coff[GlobalHeap] = off
 	t.cs = cs
 	return pbuf, poff
 }
@@ -359,90 +359,81 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 // tex.Image() must support driver.UShaderSample.
 // splr must support depth comparison.
 func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("shadow map", globalHeap, cpy, tex, splr)
-
-	t.dt.Heap(globalHeap).SetImage(cpy, shdwTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(globalHeap).SetSampler(cpy, shdwSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("shadow map", GlobalHeap, cpy, tex, splr)
+	t.dt.Heap(GlobalHeap).SetImage(cpy, shdwTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(GlobalHeap).SetSampler(cpy, shdwSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetIrradiance sets a diffuse irradiance texture/sampler
 // pair in the global heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetIrradiance(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("irradiance", globalHeap, cpy, tex, splr)
-
-	t.dt.Heap(globalHeap).SetImage(cpy, irradTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(globalHeap).SetSampler(cpy, irradSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("irradiance", GlobalHeap, cpy, tex, splr)
+	t.dt.Heap(GlobalHeap).SetImage(cpy, irradTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(GlobalHeap).SetSampler(cpy, irradSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetLD sets a specular LD texture/sampler pair in the
 // global heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetLD(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("LD", globalHeap, cpy, tex, splr)
-
-	t.dt.Heap(globalHeap).SetImage(cpy, ldTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(globalHeap).SetSampler(cpy, ldSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("LD", GlobalHeap, cpy, tex, splr)
+	t.dt.Heap(GlobalHeap).SetImage(cpy, ldTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(GlobalHeap).SetSampler(cpy, ldSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetDFG sets a specular DFG texture/sampler pair in
 // the global heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetDFG(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("DFG", globalHeap, cpy, tex, splr)
-
-	t.dt.Heap(globalHeap).SetImage(cpy, dfgTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(globalHeap).SetSampler(cpy, dfgSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("DFG", GlobalHeap, cpy, tex, splr)
+	t.dt.Heap(GlobalHeap).SetImage(cpy, dfgTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(GlobalHeap).SetSampler(cpy, dfgSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetBaseColor sets a base color texture/sampler pair in
 // the material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetBaseColor(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("base color", materialHeap, cpy, tex, splr)
-
-	t.dt.Heap(materialHeap).SetImage(cpy, colorTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(materialHeap).SetSampler(cpy, colorSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("base color", MaterialHeap, cpy, tex, splr)
+	t.dt.Heap(MaterialHeap).SetImage(cpy, colorTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(MaterialHeap).SetSampler(cpy, colorSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetMetalRough sets a metallic-roughness texture/sampler
 // pair in the material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetMetalRough(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("metallic-roughness", materialHeap, cpy, tex, splr)
-
-	t.dt.Heap(materialHeap).SetImage(cpy, metalTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(materialHeap).SetSampler(cpy, metalSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("metallic-roughness", MaterialHeap, cpy, tex, splr)
+	t.dt.Heap(MaterialHeap).SetImage(cpy, metalTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(MaterialHeap).SetSampler(cpy, metalSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetNormalMap sets a normal texture/sampler pair in the
 // material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetNormalMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("normal map", materialHeap, cpy, tex, splr)
-
-	t.dt.Heap(materialHeap).SetImage(cpy, normTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(materialHeap).SetSampler(cpy, normSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("normal map", MaterialHeap, cpy, tex, splr)
+	t.dt.Heap(MaterialHeap).SetImage(cpy, normTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(MaterialHeap).SetSampler(cpy, normSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetOcclusionMap sets an occlusion texture/sampler pair
 // in the material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("occlusion map", materialHeap, cpy, tex, splr)
-
-	t.dt.Heap(materialHeap).SetImage(cpy, occTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(materialHeap).SetSampler(cpy, occSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("occlusion map", MaterialHeap, cpy, tex, splr)
+	t.dt.Heap(MaterialHeap).SetImage(cpy, occTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(MaterialHeap).SetSampler(cpy, occSplrNr, 0, []driver.Sampler{splr})
 }
 
 // SetEmissiveMap sets an emissive texture/sampler pair in
 // the material heap.
 // tex.Image() must support driver.UShaderSample.
 func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
-	t.validateTexSplr("emissive map", materialHeap, cpy, tex, splr)
-
-	t.dt.Heap(materialHeap).SetImage(cpy, emisTexNr, 0, []driver.ImageView{tex}, nil)
-	t.dt.Heap(materialHeap).SetSampler(cpy, emisSplrNr, 0, []driver.Sampler{splr})
+	t.validateTexSplr("emissive map", MaterialHeap, cpy, tex, splr)
+	t.dt.Heap(MaterialHeap).SetImage(cpy, emisTexNr, 0, []driver.ImageView{tex}, nil)
+	t.dt.Heap(MaterialHeap).SetSampler(cpy, emisSplrNr, 0, []driver.Sampler{splr})
 }
 
 // Frame returns a pointer to GPU memory mapping to a
@@ -452,10 +443,10 @@ func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sample
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Frame(cpy int) *FrameLayout {
-	if uint(cpy) >= uint(t.dcpy[globalHeap]) {
+	if uint(cpy) >= uint(t.dcpy[GlobalHeap]) {
 		panic("frame descriptor out of bounds")
 	}
-	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	off := t.coff[GlobalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	s := t.cs[off:]
 	return (*FrameLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
@@ -467,10 +458,10 @@ func (t *Table) Frame(cpy int) *FrameLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
-	if uint(cpy) >= uint(t.dcpy[globalHeap]) {
+	if uint(cpy) >= uint(t.dcpy[GlobalHeap]) {
 		panic("light descriptor out of bounds")
 	}
-	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	off := t.coff[GlobalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan) * blockSize
 	s := t.cs[off:]
 	return (*[MaxLight]LightLayout)(unsafe.Pointer(unsafe.SliceData(s)))
@@ -483,10 +474,10 @@ func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
-	if uint(cpy) >= uint(t.dcpy[globalHeap]) {
+	if uint(cpy) >= uint(t.dcpy[GlobalHeap]) {
 		panic("shadow descriptor out of bounds")
 	}
-	off := t.coff[globalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
+	off := t.coff[GlobalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan+lightSpan) * blockSize
 	s := t.cs[off:]
 	return (*[MaxShadow]ShadowLayout)(unsafe.Pointer(unsafe.SliceData(s)))
@@ -499,10 +490,10 @@ func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Drawable(cpy int) *DrawableLayout {
-	if uint(cpy) >= uint(t.dcpy[drawableHeap]) {
+	if uint(cpy) >= uint(t.dcpy[DrawableHeap]) {
 		panic("drawable descriptor out of bounds")
 	}
-	off := t.coff[drawableHeap] + int64(drawableSpan)*blockSize*int64(cpy)
+	off := t.coff[DrawableHeap] + int64(drawableSpan)*blockSize*int64(cpy)
 	s := t.cs[off:]
 	return (*DrawableLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
@@ -514,10 +505,10 @@ func (t *Table) Drawable(cpy int) *DrawableLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Material(cpy int) *MaterialLayout {
-	if uint(cpy) >= uint(t.dcpy[materialHeap]) {
+	if uint(cpy) >= uint(t.dcpy[MaterialHeap]) {
 		panic("material descriptor out of bounds")
 	}
-	off := t.coff[materialHeap] + int64(materialSpan)*blockSize*int64(cpy)
+	off := t.coff[MaterialHeap] + int64(materialSpan)*blockSize*int64(cpy)
 	s := t.cs[off:]
 	return (*MaterialLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
@@ -529,10 +520,10 @@ func (t *Table) Material(cpy int) *MaterialLayout {
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
 func (t *Table) Joint(cpy int) *[MaxJoint]JointLayout {
-	if uint(cpy) >= uint(t.dcpy[jointHeap]) {
+	if uint(cpy) >= uint(t.dcpy[JointHeap]) {
 		panic("joint descriptor out of bounds")
 	}
-	off := t.coff[jointHeap] + int64(jointSpan)*blockSize*int64(cpy)
+	off := t.coff[JointHeap] + int64(jointSpan)*blockSize*int64(cpy)
 	s := t.cs[off:]
 	return (*[MaxJoint]JointLayout)(unsafe.Pointer(unsafe.SliceData(s)))
 }
