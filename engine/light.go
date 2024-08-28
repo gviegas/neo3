@@ -10,14 +10,14 @@ import (
 )
 
 const (
-	sunLight = iota
+	distantLight = iota
 	pointLight
 	spotLight
 )
 
 // Light defines a light source.
 // The zero value for Light is not valid; one must
-// call SunLight.Light, PointLight.Light or
+// call DistantLight.Light, PointLight.Light or
 // SpotLight.Light to create an initialized Light.
 type Light struct {
 	typ    int
@@ -26,7 +26,7 @@ type Light struct {
 
 // SetDirection sets the direction of l.
 // It does not normalize d.
-// Only applies to sun and spot lights.
+// Only applies to distant and spot lights.
 func (l *Light) SetDirection(d *linear.V3) { l.layout.SetDirection(d) }
 
 // SetPosition sets the position of l.
@@ -58,11 +58,11 @@ func (l *Light) SetConeAngles(inner, outer float32) {
 	l.layout.SetAngOffset(float32(offset))
 }
 
-// SunLight is a directional light.
+// DistantLight is a directional light.
 // The light is emitted in the given Direction.
 // It behaves as if located infinitely far way.
 // Intensity is the illuminance in lux.
-type SunLight struct {
+type DistantLight struct {
 	Direction linear.V3
 	Intensity float32
 	R, G, B   float32
@@ -71,9 +71,9 @@ type SunLight struct {
 // Light creates the light source described by t.
 // t.Direction must have length 1.
 // t.R/G/B must be in the range [0, 1].
-func (t *SunLight) Light() (light Light) {
-	light.typ = sunLight
-	light.layout.SetType(shader.SunLight)
+func (t *DistantLight) Light() (light Light) {
+	light.typ = distantLight
+	light.layout.SetType(shader.DistantLight)
 	light.SetIntensity(t.Intensity)
 	light.SetColor(t.R, t.G, t.B)
 	light.SetDirection(&t.Direction)

@@ -134,7 +134,7 @@ func TestID(t *testing.T) {
 	checkRemove(id0, "k")
 
 	// XXX: This is somewhat frail since it relies on
-	// internal details.
+	// implementation details.
 	checkBits := func(wantLen, wantRem int) {
 		if len := len(m.ids); len != wantLen {
 			t.Fatalf("len(dataMap.ids)\nhave: %d\nwant %d", len, wantLen)
@@ -195,28 +195,28 @@ func TestID(t *testing.T) {
 }
 
 func TestLight(t *testing.T) {
-	t.Run("Sun", func(t *testing.T) {
-		sun := SunLight{
+	t.Run("Distant", func(t *testing.T) {
+		dist := DistantLight{
 			Direction: linear.V3{0, 0, -1},
 			Intensity: 100_000,
 			R:         1,
 			G:         1,
 			B:         1,
 		}
-		light := sun.Light()
-		if other := sun.Light(); light != other {
-			t.Fatalf("SunLight.Light: created Lights differ\n1st: %v\n2nd: %v", light, other)
+		light := dist.Light()
+		if other := dist.Light(); light != other {
+			t.Fatalf("DistantLight.Light: created Lights differ\n1st: %v\n2nd: %v", light, other)
 		}
 		// Intensity should not go below 0.
-		sun.Intensity = -sun.Intensity
-		if other := sun.Light(); light == other {
-			t.Fatalf("SunLight.Light: created Lights don't differ\n1st: %v\n2nd: %v", light, other)
+		dist.Intensity = -dist.Intensity
+		if other := dist.Light(); light == other {
+			t.Fatalf("DistantLight.Light: created Lights don't differ\n1st: %v\n2nd: %v", light, other)
 		} else {
 			light = other
 		}
-		sun.Intensity = 0
-		if other := sun.Light(); light != other {
-			t.Fatalf("SunLight.Light: created Lights differ\n1st: %v\n2nd: %v", light, other)
+		dist.Intensity = 0
+		if other := dist.Light(); light != other {
+			t.Fatalf("DistantLight.Light: created Lights differ\n1st: %v\n2nd: %v", light, other)
 		}
 	})
 
