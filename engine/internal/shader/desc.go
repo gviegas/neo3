@@ -162,34 +162,23 @@ func newJointHeap() (driver.DescHeap, error) {
 // newDrawTable creates a new driver.DescTable containing
 // the global, drawable, material and joint heaps.
 func newDrawTable() (driver.DescTable, error) {
-	dh0, err := newGlobalHeap()
-	if err != nil {
-		return nil, err
+	var heaps [maxHeap]driver.DescHeap
+	for i, f := range [maxHeap]func() (driver.DescHeap, error){
+		GlobalHeap:   newGlobalHeap,
+		DrawableHeap: newDrawableHeap,
+		MaterialHeap: newMaterialHeap,
+		JointHeap:    newJointHeap,
+	} {
+		dh, err := f()
+		if err != nil {
+			for j := range i {
+				heaps[j].Destroy()
+			}
+			return nil, err
+		}
+		heaps[i] = dh
 	}
-	dh1, err := newDrawableHeap()
-	if err != nil {
-		dh0.Destroy()
-		return nil, err
-	}
-	dh2, err := newMaterialHeap()
-	if err != nil {
-		dh0.Destroy()
-		dh1.Destroy()
-		return nil, err
-	}
-	dh3, err := newJointHeap()
-	if err != nil {
-		dh0.Destroy()
-		dh1.Destroy()
-		dh2.Destroy()
-		return nil, err
-	}
-	return ctxt.GPU().NewDescTable([]driver.DescHeap{
-		dh0,
-		dh1,
-		dh2,
-		dh3,
-	})
+	return ctxt.GPU().NewDescTable(heaps[:])
 }
 
 // freeDescTable destroys a driver.DescTable and every
