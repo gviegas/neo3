@@ -101,12 +101,12 @@ func samplerDesc(nr int, stages driver.Stage) driver.Descriptor {
 	}
 }
 
-// newDescHeap0 creates a new driver.DescHeap suitable for
-// frame (FrameLayout), light (LightLayout) and shadow
-// (ShadowLayout) data plus textures/samplers.
+// newGlobalHeap creates a new driver.DescHeap suitable
+// for frame (FrameLayout), light (LightLayout) and
+// shadow (ShadowLayout) data plus textures/samplers.
 //
 // TODO: Texture arrays.
-func newDescHeap0() (driver.DescHeap, error) {
+func newGlobalHeap() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
 		// TODO: driver.SCompute may be necessary.
 		constantDesc(frameNr, driver.SVertex|driver.SFragment),
@@ -123,18 +123,19 @@ func newDescHeap0() (driver.DescHeap, error) {
 	})
 }
 
-// newDescHeap1 creates a new driver.DescHeap suitable for
-// drawable (DrawableLayout) data.
-func newDescHeap1() (driver.DescHeap, error) {
+// newDrawableHeap creates a new driver.DescHeap suitable
+// for drawable (DrawableLayout) data.
+func newDrawableHeap() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
 		// TODO: driver.SFragment may be unnecessary.
 		constantDesc(drawableNr, driver.SVertex|driver.SFragment),
 	})
 }
 
-// newDescHeap2 creates a new driver.DescHeap suitable for
-// material (MaterialLayout) data plus textures/samplers.
-func newDescHeap2() (driver.DescHeap, error) {
+// newMaterialHeap creates a new driver.DescHeap suitable
+// for material (MaterialLayout) data plus
+// textures/samplers.
+func newMaterialHeap() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
 		constantDesc(materialNr, driver.SFragment),
 		textureDesc(colorTexNr, driver.SFragment),
@@ -150,33 +151,33 @@ func newDescHeap2() (driver.DescHeap, error) {
 	})
 }
 
-// newDescHeap3 creates a new driver.DescHeap suitable for
-// joint (JointLayout) data.
-func newDescHeap3() (driver.DescHeap, error) {
+// newJointHeap creates a new driver.DescHeap suitable
+// for joint (JointLayout) data.
+func newJointHeap() (driver.DescHeap, error) {
 	return ctxt.GPU().NewDescHeap([]driver.Descriptor{
 		constantDesc(jointNr, driver.SVertex),
 	})
 }
 
-// newDescTable creates a new driver.DescTable containing
-// the heaps 0-3.
-func newDescTable() (driver.DescTable, error) {
-	dh0, err := newDescHeap0()
+// newDrawTable creates a new driver.DescTable containing
+// the global, drawable, material and joint heaps.
+func newDrawTable() (driver.DescTable, error) {
+	dh0, err := newGlobalHeap()
 	if err != nil {
 		return nil, err
 	}
-	dh1, err := newDescHeap1()
+	dh1, err := newDrawableHeap()
 	if err != nil {
 		dh0.Destroy()
 		return nil, err
 	}
-	dh2, err := newDescHeap2()
+	dh2, err := newMaterialHeap()
 	if err != nil {
 		dh0.Destroy()
 		dh1.Destroy()
 		return nil, err
 	}
-	dh3, err := newDescHeap3()
+	dh3, err := newJointHeap()
 	if err != nil {
 		dh0.Destroy()
 		dh1.Destroy()
@@ -204,13 +205,13 @@ func freeDescTable(dt driver.DescTable) {
 	}
 }
 
-// Table manages descriptor usage within a single
+// DrawTable manages descriptor usage within a single
 // driver.DescTable.
-type Table struct {
+type DrawTable struct {
 	dt driver.DescTable
 	// Cached heap copy counts.
 	// These counts will not change during the
-	// lifetime of the Table, so this avoids
+	// lifetime of the table, so this avoids
 	// having to query the driver needlessly.
 	dcpy [maxHeap]int
 	cbuf driver.Buffer
@@ -226,7 +227,7 @@ type Table struct {
 	cs []byte
 }
 
-// NewTable creates a new descriptor table.
+// NewDrawTable creates a new descriptor table.
 // Each parameter defines the number of heap copies to
 // allocate for a given heap. Currently, the heaps are
 // organized as follows:
@@ -239,8 +240,8 @@ type Table struct {
 // For constant descriptors that are defined as static
 // arrays in shaders, every heap copy will require
 // enough buffer memory to store the whole array.
-func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
-	dt, err := newDescTable()
+func NewDrawTable(globalN, drawableN, materialN, jointN int) (*DrawTable, error) {
+	dt, err := newDrawTable()
 	if err != nil {
 		return nil, err
 	}
@@ -255,13 +256,13 @@ func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
 			return nil, err
 		}
 	}
-	return &Table{dt: dt, dcpy: dcpy}, nil
+	return &DrawTable{dt: dt, dcpy: dcpy}, nil
 }
 
 // SetGraph calls cb.SetDescTableGraph to set the given
 // heap copies.
 // cb must be recording commands.
-func (t *Table) SetGraph(cb driver.CmdBuffer, start int, cpy []int) {
+func (t *DrawTable) SetGraph(cb driver.CmdBuffer, start int, cpy []int) {
 	if start < GlobalHeap || start > JointHeap || len(cpy) == 0 || len(cpy) > maxHeap-start {
 		panic("invalid descriptor heap indexing")
 	}
@@ -273,7 +274,7 @@ func (t *Table) SetGraph(cb driver.CmdBuffer, start int, cpy []int) {
 
 // ConstSize returns the number of bytes consumed by
 // all constant descriptors of t.
-func (t *Table) ConstSize() int {
+func (t *DrawTable) ConstSize() int {
 	spn0 := t.dt.Heap(GlobalHeap).Len() * int(frameSpan+lightSpan+shadowSpan)
 	spn1 := t.dt.Heap(DrawableHeap).Len() * int(drawableSpan)
 	spn2 := t.dt.Heap(MaterialHeap).Len() * int(materialSpan)
@@ -289,7 +290,7 @@ func (t *Table) ConstSize() int {
 // must ensure that this range is within bounds).
 // off must be aligned to 256 bytes.
 // It returns the previously set buffer/offset, if any.
-func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64) {
+func (t *DrawTable) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64) {
 	var cs []byte
 	switch {
 	case buf == nil:
@@ -371,7 +372,7 @@ func (t *Table) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, int64)
 // global heap.
 // tex.Image() must support driver.UShaderSample.
 // splr must support depth comparison.
-func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(GlobalHeap, cpy, tex, splr)
 	t.dt.Heap(GlobalHeap).SetImage(cpy, shdwTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(GlobalHeap).SetSampler(cpy, shdwSplrNr, 0, []driver.Sampler{splr})
@@ -380,7 +381,7 @@ func (t *Table) SetShadowMap(cpy int, tex driver.ImageView, splr driver.Sampler)
 // SetIrradiance sets a diffuse irradiance texture/sampler
 // pair in the global heap.
 // tex.Image() must support driver.UShaderSample.
-func (t *Table) SetIrradiance(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetIrradiance(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(GlobalHeap, cpy, tex, splr)
 	t.dt.Heap(GlobalHeap).SetImage(cpy, irradTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(GlobalHeap).SetSampler(cpy, irradSplrNr, 0, []driver.Sampler{splr})
@@ -389,7 +390,7 @@ func (t *Table) SetIrradiance(cpy int, tex driver.ImageView, splr driver.Sampler
 // SetLD sets a specular LD texture/sampler pair in the
 // global heap.
 // tex.Image() must support driver.UShaderSample.
-func (t *Table) SetLD(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetLD(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(GlobalHeap, cpy, tex, splr)
 	t.dt.Heap(GlobalHeap).SetImage(cpy, ldTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(GlobalHeap).SetSampler(cpy, ldSplrNr, 0, []driver.Sampler{splr})
@@ -398,7 +399,7 @@ func (t *Table) SetLD(cpy int, tex driver.ImageView, splr driver.Sampler) {
 // SetDFG sets a specular DFG texture/sampler pair in
 // the global heap.
 // tex.Image() must support driver.UShaderSample.
-func (t *Table) SetDFG(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetDFG(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(GlobalHeap, cpy, tex, splr)
 	t.dt.Heap(GlobalHeap).SetImage(cpy, dfgTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(GlobalHeap).SetSampler(cpy, dfgSplrNr, 0, []driver.Sampler{splr})
@@ -407,7 +408,7 @@ func (t *Table) SetDFG(cpy int, tex driver.ImageView, splr driver.Sampler) {
 // SetBaseColor sets a base color texture/sampler pair in
 // the material heap.
 // tex.Image() must support driver.UShaderSample.
-func (t *Table) SetBaseColor(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetBaseColor(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(MaterialHeap, cpy, tex, splr)
 	t.dt.Heap(MaterialHeap).SetImage(cpy, colorTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(MaterialHeap).SetSampler(cpy, colorSplrNr, 0, []driver.Sampler{splr})
@@ -416,7 +417,7 @@ func (t *Table) SetBaseColor(cpy int, tex driver.ImageView, splr driver.Sampler)
 // SetMetalRough sets a metallic-roughness texture/sampler
 // pair in the material heap.
 // tex.Image() must support driver.UShaderSample.
-func (t *Table) SetMetalRough(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetMetalRough(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(MaterialHeap, cpy, tex, splr)
 	t.dt.Heap(MaterialHeap).SetImage(cpy, metalTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(MaterialHeap).SetSampler(cpy, metalSplrNr, 0, []driver.Sampler{splr})
@@ -425,7 +426,7 @@ func (t *Table) SetMetalRough(cpy int, tex driver.ImageView, splr driver.Sampler
 // SetNormalMap sets a normal texture/sampler pair in the
 // material heap.
 // tex.Image() must support driver.UShaderSample.
-func (t *Table) SetNormalMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetNormalMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(MaterialHeap, cpy, tex, splr)
 	t.dt.Heap(MaterialHeap).SetImage(cpy, normTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(MaterialHeap).SetSampler(cpy, normSplrNr, 0, []driver.Sampler{splr})
@@ -434,7 +435,7 @@ func (t *Table) SetNormalMap(cpy int, tex driver.ImageView, splr driver.Sampler)
 // SetOcclusionMap sets an occlusion texture/sampler pair
 // in the material heap.
 // tex.Image() must support driver.UShaderSample.
-func (t *Table) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(MaterialHeap, cpy, tex, splr)
 	t.dt.Heap(MaterialHeap).SetImage(cpy, occTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(MaterialHeap).SetSampler(cpy, occSplrNr, 0, []driver.Sampler{splr})
@@ -443,7 +444,7 @@ func (t *Table) SetOcclusionMap(cpy int, tex driver.ImageView, splr driver.Sampl
 // SetEmissiveMap sets an emissive texture/sampler pair in
 // the material heap.
 // tex.Image() must support driver.UShaderSample.
-func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateTexSplr(MaterialHeap, cpy, tex, splr)
 	t.dt.Heap(MaterialHeap).SetImage(cpy, emisTexNr, 0, []driver.ImageView{tex}, nil)
 	t.dt.Heap(MaterialHeap).SetSampler(cpy, emisSplrNr, 0, []driver.Sampler{splr})
@@ -455,7 +456,7 @@ func (t *Table) SetEmissiveMap(cpy int, tex driver.ImageView, splr driver.Sample
 // is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
-func (t *Table) Frame(cpy int) *FrameLayout {
+func (t *DrawTable) Frame(cpy int) *FrameLayout {
 	t.validateHeapCopy(GlobalHeap, cpy)
 	off := t.coff[GlobalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	s := t.cs[off:]
@@ -468,7 +469,7 @@ func (t *Table) Frame(cpy int) *FrameLayout {
 // is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
-func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
+func (t *DrawTable) Light(cpy int) *[MaxLight]LightLayout {
 	t.validateHeapCopy(GlobalHeap, cpy)
 	off := t.coff[GlobalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan) * blockSize
@@ -482,7 +483,7 @@ func (t *Table) Light(cpy int) *[MaxLight]LightLayout {
 // is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
-func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
+func (t *DrawTable) Shadow(cpy int) *[MaxShadow]ShadowLayout {
 	t.validateHeapCopy(GlobalHeap, cpy)
 	off := t.coff[GlobalHeap] + int64(frameSpan+lightSpan+shadowSpan)*blockSize*int64(cpy)
 	off += int64(frameSpan+lightSpan) * blockSize
@@ -496,7 +497,7 @@ func (t *Table) Shadow(cpy int) *[MaxShadow]ShadowLayout {
 // is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
-func (t *Table) Drawable(cpy int) *DrawableLayout {
+func (t *DrawTable) Drawable(cpy int) *DrawableLayout {
 	t.validateHeapCopy(DrawableHeap, cpy)
 	off := t.coff[DrawableHeap] + int64(drawableSpan)*blockSize*int64(cpy)
 	s := t.cs[off:]
@@ -509,7 +510,7 @@ func (t *Table) Drawable(cpy int) *DrawableLayout {
 // is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
-func (t *Table) Material(cpy int) *MaterialLayout {
+func (t *DrawTable) Material(cpy int) *MaterialLayout {
 	t.validateHeapCopy(MaterialHeap, cpy)
 	off := t.coff[MaterialHeap] + int64(materialSpan)*blockSize*int64(cpy)
 	s := t.cs[off:]
@@ -522,7 +523,7 @@ func (t *Table) Material(cpy int) *MaterialLayout {
 // is called.
 // Calling t.SetConstBuf invalidates any pointers
 // returned by this method.
-func (t *Table) Joint(cpy int) *[MaxJoint]JointLayout {
+func (t *DrawTable) Joint(cpy int) *[MaxJoint]JointLayout {
 	t.validateHeapCopy(JointHeap, cpy)
 	off := t.coff[JointHeap] + int64(jointSpan)*blockSize*int64(cpy)
 	s := t.cs[off:]
@@ -534,22 +535,22 @@ func (t *Table) Joint(cpy int) *[MaxJoint]JointLayout {
 // NOTE: The constant buffer is not destroyed by this
 // method; one can retrieve the buffer by calling
 // t.SetConstBuf(nil, _) prior to calling t.Free.
-func (t *Table) Free() {
+func (t *DrawTable) Free() {
 	if t.dt != nil {
 		freeDescTable(t.dt)
 	}
-	*t = Table{}
+	*t = DrawTable{}
 }
 
 // NOTE: Tests will fail if the panic message changes.
-func (t *Table) validateHeapCopy(heap int, cpy int) {
+func (t *DrawTable) validateHeapCopy(heap int, cpy int) {
 	if uint(t.dcpy[heap]) <= uint(cpy) {
 		panic("descriptor heap copy out of bounds")
 	}
 }
 
 // NOTE: Tests will fail if the panic message changes.
-func (t *Table) validateTexSplr(heap int, cpy int, tex driver.ImageView, splr driver.Sampler) {
+func (t *DrawTable) validateTexSplr(heap int, cpy int, tex driver.ImageView, splr driver.Sampler) {
 	t.validateHeapCopy(heap, cpy)
 	switch {
 	case tex == nil:

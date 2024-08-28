@@ -13,9 +13,9 @@ import (
 )
 
 // check checks that tb is valid.
-func (tb *Table) check(globalN, drawableN, materialN, jointN int, t *testing.T) {
+func (tb *DrawTable) check(globalN, drawableN, materialN, jointN int, t *testing.T) {
 	if tb == nil {
-		t.Fatal("Table is nil (NewTable likely failed)")
+		t.Fatal("DrawTable is nil (NewDrawTable likely failed)")
 	}
 	var csz int
 	for _, x := range [4]struct {
@@ -46,7 +46,7 @@ func (tb *Table) check(globalN, drawableN, materialN, jointN int, t *testing.T) 
 	}
 }
 
-func TestNewTable(t *testing.T) {
+func TestNewDrawTable(t *testing.T) {
 	for _, x := range [...]struct{ ng, nd, nm, nj int }{
 		{ng: 1},
 		{ng: 2},
@@ -77,7 +77,7 @@ func TestNewTable(t *testing.T) {
 		{ng: 9, nd: 1000, nm: 1000, nj: 1000},
 		{ng: 3 * 1, nd: 3 * 1024, nm: 3 * 1024, nj: 3 * 1024},
 	} {
-		tb, _ := NewTable(x.ng, x.nd, x.nm, x.nj)
+		tb, _ := NewDrawTable(x.ng, x.nd, x.nm, x.nj)
 		tb.check(x.ng, x.nd, x.nm, x.nj, t)
 		tb.Free()
 	}
@@ -85,7 +85,7 @@ func TestNewTable(t *testing.T) {
 
 func TestSetConstBuf(t *testing.T) {
 	ng, nd, nm, nj := 1, 1, 1, 1
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 
 	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()+blockSize), true, driver.UShaderConst)
@@ -126,7 +126,7 @@ func TestSetConstBuf(t *testing.T) {
 		{ng: 2, nd: 62, nm: 63, nj: 64},
 		{ng: 3, nd: 384, nm: 384, nj: 384},
 	} {
-		tb, _ := NewTable(x.ng, x.nd, x.nm, x.nj)
+		tb, _ := NewDrawTable(x.ng, x.nd, x.nm, x.nj)
 		tb.check(x.ng, x.nd, x.nm, x.nj, t)
 
 		sz := int64(tb.ConstSize() * 4)
@@ -275,7 +275,7 @@ func TestConstWrite(t *testing.T) {
 		{nd: 3, nm: 1, nj: 2},
 		{ng: 3, nd: 15, nm: 15, nj: 15},
 	} {
-		tb, _ := NewTable(x.ng, x.nd, x.nm, x.nj)
+		tb, _ := NewDrawTable(x.ng, x.nd, x.nm, x.nj)
 		tb.check(x.ng, x.nd, x.nm, x.nj, t)
 
 		sz := int64(tb.ConstSize() * 4)
@@ -333,7 +333,7 @@ func TestConstWrite(t *testing.T) {
 
 func TestGlobalWrite(t *testing.T) {
 	ng, nd, nm, nj := 1, 0, 0, 0
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -399,7 +399,7 @@ func TestGlobalWrite(t *testing.T) {
 
 func TestGlobalWriteN(t *testing.T) {
 	ng, nd, nm, nj := 3, 10, 10, 10
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -485,7 +485,7 @@ func TestGlobalWriteN(t *testing.T) {
 
 func TestDrawableWrite(t *testing.T) {
 	ng, nd, nm, nj := 1, 1, 0, 0
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -512,7 +512,7 @@ func TestDrawableWrite(t *testing.T) {
 
 func TestDrawableWriteN(t *testing.T) {
 	ng, nd, nm, nj := 3, 10, 10, 10
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -556,7 +556,7 @@ func TestDrawableWriteN(t *testing.T) {
 
 func TestMaterialWrite(t *testing.T) {
 	ng, nd, nm, nj := 1, 1, 1, 0
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -587,7 +587,7 @@ func TestMaterialWrite(t *testing.T) {
 
 func TestMaterialWriteN(t *testing.T) {
 	ng, nd, nm, nj := 3, 10, 10, 10
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -625,7 +625,7 @@ func TestMaterialWriteN(t *testing.T) {
 
 func TestJointWrite(t *testing.T) {
 	ng, nd, nm, nj := 1, 1, 1, 1
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -670,7 +670,7 @@ func TestJointWrite(t *testing.T) {
 
 func TestJointWriteN(t *testing.T) {
 	ng, nd, nm, nj := 3, 10, 10, 10
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -744,7 +744,7 @@ func TestJointWriteN(t *testing.T) {
 
 func TestSetCBFail(t *testing.T) {
 	ng, nd, nm, nj := 2, 8, 6, 8
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -773,7 +773,7 @@ func TestSetCBFail(t *testing.T) {
 
 func TestSetTSFail(t *testing.T) {
 	ng, nd, nm, nj := 2, 8, 6, 8
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
@@ -799,17 +799,17 @@ func TestSetTSFail(t *testing.T) {
 	wsplr := "nil sampler"
 	for _, c := range [...]struct {
 		s string
-		f func(*Table, int, driver.ImageView, driver.Sampler)
+		f func(*DrawTable, int, driver.ImageView, driver.Sampler)
 	}{
-		{"ShadowMap", (*Table).SetShadowMap},
-		{"Irradiance", (*Table).SetIrradiance},
-		{"LD", (*Table).SetLD},
-		{"DFG", (*Table).SetDFG},
-		{"BaseColor", (*Table).SetBaseColor},
-		{"MetalRough", (*Table).SetMetalRough},
-		{"NormalMap", (*Table).SetNormalMap},
-		{"OcclusionMap", (*Table).SetOcclusionMap},
-		{"EmissiveMap", (*Table).SetEmissiveMap},
+		{"ShadowMap", (*DrawTable).SetShadowMap},
+		{"Irradiance", (*DrawTable).SetIrradiance},
+		{"LD", (*DrawTable).SetLD},
+		{"DFG", (*DrawTable).SetDFG},
+		{"BaseColor", (*DrawTable).SetBaseColor},
+		{"MetalRough", (*DrawTable).SetMetalRough},
+		{"NormalMap", (*DrawTable).SetNormalMap},
+		{"OcclusionMap", (*DrawTable).SetOcclusionMap},
+		{"EmissiveMap", (*DrawTable).SetEmissiveMap},
 	} {
 		t.Run(c.s, func(t *testing.T) {
 			s := "Table.Set" + c.s + ":\nhave %#v\nwant %#v"
@@ -849,7 +849,7 @@ func TestSetTSFail(t *testing.T) {
 
 func TestConstFail(t *testing.T) {
 	ng, nd, nm, nj := 2, 8, 6, 8
-	tb, _ := NewTable(ng, nd, nm, nj)
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
 
