@@ -258,6 +258,21 @@ func NewTable(globalN, drawableN, materialN, jointN int) (*Table, error) {
 	return &Table{dt: dt, dcpy: dcpy}, nil
 }
 
+// SetGraph calls cb.SetDescTableGraph to set the given
+// heap copies.
+// cb must be recording commands.
+func (t *Table) SetGraph(cb driver.CmdBuffer, start int, cpy []int) {
+	if start < GlobalHeap || start > JointHeap || len(cpy) == 0 || len(cpy) > maxHeap-start {
+		panic("invalid descriptor heap indexing")
+	}
+	for i, x := range cpy {
+		if uint(x) >= uint(t.dcpy[start+i]) {
+			panic("descriptor heap copy out of bounds")
+		}
+	}
+	cb.SetDescTableGraph(t.dt, start, cpy)
+}
+
 // ConstSize returns the number of bytes consumed by
 // all constant descriptors of t.
 func (t *Table) ConstSize() int {
