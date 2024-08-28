@@ -794,87 +794,33 @@ func TestSetTSFail(t *testing.T) {
 	}
 	defer splr.Destroy()
 
+	wcpy := "descriptor heap copy out of bounds"
+	wtex := "nil texture"
+	wsplr := "nil sampler"
 	for _, c := range [...]struct {
-		s     string
-		f     func(*Table, int, driver.ImageView, driver.Sampler)
-		wcpy  string
-		wtex  string
-		wsplr string
+		s string
+		f func(*Table, int, driver.ImageView, driver.Sampler)
 	}{
-		{
-			"ShadowMap",
-			(*Table).SetShadowMap,
-			"shadow map descriptor out of bounds",
-			"nil shadow map texture",
-			"nil shadow map sampler",
-		},
-		{
-			"Irradiance",
-			(*Table).SetIrradiance,
-			"irradiance descriptor out of bounds",
-			"nil irradiance texture",
-			"nil irradiance sampler",
-		},
-		{
-			"LD",
-			(*Table).SetLD,
-			"LD descriptor out of bounds",
-			"nil LD texture",
-			"nil LD sampler",
-		},
-		{
-			"DFG",
-			(*Table).SetDFG,
-			"DFG descriptor out of bounds",
-			"nil DFG texture",
-			"nil DFG sampler",
-		},
-		{
-			"BaseColor",
-			(*Table).SetBaseColor,
-			"base color descriptor out of bounds",
-			"nil base color texture",
-			"nil base color sampler",
-		},
-		{
-			"MetalRough",
-			(*Table).SetMetalRough,
-			"metallic-roughness descriptor out of bounds",
-			"nil metallic-roughness texture",
-			"nil metallic-roughness sampler",
-		},
-		{
-			"NormalMap",
-			(*Table).SetNormalMap,
-			"normal map descriptor out of bounds",
-			"nil normal map texture",
-			"nil normal map sampler",
-		},
-		{
-			"OcclusionMap",
-			(*Table).SetOcclusionMap,
-			"occlusion map descriptor out of bounds",
-			"nil occlusion map texture",
-			"nil occlusion map sampler",
-		},
-		{
-			"EmissiveMap",
-			(*Table).SetEmissiveMap,
-			"emissive map descriptor out of bounds",
-			"nil emissive map texture",
-			"nil emissive map sampler",
-		},
+		{"ShadowMap", (*Table).SetShadowMap},
+		{"Irradiance", (*Table).SetIrradiance},
+		{"LD", (*Table).SetLD},
+		{"DFG", (*Table).SetDFG},
+		{"BaseColor", (*Table).SetBaseColor},
+		{"MetalRough", (*Table).SetMetalRough},
+		{"NormalMap", (*Table).SetNormalMap},
+		{"OcclusionMap", (*Table).SetOcclusionMap},
+		{"EmissiveMap", (*Table).SetEmissiveMap},
 	} {
 		t.Run(c.s, func(t *testing.T) {
 			s := "Table.Set" + c.s + ":\nhave %#v\nwant %#v"
 			t.Run("cpy", func(t *testing.T) {
 				defer func() {
-					if x := recover(); x != c.wcpy {
-						t.Fatalf(s, x, c.wcpy)
+					if x := recover(); x != wcpy {
+						t.Fatalf(s, x, wcpy)
 					}
 					defer func() {
-						if x := recover(); x != c.wcpy {
-							t.Fatalf(s, x, c.wcpy)
+						if x := recover(); x != wcpy {
+							t.Fatalf(s, x, wcpy)
 						}
 					}()
 					c.f(tb, -1, iv, splr)
@@ -883,16 +829,16 @@ func TestSetTSFail(t *testing.T) {
 			})
 			t.Run("tex", func(t *testing.T) {
 				defer func() {
-					if x := recover(); x != c.wtex {
-						t.Fatalf(s, x, c.wtex)
+					if x := recover(); x != wtex {
+						t.Fatalf(s, x, wtex)
 					}
 				}()
 				c.f(tb, 0, nil, splr)
 			})
 			t.Run("splr", func(t *testing.T) {
 				defer func() {
-					if x := recover(); x != c.wsplr {
-						t.Fatalf(s, x, c.wsplr)
+					if x := recover(); x != wsplr {
+						t.Fatalf(s, x, wsplr)
 					}
 				}()
 				c.f(tb, 0, iv, nil)
@@ -915,51 +861,27 @@ func TestConstFail(t *testing.T) {
 
 	tb.SetConstBuf(buf, 0)
 
+	want := "descriptor heap copy out of bounds"
 	for _, c := range [...]struct {
-		s    string
-		f    func(int)
-		want string
+		s string
+		f func(int)
 	}{
-		{
-			"Frame",
-			func(cpy int) { tb.Frame(cpy) },
-			"frame descriptor out of bounds",
-		},
-		{
-			"Light",
-			func(cpy int) { tb.Light(cpy) },
-			"light descriptor out of bounds",
-		},
-		{
-			"Shadow",
-			func(cpy int) { tb.Shadow(cpy) },
-			"shadow descriptor out of bounds",
-		},
-		{
-			"Drawable",
-			func(cpy int) { tb.Drawable(cpy) },
-			"drawable descriptor out of bounds",
-		},
-		{
-			"Material",
-			func(cpy int) { tb.Material(cpy) },
-			"material descriptor out of bounds",
-		},
-		{
-			"Joint",
-			func(cpy int) { tb.Joint(cpy) },
-			"joint descriptor out of bounds",
-		},
+		{"Frame", func(cpy int) { tb.Frame(cpy) }},
+		{"Light", func(cpy int) { tb.Light(cpy) }},
+		{"Shadow", func(cpy int) { tb.Shadow(cpy) }},
+		{"Drawable", func(cpy int) { tb.Drawable(cpy) }},
+		{"Material", func(cpy int) { tb.Material(cpy) }},
+		{"Joint", func(cpy int) { tb.Joint(cpy) }},
 	} {
 		t.Run(c.s, func(t *testing.T) {
 			s := "Table." + c.s + ":\nhave %#v\nwant %#v"
 			defer func() {
-				if x := recover(); x != c.want {
-					t.Fatalf(s, x, c.want)
+				if x := recover(); x != want {
+					t.Fatalf(s, x, want)
 				}
 				defer func() {
-					if x := recover(); x != c.want {
-						t.Fatalf(s, x, c.want)
+					if x := recover(); x != want {
+						t.Fatalf(s, x, want)
 					}
 				}()
 				c.f(-2)
