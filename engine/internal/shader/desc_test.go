@@ -984,3 +984,88 @@ func TestConstFail(t *testing.T) {
 		})
 	}
 }
+
+func TestSetGraphFail(t *testing.T) {
+	const ng, nd, nm, nj = 1, 10, 6, 3
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+
+	cb, err := ctxt.GPU().NewCmdBuffer()
+	if err != nil {
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+	}
+	defer cb.Destroy()
+	if err = cb.Begin(); err != nil {
+		// It is OK to continue because SetGraph
+		// should not record anything.
+		t.Errorf("driver.CmdBuffer.Begin failed:\n%#v", err)
+	}
+
+	// TODO: Detect that the constant buffer was not set.
+	/*
+		buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()), true, driver.UShaderConst)
+		if err != nil {
+			t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		}
+		defer buf.Destroy()
+
+		tb.SetConstBuf(buf, 0)
+	*/
+
+	const (
+		s    = "DrawTable.SetGraph:\nhave %#v\nwant %#v"
+		wcpy = "descriptor heap copy out of bounds"
+		ncpy = 8 + 10
+		widx = "invalid descriptor heap indexing"
+		nidx = 6
+	)
+
+	type testCase struct {
+		start int
+		cpy   []int
+	}
+	cases := [ncpy + nidx]testCase{
+		ncpy - 10: {GlobalHeap, []int{0, 0, 0, -1}},
+		ncpy - 9:  {GlobalHeap, []int{0, 0, nm, 0}},
+		ncpy - 8:  {GlobalHeap, []int{0, nd, 0, 0}},
+		ncpy - 7:  {GlobalHeap, []int{ng, 0, 0, 0}},
+		ncpy - 6:  {GlobalHeap, []int{0, -2, 0}},
+		ncpy - 5:  {GlobalHeap, []int{-3, -4}},
+		ncpy - 4:  {DrawableHeap, []int{nd, -1, -1}},
+		ncpy - 3:  {DrawableHeap, []int{0, nm}},
+		ncpy - 2:  {MaterialHeap, []int{-1, 0}},
+		ncpy - 1:  {MaterialHeap, []int{nm, nj - 1}},
+		ncpy:      {-1, []int{0}},
+		ncpy + 1:  {4, []int{0}},
+		ncpy + 2:  {GlobalHeap, []int{0, 0, 0, 0, 0}},
+		ncpy + 3:  {DrawableHeap, []int{nd - 1, nm - 1, nj - 1, 0}},
+		ncpy + 4:  {MaterialHeap, []int{nm / 2, nj / 2, 0}},
+		ncpy + 5:  {JointHeap, []int{0, 1}},
+	}
+	for i, x := range [4]int{
+		GlobalHeap:   ng,
+		DrawableHeap: nd,
+		MaterialHeap: nm,
+		JointHeap:    nj,
+	} {
+		cases[i*2] = testCase{i, []int{-1}}
+		cases[i*2+1] = testCase{i, []int{x}}
+	}
+
+	for i, x := range cases {
+		t.Run(fmt.Sprintf("cases[%d]", i), func(t *testing.T) {
+			defer func() {
+				var want string
+				if i < ncpy {
+					want = wcpy
+				} else {
+					want = widx
+				}
+				if x := recover(); x != want {
+					t.Fatalf(s, x, want)
+				}
+			}()
+			tb.SetGraph(cb, x.start, x.cpy)
+		})
+	}
+}
