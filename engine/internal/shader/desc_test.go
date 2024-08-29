@@ -29,20 +29,20 @@ func (tb *DrawTable) check(globalN, drawableN, materialN, jointN int, t *testing
 		{"JointHeap", JointHeap, jointN, jointSpan},
 	} {
 		if n := tb.dt.Heap(x.i).Len(); n != x.n {
-			t.Fatalf("Table.dt.Heap(%s).Len:\nhave %d\nwant %d", x.s, n, x.n)
+			t.Fatalf("DrawTable.dt.Heap(%s).Len:\nhave %d\nwant %d", x.s, n, x.n)
 		} else if tb.dcpy[x.i] != x.n {
-			t.Fatalf("Table.dcpy[%s]:\nhave %d\nwant %d", x.s, tb.dcpy[x.i], x.n)
+			t.Fatalf("DrawTable.dcpy[%s]:\nhave %d\nwant %d", x.s, tb.dcpy[x.i], x.n)
 		} else {
 			csz += n * int(x.spn)
 		}
 	}
 	csz *= blockSize
 	if x := tb.ConstSize(); x != csz {
-		t.Fatalf("Table.ConstSize:\nhave %d\nwant %d", x, csz)
+		t.Fatalf("DrawTable.ConstSize:\nhave %d\nwant %d", x, csz)
 	} else if x%blockSize != 0 {
-		t.Fatal("Table.ConstSize: misaligned size")
+		t.Fatal("DrawTable.ConstSize: misaligned size")
 	} else if tb.cbuf != nil && tb.cbuf.Cap()-tb.coff[GlobalHeap] < int64(x) {
-		t.Fatal("Table.cbuf/coff: range out of bounds")
+		t.Fatal("DrawTable.cbuf/coff: range out of bounds")
 	}
 }
 
@@ -94,22 +94,22 @@ func TestSetConstBuf(t *testing.T) {
 	}
 
 	if buf, off := tb.SetConstBuf(nil, 0); buf != nil || off != 0 {
-		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant <nil>, 0", buf, off)
+		t.Fatalf("DrawTable.SetConstBuf:\nhave %v, %d\nwant <nil>, 0", buf, off)
 	}
 	if tb.coff[GlobalHeap] != 0 {
-		t.Fatalf("Table.coff[GlobalHeap]:\nhave %d\nwant 0", tb.coff[GlobalHeap])
+		t.Fatalf("DrawTable.coff[GlobalHeap]:\nhave %d\nwant 0", tb.coff[GlobalHeap])
 	}
 	if buf, off := tb.SetConstBuf(buf, blockSize); buf != nil || off != 0 {
-		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant <nil>, 0", buf, off)
+		t.Fatalf("DrawTable.SetConstBuf:\nhave %v, %d\nwant <nil>, 0", buf, off)
 	}
 	if tb.coff[GlobalHeap] != blockSize {
-		t.Fatalf("Table.coff[GlobalHeap]:\nhave %d\nwant %d", tb.coff[GlobalHeap], blockSize)
+		t.Fatalf("DrawTable.coff[GlobalHeap]:\nhave %d\nwant %d", tb.coff[GlobalHeap], blockSize)
 	}
 	if buf_, off := tb.SetConstBuf(nil, blockSize*2); buf_ != buf || off != blockSize {
-		t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant %v, %d", buf_, off, buf, blockSize)
+		t.Fatalf("DrawTable.SetConstBuf:\nhave %v, %d\nwant %v, %d", buf_, off, buf, blockSize)
 	}
 	if tb.coff[GlobalHeap] != 0 {
-		t.Fatalf("Table.coff[GlobalHeap]:\nhave %d\nwant 0", tb.coff[GlobalHeap])
+		t.Fatalf("DrawTable.coff[GlobalHeap]:\nhave %d\nwant 0", tb.coff[GlobalHeap])
 	}
 
 	tb.Free()
@@ -143,19 +143,19 @@ func TestSetConstBuf(t *testing.T) {
 		wbuf, woff := driver.Buffer(nil), int64(0)
 		for _, x := range [3]int64{0, sz / 2, sz - int64(tb.ConstSize())} {
 			if hbuf, hoff := tb.SetConstBuf(buf, x); wbuf != hbuf || woff != hoff {
-				t.Fatalf("Table.SetConstBuf:\nhave %v, %d\nwant %v, %d", hbuf, hoff, wbuf, woff)
+				t.Fatalf("DrawTable.SetConstBuf:\nhave %v, %d\nwant %v, %d", hbuf, hoff, wbuf, woff)
 			}
 			if x := goff + x; tb.coff[GlobalHeap] != x {
-				t.Fatalf("Table.coff[GlobalHeap]:\nhave %d\nwant %d", tb.coff[GlobalHeap], x)
+				t.Fatalf("DrawTable.coff[GlobalHeap]:\nhave %d\nwant %d", tb.coff[GlobalHeap], x)
 			}
 			if x := doff + x; tb.coff[DrawableHeap] != x {
-				t.Fatalf("Table.coff[DrawableHeap]:\nhave %d\nwant %d", tb.coff[DrawableHeap], x)
+				t.Fatalf("DrawTable.coff[DrawableHeap]:\nhave %d\nwant %d", tb.coff[DrawableHeap], x)
 			}
 			if x := moff + x; tb.coff[MaterialHeap] != x {
-				t.Fatalf("Table.coff[MaterialHeap]:\nhave %d\nwant %d", tb.coff[MaterialHeap], x)
+				t.Fatalf("DrawTable.coff[MaterialHeap]:\nhave %d\nwant %d", tb.coff[MaterialHeap], x)
 			}
 			if x := joff + x; tb.coff[JointHeap] != x {
-				t.Fatalf("Table.coff[JointHeap]:\nhave %d\nwant %d", tb.coff[JointHeap], x)
+				t.Fatalf("DrawTable.coff[JointHeap]:\nhave %d\nwant %d", tb.coff[JointHeap], x)
 			}
 			wbuf = buf
 			woff = x
@@ -305,23 +305,23 @@ func TestConstWrite(t *testing.T) {
 			}
 
 			for i := 0; i < x.ng; i++ {
-				checkSlicesT(tb.Frame(i)[:], f[i][:], t, fmt.Sprintf("Table.Frame(%d)", i))
+				checkSlicesT(tb.Frame(i)[:], f[i][:], t, fmt.Sprintf("DrawTable.Frame(%d)", i))
 				for j := 0; j < int(MaxLight); j++ {
-					checkSlicesT(tb.Light(i)[j][:], l[i][j][:], t, fmt.Sprintf("Table.Light(%d)[%d]", i, j))
+					checkSlicesT(tb.Light(i)[j][:], l[i][j][:], t, fmt.Sprintf("DrawTable.Light(%d)[%d]", i, j))
 				}
 				for j := 0; j < int(MaxShadow); j++ {
-					checkSlicesT(tb.Shadow(i)[j][:], s[i][j][:], t, fmt.Sprintf("Table.Shadow(%d)[%d]", i, j))
+					checkSlicesT(tb.Shadow(i)[j][:], s[i][j][:], t, fmt.Sprintf("DrawTable.Shadow(%d)[%d]", i, j))
 				}
 			}
 			for i := 0; i < x.nd; i++ {
-				checkSlicesT(tb.Drawable(i)[:], d[i][:], t, fmt.Sprintf("Table.Drawable(%d)", i))
+				checkSlicesT(tb.Drawable(i)[:], d[i][:], t, fmt.Sprintf("DrawTable.Drawable(%d)", i))
 			}
 			for i := 0; i < x.nm; i++ {
-				checkSlicesT(tb.Material(i)[:], m[i][:], t, fmt.Sprintf("Table.Material(%d)", i))
+				checkSlicesT(tb.Material(i)[:], m[i][:], t, fmt.Sprintf("DrawTable.Material(%d)", i))
 			}
 			for i := 0; i < x.nj; i++ {
 				for j_ := 0; j_ < int(MaxJoint); j_++ {
-					checkSlicesT(tb.Joint(i)[j_][:], j[i][j_][:], t, fmt.Sprintf("Table.Joint(%d)[%d]", i, j_))
+					checkSlicesT(tb.Joint(i)[j_][:], j[i][j_][:], t, fmt.Sprintf("DrawTable.Joint(%d)[%d]", i, j_))
 				}
 			}
 		}
@@ -364,7 +364,7 @@ func TestGlobalWrite(t *testing.T) {
 	tb.Frame(0).SetRand(rnd)
 	tb.Frame(0).SetBounds(&vport)
 
-	s := "Table.Frame(0)[%d:]"
+	s := "DrawTable.Frame(0)[%d:]"
 	checkSlicesT(tb.Frame(0)[16:], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, fmt.Sprintf(s, 16))
 	checkSlicesT(tb.Frame(0)[32:], unsafe.Slice((*float32)(unsafe.Pointer(&p)), 16), t, fmt.Sprintf(s, 32))
 	checkSlicesT(tb.Frame(0)[49:], []float32{rnd}, t, fmt.Sprintf(s, 49))
@@ -379,11 +379,11 @@ func TestGlobalWrite(t *testing.T) {
 	tb.Light(0)[0].SetDirection(&dir)
 	tb.Light(0)[1].SetRange(-rng)
 
-	s = "Table.Light(0)[0][%d:]"
+	s = "DrawTable.Light(0)[0][%d:]"
 	checkSlicesT(tb.Light(0)[0][3:], []float32{rng}, t, fmt.Sprintf(s, 3))
 	checkSlicesT(tb.Light(0)[0][4:], color[:], t, fmt.Sprintf(s, 4))
 	checkSlicesT(tb.Light(0)[0][12:], dir[:], t, fmt.Sprintf(s, 12))
-	s = "Table.Light(0)[1][%d:]"
+	s = "DrawTable.Light(0)[1][%d:]"
 	checkSlicesT(tb.Light(0)[1][3:], []float32{-rng}, t, fmt.Sprintf(s, 3))
 
 	shdw := linear.M4{{0.5}, {1: 0.5}, {2: 0.5}, {0.5, 0.5, 0.5, 1}}
@@ -392,7 +392,7 @@ func TestGlobalWrite(t *testing.T) {
 	tb.Shadow(0)[0].SetUnused(unused)
 	tb.Shadow(0)[0].SetShadow(&shdw)
 
-	s = "Table.Shadow(0)[0][%d:]"
+	s = "DrawTable.Shadow(0)[0][%d:]"
 	checkSlicesT(tb.Shadow(0)[0][:], []float32{*(*float32)(unsafe.Pointer(&unused_))}, t, fmt.Sprintf(s, 0))
 	checkSlicesT(tb.Shadow(0)[0][16:], unsafe.Slice((*float32)(unsafe.Pointer(&shdw)), 16), t, fmt.Sprintf(s, 16))
 }
@@ -434,13 +434,13 @@ func TestGlobalWriteN(t *testing.T) {
 	tb.Frame(2).SetRand(rnd + 0.1)
 	tb.Frame(1).SetBounds(&vport)
 
-	s := "Table.Frame(0)[%d:]"
+	s := "DrawTable.Frame(0)[%d:]"
 	checkSlicesT(tb.Frame(0)[16:], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, fmt.Sprintf(s, 16))
 	checkSlicesT(tb.Frame(0)[32:], unsafe.Slice((*float32)(unsafe.Pointer(&p)), 16), t, fmt.Sprintf(s, 32))
 	checkSlicesT(tb.Frame(0)[49:], []float32{rnd}, t, fmt.Sprintf(s, 49))
-	s = "Table.Frame(1)[%d:]"
+	s = "DrawTable.Frame(1)[%d:]"
 	checkSlicesT(tb.Frame(1)[50:], unsafe.Slice((*float32)(unsafe.Pointer(&vport)), 6), t, fmt.Sprintf(s, 50))
-	s = "Table.Frame(2)[%d:]"
+	s = "DrawTable.Frame(2)[%d:]"
 	checkSlicesT(tb.Frame(2)[16:], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, fmt.Sprintf(s, 16))
 	checkSlicesT(tb.Frame(2)[49:], []float32{rnd + 0.1}, t, fmt.Sprintf(s, 49))
 
@@ -457,18 +457,18 @@ func TestGlobalWriteN(t *testing.T) {
 	tb.Light(2)[1].SetDirection(&dir)
 	tb.Light(2)[MaxLight-1].SetRange(-rng)
 
-	s = "Table.Light(0)[0][%d:]"
+	s = "DrawTable.Light(0)[0][%d:]"
 	checkSlicesT(tb.Light(0)[0][3:], []float32{rng}, t, fmt.Sprintf(s, 3))
 	checkSlicesT(tb.Light(0)[0][4:], color[:], t, fmt.Sprintf(s, 4))
 	checkSlicesT(tb.Light(0)[0][12:], dir[:], t, fmt.Sprintf(s, 12))
-	s = "Table.Light(0)[1][%d:]"
+	s = "DrawTable.Light(0)[1][%d:]"
 	checkSlicesT(tb.Light(0)[1][3:], []float32{-rng}, t, fmt.Sprintf(s, 3))
-	s = "Table.Light(1)[8][%d:]"
+	s = "DrawTable.Light(1)[8][%d:]"
 	checkSlicesT(tb.Light(1)[8][3:], []float32{rng}, t, fmt.Sprintf(s, 3))
 	checkSlicesT(tb.Light(1)[8][4:], color[:], t, fmt.Sprintf(s, 4))
-	s = "Table.Light(2)[1][%d:]"
+	s = "DrawTable.Light(2)[1][%d:]"
 	checkSlicesT(tb.Light(2)[1][12:], dir[:], t, fmt.Sprintf(s, 12))
-	s = fmt.Sprintf("Table.Light(2)[%d]%s", MaxLight-1, "[%d:]")
+	s = fmt.Sprintf("DrawTable.Light(2)[%d]%s", MaxLight-1, "[%d:]")
 	checkSlicesT(tb.Light(2)[MaxLight-1][3:], []float32{-rng}, t, fmt.Sprintf(s, 3))
 
 	shdw := linear.M4{{0.5}, {1: 0.5}, {2: 0.5}, {0.5, 0.5, 0.5, 1}}
@@ -477,9 +477,9 @@ func TestGlobalWriteN(t *testing.T) {
 	tb.Shadow(2)[0].SetUnused(unused)
 	tb.Shadow(0)[0].SetShadow(&shdw)
 
-	s = "Table.Shadow(2)[0][%d:]"
+	s = "DrawTable.Shadow(2)[0][%d:]"
 	checkSlicesT(tb.Shadow(2)[0][:], []float32{*(*float32)(unsafe.Pointer(&unused_))}, t, fmt.Sprintf(s, 0))
-	s = "Table.Shadow(0)[0][%d:]"
+	s = "DrawTable.Shadow(0)[0][%d:]"
 	checkSlicesT(tb.Shadow(0)[0][16:], unsafe.Slice((*float32)(unsafe.Pointer(&shdw)), 16), t, fmt.Sprintf(s, 16))
 }
 
@@ -505,7 +505,7 @@ func TestDrawableWrite(t *testing.T) {
 	tb.Drawable(0).SetWorld(&wld)
 	tb.Drawable(0).SetID(id)
 
-	s := "Table.Drawable(0)[%d:]"
+	const s = "DrawTable.Drawable(0)[%d:]"
 	checkSlicesT(tb.Drawable(0)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
 	checkSlicesT(tb.Drawable(0)[28:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 28))
 }
@@ -540,17 +540,17 @@ func TestDrawableWriteN(t *testing.T) {
 	tb.Drawable(3).SetNormal(&norm)
 	tb.Drawable(9).SetID(id1)
 
-	s := "Table.Drawable(0)[%d:]"
+	s := "DrawTable.Drawable(0)[%d:]"
 	checkSlicesT(tb.Drawable(0)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
 	checkSlicesT(tb.Drawable(0)[28:], unsafe.Slice((*float32)(unsafe.Pointer(&id)), 1), t, fmt.Sprintf(s, 28))
-	s = "Table.Drawable(3)[%d:]"
+	s = "DrawTable.Drawable(3)[%d:]"
 	checkSlicesT(tb.Drawable(3)[:], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, fmt.Sprintf(s, 0))
 	checkSlicesT(tb.Drawable(3)[16:], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
 	}, t, fmt.Sprintf(s, 16))
-	s = "Table.Drawable(9)[%d:]"
+	s = "DrawTable.Drawable(9)[%d:]"
 	checkSlicesT(tb.Drawable(9)[28:], unsafe.Slice((*float32)(unsafe.Pointer(&id1)), 1), t, fmt.Sprintf(s, 28))
 }
 
@@ -578,7 +578,7 @@ func TestMaterialWrite(t *testing.T) {
 	tb.Material(0).SetMetalRough(metal, rough)
 	tb.Material(0).SetAlphaCutoff(cutoff)
 
-	s := "Table.Material(0)[%d:]"
+	const s = "DrawTable.Material(0)[%d:]"
 	checkSlicesT(tb.Material(0)[:], color[:], t, fmt.Sprintf(s, 0))
 	checkSlicesT(tb.Material(0)[4:], []float32{metal}, t, fmt.Sprintf(s, 4))
 	checkSlicesT(tb.Material(0)[5:], []float32{rough}, t, fmt.Sprintf(s, 5))
@@ -611,13 +611,13 @@ func TestMaterialWriteN(t *testing.T) {
 	tb.Material(0).SetAlphaCutoff(cutoff)
 	tb.Material(9).SetAlphaCutoff(1.0 - cutoff)
 
-	s := "Table.Material(0)[%d:]"
+	s := "DrawTable.Material(0)[%d:]"
 	checkSlicesT(tb.Material(0)[:], color[:], t, fmt.Sprintf(s, 0))
 	checkSlicesT(tb.Material(0)[11:], []float32{cutoff}, t, fmt.Sprintf(s, 11))
-	s = "Table.Material(2)[%d:]"
+	s = "DrawTable.Material(2)[%d:]"
 	checkSlicesT(tb.Material(2)[4:], []float32{metal}, t, fmt.Sprintf(s, 4))
 	checkSlicesT(tb.Material(2)[5:], []float32{rough}, t, fmt.Sprintf(s, 5))
-	s = "Table.Material(9)[%d:]"
+	s = "DrawTable.Material(9)[%d:]"
 	checkSlicesT(tb.Material(9)[4:], []float32{1.0 - metal}, t, fmt.Sprintf(s, 4))
 	checkSlicesT(tb.Material(9)[5:], []float32{1.0 - rough}, t, fmt.Sprintf(s, 5))
 	checkSlicesT(tb.Material(9)[11:], []float32{1.0 - cutoff}, t, fmt.Sprintf(s, 11))
@@ -649,7 +649,7 @@ func TestJointWrite(t *testing.T) {
 	tb.Joint(0)[0].SetNormal(&norm)
 	tb.Joint(0)[MaxJoint-1].SetJoint(&jnt)
 
-	s := "Table.Joint(0)[0][%d:]"
+	s := "DrawTable.Joint(0)[0][%d:]"
 	checkSlicesT(tb.Joint(0)[0][:], []float32{
 		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
 		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
@@ -660,7 +660,7 @@ func TestJointWrite(t *testing.T) {
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
 	}, t, fmt.Sprintf(s, 12))
-	s = fmt.Sprintf("Table.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
+	s = fmt.Sprintf("DrawTable.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
 	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], []float32{
 		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
 		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
@@ -698,7 +698,7 @@ func TestJointWriteN(t *testing.T) {
 	tb.Joint(9)[MaxJoint-1].SetJoint(&jnt)
 	tb.Joint(9)[MaxJoint-1].SetNormal(&norm)
 
-	s := "Table.Joint(0)[0][%d:]"
+	s := "DrawTable.Joint(0)[0][%d:]"
 	checkSlicesT(tb.Joint(0)[0][:], []float32{
 		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
 		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
@@ -709,27 +709,27 @@ func TestJointWriteN(t *testing.T) {
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
 	}, t, fmt.Sprintf(s, 12))
-	s = fmt.Sprintf("Table.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
+	s = fmt.Sprintf("DrawTable.Joint(0)[%d]%s", MaxJoint-1, "[%d:]")
 	checkSlicesT(tb.Joint(0)[MaxJoint-1][:], []float32{
 		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
 		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
 		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
 	}, t, fmt.Sprintf(s, 0))
 
-	s = fmt.Sprintf("Table.Joint(5)[%d]%s", MaxJoint/2, "[%d:]")
+	s = fmt.Sprintf("DrawTable.Joint(5)[%d]%s", MaxJoint/2, "[%d:]")
 	checkSlicesT(tb.Joint(5)[MaxJoint/2][:], []float32{
 		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
 		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
 		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
 	}, t, fmt.Sprintf(s, 0))
 
-	s = "Table.Joint(9)[1][%d:]"
+	s = "DrawTable.Joint(9)[1][%d:]"
 	checkSlicesT(tb.Joint(9)[1][12:], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
 	}, t, fmt.Sprintf(s, 12))
-	s = fmt.Sprintf("Table.Joint(9)[%d]%s", MaxJoint-1, "[%d:]")
+	s = fmt.Sprintf("DrawTable.Joint(9)[%d]%s", MaxJoint-1, "[%d:]")
 	checkSlicesT(tb.Joint(9)[MaxJoint-1][:], []float32{
 		jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0],
 		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
@@ -846,14 +846,14 @@ func TestSetCBFail(t *testing.T) {
 	}
 	defer buf.Destroy()
 
+	const s = "DrawTable.SetConstBuf:\nhave %#v\nwant %#v"
 	defer func() {
-		s := "Table.SetConstBuf:\nhave %#v\nwant %#v"
-		want := "misaligned constant buffer offset"
+		const want = "misaligned constant buffer offset"
 		if x := recover(); x != want {
 			t.Fatalf(s, x, want)
 		}
 		defer func() {
-			want := "constant buffer range out of bounds"
+			const want = "constant buffer range out of bounds"
 			if x := recover(); x != want {
 				t.Fatalf(s, x, want)
 			}
@@ -906,7 +906,7 @@ func TestSetTSFail(t *testing.T) {
 		{"EmissiveMap", (*DrawTable).SetEmissiveMap},
 	} {
 		t.Run(c.s, func(t *testing.T) {
-			s := "Table.Set" + c.s + ":\nhave %#v\nwant %#v"
+			s := "DrawTable.Set" + c.s + ":\nhave %#v\nwant %#v"
 			t.Run("cpy", func(t *testing.T) {
 				defer func() {
 					if x := recover(); x != wcpy {
@@ -968,7 +968,7 @@ func TestConstFail(t *testing.T) {
 		{"Joint", func(cpy int) { tb.Joint(cpy) }},
 	} {
 		t.Run(c.s, func(t *testing.T) {
-			s := "Table." + c.s + ":\nhave %#v\nwant %#v"
+			s := "DrawTable." + c.s + ":\nhave %#v\nwant %#v"
 			defer func() {
 				if x := recover(); x != want {
 					t.Fatalf(s, x, want)
