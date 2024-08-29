@@ -790,7 +790,7 @@ func TestSetTSFail(t *testing.T) {
 	defer iv.Destroy()
 	splr, err := ctxt.GPU().NewSampler(&driver.Sampling{MaxAniso: 1, MaxLOD: 1})
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewSampler failed:\n%#v", err)
 	}
 	defer splr.Destroy()
 
