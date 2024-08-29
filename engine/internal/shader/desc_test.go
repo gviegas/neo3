@@ -84,7 +84,7 @@ func TestNewDrawTable(t *testing.T) {
 }
 
 func TestSetConstBuf(t *testing.T) {
-	ng, nd, nm, nj := 1, 1, 1, 1
+	const ng, nd, nm, nj = 1, 1, 1, 1
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 
@@ -332,7 +332,7 @@ func TestConstWrite(t *testing.T) {
 }
 
 func TestGlobalWrite(t *testing.T) {
-	ng, nd, nm, nj := 1, 0, 0, 0
+	const ng, nd, nm, nj = 1, 0, 0, 0
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -398,7 +398,7 @@ func TestGlobalWrite(t *testing.T) {
 }
 
 func TestGlobalWriteN(t *testing.T) {
-	ng, nd, nm, nj := 3, 10, 10, 10
+	const ng, nd, nm, nj = 3, 10, 10, 10
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -484,7 +484,7 @@ func TestGlobalWriteN(t *testing.T) {
 }
 
 func TestDrawableWrite(t *testing.T) {
-	ng, nd, nm, nj := 1, 1, 0, 0
+	const ng, nd, nm, nj = 1, 1, 0, 0
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -511,7 +511,7 @@ func TestDrawableWrite(t *testing.T) {
 }
 
 func TestDrawableWriteN(t *testing.T) {
-	ng, nd, nm, nj := 3, 10, 10, 10
+	const ng, nd, nm, nj = 3, 10, 10, 10
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -555,7 +555,7 @@ func TestDrawableWriteN(t *testing.T) {
 }
 
 func TestMaterialWrite(t *testing.T) {
-	ng, nd, nm, nj := 1, 1, 1, 0
+	const ng, nd, nm, nj = 1, 1, 1, 0
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -586,7 +586,7 @@ func TestMaterialWrite(t *testing.T) {
 }
 
 func TestMaterialWriteN(t *testing.T) {
-	ng, nd, nm, nj := 3, 10, 10, 10
+	const ng, nd, nm, nj = 3, 10, 10, 10
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -624,7 +624,7 @@ func TestMaterialWriteN(t *testing.T) {
 }
 
 func TestJointWrite(t *testing.T) {
-	ng, nd, nm, nj := 1, 1, 1, 1
+	const ng, nd, nm, nj = 1, 1, 1, 1
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -669,7 +669,7 @@ func TestJointWrite(t *testing.T) {
 }
 
 func TestJointWriteN(t *testing.T) {
-	ng, nd, nm, nj := 3, 10, 10, 10
+	const ng, nd, nm, nj = 3, 10, 10, 10
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -743,7 +743,7 @@ func TestJointWriteN(t *testing.T) {
 }
 
 func TestSetGraph(t *testing.T) {
-	ng, nd, nm, nj := 1, 10, 6, 3
+	const ng, nd, nm, nj = 1, 10, 6, 3
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 
@@ -835,7 +835,7 @@ func TestSetGraph(t *testing.T) {
 }
 
 func TestSetCBFail(t *testing.T) {
-	ng, nd, nm, nj := 2, 8, 6, 8
+	const ng, nd, nm, nj = 2, 8, 6, 8
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -864,7 +864,7 @@ func TestSetCBFail(t *testing.T) {
 }
 
 func TestSetTSFail(t *testing.T) {
-	ng, nd, nm, nj := 2, 8, 6, 8
+	const ng, nd, nm, nj = 2, 8, 6, 8
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -886,9 +886,11 @@ func TestSetTSFail(t *testing.T) {
 	}
 	defer splr.Destroy()
 
-	wcpy := "descriptor heap copy out of bounds"
-	wtex := "nil texture"
-	wsplr := "nil sampler"
+	const (
+		wcpy  = "descriptor heap copy out of bounds"
+		wtex  = "nil texture"
+		wsplr = "nil sampler"
+	)
 	for _, c := range [...]struct {
 		s string
 		f func(*DrawTable, int, driver.ImageView, driver.Sampler)
@@ -940,7 +942,7 @@ func TestSetTSFail(t *testing.T) {
 }
 
 func TestConstFail(t *testing.T) {
-	ng, nd, nm, nj := 2, 8, 6, 8
+	const ng, nd, nm, nj = 2, 8, 6, 8
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
 	tb.check(ng, nd, nm, nj, t)
 	defer tb.Free()
@@ -953,7 +955,7 @@ func TestConstFail(t *testing.T) {
 
 	tb.SetConstBuf(buf, 0)
 
-	want := "descriptor heap copy out of bounds"
+	const want = "descriptor heap copy out of bounds"
 	for _, c := range [...]struct {
 		s string
 		f func(int)
