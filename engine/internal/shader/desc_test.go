@@ -742,6 +742,98 @@ func TestJointWriteN(t *testing.T) {
 	}, t, fmt.Sprintf(s, 12))
 }
 
+func TestSetGraph(t *testing.T) {
+	ng, nd, nm, nj := 1, 10, 6, 3
+	tb, _ := NewDrawTable(ng, nd, nm, nj)
+	tb.check(ng, nd, nm, nj, t)
+
+	cb, err := ctxt.GPU().NewCmdBuffer()
+	if err != nil {
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+	}
+	defer cb.Destroy()
+	if err = cb.Begin(); err != nil {
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+	}
+
+	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()), true, driver.UShaderConst)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+	}
+	defer buf.Destroy()
+
+	tb.SetConstBuf(buf, 0)
+
+	img, err := ctxt.GPU().NewImage(driver.RGBA8Unorm, driver.Dim3D{Width: 256, Height: 256},
+		1, 1, 1, driver.UGeneric)
+	if err != nil {
+		t.Fatalf("driver.GPU.NewImage failed:\n%#v", err)
+	}
+	defer img.Destroy()
+	iv, err := img.NewView(driver.IView2D, 0, 1, 0, 1)
+	if err != nil {
+		t.Fatalf("driver.Image.NewView failed:\n%#v", err)
+	}
+	defer iv.Destroy()
+	splr, err := ctxt.GPU().NewSampler(&driver.Sampling{MaxAniso: 1, MaxLOD: 1})
+	if err != nil {
+		t.Fatalf("driver.GPU.NewSampler failed:\n%#v", err)
+	}
+	defer splr.Destroy()
+
+	// NOTE: Keep this up to date.
+	for i := range ng {
+		tb.SetShadowMap(i, iv, splr)
+		tb.SetIrradiance(i, iv, splr)
+		tb.SetLD(i, iv, splr)
+		tb.SetDFG(i, iv, splr)
+	}
+	for i := range nm {
+		tb.SetBaseColor(i, iv, splr)
+		tb.SetMetalRough(i, iv, splr)
+		tb.SetNormalMap(i, iv, splr)
+		tb.SetOcclusionMap(i, iv, splr)
+		tb.SetEmissiveMap(i, iv, splr)
+	}
+
+	type testCase struct {
+		start int
+		cpy   []int
+	}
+	cases := make([]testCase, 0, 9+ng+nd+nm+nj)
+	// NOTE: Assuming global/drawable/material/joint order.
+	cases = append(cases, []testCase{
+		{GlobalHeap, []int{0, 0, 0, 0}},
+		{GlobalHeap, []int{ng - 1, nd - 1, nm - 1, nj - 1}},
+		{GlobalHeap, []int{ng / 2, nd / 2, nm / 2, nj / 2}},
+		{GlobalHeap, []int{0, nd / 3, nm / 3}},
+		{GlobalHeap, []int{ng - 1, 0}},
+		{DrawableHeap, []int{0, nm / 2, nj - 1}},
+		{DrawableHeap, []int{nd - 1, 0}},
+		{MaterialHeap, []int{0, 0}},
+		{MaterialHeap, []int{nm - 1, nj - 1}},
+	}...)
+	inds := make([]int, 0, max(ng, nd, nm, nj))
+	for i := range cap(inds) {
+		inds = append(inds, i)
+	}
+	for i, x := range [4]int{
+		GlobalHeap:   ng,
+		DrawableHeap: nd,
+		MaterialHeap: nm,
+		JointHeap:    nj,
+	} {
+		for j := range x {
+			cases = append(cases, testCase{i, inds[j : j+1]})
+		}
+	}
+
+	// Every case is valid, so SetGraph must not panic.
+	for _, x := range cases {
+		tb.SetGraph(cb, x.start, x.cpy)
+	}
+}
+
 func TestSetCBFail(t *testing.T) {
 	ng, nd, nm, nj := 2, 8, 6, 8
 	tb, _ := NewDrawTable(ng, nd, nm, nj)
