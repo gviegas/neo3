@@ -31,9 +31,8 @@ func (m *dataMap[I, D]) insert(data D) I {
 	if m.idMap.Rem() == 0 {
 		switch n := m.idMap.Len(); {
 		case n > 0:
-			cnt := 1 + (n-31)/32
 			m.ids = append(m.ids, m.ids...)
-			m.idMap.Grow(cnt)
+			m.idMap.Grow(n / 32)
 		default:
 			var elems [32]dataID
 			m.ids = append(m.ids, elems[:]...)
