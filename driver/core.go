@@ -34,10 +34,10 @@ type GPU interface {
 	// visible to any accesses that happen in subsequent
 	// Commit calls.
 	//
-	// NOTE: Commit will retain wk and may update it at
-	// at any time. In particular, calling methods on
-	// committed command buffers is not safe - accesses
-	// to wk must synchronize with the receive on ch.
+	// NOTE: Commit will retain wk and may update it at any
+	// time. In particular, calling methods on committed
+	// command buffers is not safe - accesses to wk must
+	// synchronize with the receive on ch.
 	Commit(wk *WorkItem, ch chan<- *WorkItem) error
 
 	// NewCmdBuffer creates a new command buffer.
