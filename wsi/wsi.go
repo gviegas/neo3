@@ -367,6 +367,14 @@ type PointerButtonHandler interface {
 	PointerButton(btn Button, pressed bool)
 }
 
+// PointerHandler is the interface that groups all pointer callbacks.
+type PointerHandler interface {
+	PointerEnterHandler
+	PointerLeaveHandler
+	PointerMotionHandler
+	PointerButtonHandler
+}
+
 // SetPointerEnterHandler sets the pointer enter handler.
 func SetPointerEnterHandler(ph PointerEnterHandler) { pointerEnterHandler = ph }
 
@@ -378,6 +386,14 @@ func SetPointerMotionHandler(ph PointerMotionHandler) { pointerMotionHandler = p
 
 // SetPointerButtonHandler sets the pointer button handler.
 func SetPointerButtonHandler(ph PointerButtonHandler) { pointerButtonHandler = ph }
+
+// SetPointerHandler sets the pointer handler.
+func SetPointerHandler(ph PointerHandler) {
+	SetPointerEnterHandler(ph)
+	SetPointerLeaveHandler(ph)
+	SetPointerMotionHandler(ph)
+	SetPointerButtonHandler(ph)
+}
 
 var (
 	pointerEnterHandler  PointerEnterHandler
