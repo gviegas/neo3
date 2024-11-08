@@ -261,11 +261,23 @@ type WindowResizeHandler interface {
 	WindowResize(win Window, newWidth, newHeight int)
 }
 
+// WindowHandler is an interface that groups all window callbacks.
+type WindowHandler interface {
+	WindowCloseHandler
+	WindowResizeHandler
+}
+
 // SetWindowCloseHandler sets the window close handler.
 func SetWindowCloseHandler(wh WindowCloseHandler) { windowCloseHandler = wh }
 
 // SetWindowResizeHandler sets the window resize handler.
 func SetWindowResizeHandler(wh WindowResizeHandler) { windowResizeHandler = wh }
+
+// SetWindowHandler sets the window handler.
+func SetWindowHandler(wh WindowHandler) {
+	SetWindowCloseHandler(wh)
+	SetWindowResizeHandler(wh)
+}
 
 var (
 	windowCloseHandler  WindowCloseHandler
