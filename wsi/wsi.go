@@ -261,7 +261,7 @@ type WindowResizeHandler interface {
 	WindowResize(win Window, newWidth, newHeight int)
 }
 
-// WindowHandler is an interface that groups all window callbacks.
+// WindowHandler is the interface that groups all window callbacks.
 type WindowHandler interface {
 	WindowCloseHandler
 	WindowResizeHandler
@@ -308,6 +308,14 @@ type KeyboardModifierHandler interface {
 	KeyboardModifier(modMask Modifier)
 }
 
+// KeyboardHandler is the interface that groups all keyboard callbacks.
+type KeyboardHandler interface {
+	KeyboardEnterHandler
+	KeyboardLeaveHandler
+	KeyboardKeyHandler
+	KeyboardModifierHandler
+}
+
 // SetKeyboardEnterHandler sets the keyboard enter handler.
 func SetKeyboardEnterHandler(kh KeyboardEnterHandler) { keyboardEnterHandler = kh }
 
@@ -319,6 +327,14 @@ func SetKeyboardKeyHandler(kh KeyboardKeyHandler) { keyboardKeyHandler = kh }
 
 // SetKeyboardModifierHandler sets the keyboard modifier handler.
 func SetKeyboardModifierHandler(kh KeyboardModifierHandler) { keyboardModifierHandler = kh }
+
+// SetKeyboardHandler sets the keyboard handler.
+func SetKeyboardHandler(kh KeyboardHandler) {
+	SetKeyboardEnterHandler(kh)
+	SetKeyboardLeaveHandler(kh)
+	SetKeyboardKeyHandler(kh)
+	SetKeyboardModifierHandler(kh)
+}
 
 var (
 	keyboardEnterHandler    KeyboardEnterHandler
