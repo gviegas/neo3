@@ -98,8 +98,7 @@ func Example_present() {
 		Width:  dim.Width,
 		Height: dim.Height,
 	}
-	wsi.SetWindowCloseHandler(&t)
-	wsi.SetWindowResizeHandler(&t)
+	wsi.SetWindowHandler(&t)
 	wsi.SetKeyboardKeyHandler(&t)
 	wsi.SetAppName("driver.example")
 	t.renderLoop()
