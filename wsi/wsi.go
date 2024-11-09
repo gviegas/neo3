@@ -5,6 +5,9 @@
 // Because a system need not have a window system, WSI
 // is conditionally supported. Moreover, WSI support in
 // a driver is not guaranteed.
+//
+// NOTE: This package's functionality must only be used
+// on main's goroutine.
 package wsi
 
 import (
@@ -249,13 +252,13 @@ const (
 	BtnBackward
 )
 
-// WindowCloseHandler is a callback for window close events.
+// WindowCloseHandler is the callback for window close events.
 type WindowCloseHandler interface {
 	// WindowClose is called when a window is closed.
 	WindowClose(win Window)
 }
 
-// WindowResizeHandler is a callback for window resize events.
+// WindowResizeHandler is the callback for window resize events.
 type WindowResizeHandler interface {
 	// WindowResize is called when a window is resized.
 	WindowResize(win Window, newWidth, newHeight int)
@@ -268,10 +271,14 @@ type WindowHandler interface {
 }
 
 // SetWindowCloseHandler sets the window close handler.
-func SetWindowCloseHandler(wh WindowCloseHandler) { windowCloseHandler = wh }
+func SetWindowCloseHandler(wh WindowCloseHandler) {
+	windowCloseHandler = wh
+}
 
 // SetWindowResizeHandler sets the window resize handler.
-func SetWindowResizeHandler(wh WindowResizeHandler) { windowResizeHandler = wh }
+func SetWindowResizeHandler(wh WindowResizeHandler) {
+	windowResizeHandler = wh
+}
 
 // SetWindowHandler sets the window handler.
 func SetWindowHandler(wh WindowHandler) {
@@ -284,25 +291,25 @@ var (
 	windowResizeHandler WindowResizeHandler
 )
 
-// KeyboardEnterHandler is a callback for keyboard enter events.
+// KeyboardEnterHandler is the callback for keyboard enter events.
 type KeyboardEnterHandler interface {
 	// KeyboardEnter is called when focus is gained.
 	KeyboardEnter(win Window)
 }
 
-// KeyboardLeaveHandler is a callback for keyboard leave events.
+// KeyboardLeaveHandler is the callback for keyboard leave events.
 type KeyboardLeaveHandler interface {
 	// KeyboardLeave is called when focus is lost.
 	KeyboardLeave(win Window)
 }
 
-// KeyboardKeyHandler is a callback for keyboard key events.
+// KeyboardKeyHandler is the callback for keyboard key events.
 type KeyboardKeyHandler interface {
 	// KeyboardKey is called when a key is pressed/released.
 	KeyboardKey(key Key, pressed bool)
 }
 
-// KeyboardModifierHandler is a callback for keyboard modifier events.
+// KeyboardModifierHandler is the callback for keyboard modifier events.
 type KeyboardModifierHandler interface {
 	// KeyboardModifier is called when modifier state changes.
 	KeyboardModifier(modMask Modifier)
@@ -317,16 +324,24 @@ type KeyboardHandler interface {
 }
 
 // SetKeyboardEnterHandler sets the keyboard enter handler.
-func SetKeyboardEnterHandler(kh KeyboardEnterHandler) { keyboardEnterHandler = kh }
+func SetKeyboardEnterHandler(kh KeyboardEnterHandler) {
+	keyboardEnterHandler = kh
+}
 
 // SetKeyboardLeaveHandler sets the keyboard leave handler.
-func SetKeyboardLeaveHandler(kh KeyboardLeaveHandler) { keyboardLeaveHandler = kh }
+func SetKeyboardLeaveHandler(kh KeyboardLeaveHandler) {
+	keyboardLeaveHandler = kh
+}
 
 // SetKeyboardKeyHandler sets the keyboard key handler.
-func SetKeyboardKeyHandler(kh KeyboardKeyHandler) { keyboardKeyHandler = kh }
+func SetKeyboardKeyHandler(kh KeyboardKeyHandler) {
+	keyboardKeyHandler = kh
+}
 
 // SetKeyboardModifierHandler sets the keyboard modifier handler.
-func SetKeyboardModifierHandler(kh KeyboardModifierHandler) { keyboardModifierHandler = kh }
+func SetKeyboardModifierHandler(kh KeyboardModifierHandler) {
+	keyboardModifierHandler = kh
+}
 
 // SetKeyboardHandler sets the keyboard handler.
 func SetKeyboardHandler(kh KeyboardHandler) {
@@ -343,25 +358,25 @@ var (
 	keyboardModifierHandler KeyboardModifierHandler
 )
 
-// PointerEnterHandler is a callback for pointer enter events.
+// PointerEnterHandler is the callback for pointer enter events.
 type PointerEnterHandler interface {
 	// PointerEnter is called when the pointer enters a window.
 	PointerEnter(win Window, x, y int)
 }
 
-// PointerLeaveHandler is a callback for pointer leave events.
+// PointerLeaveHandler is the callback for pointer leave events.
 type PointerLeaveHandler interface {
 	// PointerLeave is called when the pointer leaves a window.
 	PointerLeave(win Window)
 }
 
-// PointerMotionHandler is a callback for pointer motion events.
+// PointerMotionHandler is the callback for pointer motion events.
 type PointerMotionHandler interface {
 	// PointerMotion is called when the pointer changes position.
 	PointerMotion(newX, newY int)
 }
 
-// PointerButtonHandler is a callback for pointer button events.
+// PointerButtonHandler is the callback for pointer button events.
 type PointerButtonHandler interface {
 	// PointerButton is called when a button is pressed/released.
 	PointerButton(btn Button, pressed bool)
@@ -376,16 +391,24 @@ type PointerHandler interface {
 }
 
 // SetPointerEnterHandler sets the pointer enter handler.
-func SetPointerEnterHandler(ph PointerEnterHandler) { pointerEnterHandler = ph }
+func SetPointerEnterHandler(ph PointerEnterHandler) {
+	pointerEnterHandler = ph
+}
 
 // SetPointerLeaveHandler sets the pointer leave handler.
-func SetPointerLeaveHandler(ph PointerLeaveHandler) { pointerLeaveHandler = ph }
+func SetPointerLeaveHandler(ph PointerLeaveHandler) {
+	pointerLeaveHandler = ph
+}
 
 // SetPointerMotionHandler sets the pointer motion handler.
-func SetPointerMotionHandler(ph PointerMotionHandler) { pointerMotionHandler = ph }
+func SetPointerMotionHandler(ph PointerMotionHandler) {
+	pointerMotionHandler = ph
+}
 
 // SetPointerButtonHandler sets the pointer button handler.
-func SetPointerButtonHandler(ph PointerButtonHandler) { pointerButtonHandler = ph }
+func SetPointerButtonHandler(ph PointerButtonHandler) {
+	pointerButtonHandler = ph
+}
 
 // SetPointerHandler sets the pointer handler.
 func SetPointerHandler(ph PointerHandler) {
