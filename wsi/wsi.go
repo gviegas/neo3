@@ -469,6 +469,24 @@ const (
 	XCB
 )
 
+// String implements fmt.Stringer.
+func (p Platform) String() string {
+	switch p {
+	case None:
+		return "None"
+	case Android:
+		return "Android"
+	case Wayland:
+		return "Wayland"
+	case Win32:
+		return "Win32"
+	case XCB:
+		return "XCB"
+	default:
+		return "!wsi.Platform"
+	}
+}
+
 // PlatformInUse identifies the underlying platform which
 // wsi is using.
 func PlatformInUse() Platform {
