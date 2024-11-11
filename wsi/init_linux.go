@@ -11,14 +11,18 @@ import (
 func init() {
 	// TODO: Prefer X11 for now as Wayland lacks decorations.
 	_, useWL := os.LookupEnv("NEO3_USE_WAYLAND")
-	if useWL && os.Getenv("WAYLAND_DISPLAY") != "" {
-		if err := initWayland(); err != nil {
-			os.Stderr.WriteString(err.Error() + "\n")
-		} else {
-			return
+	switch os.Getenv("XDG_SESSION_TYPE") {
+	case "wayland":
+		if useWL {
+			if err := initWayland(); err != nil {
+				os.Stderr.WriteString(err.Error() + "\n")
+			} else {
+				return
+			}
+			break
 		}
-	}
-	if os.Getenv("DISPLAY") != "" {
+		fallthrough
+	default:
 		if err := initXCB(); err != nil {
 			os.Stderr.WriteString(err.Error() + "\n")
 		} else {
