@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	if os.Getenv("DISPLAY") != "" {
+	if os.Getenv("XDG_SESSION_TYPE") == "x11" || os.Getenv("DISPLAY") != "" {
 		if err := initXCB(); err != nil {
 			os.Stderr.WriteString(err.Error() + "\n")
 		} else {
