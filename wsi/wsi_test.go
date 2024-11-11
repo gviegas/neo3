@@ -9,6 +9,8 @@ import (
 )
 
 func TestWSI(t *testing.T) {
+	plat := PlatformInUse()
+	t.Logf("Platform being tested is %s", plat)
 	SetWindowCloseHandler(E{})
 	SetWindowResizeHandler(E{})
 	SetKeyboardEnterHandler(E{})
@@ -19,7 +21,7 @@ func TestWSI(t *testing.T) {
 	SetPointerLeaveHandler(E{})
 	SetPointerMotionHandler(E{})
 	SetPointerButtonHandler(E{})
-	switch PlatformInUse() {
+	switch plat {
 	case None:
 		win, err := NewWindow(480, 360, "Will fail")
 		if win != nil || err != errMissing {
