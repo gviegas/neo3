@@ -151,7 +151,7 @@ const struct wl_interface bufferInterfaceWayland = {
 
 const struct wl_interface surfaceInterfaceWayland = {
 	.name = "wl_surface",
-	.version = 5,
+	.version = 6,
 	.method_count = 11,
 	.methods = (const struct wl_message[11]){
 		{ "destroy", "", nullInterface },
@@ -166,10 +166,12 @@ const struct wl_interface surfaceInterfaceWayland = {
 		{ "damage_buffer", "4iiii", nullInterface },
 		{ "offset", "5ii", nullInterface },
 	},
-	.event_count = 2,
-	.events = (const struct wl_message[2]){
+	.event_count = 4,
+	.events = (const struct wl_message[4]){
 		{ "enter", "o", (const struct wl_interface*[1]){&outputInterfaceWayland} },
 		{ "leave", "o", (const struct wl_interface*[1]){&outputInterfaceWayland} },
+		{ "preferred_buffer_scale", "6i", nullInterface },
+		{ "preferred_buffer_transform", "6u", nullInterface },
 	},
 };
 
@@ -492,10 +494,20 @@ static void surfaceLeave(void* data_, struct wl_surface* sf, struct wl_output* o
 	surfaceLeaveWayland(sf, out);
 }
 
+static void surfacePreferredBufferScale(void* data_, struct wl_surface* sf, int32_t factor) {
+	// TODO
+}
+
+static void surfacePreferredBufferTransform(void* data_, struct wl_surface* sf, uint32_t xform) {
+	// TODO
+}
+
 int surfaceAddListenerWayland(struct wl_surface* sf) {
 	static const struct wl_surface_listener ltn = {
 		.enter = surfaceEnter,
 		.leave = surfaceLeave,
+		.preferred_buffer_scale = surfacePreferredBufferScale,
+		.preferred_buffer_transform = surfacePreferredBufferTransform,
 	};
 	return proxyAddListener((struct wl_proxy*)sf, (void (**)(void))&ltn, NULL);
 }
