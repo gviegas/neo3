@@ -337,7 +337,7 @@ const struct wl_interface surfaceInterfaceXDG = {
 
 const struct wl_interface toplevelInterfaceXDG = {
 	.name = "xdg_toplevel",
-	.version = 4,
+	.version = 6,
 	.method_count = 14,
 	.methods = (const struct wl_message[14]) {
 		{ "destroy", "", nullInterface },
@@ -355,11 +355,12 @@ const struct wl_interface toplevelInterfaceXDG = {
 		{ "unset_fullscreen", "", nullInterface },
 		{ "set_minimized", "", nullInterface },
 	},
-	.event_count = 3,
-	.events = (const struct wl_message[3]) {
+	.event_count = 4,
+	.events = (const struct wl_message[4]) {
 		{ "configure", "iia", nullInterface },
 		{ "close", "", nullInterface },
 		{ "configure_bounds", "4ii", nullInterface },
+		{ "wm_capabilities", "5a", nullInterface },
 	},
 };
 
@@ -607,11 +608,16 @@ static void toplevelConfigureBounds(void* data_, struct xdg_toplevel* tl, int32_
 	toplevelConfigureBoundsXDG(tl, width, height);
 }
 
+static void toplevelWMCapabilities(void* data_, struct xdg_toplevel* tl, struct wl_array* capab) {
+	// TODO
+}
+
 int toplevelAddListenerXDG(struct xdg_toplevel* tl) {
 	static const struct xdg_toplevel_listener ltn = {
 		.configure = toplevelConfigure,
 		.close = toplevelClose,
 		.configure_bounds = toplevelConfigureBounds,
+		.wm_capabilities = toplevelWMCapabilities,
 	};
 	return proxyAddListener((struct wl_proxy*)tl, (void (**)(void))&ltn, NULL);
 }
