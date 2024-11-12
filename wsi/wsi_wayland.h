@@ -110,6 +110,8 @@ void bufferDestroyWayland(struct wl_buffer* buf);
 //
 // - surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output)
 // - surfaceLeaveWayland(sf *C.struct_wl_surface, out *C.struct_wl_output)
+// - surfacePreferredBufferScaleWayland(sf *C.struct_wl_surface, factor C.int32_t)
+// - surfacePreferredBufferTransformWayland(sf *C.struct_wl_surface, xform C.uint32_t)
 int surfaceAddListenerWayland(struct wl_surface* sf);
 
 // wl_surface_destroy.

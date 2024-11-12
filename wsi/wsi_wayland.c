@@ -495,11 +495,11 @@ static void surfaceLeave(void* data_, struct wl_surface* sf, struct wl_output* o
 }
 
 static void surfacePreferredBufferScale(void* data_, struct wl_surface* sf, int32_t factor) {
-	// TODO
+	surfacePreferredBufferScaleWayland(sf, factor);
 }
 
 static void surfacePreferredBufferTransform(void* data_, struct wl_surface* sf, uint32_t xform) {
-	// TODO
+	surfacePreferredBufferTransformWayland(sf, xform);
 }
 
 int surfaceAddListenerWayland(struct wl_surface* sf) {

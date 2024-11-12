@@ -561,6 +561,12 @@ func surfaceEnterWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {}
 //export surfaceLeaveWayland
 func surfaceLeaveWayland(sf *C.struct_wl_surface, out *C.struct_wl_output) {}
 
+//export surfacePreferredBufferScaleWayland
+func surfacePreferredBufferScaleWayland(sf *C.struct_wl_surface, factor C.int32_t) {}
+
+//export surfacePreferredBufferTransformWayland
+func surfacePreferredBufferTransformWayland(sf *C.struct_wl_surface, xform C.uint32_t) {}
+
 //export wmBasePingXDG
 func wmBasePingXDG(serial C.uint32_t) {
 	C.wmBasePongXDG(wmXDG, serial)
