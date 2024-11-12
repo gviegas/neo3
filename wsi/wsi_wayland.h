@@ -177,6 +177,7 @@ void surfaceAckConfigureXDG(struct xdg_surface* xsf, uint32_t serial);
 // - toplevelConfigureXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t, states *C.struct_wl_array)
 // - toplevelCloseXDG(tl *C.struct_xdg_toplevel)
 // - toplevelConfigureBoundsXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t)
+// - toplevelWMCapabilitiesXDG(tl *C.struct_xdg_toplevel, capab *C.struct_wl_array)
 int toplevelAddListenerXDG(struct xdg_toplevel* tl);
 
 // xdg_toplevel_destroy.

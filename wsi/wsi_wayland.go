@@ -609,6 +609,9 @@ func toplevelCloseXDG(tl *C.struct_xdg_toplevel) {
 //export toplevelConfigureBoundsXDG
 func toplevelConfigureBoundsXDG(tl *C.struct_xdg_toplevel, width, height C.int32_t) {}
 
+//export toplevelWMCapabilitiesXDG
+func toplevelWMCapabilitiesXDG(tl *C.struct_xdg_toplevel, capab *C.struct_wl_array) {}
+
 //export seatCapabilitiesWayland
 func seatCapabilitiesWayland(capab C.uint32_t) {
 	if capab&C.WL_SEAT_CAPABILITY_POINTER != 0 {

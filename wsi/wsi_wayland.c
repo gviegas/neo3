@@ -609,7 +609,7 @@ static void toplevelConfigureBounds(void* data_, struct xdg_toplevel* tl, int32_
 }
 
 static void toplevelWMCapabilities(void* data_, struct xdg_toplevel* tl, struct wl_array* capab) {
-	// TODO
+	toplevelWMCapabilitiesXDG(tl, capab);
 }
 
 int toplevelAddListenerXDG(struct xdg_toplevel* tl) {
