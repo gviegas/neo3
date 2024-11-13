@@ -112,10 +112,11 @@ const struct wl_interface compositorInterfaceWayland = {
 
 const struct wl_interface shmInterfaceWayland = {
 	.name = "wl_shm",
-	.version = 1,
-	.method_count = 1,
-	.methods = (const struct wl_message[1]){
+	.version = 2,
+	.method_count = 2,
+	.methods = (const struct wl_message[2]){
 		{ "create_pool", "nhi", (const struct wl_interface*[3]){&shmPoolInterfaceWayland} },
+		{ "release", "2", nullInterface },
 	},
 	.event_count = 1,
 	.events = (const struct wl_message[1]){
@@ -463,6 +464,10 @@ void shmDestroyWayland(struct wl_shm* shm) {
 struct wl_shm_pool* shmCreatePoolWayland(struct wl_shm* shm, int32_t fd, int32_t size) {
 	return (struct wl_shm_pool*)proxyMarshalFlags(
 		(struct wl_proxy*)shm, WL_SHM_CREATE_POOL, &shmPoolInterfaceWayland, proxyGetVersion((struct wl_proxy*)shm), 0, NULL, fd, size);
+}
+
+void shmReleaseWayland(struct wl_shm* shm) {
+	proxyMarshalFlags((struct wl_proxy*)shm, WL_SHM_RELEASE, NULL, proxyGetVersion((struct wl_proxy*)shm), WL_MARSHAL_FLAG_DESTROY);
 }
 
 struct wl_buffer* shmPoolCreateBufferWayland(struct wl_shm_pool* shmp, int32_t offset, int32_t width, int32_t height, int32_t stride, uint32_t format) {

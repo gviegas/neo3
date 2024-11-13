@@ -90,6 +90,9 @@ void shmDestroyWayland(struct wl_shm* shm);
 // wl_shm_create_pool.
 struct wl_shm_pool* shmCreatePoolWayland(struct wl_shm* shm, int32_t fd, int32_t size);
 
+// wl_shm_release.
+void shmReleaseWayland(struct wl_shm* shm);
+
 // wl_shm_pool_create_buffer.
 struct wl_buffer* shmPoolCreateBufferWayland(struct wl_shm_pool* shmp, int32_t offset, int32_t width, int32_t height, int32_t stride, uint32_t format);
 
