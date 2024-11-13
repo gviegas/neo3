@@ -486,21 +486,25 @@ func registryGlobalWayland(name C.uint32_t, iface *C.char, vers C.uint32_t) {
 	switch C.GoString(iface) {
 	case "wl_compositor":
 		i := &C.compositorInterfaceWayland
+		vers = min(vers, C.uint32_t(i.version))
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		cptWayland = (*C.struct_wl_compositor)(p)
 		nameCptWayland = name
 	case "wl_shm":
 		i := &C.shmInterfaceWayland
+		vers = min(vers, C.uint32_t(i.version))
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		shmWayland = (*C.struct_wl_shm)(p)
 		nameShmWayland = name
 	case "xdg_wm_base":
 		i := &C.wmBaseInterfaceXDG
+		vers = min(vers, C.uint32_t(i.version))
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		wmXDG = (*C.struct_xdg_wm_base)(p)
 		nameWMXDG = name
 	case "wl_seat":
 		i := &C.seatInterfaceWayland
+		vers = min(vers, C.uint32_t(i.version))
 		p := C.registryBindWayland(rtyWayland, name, i, vers)
 		seatWayland = (*C.struct_wl_seat)(p)
 		nameSeatWayland = name
