@@ -70,8 +70,20 @@ void closeWayland(void* handle) {
 
 static const struct wl_interface* nullInterface[8];
 
-// TODO
-const struct wl_interface displayInterfaceWayland;
+const struct wl_interface displayInterfaceWayland = {
+	.name = "wl_display",
+	.version = 1,
+	.method_count = 2,
+	.methods = (const struct wl_message[2]){
+		{ "sync", "n", (const struct wl_interface*[1]){&callbackInterfaceWayland} },
+		{ "get_registry", "n", (const struct wl_interface*[1]){&registryInterfaceWayland} },
+	},
+	.event_count = 2,
+	.events = (const struct wl_message[2]){
+		{ "error", "ous", nullInterface },
+		{ "delete_id", "u", nullInterface },
+	},
+};
 
 const struct wl_interface registryInterfaceWayland = {
 	.name = "wl_registry",
