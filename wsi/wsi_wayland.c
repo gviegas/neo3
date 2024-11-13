@@ -287,7 +287,7 @@ const struct wl_interface touchInterfaceWayland = {
 
 const struct wl_interface wmBaseInterfaceXDG = {
 	.name = "xdg_wm_base",
-	.version = 4,
+	.version = 6,
 	.method_count = 4,
 	.methods = (const struct wl_message[4]){
 		{ "destroy", "", nullInterface },
@@ -303,7 +303,7 @@ const struct wl_interface wmBaseInterfaceXDG = {
 
 const struct wl_interface positionerInterfaceXDG = {
 	.name = "xdg_positioner",
-	.version = 4,
+	.version = 6,
 	.method_count = 10,
 	.methods = (const struct wl_message[10]){
 		{ "destroy", "", nullInterface },
@@ -323,7 +323,7 @@ const struct wl_interface positionerInterfaceXDG = {
 
 const struct wl_interface surfaceInterfaceXDG = {
 	.name = "xdg_surface",
-	.version = 4,
+	.version = 6,
 	.method_count = 5,
 	.methods = (const struct wl_message[5]){
 		{ "destroy", "", nullInterface },
@@ -369,7 +369,7 @@ const struct wl_interface toplevelInterfaceXDG = {
 
 const struct wl_interface popupInterfaceXDG = {
 	.name = "xdg_popup",
-	.version = 4,
+	.version = 6,
 	.method_count = 3,
 	.methods = (const struct wl_message[3]) {
 		{ "destroy", "", nullInterface },
