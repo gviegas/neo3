@@ -238,6 +238,8 @@ void seatReleaseWayland(struct wl_seat* seat);
 // - pointerAxisSourceWayland(axisSrc C.uint32_t)
 // - pointerAxisStopWayland(millis, axis C.uint32_t)
 // - pointerAxisDiscreteWayland(axis C.uint32_t, discrete C.int32_t)
+// - pointerAxisValue120Wayland(axis C.uint32_t, value120 C.int32_t)
+// - pointerAxisRelativeDirectionWayland(axis C.uint32_t, direction C.uint32_t)
 int pointerAddListenerWayland(struct wl_pointer* pt);
 
 // wl_pointer_destroy.

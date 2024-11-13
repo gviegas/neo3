@@ -736,11 +736,11 @@ static void pointerAxisDiscrete(void* data_, struct wl_pointer* pt_, uint32_t ax
 }
 
 static void pointerAxisValue120(void* data_, struct wl_pointer* pt_, uint32_t axis, int32_t value120) {
-	// TODO
+	pointerAxisValue120Wayland(axis, value120);
 }
 
 static void pointerAxisRelativeDirection(void *data_, struct wl_pointer* pt_, uint32_t axis, uint32_t direction) {
-	// TODO
+	pointerAxisRelativeDirectionWayland(axis, direction);
 }
 
 int pointerAddListenerWayland(struct wl_pointer* pt) {

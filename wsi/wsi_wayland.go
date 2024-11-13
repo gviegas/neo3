@@ -708,6 +708,16 @@ func pointerAxisDiscreteWayland(axis C.uint32_t, discrete C.int32_t) {
 	// TODO
 }
 
+//export pointerAxisValue120Wayland
+func pointerAxisValue120Wayland(axis C.uint32_t, value120 C.int32_t) {
+	// TODO
+}
+
+//export pointerAxisRelativeDirectionWayland
+func pointerAxisRelativeDirectionWayland(axis C.uint32_t, direction C.uint32_t) {
+	// TODO
+}
+
 //export keyboardKeymapWayland
 func keyboardKeymapWayland(format C.uint32_t, fd C.int32_t, size C.uint32_t) {
 	if format != C.WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1 {
