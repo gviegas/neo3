@@ -226,14 +226,14 @@ const struct wl_interface seatInterfaceWayland = {
 
 const struct wl_interface pointerInterfaceWayland = {
 	.name = "wl_pointer",
-	.version = 7,
+	.version = 9,
 	.method_count = 2,
 	.methods = (const struct wl_message[2]){
 		{ "set_cursor", "u?oii", (const struct wl_interface*[4]){NULL, &surfaceInterfaceWayland} },
 		{ "release", "3", nullInterface },
 	},
-	.event_count = 9,
-	.events = (const struct wl_message[9]){
+	.event_count = 11,
+	.events = (const struct wl_message[11]){
 		{ "enter", "uoff", (const struct wl_interface*[4]){NULL, &surfaceInterfaceWayland} },
 		{ "leave", "uo", (const struct wl_interface*[2]){NULL, &surfaceInterfaceWayland} },
 		{ "motion", "uff", nullInterface },
@@ -243,6 +243,8 @@ const struct wl_interface pointerInterfaceWayland = {
 		{ "axis_source", "5u", nullInterface },
 		{ "axis_stop", "5uu", nullInterface },
 		{ "axis_discrete", "5ui", nullInterface },
+		{ "axis_value120", "8ui", nullInterface },
+		{ "axis_relative_direction", "9uu", nullInterface },
 	},
 };
 
@@ -733,6 +735,14 @@ static void pointerAxisDiscrete(void* data_, struct wl_pointer* pt_, uint32_t ax
 	pointerAxisDiscreteWayland(axis, discrete);
 }
 
+static void pointerAxisValue120(void* data_, struct wl_pointer* pt_, uint32_t axis, int32_t value120) {
+	// TODO
+}
+
+static void pointerAxisRelativeDirection(void *data_, struct wl_pointer* pt_, uint32_t axis, uint32_t direction) {
+	// TODO
+}
+
 int pointerAddListenerWayland(struct wl_pointer* pt) {
 	static const struct wl_pointer_listener ltn = {
 		.enter = pointerEnter,
@@ -744,6 +754,8 @@ int pointerAddListenerWayland(struct wl_pointer* pt) {
 		.axis_source = pointerAxisSource,
 		.axis_stop = pointerAxisStop,
 		.axis_discrete = pointerAxisDiscrete,
+		.axis_value120 = pointerAxisValue120,
+		.axis_relative_direction = pointerAxisRelativeDirection,
 	};
 	return proxyAddListener((struct wl_proxy*)pt, (void (**)(void))&ltn, NULL);
 }
