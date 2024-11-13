@@ -100,7 +100,7 @@ const struct wl_interface callbackInterfaceWayland = {
 
 const struct wl_interface compositorInterfaceWayland = {
 	.name = "wl_compositor",
-	.version = 5,
+	.version = 6,
 	.method_count = 2,
 	.methods = (const struct wl_message[2]){
 		{ "create_surface", "n", (const struct wl_interface*[1]){&surfaceInterfaceWayland} },
@@ -125,7 +125,7 @@ const struct wl_interface shmInterfaceWayland = {
 
 const struct wl_interface shmPoolInterfaceWayland = {
 	.name = "wl_shm_pool",
-	.version = 1,
+	.version = 2,
 	.method_count = 3,
 	.methods = (const struct wl_message[3]){
 		{ "create_buffer", "niiiiu", (const struct wl_interface*[6]){&bufferInterfaceWayland} },
@@ -208,7 +208,7 @@ const struct wl_interface outputInterfaceWayland = {
 
 const struct wl_interface seatInterfaceWayland = {
 	.name = "wl_seat",
-	.version = 7,
+	.version = 9,
 	.method_count = 4,
 	.methods = (const struct wl_message[4]){
 		{ "get_pointer", "n", (const struct wl_interface*[1]){&pointerInterfaceWayland} },
@@ -247,7 +247,7 @@ const struct wl_interface pointerInterfaceWayland = {
 
 const struct wl_interface keyboardInterfaceWayland = {
 	.name = "wl_keyboard",
-	.version = 7,
+	.version = 9,
 	.method_count = 1,
 	.methods = (const struct wl_message[1]){
 		{ "release", "3", nullInterface },
@@ -265,7 +265,7 @@ const struct wl_interface keyboardInterfaceWayland = {
 
 const struct wl_interface touchInterfaceWayland = {
 	.name = "wl_touch",
-	.version = 7,
+	.version = 9,
 	.method_count = 1,
 	.methods = (const struct wl_message[1]){
 		{ "release", "3", nullInterface },
