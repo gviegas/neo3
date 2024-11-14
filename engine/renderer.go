@@ -31,6 +31,21 @@ type Renderer struct {
 	// TODO: Post-processing data.
 }
 
+// free invalidates r and destroys/releases the
+// driver resources it holds.
+func (r *Renderer) free() {
+	if r == nil {
+		return
+	}
+	for _, cb := range r.cb {
+		cb.Destroy()
+	}
+	// TODO: Deinitialize r.drawables.
+	r.hdr.Free()
+	r.ds.Free()
+	*r = Renderer{}
+}
+
 // Onscreen is a Renderer that targets a wsi.Window.
 type Onscreen struct {
 	Renderer
@@ -65,9 +80,10 @@ func (r *Onscreen) Free() {
 	if r == nil {
 		return
 	}
-	// TODO: Deinitialize Renderer.
+	r.free()
 	r.sc.Destroy()
-	*r = Onscreen{}
+	r.win = nil
+	r.sc = nil
 }
 
 // Offscreen is a Renderer that targets a Texture.
@@ -102,7 +118,7 @@ func (r *Offscreen) Free() {
 	if r == nil {
 		return
 	}
-	// TODO: Deinitialize Renderer.
+	r.free()
 	r.rt.Free()
-	*r = Offscreen{}
+	r.rt = nil
 }
