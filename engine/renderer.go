@@ -31,6 +31,53 @@ type Renderer struct {
 	// TODO: Post-processing data.
 }
 
+// init initializes r.
+// It assumes that r has not been initialized yet
+// (call r.free first if that is not the case).
+func (r *Renderer) init(width, height int) (err error) {
+	defer func() {
+		if err != nil {
+			r.free()
+		}
+	}()
+	for i := range r.cb {
+		r.cb[i], err = ctxt.GPU().NewCmdBuffer()
+		if err != nil {
+			return
+		}
+	}
+	// TODO: Initialize r.drawables.
+	// TODO: Customizable sample count.
+	// TODO: Choose a better DS format if available.
+	r.hdr, err = NewTarget(&TexParam{
+		PixelFmt: driver.RGBA16Float,
+		Dim3D: driver.Dim3D{
+			Width:  width,
+			Height: height,
+		},
+		Layers:  1,
+		Levels:  1,
+		Samples: 4,
+	})
+	if err != nil {
+		return
+	}
+	r.ds, err = NewTarget(&TexParam{
+		PixelFmt: driver.D16Unorm,
+		Dim3D: driver.Dim3D{
+			Width:  width,
+			Height: height,
+		},
+		Layers:  1,
+		Levels:  1,
+		Samples: 4,
+	})
+	//if err != nil {
+	//	return
+	//}
+	return
+}
+
 // free invalidates r and destroys/releases the
 // driver resources it holds.
 func (r *Renderer) free() {
@@ -66,8 +113,15 @@ func NewOnscreen(win wsi.Window) (*Onscreen, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Initialize Renderer.
-	return &Onscreen{sc: sc}, nil
+	var r Onscreen
+	err = r.init(win.Width(), win.Height())
+	if err != nil {
+		sc.Destroy()
+		return nil, err
+	}
+	r.win = win
+	r.sc = sc
+	return &r, nil
 }
 
 // Window returns the wsi.Window associated with r.
@@ -104,8 +158,14 @@ func NewOffscreen(width, height int) (*Offscreen, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Initialize Renderer.
-	return &Offscreen{rt: rt}, nil
+	var r Offscreen
+	err = r.init(width, height)
+	if err != nil {
+		rt.Free()
+		return nil, err
+	}
+	r.rt = rt
+	return &r, nil
 }
 
 // Target returns the Texture into which r renders.
