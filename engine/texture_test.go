@@ -891,7 +891,7 @@ func TestTextureFree(t *testing.T) {
 		default:
 			tex, err = NewTarget(&x)
 			if err != nil {
-				t.Fatalf("NewTarget failed:/%#v", err)
+				t.Fatalf("NewTarget failed:\n%#v", err)
 			}
 		}
 		texs = append(texs, tex)
