@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 
+	"gviegas/neo3/driver"
 	"gviegas/neo3/engine/internal/ctxt"
 	"gviegas/neo3/linear"
 )
@@ -287,4 +288,53 @@ func TestLight(t *testing.T) {
 			t.Fatalf("SpotLight.Light: created Lights differ\n1st: %v\n2nd: %v", light, other)
 		}
 	})
+}
+
+func TestRenderer(t *testing.T) {
+	checkInit := func(rend *Renderer, width, height int) {
+		if len(rend.cb) != cap(rend.ch) {
+			t.Fatal("Renderer.init: len(cb) differs from cap(ch)")
+		}
+		for range cap(rend.ch) {
+			wk := <-rend.ch
+			if len(wk.Work) != 1 {
+				t.Fatal("Renderer.init: len((<-ch).Work) should have exactly 1 element")
+			}
+			cb := wk.Work[0]
+			idx := wk.Custom.(int)
+			if cb.IsRecording() {
+				t.Fatalf("Renderer.init: cb[%d] should not have begun", idx)
+			}
+		}
+		for i, cb := range rend.cb {
+			rend.ch <- &driver.WorkItem{
+				Work:   []driver.CmdBuffer{cb},
+				Custom: i,
+			}
+		}
+		for i, rt := range [2]*Texture{rend.hdr, rend.ds} {
+			var s string
+			if i == 0 {
+				s = "hdr"
+			} else {
+				s = "ds"
+			}
+			if width != rt.Width() || height != rt.Height() {
+				t.Fatalf("Renderer.init: %s size mismatch", s)
+			}
+			if rt.Layers() != 1 {
+				t.Fatalf("Renderer.init: %s should have exactly 1 layer", s)
+			}
+			if rt.Levels() != 1 {
+				t.Fatalf("Renderer.init: %s should have exactly 1 level", s)
+			}
+		}
+	}
+	for range 2 {
+		var rend Renderer
+		if err := rend.init(800, 600); err != nil {
+			t.Fatalf("Renderer.init failed:\n%#v", err)
+		}
+		checkInit(&rend, 800, 600)
+	}
 }
