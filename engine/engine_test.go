@@ -330,11 +330,33 @@ func TestRenderer(t *testing.T) {
 			}
 		}
 	}
+	checkFree := func(rend *Renderer) {
+		for i, cb := range rend.cb {
+			if cb != nil {
+				t.Fatalf("Renderer.free: cb[%d] should be nil", i)
+			}
+		}
+		if rend.ch != nil {
+			t.Fatal("Renderer.free: ch should be nil")
+		}
+		if rend.nlight != 0 {
+			t.Fatal("Renderer.free: nlight should be 0")
+		}
+		if rend.hdr != nil {
+			t.Fatal("Renderer.free: hdr should be nil")
+		}
+		if rend.ds != nil {
+			t.Fatal("Renderer.free: ds should be nil")
+		}
+	}
+
 	for range 2 {
 		var rend Renderer
 		if err := rend.init(800, 600); err != nil {
 			t.Fatalf("Renderer.init failed:\n%#v", err)
 		}
 		checkInit(&rend, 800, 600)
+		rend.free()
+		checkFree(&rend)
 	}
 }
