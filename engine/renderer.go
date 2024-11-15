@@ -17,6 +17,7 @@ func newRendErr(reason string) error { return errors.New(rendPrefix + reason) }
 // Renderer is a real-time renderer.
 type Renderer struct {
 	cb [NFrame]driver.CmdBuffer
+	ch chan *driver.WorkItem
 
 	lights [NLight]Light
 	nlight int
@@ -44,6 +45,13 @@ func (r *Renderer) init(width, height int) (err error) {
 		r.cb[i], err = ctxt.GPU().NewCmdBuffer()
 		if err != nil {
 			return
+		}
+	}
+	r.ch = make(chan *driver.WorkItem, NFrame)
+	for i := range cap(r.ch) {
+		r.ch <- &driver.WorkItem{
+			Work:   []driver.CmdBuffer{r.cb[i]},
+			Custom: i,
 		}
 	}
 	// TODO: Initialize r.drawables.
@@ -83,6 +91,9 @@ func (r *Renderer) init(width, height int) (err error) {
 func (r *Renderer) free() {
 	if r == nil {
 		return
+	}
+	for range cap(r.ch) {
+		<-r.ch
 	}
 	for _, cb := range r.cb {
 		cb.Destroy()
