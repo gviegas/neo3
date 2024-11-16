@@ -10,6 +10,7 @@ import (
 	"gviegas/neo3/driver"
 	"gviegas/neo3/engine/internal/ctxt"
 	"gviegas/neo3/linear"
+	"gviegas/neo3/wsi"
 )
 
 func TestCtxt(t *testing.T) {
@@ -358,5 +359,27 @@ func TestRenderer(t *testing.T) {
 		checkInit(&rend, 800, 600)
 		rend.free()
 		checkFree(&rend)
+	}
+}
+
+func TestOnscreen(t *testing.T) {
+	width := 480
+	height := 270
+	win, err := wsi.NewWindow(width, height, "TestOnscreen")
+	if err != nil {
+		t.Fatalf("Onscreen: wsi.NewWindow failed:\n%#v", err)
+	}
+	for range 2 {
+		rend, err := NewOnscreen(win)
+		if err != nil {
+			t.Fatalf("Onscreen.New failed:\n%#v", err)
+		}
+		if win != rend.Window() {
+			t.Fatal("Onscreen.Window: windows differ")
+		}
+		rend.Free()
+		if rend.Window() != nil {
+			t.Fatal("Onscreen.Window: window should be nil")
+		}
 	}
 }
