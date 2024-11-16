@@ -31,6 +31,12 @@ func (r *Renderer) checkInit(width, height int, t *testing.T) {
 			Custom: i,
 		}
 	}
+	if r.nlight != 0 {
+		t.Fatal("Renderer.init: nlight should be 0")
+	}
+	if r.drawables.len() != 0 {
+		t.Fatal("Renderer.init: drawables.len should be 0")
+	}
 	for i, rt := range [2]*Texture{r.hdr, r.ds} {
 		var s string
 		if i == 0 {
@@ -62,6 +68,9 @@ func (r *Renderer) checkFree(t *testing.T) {
 	}
 	if r.nlight != 0 {
 		t.Fatal("Renderer.free: nlight should be 0")
+	}
+	if r.drawables.len() != 0 {
+		t.Fatal("Renderer.free: drawables.len should be 0")
 	}
 	if r.hdr != nil {
 		t.Fatal("Renderer.free: hdr should be nil")
