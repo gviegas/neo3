@@ -9,6 +9,7 @@ import (
 	"gviegas/neo3/wsi"
 )
 
+// checkInit checks that r's fields are valid.
 func (r *Renderer) checkInit(width, height int, t *testing.T) {
 	if len(r.cb) != cap(r.ch) {
 		t.Fatal("Renderer.init: len(cb) differs from cap(ch)")
@@ -49,6 +50,7 @@ func (r *Renderer) checkInit(width, height int, t *testing.T) {
 	}
 }
 
+// checkFree checks that r's fields are invalid.
 func (r *Renderer) checkFree(t *testing.T) {
 	for i, cb := range r.cb {
 		if cb != nil {
@@ -66,20 +68,6 @@ func (r *Renderer) checkFree(t *testing.T) {
 	}
 	if r.ds != nil {
 		t.Fatal("Renderer.free: ds should be nil")
-	}
-}
-
-func TestRenderer(t *testing.T) {
-	width := 800
-	height := 600
-	for range 2 {
-		var rend Renderer
-		if err := rend.init(width, height); err != nil {
-			t.Fatalf("Renderer.init failed:\n%#v", err)
-		}
-		rend.checkInit(width, height, t)
-		rend.free()
-		rend.checkFree(t)
 	}
 }
 
@@ -108,8 +96,8 @@ func TestOnscreen(t *testing.T) {
 }
 
 func TestOffscreen(t *testing.T) {
-	width := 480
-	height := 270
+	width := 800
+	height := 600
 	for range 2 {
 		rend, err := NewOffscreen(width, height)
 		rend.checkInit(width, height, t)
