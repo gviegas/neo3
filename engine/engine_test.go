@@ -383,3 +383,29 @@ func TestOnscreen(t *testing.T) {
 		}
 	}
 }
+
+func TestOffscreen(t *testing.T) {
+	width := 480
+	height := 270
+	for range 2 {
+		rend, err := NewOffscreen(width, height)
+		if err != nil {
+			t.Fatalf("Offscreen.New failed:\n%#v", err)
+		}
+		rt := rend.Target()
+		if width != rt.Width() || height != rt.Height() {
+			t.Fatal("Offscreen.Target: target size mismatch")
+		}
+		if rt.Layers() != 1 {
+			t.Fatal("Offscreen.Target: target should have exactly 1 layer")
+		}
+		if rt.Levels() != 1 {
+			t.Fatal("Offscreen.Target: target should have exactly 1 level")
+		}
+		rend.Free()
+		rt = rend.Target()
+		if rt != nil {
+			t.Fatal("Offscreen.Target: target should be nil")
+		}
+	}
+}
