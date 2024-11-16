@@ -9,74 +9,77 @@ import (
 	"gviegas/neo3/wsi"
 )
 
-func TestRenderer(t *testing.T) {
-	checkInit := func(rend *Renderer, width, height int) {
-		if len(rend.cb) != cap(rend.ch) {
-			t.Fatal("Renderer.init: len(cb) differs from cap(ch)")
+func (r *Renderer) checkInit(width, height int, t *testing.T) {
+	if len(r.cb) != cap(r.ch) {
+		t.Fatal("Renderer.init: len(cb) differs from cap(ch)")
+	}
+	for range cap(r.ch) {
+		wk := <-r.ch
+		if len(wk.Work) != 1 {
+			t.Fatal("Renderer.init: len((<-ch).Work) should have exactly 1 element")
 		}
-		for range cap(rend.ch) {
-			wk := <-rend.ch
-			if len(wk.Work) != 1 {
-				t.Fatal("Renderer.init: len((<-ch).Work) should have exactly 1 element")
-			}
-			cb := wk.Work[0]
-			idx := wk.Custom.(int)
-			if cb.IsRecording() {
-				t.Fatalf("Renderer.init: cb[%d] should not have begun", idx)
-			}
-		}
-		for i, cb := range rend.cb {
-			rend.ch <- &driver.WorkItem{
-				Work:   []driver.CmdBuffer{cb},
-				Custom: i,
-			}
-		}
-		for i, rt := range [2]*Texture{rend.hdr, rend.ds} {
-			var s string
-			if i == 0 {
-				s = "hdr"
-			} else {
-				s = "ds"
-			}
-			if width != rt.Width() || height != rt.Height() {
-				t.Fatalf("Renderer.init: %s size mismatch", s)
-			}
-			if rt.Layers() != 1 {
-				t.Fatalf("Renderer.init: %s should have exactly 1 layer", s)
-			}
-			if rt.Levels() != 1 {
-				t.Fatalf("Renderer.init: %s should have exactly 1 level", s)
-			}
+		cb := wk.Work[0]
+		idx := wk.Custom.(int)
+		if cb.IsRecording() {
+			t.Fatalf("Renderer.init: cb[%d] should not have begun", idx)
 		}
 	}
-	checkFree := func(rend *Renderer) {
-		for i, cb := range rend.cb {
-			if cb != nil {
-				t.Fatalf("Renderer.free: cb[%d] should be nil", i)
-			}
-		}
-		if rend.ch != nil {
-			t.Fatal("Renderer.free: ch should be nil")
-		}
-		if rend.nlight != 0 {
-			t.Fatal("Renderer.free: nlight should be 0")
-		}
-		if rend.hdr != nil {
-			t.Fatal("Renderer.free: hdr should be nil")
-		}
-		if rend.ds != nil {
-			t.Fatal("Renderer.free: ds should be nil")
+	for i, cb := range r.cb {
+		r.ch <- &driver.WorkItem{
+			Work:   []driver.CmdBuffer{cb},
+			Custom: i,
 		}
 	}
+	for i, rt := range [2]*Texture{r.hdr, r.ds} {
+		var s string
+		if i == 0 {
+			s = "hdr"
+		} else {
+			s = "ds"
+		}
+		if width != rt.Width() || height != rt.Height() {
+			t.Fatalf("Renderer.init: %s size mismatch", s)
+		}
+		if rt.Layers() != 1 {
+			t.Fatalf("Renderer.init: %s should have exactly 1 layer", s)
+		}
+		if rt.Levels() != 1 {
+			t.Fatalf("Renderer.init: %s should have exactly 1 level", s)
+		}
+	}
+}
 
+func (r *Renderer) checkFree(t *testing.T) {
+	for i, cb := range r.cb {
+		if cb != nil {
+			t.Fatalf("Renderer.free: cb[%d] should be nil", i)
+		}
+	}
+	if r.ch != nil {
+		t.Fatal("Renderer.free: ch should be nil")
+	}
+	if r.nlight != 0 {
+		t.Fatal("Renderer.free: nlight should be 0")
+	}
+	if r.hdr != nil {
+		t.Fatal("Renderer.free: hdr should be nil")
+	}
+	if r.ds != nil {
+		t.Fatal("Renderer.free: ds should be nil")
+	}
+}
+
+func TestRenderer(t *testing.T) {
+	width := 800
+	height := 600
 	for range 2 {
 		var rend Renderer
-		if err := rend.init(800, 600); err != nil {
+		if err := rend.init(width, height); err != nil {
 			t.Fatalf("Renderer.init failed:\n%#v", err)
 		}
-		checkInit(&rend, 800, 600)
+		rend.checkInit(width, height, t)
 		rend.free()
-		checkFree(&rend)
+		rend.checkFree(t)
 	}
 }
 
@@ -89,6 +92,7 @@ func TestOnscreen(t *testing.T) {
 	}
 	for range 2 {
 		rend, err := NewOnscreen(win)
+		rend.checkInit(width, height, t)
 		if err != nil {
 			t.Fatalf("Onscreen.New failed:\n%#v", err)
 		}
@@ -96,6 +100,7 @@ func TestOnscreen(t *testing.T) {
 			t.Fatal("Onscreen.Window: windows differ")
 		}
 		rend.Free()
+		rend.checkFree(t)
 		if rend.Window() != nil {
 			t.Fatal("Onscreen.Window: window should be nil")
 		}
@@ -107,6 +112,7 @@ func TestOffscreen(t *testing.T) {
 	height := 270
 	for range 2 {
 		rend, err := NewOffscreen(width, height)
+		rend.checkInit(width, height, t)
 		if err != nil {
 			t.Fatalf("Offscreen.New failed:\n%#v", err)
 		}
@@ -121,6 +127,7 @@ func TestOffscreen(t *testing.T) {
 			t.Fatal("Offscreen.Target: target should have exactly 1 level")
 		}
 		rend.Free()
+		rend.checkFree(t)
 		rt = rend.Target()
 		if rt != nil {
 			t.Fatal("Offscreen.Target: target should be nil")
