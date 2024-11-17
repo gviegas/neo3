@@ -167,4 +167,16 @@ func TestOffscreen(t *testing.T) {
 		rend.Free()
 		rend.checkFree(t)
 	}
+	width2 := 256
+	height2 := 256
+	for range 2 {
+		rend, err := NewOffscreen(width, height)
+		rend2, err2 := NewOffscreen(width2, height2)
+		rend.checkNew(err, width, height, t)
+		rend2.checkNew(err2, width2, height2, t)
+		rend.Free()
+		rend2.Free()
+		rend.checkFree(t)
+		rend2.checkFree(t)
+	}
 }
