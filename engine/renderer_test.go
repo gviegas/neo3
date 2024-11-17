@@ -180,3 +180,24 @@ func TestOffscreen(t *testing.T) {
 		rend2.checkFree(t)
 	}
 }
+
+func TestOnscreenOffscreen(t *testing.T) {
+	width := [2]int{960, 600}
+	height := [2]int{540, 360}
+	for i := range 2 {
+		ofw, ofh := width[i%2], height[i%2]
+		onw, onh := width[(i+1)%2], height[(i+1)%2]
+		win, err := wsi.NewWindow(onw, onh, "TestOnscreenOffscreen")
+		if err != nil {
+			t.Fatalf("OnscreenOffscreen: wsi.NewWindow failed:\n%#v", err)
+		}
+		ofs, ofe := NewOffscreen(ofw, ofh)
+		ons, one := NewOnscreen(win)
+		ofs.checkNew(ofe, ofw, ofh, t)
+		ons.checkNew(one, win, t)
+		ofs.Free()
+		ons.Free()
+		ofs.checkFree(t)
+		ons.checkFree(t)
+	}
+}
