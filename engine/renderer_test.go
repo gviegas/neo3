@@ -9,7 +9,7 @@ import (
 	"gviegas/neo3/wsi"
 )
 
-// checkInit checks that r's fields were initialized.
+// checkInit checks whether r.init worked.
 func (r *Renderer) checkInit(width, height int, t *testing.T) {
 	if len(r.cb) != cap(r.ch) {
 		t.Fatal("Renderer.init: len(cb) differs from cap(ch)")
@@ -56,7 +56,7 @@ func (r *Renderer) checkInit(width, height int, t *testing.T) {
 	}
 }
 
-// checkFree checks that r's fields were freed.
+// checkFree checks whether r.free worked.
 func (r *Renderer) checkFree(t *testing.T) {
 	for i, cb := range r.cb {
 		if cb != nil {
@@ -80,6 +80,53 @@ func (r *Renderer) checkFree(t *testing.T) {
 	}
 }
 
+// checkNew checks whether NewOnscreen worked.
+func (r *Onscreen) checkNew(err error, win wsi.Window, t *testing.T) {
+	if err != nil {
+		t.Fatalf("NewOnscreen failed:\n%#v", err)
+	}
+	if win != r.Window() {
+		t.Fatal("Onscreen.Window: windows differ")
+	}
+	r.checkInit(r.Window().Width(), r.Window().Height(), t)
+}
+
+// checkFree checks whether r.Free worked.
+func (r *Onscreen) checkFree(t *testing.T) {
+	if r.Window() != nil {
+		t.Fatal("Onscreen.Window: window should be nil")
+	}
+	r.Renderer.checkFree(t)
+
+}
+
+// checkNew checks whether NewOffscreen worked.
+func (r *Offscreen) checkNew(err error, width, height int, t *testing.T) {
+	if err != nil {
+		t.Fatalf("NewOffscreen failed:\n%#v", err)
+	}
+	rt := r.Target()
+	if width != rt.Width() || height != rt.Height() {
+		t.Fatal("Offscreen.Target: target size mismatch")
+	}
+	if rt.Layers() != 1 {
+		t.Fatal("Offscreen.Target: target should have exactly 1 layer")
+	}
+	if rt.Levels() != 1 {
+		t.Fatal("Offscreen.Target: target should have exactly 1 level")
+	}
+	r.checkInit(width, height, t)
+}
+
+// checkFree checks whether r.Free worked.
+func (r *Offscreen) checkFree(t *testing.T) {
+	rt := r.Target()
+	if rt != nil {
+		t.Fatal("Offscreen.Target: target should be nil")
+	}
+	r.Renderer.checkFree(t)
+}
+
 func TestOnscreen(t *testing.T) {
 	width := 480
 	height := 270
@@ -89,18 +136,9 @@ func TestOnscreen(t *testing.T) {
 	}
 	for range 2 {
 		rend, err := NewOnscreen(win)
-		rend.checkInit(width, height, t)
-		if err != nil {
-			t.Fatalf("NewOnscreen failed:\n%#v", err)
-		}
-		if win != rend.Window() {
-			t.Fatal("Onscreen.Window: windows differ")
-		}
+		rend.checkNew(err, win, t)
 		rend.Free()
 		rend.checkFree(t)
-		if rend.Window() != nil {
-			t.Fatal("Onscreen.Window: window should be nil")
-		}
 	}
 }
 
@@ -109,25 +147,8 @@ func TestOffscreen(t *testing.T) {
 	height := 600
 	for range 2 {
 		rend, err := NewOffscreen(width, height)
-		rend.checkInit(width, height, t)
-		if err != nil {
-			t.Fatalf("NewOffscreen failed:\n%#v", err)
-		}
-		rt := rend.Target()
-		if width != rt.Width() || height != rt.Height() {
-			t.Fatal("Offscreen.Target: target size mismatch")
-		}
-		if rt.Layers() != 1 {
-			t.Fatal("Offscreen.Target: target should have exactly 1 layer")
-		}
-		if rt.Levels() != 1 {
-			t.Fatal("Offscreen.Target: target should have exactly 1 level")
-		}
+		rend.checkNew(err, width, height, t)
 		rend.Free()
 		rend.checkFree(t)
-		rt = rend.Target()
-		if rt != nil {
-			t.Fatal("Offscreen.Target: target should be nil")
-		}
 	}
 }
