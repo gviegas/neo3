@@ -140,6 +140,22 @@ func TestOnscreen(t *testing.T) {
 		rend.Free()
 		rend.checkFree(t)
 	}
+	width2 := 400
+	height2 := 240
+	win2, err := wsi.NewWindow(width2, height2, "TestOnscreen")
+	if err != nil {
+		t.Fatalf("Onscreen: wsi.NewWindow failed:\n%#v", err)
+	}
+	for range 2 {
+		rend, err := NewOnscreen(win)
+		rend2, err2 := NewOnscreen(win2)
+		rend.checkNew(err, win, t)
+		rend2.checkNew(err2, win2, t)
+		rend.Free()
+		rend2.Free()
+		rend.checkFree(t)
+		rend2.checkFree(t)
+	}
 }
 
 func TestOffscreen(t *testing.T) {
