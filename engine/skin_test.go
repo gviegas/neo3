@@ -79,7 +79,7 @@ func TestSkin(t *testing.T) {
 		in := dummyJoints(x[0], x[1])
 		sk, err := NewSkin(in)
 		if sk == nil || err != nil {
-			t.Fatalf("NewSkin:\nhave %v, %#v\nwant non-nil, nil", sk, err)
+			t.Fatalf("NewSkin:\nhave %v, %v\nwant non-nil, nil", sk, err)
 		}
 		if x, y := len(sk.joints), len(in); x != y {
 			t.Fatalf("NewSkin: len(Skin.joints)\nhave %d\nwant %d", x, y)
@@ -116,7 +116,7 @@ func TestSkinFail(t *testing.T) {
 
 	checkFail := func(reason string) {
 		if sk != nil || err == nil {
-			t.Fatalf("NewSkin:\nhave %v, %#v\nwant nil, non-nil", sk, err)
+			t.Fatalf("NewSkin:\nhave %v, %v\nwant nil, non-nil", sk, err)
 		}
 		if x := err.Error(); !strings.HasSuffix(x, reason) {
 			t.Fatalf("NewSkin: error.Error()\nhave \"%s\"\nwant \"%s\"", x, skinPrefix+reason)
@@ -214,7 +214,7 @@ func TestSkinScrambled(t *testing.T) {
 
 	sk, err := NewSkin(js)
 	if sk == nil || err != nil {
-		t.Fatalf("NewSkin:\nhave %v, %#v\nwant non-nil, nil", sk, err)
+		t.Fatalf("NewSkin:\nhave %v, %v\nwant non-nil, nil", sk, err)
 	}
 	sk.checkHier(t)
 }
@@ -243,7 +243,7 @@ func TestSkinReversed(t *testing.T) {
 	js := dummyJointsRev(20)
 	sk, err := NewSkin(js)
 	if sk == nil || err != nil {
-		t.Fatalf("NewSkin:\nhave %v, %#v\nwant non-nil, nil", sk, err)
+		t.Fatalf("NewSkin:\nhave %v, %v\nwant non-nil, nil", sk, err)
 	}
 	sk.checkHier(t)
 }
@@ -276,7 +276,7 @@ func BenchmarkSkin(b *testing.B) {
 
 		b.Run(s, func(b *testing.B) {
 			if _, err := NewSkin(in); err != nil {
-				b.Fatalf("NewSkin failed:\n%#v", err)
+				b.Fatalf("NewSkin failed:\n%v", err)
 			}
 		})
 	}
@@ -289,7 +289,7 @@ func BenchmarkSkinReversed(b *testing.B) {
 
 		b.Run(s, func(b *testing.B) {
 			if _, err := NewSkin(in); err != nil {
-				b.Fatalf("NewSkin failed:\n%#v", err)
+				b.Fatalf("NewSkin failed:\n%v", err)
 			}
 		})
 	}

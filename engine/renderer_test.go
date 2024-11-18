@@ -83,7 +83,7 @@ func (r *Renderer) checkFree(t *testing.T) {
 // checkNew checks whether NewOnscreen worked.
 func (r *Onscreen) checkNew(err error, win wsi.Window, t *testing.T) {
 	if err != nil {
-		t.Fatalf("NewOnscreen failed:\n%#v", err)
+		t.Fatalf("NewOnscreen failed:\n%v", err)
 	}
 	if win != r.Window() {
 		t.Fatal("Onscreen.Window: windows differ")
@@ -103,7 +103,7 @@ func (r *Onscreen) checkFree(t *testing.T) {
 // checkNew checks whether NewOffscreen worked.
 func (r *Offscreen) checkNew(err error, width, height int, t *testing.T) {
 	if err != nil {
-		t.Fatalf("NewOffscreen failed:\n%#v", err)
+		t.Fatalf("NewOffscreen failed:\n%v", err)
 	}
 	rt := r.Target()
 	if width != rt.Width() || height != rt.Height() {
@@ -132,7 +132,7 @@ func TestOnscreen(t *testing.T) {
 	height := 270
 	win, err := wsi.NewWindow(width, height, "TestOnscreen")
 	if err != nil {
-		t.Fatalf("Onscreen: wsi.NewWindow failed:\n%#v", err)
+		t.Fatalf("Onscreen: wsi.NewWindow failed:\n%v", err)
 	}
 	for range 2 {
 		rend, err := NewOnscreen(win)
@@ -144,7 +144,7 @@ func TestOnscreen(t *testing.T) {
 	height2 := 240
 	win2, err := wsi.NewWindow(width2, height2, "TestOnscreen")
 	if err != nil {
-		t.Fatalf("Onscreen: wsi.NewWindow failed:\n%#v", err)
+		t.Fatalf("Onscreen: wsi.NewWindow failed:\n%v", err)
 	}
 	for range 2 {
 		rend, err := NewOnscreen(win)
@@ -189,7 +189,7 @@ func TestOnscreenOffscreen(t *testing.T) {
 		onw, onh := width[(i+1)%2], height[(i+1)%2]
 		win, err := wsi.NewWindow(onw, onh, "TestOnscreenOffscreen")
 		if err != nil {
-			t.Fatalf("OnscreenOffscreen: wsi.NewWindow failed:\n%#v", err)
+			t.Fatalf("OnscreenOffscreen: wsi.NewWindow failed:\n%v", err)
 		}
 		ofs, ofe := NewOffscreen(ofw, ofh)
 		ons, one := NewOnscreen(win)

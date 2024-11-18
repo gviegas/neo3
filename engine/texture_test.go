@@ -44,7 +44,7 @@ func Test2D(t *testing.T) {
 	switch {
 	case err != nil:
 		if strings.HasPrefix(err.Error(), texPrefix) {
-			t.Fatalf("New2D: unexpected error:\n%#v", err)
+			t.Fatalf("New2D: unexpected error:\n%v", err)
 		}
 	}
 	tex.check(t)
@@ -55,7 +55,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Depth must be 0.
@@ -74,7 +74,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Layers must be greater than 0.
@@ -93,7 +93,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Levels must be greater than 0.
@@ -112,7 +112,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Samples must be greater than 0.
@@ -131,7 +131,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Width must be no greater than the driver-imposed limit.
@@ -150,7 +150,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Height must be no greater than the driver-imposed limit.
@@ -169,7 +169,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Layers must be no greater than the driver-imposed limit.
@@ -188,7 +188,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Levels must be less than 1 + log₂(maxDim).
@@ -207,7 +207,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Samples must be a power of two.
@@ -226,7 +226,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 
 	// Either Levels or Samples must be 1.
@@ -245,7 +245,7 @@ func Test2D(t *testing.T) {
 	case err == nil:
 		t.Fatal("New2D: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("New2D: unexpected error:\n%#v", err)
+		t.Fatalf("New2D: unexpected error:\n%v", err)
 	}
 }
 
@@ -264,7 +264,7 @@ func TestCube(t *testing.T) {
 	switch {
 	case err != nil:
 		if strings.HasPrefix(err.Error(), texPrefix) {
-			t.Fatalf("NewCube: unexpected error:\n%#v", err)
+			t.Fatalf("NewCube: unexpected error:\n%v", err)
 		}
 	}
 	tex.check(t)
@@ -275,7 +275,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Depth must be 0.
@@ -294,7 +294,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Layers must be greater than 0.
@@ -313,7 +313,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Levels must be greater than 0.
@@ -332,7 +332,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Width must be no greater than the driver-imposed limit.
@@ -351,7 +351,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Height must be no greater than the driver-imposed limit.
@@ -370,7 +370,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Width and Height must be equal.
@@ -389,7 +389,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Layers must be no greater than the driver-imposed limit.
@@ -408,7 +408,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Layers must be a multiple of 6.
@@ -427,7 +427,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Levels must be less than 1 + log₂(maxDim).
@@ -446,7 +446,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 
 	// Samples must be 1.
@@ -465,7 +465,7 @@ func TestCube(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewCube: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewCube: unexpected error:\n%#v", err)
+		t.Fatalf("NewCube: unexpected error:\n%v", err)
 	}
 }
 
@@ -484,7 +484,7 @@ func TestTarget(t *testing.T) {
 	switch {
 	case err != nil:
 		if strings.HasPrefix(err.Error(), texPrefix) {
-			t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+			t.Fatalf("NewTarget: unexpected error:\n%v", err)
 		}
 	}
 	tex.check(t)
@@ -495,7 +495,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Depth must be 0.
@@ -514,7 +514,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Layers must be greater than 0.
@@ -533,7 +533,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Levels must be greater than 0.
@@ -552,7 +552,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Samples must be greater than 0.
@@ -571,7 +571,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Width must be no greater than the driver-imposed limit.
@@ -590,7 +590,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Height must be no greater than the driver-imposed limit.
@@ -609,7 +609,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Layers must be no greater than the driver-imposed limit.
@@ -628,7 +628,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Levels must be less than 1 + log₂(maxDim).
@@ -647,7 +647,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Samples must be a power of two.
@@ -666,7 +666,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 
 	// Either Levels or Samples must be 1.
@@ -685,7 +685,7 @@ func TestTarget(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewTarget: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewTarget: unexpected error:\n%#v", err)
+		t.Fatalf("NewTarget: unexpected error:\n%v", err)
 	}
 }
 
@@ -713,7 +713,7 @@ func TestSampler(t *testing.T) {
 	switch {
 	case err != nil:
 		if strings.HasPrefix(err.Error(), texPrefix) {
-			t.Fatalf("NewSampler: unexpected error:\n%#v", err)
+			t.Fatalf("NewSampler: unexpected error:\n%v", err)
 		}
 	}
 	s.check(t)
@@ -734,7 +734,7 @@ func TestSampler(t *testing.T) {
 	switch {
 	case err != nil:
 		if strings.HasPrefix(err.Error(), texPrefix) {
-			t.Fatalf("NewSampler: unexpected error:\n%#v", err)
+			t.Fatalf("NewSampler: unexpected error:\n%v", err)
 		}
 	}
 	s.check(t)
@@ -745,7 +745,7 @@ func TestSampler(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
+		t.Fatalf("NewSampler: unexpected error:\n%v", err)
 	}
 
 	// MaxAniso must be greater than or equal to 1.0.
@@ -764,7 +764,7 @@ func TestSampler(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
+		t.Fatalf("NewSampler: unexpected error:\n%v", err)
 	}
 
 	// MinLOD must be greater than or equal to 0.0.
@@ -783,7 +783,7 @@ func TestSampler(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
+		t.Fatalf("NewSampler: unexpected error:\n%v", err)
 	}
 
 	// MaxLOD must be greater than or equal to 0.0.
@@ -802,7 +802,7 @@ func TestSampler(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
+		t.Fatalf("NewSampler: unexpected error:\n%v", err)
 	}
 
 	// MinLOD must be no greater than MaxLOD.
@@ -823,7 +823,7 @@ func TestSampler(t *testing.T) {
 	case err == nil:
 		t.Fatal("NewSampler: unexpected success")
 	case !strings.HasPrefix(err.Error(), texPrefix):
-		t.Fatalf("NewSampler: unexpected error:\n%#v", err)
+		t.Fatalf("NewSampler: unexpected error:\n%v", err)
 	}
 }
 
@@ -881,17 +881,17 @@ func TestTextureFree(t *testing.T) {
 		case 0, 1:
 			tex, err = New2D(&x)
 			if err != nil {
-				t.Fatalf("New2D failed:\n%#v", err)
+				t.Fatalf("New2D failed:\n%v", err)
 			}
 		case 2:
 			tex, err = NewCube(&x)
 			if err != nil {
-				t.Fatalf("NewCube failed:\n%#v", err)
+				t.Fatalf("NewCube failed:\n%v", err)
 			}
 		default:
 			tex, err = NewTarget(&x)
 			if err != nil {
-				t.Fatalf("NewTarget failed:\n%#v", err)
+				t.Fatalf("NewTarget failed:\n%v", err)
 			}
 		}
 		texs = append(texs, tex)
@@ -949,7 +949,7 @@ func TestSamplerFree(t *testing.T) {
 	} {
 		splr, err := NewSampler(&x)
 		if err != nil {
-			t.Fatalf("NewSampler failed:\n%#v", err)
+			t.Fatalf("NewSampler failed:\n%v", err)
 		}
 		splrs = append(splrs, splr)
 	}
@@ -969,7 +969,7 @@ func TestTexStgBuffer(t *testing.T) {
 
 	check := func(nbuf, nbv int) {
 		if err != nil {
-			t.Fatalf("driver.NewBuffer failed:\n%#v", err)
+			t.Fatalf("driver.NewBuffer failed:\n%v", err)
 		}
 		if x := int(s.buf.Cap()); x != nbuf {
 			t.Fatalf("newTexStg: buf.Cap\nhave %d\nwant %d", x, nbuf)
@@ -1044,7 +1044,7 @@ func TestTexStgInit(t *testing.T) {
 				t.Fatal("texStg: (<-wk).Work[0]\nhave nil\nwant non-nil")
 			}
 			if wk.Err != nil {
-				t.Fatalf("texStg: (<-wk).Err\nhave %#v\nwant nil", wk.Err)
+				t.Fatalf("texStg: (<-wk).Err\nhave %v\nwant nil", wk.Err)
 			}
 			if x.buf.Cap() != texStgBlock*texStgNBit {
 				t.Fatalf("texStg: buf.Cap:\nhave %d\nwant %d", x.buf.Cap(), texStgBlock*texStgNBit)
@@ -1132,7 +1132,7 @@ func TestViewCopy(t *testing.T) {
 	} {
 		tex, err := New2D(&param)
 		if err != nil {
-			t.Fatalf("New2D failed:\n%#v", err)
+			t.Fatalf("New2D failed:\n%v", err)
 		}
 		view := param.Layers - 1
 		n := param.Size() * param.Width * param.Height
@@ -1147,10 +1147,10 @@ func TestViewCopy(t *testing.T) {
 		dst := make([]byte, n)
 
 		if err = tex.CopyToView(view, data, true); err != nil {
-			t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+			t.Fatalf("Texture.CopyToView:\nhave %v\nwant nil", err)
 		}
 		if x, err := tex.CopyFromView(view, dst); x != n || err != nil {
-			t.Fatalf("Texture.CopyFromView:\nhave %d, %#v\nwant %d, nil", x, err, n)
+			t.Fatalf("Texture.CopyFromView:\nhave %d, %v\nwant %d, nil", x, err, n)
 		}
 		checkData(data, dst, t)
 		tex.Free()
@@ -1182,7 +1182,7 @@ func TestViewCopy(t *testing.T) {
 	} {
 		tex, err := New2D(&param)
 		if err != nil {
-			t.Fatalf("New2D failed:\n%#v", err)
+			t.Fatalf("New2D failed:\n%v", err)
 		}
 		n := param.Size() * param.Width * param.Height
 
@@ -1199,10 +1199,10 @@ func TestViewCopy(t *testing.T) {
 
 		for k := 0; k < param.Layers; k++ {
 			if err = tex.CopyToView(k, data[k*n:k*n+n], true); err != nil {
-				t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+				t.Fatalf("Texture.CopyToView:\nhave %v\nwant nil", err)
 			}
 			if x, err := tex.CopyFromView(k, dst[k*n:k*n+n]); x != n || err != nil {
-				t.Fatalf("Texture.CopyFromView:\nhave %d, %#v\nwant %d, nil", x, err, n)
+				t.Fatalf("Texture.CopyFromView:\nhave %d, %v\nwant %d, nil", x, err, n)
 			}
 		}
 		checkData(data, dst, t)
@@ -1228,7 +1228,7 @@ func TestViewCopy(t *testing.T) {
 	} {
 		tex, err := New2D(&param)
 		if err != nil {
-			t.Fatalf("New2D failed:\n%#v", err)
+			t.Fatalf("New2D failed:\n%v", err)
 		}
 		view := param.Layers
 		n := param.Size() * param.Width * param.Height
@@ -1245,10 +1245,10 @@ func TestViewCopy(t *testing.T) {
 		dst := make([]byte, n*param.Layers)
 
 		if err = tex.CopyToView(view, data, true); err != nil {
-			t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+			t.Fatalf("Texture.CopyToView:\nhave %v\nwant nil", err)
 		}
 		if x, err := tex.CopyFromView(view, dst); x != n*param.Layers || err != nil {
-			t.Fatalf("Texture.CopyFromView:\nhave %d, %#v\nwant %d, nil", x, err, n*param.Layers)
+			t.Fatalf("Texture.CopyFromView:\nhave %d, %v\nwant %d, nil", x, err, n*param.Layers)
 		}
 		checkData(data, dst, t)
 		tex.Free()
@@ -1269,7 +1269,7 @@ func TestViewCopyPending(t *testing.T) {
 	}
 	tex, err := NewTarget(&param)
 	if err != nil {
-		t.Fatalf("NewTarget failed:\n%#v", err)
+		t.Fatalf("NewTarget failed:\n%v", err)
 	}
 	data := make([]byte, param.Size()*param.Width*param.Height)
 	for i := range data {
@@ -1278,7 +1278,7 @@ func TestViewCopyPending(t *testing.T) {
 
 	// Stage uncommitted.
 	if err = tex.CopyToView(0, data, false); err != nil {
-		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+		t.Fatalf("Texture.CopyToView:\nhave %v\nwant nil", err)
 	}
 
 	defer func() {
@@ -1336,7 +1336,7 @@ func TestViewCopyPendingNoPanic(t *testing.T) {
 	}
 	tex, err := NewTarget(&param)
 	if err != nil {
-		t.Fatalf("NewTarget failed:\n%#v", err)
+		t.Fatalf("NewTarget failed:\n%v", err)
 	}
 	data := make([]byte, param.Size()*param.Width*param.Height)
 	for i := range data {
@@ -1345,19 +1345,19 @@ func TestViewCopyPendingNoPanic(t *testing.T) {
 
 	// Stage and commit.
 	if err = tex.CopyToView(0, data, true); err != nil {
-		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+		t.Fatalf("Texture.CopyToView:\nhave %v\nwant nil", err)
 	}
 
 	// Stage a second copy operation.
 	// Must not panic.
 	if err := tex.CopyToView(0, data, true); err != nil {
-		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+		t.Fatalf("Texture.CopyToView:\nhave %v\nwant nil", err)
 	}
 
 	// Stage a third copy operation, uncommitted.
 	// Must not panic.
 	if err := tex.CopyToView(0, data, false); err != nil {
-		t.Fatalf("Texture.CopyToView:\nhave %#v\nwant nil", err)
+		t.Fatalf("Texture.CopyToView:\nhave %v\nwant nil", err)
 	}
 	// Cannot free this while pending.
 	//tex.Free()
@@ -1375,7 +1375,7 @@ func TestCommitTexStg(t *testing.T) {
 		}
 		for i := n; i > 0; i-- {
 			if err := <-errs; err != nil {
-				t.Fatalf("commitTexStg failed:\n%#v", err)
+				t.Fatalf("commitTexStg failed:\n%v", err)
 			}
 		}
 	}
@@ -1402,18 +1402,18 @@ func TestCommitTexStg(t *testing.T) {
 
 	tex1, err := New2D(&param)
 	if err != nil {
-		t.Fatalf("New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%v", err)
 	}
 	param.Layers = 4
 	tex2, err := New2D(&param)
 	if err != nil {
-		t.Fatalf("New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%v", err)
 	}
 
 	// Copy single-layer texture uncommitted
 	// and then commit.
 	if err = tex1.CopyToView(0, data, false); err != nil {
-		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+		t.Fatalf("Texture.CopyToView failed:\n%v", err)
 	}
 	if tex1.layouts[0].Load() != invalLayout {
 		t.Fatal("Texture.CopyToView: should not have committed")
@@ -1424,17 +1424,17 @@ func TestCommitTexStg(t *testing.T) {
 	}
 	n := tex1.ViewSize(0)
 	if x, err := tex1.CopyFromView(0, dst); err != nil || x != n {
-		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %v\nwant %d, nil", x, err, n)
 	}
 	checkData(data, dst[:n], t)
 
 	// Copy different layers of different textures
 	// uncommitted and then commit.
 	if err = tex2.CopyToView(1, data[16:], false); err != nil {
-		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+		t.Fatalf("Texture.CopyToView failed:\n%v", err)
 	}
 	if err = tex1.CopyToView(0, data[48:], false); err != nil {
-		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+		t.Fatalf("Texture.CopyToView failed:\n%v", err)
 	}
 	if tex2.layouts[1].Load() != invalLayout || tex1.layouts[0].Load() != invalLayout {
 		t.Fatal("Texture.CopyToView: should not have committed")
@@ -1445,11 +1445,11 @@ func TestCommitTexStg(t *testing.T) {
 	}
 	n = tex2.ViewSize(1)
 	if x, err := tex2.CopyFromView(1, dst); err != nil || x != n {
-		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %v\nwant %d, nil", x, err, n)
 	}
 	n = tex2.ViewSize(1)
 	if x, err := tex1.CopyFromView(0, dst[n:]); err != nil || x != n {
-		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %v\nwant %d, nil", x, err, n)
 	}
 	checkData(data[16:], dst[:n], t)
 	checkData(data[48:], dst[n:n*2], t)
@@ -1457,10 +1457,10 @@ func TestCommitTexStg(t *testing.T) {
 	// Copy different layers of the same texture
 	// uncommitted and then commit.
 	if err = tex2.CopyToView(0, data[256:], false); err != nil {
-		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+		t.Fatalf("Texture.CopyToView failed:\n%v", err)
 	}
 	if err = tex2.CopyToView(1, data[len(data)/3:], false); err != nil {
-		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
+		t.Fatalf("Texture.CopyToView failed:\n%v", err)
 	}
 	if tex2.layouts[0].Load() != invalLayout || tex2.layouts[1].Load() != invalLayout {
 		t.Fatal("Texture.CopyToView: should not have committed")
@@ -1471,11 +1471,11 @@ func TestCommitTexStg(t *testing.T) {
 	}
 	n = tex2.ViewSize(0)
 	if x, err := tex2.CopyFromView(0, dst); err != nil || x != n {
-		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %v\nwant %d, nil", x, err, n)
 	}
 	n = tex2.ViewSize(1)
 	if x, err := tex2.CopyFromView(1, dst[n:]); err != nil || x != n {
-		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %#v\nwant %d, nil", x, err, n)
+		t.Fatalf("Texture.CopyFromView: unexpected result\nhave %d, %v\nwant %d, nil", x, err, n)
 	}
 	checkData(data[256:], dst[:n], t)
 	checkData(data[len(data)/3:], dst[n:n*2], t)
@@ -1493,7 +1493,7 @@ func TestTransition(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("NewTarget failed:\n%#v", err)
+		t.Fatalf("NewTarget failed:\n%v", err)
 	}
 	tex2, err := NewCube(&TexParam{
 		PixelFmt: driver.RGBA8Unorm,
@@ -1503,15 +1503,15 @@ func TestTransition(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("NewCube failed:\n%#v", err)
+		t.Fatalf("NewCube failed:\n%v", err)
 	}
 	wk := make(chan *driver.WorkItem, 1)
 	cb, err := ctxt.GPU().NewCmdBuffer()
 	if err != nil {
-		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%v", err)
 	}
 	if err = cb.Begin(); err != nil {
-		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%v", err)
 	}
 
 	checkTex1 := func(l0, l1, l2 driver.Layout) {
@@ -1557,13 +1557,13 @@ func TestTransition(t *testing.T) {
 	checkTex2(invalLayout, invalLayout, invalLayout, invalLayout, invalLayout, invalLayout)
 
 	if err = cb.End(); err != nil {
-		t.Fatalf("driver.CmdBuffer.End failed:\n%#v", err)
+		t.Fatalf("driver.CmdBuffer.End failed:\n%v", err)
 	}
 	if err = ctxt.GPU().Commit(&driver.WorkItem{Work: []driver.CmdBuffer{cb}}, wk); err != nil {
-		t.Fatalf("driver.GPU.Commit failed:\n%#v", err)
+		t.Fatalf("driver.GPU.Commit failed:\n%v", err)
 	}
 	if err = (<-wk).Err; err != nil {
-		t.Fatalf("driver.GPU.Commit: (<-ch).Err\n%#v", err)
+		t.Fatalf("driver.GPU.Commit: (<-ch).Err\n%v", err)
 	}
 
 	tex2.setLayout(0, driver.LShaderRead)
@@ -1574,7 +1574,7 @@ func TestTransition(t *testing.T) {
 	checkTex1(driver.LColorTarget, driver.LUndefined, driver.LShaderRead)
 
 	if err = cb.Begin(); err != nil {
-		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%v", err)
 	}
 
 	tex2.transition(0, cb, driver.LCopyDst, driver.Barrier{})
@@ -1603,14 +1603,14 @@ func TestTransitionPanic(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("NewTarget failed:\n%#v", err)
+		t.Fatalf("NewTarget failed:\n%v", err)
 	}
 	cb, err := ctxt.GPU().NewCmdBuffer()
 	if err != nil {
-		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%v", err)
 	}
 	if err = cb.Begin(); err != nil {
-		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%v", err)
 	}
 
 	defer func() {
@@ -1656,15 +1656,15 @@ func TestSetLayoutPanic(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("NewCube failed:\n%#v", err)
+		t.Fatalf("NewCube failed:\n%v", err)
 	}
 	wk := make(chan *driver.WorkItem, 1)
 	cb, err := ctxt.GPU().NewCmdBuffer()
 	if err != nil {
-		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%v", err)
 	}
 	if err = cb.Begin(); err != nil {
-		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%v", err)
 	}
 
 	defer func() {
@@ -1693,13 +1693,13 @@ func TestSetLayoutPanic(t *testing.T) {
 	tex.transition(1, cb, driver.LColorTarget, driver.Barrier{})
 
 	if err = cb.End(); err != nil {
-		t.Fatalf("driver.CmdBuffer.End failed:\n%#v", err)
+		t.Fatalf("driver.CmdBuffer.End failed:\n%v", err)
 	}
 	if err = ctxt.GPU().Commit(&driver.WorkItem{Work: []driver.CmdBuffer{cb}}, wk); err != nil {
-		t.Fatalf("driver.GPU.Commit failed:\n%#v", err)
+		t.Fatalf("driver.GPU.Commit failed:\n%v", err)
 	}
 	if err = (<-wk).Err; err != nil {
-		t.Fatalf("driver.GPU.Commit: (<-ch).Err\n%#v", err)
+		t.Fatalf("driver.GPU.Commit: (<-ch).Err\n%v", err)
 	}
 
 	// Ok.

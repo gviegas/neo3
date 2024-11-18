@@ -308,7 +308,7 @@ func TestSemanticConv(t *testing.T) {
 				t.Fatalf("%s.conv: unexpected result: (%v, nil)", sem, r)
 			}
 			if !strings.HasPrefix(err.Error(), meshPrefix) {
-				t.Fatalf("%s.conv: unexpected error: %#v", sem, err)
+				t.Fatalf("%s.conv: unexpected error: %v", sem, err)
 			}
 			r8.Seek(0, io.SeekStart)
 		}
@@ -930,7 +930,7 @@ func TestMesh(t *testing.T) {
 	if err == nil {
 		setMeshBuffer(buf)
 	} else {
-		t.Fatalf("ctxt.GPU().NewBuffer: %#v", err)
+		t.Fatalf("ctxt.GPU().NewBuffer: %v", err)
 	}
 
 	cases := [...]struct {
@@ -967,7 +967,7 @@ func TestMesh(t *testing.T) {
 		res[i].mesh, err = NewMesh(&res[i].data)
 		if err != nil {
 			t.Log(cases[i])
-			t.Fatalf("New: unexpected error: %#v", err)
+			t.Fatalf("New: unexpected error: %v", err)
 		}
 		cases[i].check(res[i].mesh, cases[i].ntris, t)
 	}
@@ -1049,7 +1049,7 @@ func TestMeshInputs(t *testing.T) {
 	d = dummyData1(200)
 	m, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	have[0] = m.inputs(0)
 	check(want[:1], have[:1])
@@ -1057,7 +1057,7 @@ func TestMeshInputs(t *testing.T) {
 	d = dummyData2(100)
 	m, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	have[1] = m.inputs(0)
 	check(want[:2], have[:2])
@@ -1065,7 +1065,7 @@ func TestMeshInputs(t *testing.T) {
 	d = dummyData3(1024)
 	m, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	have[2] = m.inputs(0)
 	check(want[:2], have[:2])
@@ -1073,7 +1073,7 @@ func TestMeshInputs(t *testing.T) {
 	d = dummyData4(60)
 	m, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	have[3] = m.inputs(1)
 	have[4] = m.inputs(2)
@@ -1140,7 +1140,7 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData1(500)
 	m, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m, &s)
 	m.Free()
@@ -1149,7 +1149,7 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData2(5)
 	m, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m, &s)
 	m.Free()
@@ -1158,7 +1158,7 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData3(1000)
 	m, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m, &s)
 	m.Free()
@@ -1167,7 +1167,7 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData4(175)
 	m, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m, &s)
 	m.Free()
@@ -1176,22 +1176,22 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData3(12)
 	m1, err := NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData4(50)
 	m2, err := NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData2(2000)
 	m3, err := NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData1(1023)
 	m4, err := NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m1, &s)
 	m1.Free()
@@ -1209,22 +1209,22 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData3(12)
 	m1, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData4(50)
 	m2, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData2(2000)
 	m3, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData1(1023)
 	m4, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m4, &s)
 	m4.Free()
@@ -1242,12 +1242,12 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData1(75)
 	m1, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData2(140)
 	m2, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m1, &s)
 	m1.Free()
@@ -1255,12 +1255,12 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData3(80)
 	m3, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData4(513)
 	m4, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m3, &s)
 	m3.Free()
@@ -1268,7 +1268,7 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData1(400)
 	m1, err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	take(m4, &s)
 	m4.Free()
@@ -1294,7 +1294,7 @@ func TestMeshFree(t *testing.T) {
 			d = dummyData4(66)
 		}
 		if m, err = NewMesh(&d); err != nil {
-			t.Fatalf("New failed: %#v", err)
+			t.Fatalf("New failed: %v", err)
 		} else {
 			ms = append(ms, m)
 		}
@@ -1311,17 +1311,17 @@ func TestMeshFree(t *testing.T) {
 	d = dummyData1(100)
 	ms[n-1], err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData3(200)
 	ms[0], err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	d = dummyData4(150)
 	ms[n/2], err = NewMesh(&d)
 	if err != nil {
-		t.Fatalf("New failed: %#v", err)
+		t.Fatalf("New failed: %v", err)
 	}
 	for i := range ms {
 		take(ms[i], &s)
@@ -1361,7 +1361,7 @@ func BenchmarkMeshGrow(b *testing.B) {
 					data.Srcs[i].Seek(0, io.SeekStart)
 				}
 				if _, err := NewMesh(&data); err != nil {
-					b.Fatalf("NewMesh failed:\n%#v", err)
+					b.Fatalf("NewMesh failed:\n%v", err)
 				}
 			}
 		})
@@ -1374,7 +1374,7 @@ func BenchmarkMeshGrow(b *testing.B) {
 func BenchmarkMeshPre(b *testing.B) {
 	buf, err := ctxt.GPU().NewBuffer(nbufBench, true, driver.UVertexData|driver.UIndexData)
 	if err != nil {
-		b.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		b.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	if buf = setMeshBuffer(buf); buf != nil {
 		buf.Destroy()
@@ -1392,7 +1392,7 @@ func BenchmarkMeshPre(b *testing.B) {
 					data.Srcs[i].Seek(0, io.SeekStart)
 				}
 				if _, err := NewMesh(&data); err != nil {
-					b.Fatalf("NewMesh failed:\n%#v", err)
+					b.Fatalf("NewMesh failed:\n%v", err)
 				}
 			}
 		})
@@ -1421,7 +1421,7 @@ func BenchmarkMeshFree(b *testing.B) {
 				}
 				m, err := NewMesh(&data)
 				if err != nil {
-					b.Fatalf("NewMesh failed:\n%#v", err)
+					b.Fatalf("NewMesh failed:\n%v", err)
 				}
 				m.Free()
 			}

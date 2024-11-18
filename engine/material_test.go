@@ -18,7 +18,7 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%v", err)
 	}
 
 	occMetal, err := New2D(&TexParam{
@@ -29,7 +29,7 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%v", err)
 	}
 
 	normal, err := New2D(&TexParam{
@@ -40,7 +40,7 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%v", err)
 	}
 
 	emissive, err := New2D(&TexParam{
@@ -51,7 +51,7 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%v", err)
 	}
 
 	oneChTex, err := New2D(&TexParam{
@@ -62,7 +62,7 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%v", err)
 	}
 
 	twoChTex, err := New2D(&TexParam{
@@ -73,7 +73,7 @@ func TestMaterial(t *testing.T) {
 		Samples:  1,
 	})
 	if err != nil {
-		t.Fatalf("New2D failed:\n%#v", err)
+		t.Fatalf("New2D failed:\n%v", err)
 	}
 
 	splr, err := NewSampler(&SplrParam{
@@ -89,12 +89,12 @@ func TestMaterial(t *testing.T) {
 		MaxLOD:   0,
 	})
 	if err != nil {
-		t.Fatalf("NewSampler failed:\n%#v", err)
+		t.Fatalf("NewSampler failed:\n%v", err)
 	}
 
 	check := func(mat *Material, err error, prop any) {
 		if err != nil || mat == nil {
-			t.Fatalf("New*:\nhave %v, %#v\nwant non-nil, nil", mat, err)
+			t.Fatalf("New*:\nhave %v, %v\nwant non-nil, nil", mat, err)
 		}
 		var want Material
 		switch prop := prop.(type) {
@@ -138,7 +138,7 @@ func TestMaterial(t *testing.T) {
 
 	checkFail := func(mat *Material, err error, reason string) {
 		if err == nil || mat != nil {
-			t.Fatalf("New*:\nhave %v, %#v\nwant nil, non-nil", mat, err)
+			t.Fatalf("New*:\nhave %v, %v\nwant nil, non-nil", mat, err)
 		}
 		if !strings.HasSuffix(err.Error(), reason) {
 			t.Fatalf("New*: error.Error\nhave \"%s\"\nwant \"%s\"", err.Error(), matPrefix+reason)
