@@ -18,7 +18,7 @@ func TestGPUDriver(t *testing.T) {
 func TestCmdBuffer(t *testing.T) {
 	cb, err := gpu.NewCmdBuffer()
 	if err != nil {
-		t.Errorf("GPU.NewCmdBuffer failed: %#v", err)
+		t.Errorf("GPU.NewCmdBuffer failed: %v", err)
 		return
 	}
 	defer cb.Destroy()
@@ -28,7 +28,7 @@ func TestCmdBuffer(t *testing.T) {
 		}
 		err := cb.Begin()
 		if err != nil {
-			t.Errorf("CmdBuffer.Begin failed: %#v", err)
+			t.Errorf("CmdBuffer.Begin failed: %v", err)
 			return
 		}
 		if !cb.IsRecording() {
@@ -36,12 +36,12 @@ func TestCmdBuffer(t *testing.T) {
 		}
 		err = cb.End()
 		if err != nil {
-			t.Errorf("CmdBuffer.End failed: %#v", err)
+			t.Errorf("CmdBuffer.End failed: %v", err)
 			return
 		}
 		err = cb.Reset()
 		if err != nil {
-			t.Errorf("CmdBuffer.Reset failed: %#v", err)
+			t.Errorf("CmdBuffer.Reset failed: %v", err)
 			return
 		}
 	}
@@ -115,7 +115,7 @@ func TestDescHeap(t *testing.T) {
 	for _, ds := range tDesc {
 		dh, err := gpu.NewDescHeap(ds)
 		if err != nil {
-			t.Errorf("GPU.NewDescHeap failed: %#v\nds: %v\n", err, ds)
+			t.Errorf("GPU.NewDescHeap failed: %v\nds: %v\n", err, ds)
 			continue
 		}
 		defer dh.Destroy()
@@ -125,7 +125,7 @@ func TestDescHeap(t *testing.T) {
 		for _, n := range [...]int{1, 0, 4, 10, 2, 16, 64, 300, 13} {
 			err := dh.New(n)
 			if err != nil {
-				t.Errorf("DescHeap.New failed: %#v", err)
+				t.Errorf("DescHeap.New failed: %v", err)
 				continue
 			}
 			if m := dh.Len(); m != n {
@@ -178,7 +178,7 @@ func TestDescTable(t *testing.T) {
 	for _, dh := range hs {
 		dt, err := gpu.NewDescTable(dh)
 		if err != nil {
-			t.Errorf("GPU.NewDescTable failed: %#v\ndh: %v", err, dh)
+			t.Errorf("GPU.NewDescTable failed: %v\ndh: %v", err, dh)
 			continue
 		}
 		defer dt.Destroy()
@@ -214,7 +214,7 @@ func TestBuffer(t *testing.T) {
 	for _, c := range cases {
 		buf, err := gpu.NewBuffer(c.size, c.visible, c.usage)
 		if err != nil {
-			t.Errorf("GPU.NewBuffer failed: %#v", err)
+			t.Errorf("GPU.NewBuffer failed: %v", err)
 			continue
 		}
 		defer buf.Destroy()
@@ -299,7 +299,7 @@ func TestImageView(t *testing.T) {
 	for _, c := range cases {
 		img, err := gpu.NewImage(c.pf, c.size, c.layers, c.levels, c.samples, c.usage)
 		if err != nil {
-			t.Errorf("GPU.NewImage failed: %#v", err)
+			t.Errorf("GPU.NewImage failed: %v", err)
 			continue
 		}
 		defer img.Destroy()
