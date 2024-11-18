@@ -134,6 +134,7 @@ func TestOnscreen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Onscreen: wsi.NewWindow failed:\n%v", err)
 	}
+	defer win.Close()
 	for range 2 {
 		rend, err := NewOnscreen(win)
 		rend.checkNew(err, win, t)
@@ -146,6 +147,7 @@ func TestOnscreen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Onscreen: wsi.NewWindow failed:\n%v", err)
 	}
+	defer win2.Close()
 	for range 2 {
 		rend, err := NewOnscreen(win)
 		rend2, err2 := NewOnscreen(win2)
@@ -191,6 +193,7 @@ func TestOnscreenOffscreen(t *testing.T) {
 		if err != nil {
 			t.Fatalf("OnscreenOffscreen: wsi.NewWindow failed:\n%v", err)
 		}
+		defer win.Close()
 		ofs, ofe := NewOffscreen(ofw, ofh)
 		ons, one := NewOnscreen(win)
 		ofs.checkNew(ofe, ofw, ofh, t)
