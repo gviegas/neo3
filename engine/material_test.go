@@ -113,7 +113,7 @@ func TestMaterial(t *testing.T) {
 				layout:    prop.shaderLayout(),
 			}
 		default:
-			t.Fatalf("unexpected Material property")
+			t.Fatal("unexpected Material property")
 		}
 		if mat.baseColor != want.baseColor {
 			t.Fatalf("New*: Material.baseColor\nhave %v\nwant %v", mat.baseColor, want.baseColor)
