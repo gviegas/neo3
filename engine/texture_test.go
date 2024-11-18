@@ -1416,11 +1416,11 @@ func TestCommitTexStg(t *testing.T) {
 		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
 	}
 	if tex1.layouts[0].Load() != invalLayout {
-		t.Fatalf("Texture.CopyToView: should not have committed")
+		t.Fatal("Texture.CopyToView: should not have committed")
 	}
 	concCommit()
 	if tex1.layouts[0].Load() == invalLayout {
-		t.Fatalf("commitTexStg: should have set a valid layout")
+		t.Fatal("commitTexStg: should have set a valid layout")
 	}
 	n := tex1.ViewSize(0)
 	if x, err := tex1.CopyFromView(0, dst); err != nil || x != n {
@@ -1437,11 +1437,11 @@ func TestCommitTexStg(t *testing.T) {
 		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
 	}
 	if tex2.layouts[1].Load() != invalLayout || tex1.layouts[0].Load() != invalLayout {
-		t.Fatalf("Texture.CopyToView: should not have committed")
+		t.Fatal("Texture.CopyToView: should not have committed")
 	}
 	concCommit()
 	if tex2.layouts[1].Load() == invalLayout || tex1.layouts[0].Load() == invalLayout {
-		t.Fatalf("commitTexStg: should have set a valid layout")
+		t.Fatal("commitTexStg: should have set a valid layout")
 	}
 	n = tex2.ViewSize(1)
 	if x, err := tex2.CopyFromView(1, dst); err != nil || x != n {
@@ -1463,11 +1463,11 @@ func TestCommitTexStg(t *testing.T) {
 		t.Fatalf("Texture.CopyToView failed:\n%#v", err)
 	}
 	if tex2.layouts[0].Load() != invalLayout || tex2.layouts[1].Load() != invalLayout {
-		t.Fatalf("Texture.CopyToView: should not have committed")
+		t.Fatal("Texture.CopyToView: should not have committed")
 	}
 	concCommit()
 	if tex2.layouts[0].Load() == invalLayout || tex2.layouts[1].Load() == invalLayout {
-		t.Fatalf("commitTexStg: should have set a valid layout")
+		t.Fatal("commitTexStg: should have set a valid layout")
 	}
 	n = tex2.ViewSize(0)
 	if x, err := tex2.CopyFromView(0, dst); err != nil || x != n {
