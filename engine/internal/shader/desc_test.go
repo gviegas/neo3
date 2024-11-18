@@ -90,7 +90,7 @@ func TestSetConstBuf(t *testing.T) {
 
 	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()+blockSize), true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 
 	if buf, off := tb.SetConstBuf(nil, 0); buf != nil || off != 0 {
@@ -132,7 +132,7 @@ func TestSetConstBuf(t *testing.T) {
 		sz := int64(tb.ConstSize() * 4)
 		buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 		if err != nil {
-			t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+			t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 		}
 
 		var goff, doff, moff, joff int64
@@ -281,7 +281,7 @@ func TestConstWrite(t *testing.T) {
 		sz := int64(tb.ConstSize() * 4)
 		buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 		if err != nil {
-			t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+			t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 		}
 
 		rng := [3]int64{0, sz / 2, sz - int64(tb.ConstSize())}
@@ -340,7 +340,7 @@ func TestGlobalWrite(t *testing.T) {
 	sz := int64(tb.ConstSize())
 	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -406,7 +406,7 @@ func TestGlobalWriteN(t *testing.T) {
 	sz := int64(tb.ConstSize())
 	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -492,7 +492,7 @@ func TestDrawableWrite(t *testing.T) {
 	sz := int64(tb.ConstSize())
 	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -519,7 +519,7 @@ func TestDrawableWriteN(t *testing.T) {
 	sz := int64(tb.ConstSize())
 	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -563,7 +563,7 @@ func TestMaterialWrite(t *testing.T) {
 	sz := int64(tb.ConstSize())
 	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -594,7 +594,7 @@ func TestMaterialWriteN(t *testing.T) {
 	sz := int64(tb.ConstSize())
 	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -632,7 +632,7 @@ func TestJointWrite(t *testing.T) {
 	sz := int64(tb.ConstSize())
 	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -677,7 +677,7 @@ func TestJointWriteN(t *testing.T) {
 	sz := int64(tb.ConstSize())
 	buf, err := ctxt.GPU().NewBuffer(sz, true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -749,16 +749,16 @@ func TestSetGraph(t *testing.T) {
 
 	cb, err := ctxt.GPU().NewCmdBuffer()
 	if err != nil {
-		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%v", err)
 	}
 	defer cb.Destroy()
 	if err = cb.Begin(); err != nil {
-		t.Fatalf("driver.CmdBuffer.Begin failed:\n%#v", err)
+		t.Fatalf("driver.CmdBuffer.Begin failed:\n%v", err)
 	}
 
 	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()), true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -767,17 +767,17 @@ func TestSetGraph(t *testing.T) {
 	img, err := ctxt.GPU().NewImage(driver.RGBA8Unorm, driver.Dim3D{Width: 256, Height: 256},
 		1, 1, 1, driver.UGeneric)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewImage failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewImage failed:\n%v", err)
 	}
 	defer img.Destroy()
 	iv, err := img.NewView(driver.IView2D, 0, 1, 0, 1)
 	if err != nil {
-		t.Fatalf("driver.Image.NewView failed:\n%#v", err)
+		t.Fatalf("driver.Image.NewView failed:\n%v", err)
 	}
 	defer iv.Destroy()
 	splr, err := ctxt.GPU().NewSampler(&driver.Sampling{MaxAniso: 1, MaxLOD: 1})
 	if err != nil {
-		t.Fatalf("driver.GPU.NewSampler failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewSampler failed:\n%v", err)
 	}
 	defer splr.Destroy()
 
@@ -842,11 +842,11 @@ func TestSetCBFail(t *testing.T) {
 
 	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()), true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
-	const s = "DrawTable.SetConstBuf:\nhave %#v\nwant %#v"
+	const s = "DrawTable.SetConstBuf:\nhave %v\nwant %v"
 	defer func() {
 		const want = "misaligned constant buffer offset"
 		if x := recover(); x != want {
@@ -872,17 +872,17 @@ func TestSetTSFail(t *testing.T) {
 	img, err := ctxt.GPU().NewImage(driver.RGBA8Unorm, driver.Dim3D{Width: 256, Height: 256},
 		1, 1, 1, driver.UShaderSample)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewImage failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewImage failed:\n%v", err)
 	}
 	defer img.Destroy()
 	iv, err := img.NewView(driver.IView2D, 0, 1, 0, 1)
 	if err != nil {
-		t.Fatalf("driver.Image.NewView failed:\n%#v", err)
+		t.Fatalf("driver.Image.NewView failed:\n%v", err)
 	}
 	defer iv.Destroy()
 	splr, err := ctxt.GPU().NewSampler(&driver.Sampling{MaxAniso: 1, MaxLOD: 1})
 	if err != nil {
-		t.Fatalf("driver.GPU.NewSampler failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewSampler failed:\n%v", err)
 	}
 	defer splr.Destroy()
 
@@ -906,7 +906,7 @@ func TestSetTSFail(t *testing.T) {
 		{"EmissiveMap", (*DrawTable).SetEmissiveMap},
 	} {
 		t.Run(c.s, func(t *testing.T) {
-			s := "DrawTable.Set" + c.s + ":\nhave %#v\nwant %#v"
+			s := "DrawTable.Set" + c.s + ":\nhave %v\nwant %v"
 			t.Run("cpy", func(t *testing.T) {
 				defer func() {
 					if x := recover(); x != wcpy {
@@ -949,7 +949,7 @@ func TestConstFail(t *testing.T) {
 
 	buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()), true, driver.UShaderConst)
 	if err != nil {
-		t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 	}
 	defer buf.Destroy()
 
@@ -968,7 +968,7 @@ func TestConstFail(t *testing.T) {
 		{"Joint", func(cpy int) { tb.Joint(cpy) }},
 	} {
 		t.Run(c.s, func(t *testing.T) {
-			s := "DrawTable." + c.s + ":\nhave %#v\nwant %#v"
+			s := "DrawTable." + c.s + ":\nhave %v\nwant %v"
 			defer func() {
 				if x := recover(); x != want {
 					t.Fatalf(s, x, want)
@@ -992,20 +992,20 @@ func TestSetGraphFail(t *testing.T) {
 
 	cb, err := ctxt.GPU().NewCmdBuffer()
 	if err != nil {
-		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%#v", err)
+		t.Fatalf("driver.GPU.NewCmdBuffer failed:\n%v", err)
 	}
 	defer cb.Destroy()
 	if err = cb.Begin(); err != nil {
 		// It is OK to continue because SetGraph
 		// should not record anything.
-		t.Errorf("driver.CmdBuffer.Begin failed:\n%#v", err)
+		t.Errorf("driver.CmdBuffer.Begin failed:\n%v", err)
 	}
 
 	// TODO: Detect that the constant buffer was not set.
 	/*
 		buf, err := ctxt.GPU().NewBuffer(int64(tb.ConstSize()), true, driver.UShaderConst)
 		if err != nil {
-			t.Fatalf("driver.GPU.NewBuffer failed:\n%#v", err)
+			t.Fatalf("driver.GPU.NewBuffer failed:\n%v", err)
 		}
 		defer buf.Destroy()
 
@@ -1013,7 +1013,7 @@ func TestSetGraphFail(t *testing.T) {
 	*/
 
 	const (
-		s    = "DrawTable.SetGraph:\nhave %#v\nwant %#v"
+		s    = "DrawTable.SetGraph:\nhave %v\nwant %v"
 		wcpy = "descriptor heap copy out of bounds"
 		ncpy = 8 + 10
 		widx = "invalid descriptor heap indexing"
