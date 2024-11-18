@@ -3,6 +3,7 @@
 package engine
 
 import (
+	"strings"
 	"testing"
 
 	"gviegas/neo3/driver"
@@ -83,6 +84,12 @@ func (r *Renderer) checkFree(t *testing.T) {
 // checkNew checks whether NewOnscreen worked.
 func (r *Onscreen) checkNew(err error, win wsi.Window, t *testing.T) {
 	if err != nil {
+		if win == nil {
+			if strings.HasPrefix(err.Error(), rendPrefix) {
+				return
+			}
+			t.Fatalf("NewOnscreen: unexpected error:\n%v", err)
+		}
 		t.Fatalf("NewOnscreen failed:\n%v", err)
 	}
 	if win != r.Window() {
@@ -158,6 +165,9 @@ func TestOnscreen(t *testing.T) {
 		rend.checkFree(t)
 		rend2.checkFree(t)
 	}
+	var nilWin wsi.Window
+	rend, err := NewOnscreen(nilWin)
+	rend.checkNew(err, nilWin, t)
 }
 
 func TestOffscreen(t *testing.T) {
