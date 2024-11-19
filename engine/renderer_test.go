@@ -39,6 +39,12 @@ func (r *Renderer) checkInit(width, height int, t *testing.T) {
 	if r.drawables.len() != 0 {
 		t.Fatal("Renderer.init: drawables.len should be 0")
 	}
+	if !r.hdr.PixelFmt().IsColor() {
+		t.Fatal("Renderer.init: hdr should have a color format")
+	}
+	if d, _ := r.ds.PixelFmt().IsDS(); !d {
+		t.Fatal("Renderer.init: ds should have a depth-only or DS format")
+	}
 	for i, rt := range [2]*Texture{r.hdr, r.ds} {
 		var s string
 		if i == 0 {
