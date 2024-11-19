@@ -62,6 +62,9 @@ func (r *Renderer) checkInit(width, height int, t *testing.T) {
 			t.Fatalf("Renderer.init: %s should have exactly 1 level", s)
 		}
 	}
+	if r.hdr.Samples() != r.ds.Samples() {
+		t.Fatal("Renderer.init: hdr and ds should have the same number of samples")
+	}
 }
 
 // checkFree checks whether r.free worked.
