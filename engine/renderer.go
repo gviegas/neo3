@@ -57,6 +57,9 @@ func (r *Renderer) init(width, height int) (err error) {
 			Custom: i,
 		}
 	}
+	for i := range r.lights {
+		r.lights[i].layout.SetUnused(true)
+	}
 	// TODO: Initialize r.drawables.
 	// TODO: Customizable sample count.
 	// TODO: Choose a better DS format if available.
