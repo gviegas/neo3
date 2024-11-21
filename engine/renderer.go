@@ -92,6 +92,25 @@ func (r *Renderer) init(width, height int) (err error) {
 	return
 }
 
+// SetLight updates the light at the given index
+// to contain a copy of *light.
+// If light is nil, the slot is set as unused.
+func (r *Renderer) SetLight(index int, light *Light) {
+	unused := r.lights[index].layout.Unused()
+	if light != nil {
+		r.lights[index] = *light
+		r.lights[index].layout.SetUnused(false)
+		if unused {
+			r.nlight++
+		}
+	} else {
+		r.lights[index].layout.SetUnused(true)
+		if !unused {
+			r.nlight--
+		}
+	}
+}
+
 // free invalidates r and destroys/releases the
 // driver resources it holds.
 func (r *Renderer) free() {
