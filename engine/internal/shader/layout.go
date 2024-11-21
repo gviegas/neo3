@@ -103,14 +103,19 @@ const (
 )
 
 // SetUnused sets whether the light is unused.
-// Shaders will stop processing lights as soon as
-// they find an unused light slot.
 func (l *LightLayout) SetUnused(unused bool) {
 	var bool32 int32
 	if unused {
 		bool32 = 1
 	}
 	l[0] = *(*float32)(unsafe.Pointer(&bool32))
+}
+
+// Unused returns whether the light is unused.
+// TODO: Other getters.
+func (l *LightLayout) Unused() bool {
+	unused := *(*int32)(unsafe.Pointer(&l[0]))
+	return unused == 1
 }
 
 // SetType sets the light type.

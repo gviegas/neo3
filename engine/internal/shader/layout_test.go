@@ -132,9 +132,15 @@ func TestLightLayout(t *testing.T) {
 		if unused {
 			t.Fatalf("%sSetUnused:\nhave false (0) \nwant true (1)", s)
 		}
+		if l.Unused() {
+			t.Fatalf("%sUnused:\nhave true \nwant false", s)
+		}
 	case 1:
 		if !unused {
 			t.Fatalf("%sSetUnused:\nhave true (1) \nwant false (0)", s)
+		}
+		if !l.Unused() {
+			t.Fatalf("%sUnused:\nhave false \nwant true", s)
 		}
 	default:
 		t.Fatalf("%sSetUnused: bad value\n%d", s, x)
