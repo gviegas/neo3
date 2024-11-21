@@ -724,7 +724,7 @@ type Scissor struct {
 	X, Y, Width, Height int
 }
 
-// Cullmode is the type of cull modes, which
+// CullMode is the type of cull modes, which
 // determines primitive culling based on triangle
 // facing direction.
 type CullMode int
