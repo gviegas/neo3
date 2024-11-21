@@ -111,6 +111,19 @@ func (r *Renderer) SetLight(index int, light *Light) {
 	}
 }
 
+// Light returns a pointer to the light that was
+// last set at the given index.
+// If the slot is unused, it returns nil instead.
+// It is not allowed to assign a new value to the
+// return pointer; use SetLight instead.
+func (r *Renderer) Light(index int) *Light {
+	unused := r.lights[index].layout.Unused()
+	if !unused {
+		return &r.lights[index]
+	}
+	return nil
+}
+
 // free invalidates r and destroys/releases the
 // driver resources it holds.
 func (r *Renderer) free() {
