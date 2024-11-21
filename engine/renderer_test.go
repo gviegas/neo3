@@ -8,6 +8,7 @@ import (
 
 	"gviegas/neo3/driver"
 	"gviegas/neo3/engine/internal/ctxt"
+	"gviegas/neo3/linear"
 	"gviegas/neo3/wsi"
 )
 
@@ -69,6 +70,23 @@ func (r *Renderer) checkInit(width, height int, t *testing.T) {
 	}
 	if r.hdr.Samples() != r.ds.Samples() {
 		t.Fatal("Renderer.init: hdr and ds should have the same number of samples")
+	}
+}
+
+// checkLights checks that r.lights and r.nlight
+// are consistent and that they match nwant.
+func (r *Renderer) checkLights(nwant int, t *testing.T) {
+	var nlight int
+	for _, l := range r.lights {
+		if !l.layout.Unused() {
+			nlight++
+		}
+	}
+	if nlight != r.nlight {
+		t.Fatal("Renderer: lights/nlight mismatch")
+	}
+	if nlight != nwant {
+		t.Fatal("Renderer: unexpected light count")
 	}
 }
 
@@ -239,4 +257,58 @@ func TestOnscreenOffscreen(t *testing.T) {
 		ofs.checkFree(t)
 		ons.checkFree(t)
 	}
+}
+
+func TestRendererLight(t *testing.T) {
+	rend, err := NewOffscreen(256, 192)
+	if err != nil {
+		t.Fatalf("RendererLight: NewOffscreen failed:\n%v", err)
+	}
+	dist := (&DistantLight{
+		Direction: linear.V3{0, 0, 1},
+		Intensity: 500,
+		R:         1,
+		G:         1,
+		B:         1,
+	}).Light()
+	point := (&PointLight{
+		Position:  linear.V3{-1, -1, 1},
+		Range:     100,
+		Intensity: 500,
+		R:         1,
+		G:         1,
+		B:         1,
+	}).Light()
+	rend.checkLights(0, t)
+	rend.SetLight(0, &dist)
+	rend.checkLights(1, t)
+	rend.SetLight(2, &point)
+	rend.checkLights(2, t)
+	rend.SetLight(NLight-1, &point)
+	rend.checkLights(3, t)
+	rend.SetLight(1, nil)
+	rend.checkLights(3, t)
+	rend.SetLight(0, nil)
+	rend.checkLights(2, t)
+	rend.SetLight(1, &dist)
+	rend.SetLight(2, &point)
+	rend.checkLights(3, t)
+	rend.SetLight(0, &point)
+	rend.checkLights(4, t)
+	rend.SetLight(2, nil)
+	rend.checkLights(3, t)
+	rend.SetLight(2, nil)
+	rend.checkLights(3, t)
+	rend.SetLight(NLight-1, nil)
+	rend.checkLights(2, t)
+	rend.SetLight(0, nil)
+	rend.checkLights(1, t)
+	rend.SetLight(1, nil)
+	rend.checkLights(0, t)
+	rend.SetLight(NLight/2, &dist)
+	rend.checkLights(1, t)
+	rend.SetLight(NLight/2, &point)
+	rend.checkLights(1, t)
+	rend.SetLight(0, &dist)
+	rend.checkLights(2, t)
 }
