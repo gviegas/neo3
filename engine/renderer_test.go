@@ -33,6 +33,11 @@ func (r *Renderer) checkInit(width, height int, t *testing.T) {
 			Custom: i,
 		}
 	}
+	for i := range r.lights {
+		if !r.lights[i].layout.Unused() {
+			t.Fatalf("Renderer.init: lights[%d] should be set as unused", i)
+		}
+	}
 	if r.nlight != 0 {
 		t.Fatal("Renderer.init: nlight should be 0")
 	}
