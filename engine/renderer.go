@@ -4,6 +4,7 @@ package engine
 
 import (
 	"errors"
+	"iter"
 
 	"gviegas/neo3/driver"
 	"gviegas/neo3/engine/internal/ctxt"
@@ -122,6 +123,23 @@ func (r *Renderer) Light(index int) *Light {
 		return &r.lights[index]
 	}
 	return nil
+}
+
+// Lights return an iterator over the light slots
+// that are currently in use.
+func (r *Renderer) Lights() iter.Seq2[int, *Light] {
+	return func(yield func(int, *Light) bool) {
+		n := r.nlight
+		for i := 0; n > 0; i++ {
+			if r.lights[i].layout.Unused() {
+				continue
+			}
+			n--
+			if !yield(i, &r.lights[i]) {
+				return
+			}
+		}
+	}
 }
 
 // free invalidates r and destroys/releases the
