@@ -90,6 +90,24 @@ func (r *Renderer) checkLights(nwant int, t *testing.T) {
 	}
 }
 
+// checkLight checks that r.lights[index] is equal
+// to *light.
+// If light is nil, r.lights[index] must have been
+// set as unused.
+func (r *Renderer) checkLight(index int, light *Light, t *testing.T) {
+	unused := r.lights[index].layout.Unused()
+	if light != nil {
+		if unused {
+			t.Fatalf("Renderer: light[%d] set as unused", index)
+		}
+		if *light != r.lights[index] {
+			t.Fatalf("Renderer: light[%d] differs", index)
+		}
+	} else if !unused {
+		t.Fatalf("Renderer: light[%d] not set as unused", index)
+	}
+}
+
 // checkFree checks whether r.free worked.
 func (r *Renderer) checkFree(t *testing.T) {
 	for i, cb := range r.cb {
@@ -282,33 +300,49 @@ func TestRendererLight(t *testing.T) {
 	rend.checkLights(0, t)
 	rend.SetLight(0, &dist)
 	rend.checkLights(1, t)
+	rend.checkLight(0, &dist, t)
 	rend.SetLight(2, &point)
 	rend.checkLights(2, t)
+	rend.checkLight(2, &point, t)
 	rend.SetLight(NLight-1, &point)
 	rend.checkLights(3, t)
+	rend.checkLight(NLight-1, &point, t)
 	rend.SetLight(1, nil)
 	rend.checkLights(3, t)
+	rend.checkLight(1, nil, t)
 	rend.SetLight(0, nil)
 	rend.checkLights(2, t)
+	rend.checkLight(0, nil, t)
 	rend.SetLight(1, &dist)
 	rend.SetLight(2, &point)
 	rend.checkLights(3, t)
+	rend.checkLight(1, &dist, t)
+	rend.checkLight(2, &point, t)
 	rend.SetLight(0, &point)
 	rend.checkLights(4, t)
+	rend.checkLight(0, &point, t)
 	rend.SetLight(2, nil)
 	rend.checkLights(3, t)
+	rend.checkLight(2, nil, t)
 	rend.SetLight(2, nil)
 	rend.checkLights(3, t)
+	rend.checkLight(2, nil, t)
 	rend.SetLight(NLight-1, nil)
 	rend.checkLights(2, t)
+	rend.checkLight(NLight-1, nil, t)
 	rend.SetLight(0, nil)
 	rend.checkLights(1, t)
+	rend.checkLight(0, nil, t)
 	rend.SetLight(1, nil)
 	rend.checkLights(0, t)
+	rend.checkLight(1, nil, t)
 	rend.SetLight(NLight/2, &dist)
 	rend.checkLights(1, t)
+	rend.checkLight(NLight/2, &dist, t)
 	rend.SetLight(NLight/2, &point)
 	rend.checkLights(1, t)
+	rend.checkLight(NLight/2, &point, t)
 	rend.SetLight(0, &dist)
 	rend.checkLights(2, t)
+	rend.checkLight(0, &dist, t)
 }
