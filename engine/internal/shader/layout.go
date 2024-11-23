@@ -14,6 +14,8 @@
 //
 // TODO: Consider using arrays of integers, rather than
 // floats, in the layout definitions.
+//
+// TODO: Missing getters.
 
 package shader
 
@@ -112,7 +114,6 @@ func (l *LightLayout) SetUnused(unused bool) {
 }
 
 // Unused returns whether the light is unused.
-// TODO: Other getters.
 func (l *LightLayout) Unused() bool {
 	unused := *(*int32)(unsafe.Pointer(&l[0]))
 	return unused == 1
@@ -121,31 +122,60 @@ func (l *LightLayout) Unused() bool {
 // SetType sets the light type.
 func (l *LightLayout) SetType(typ int32) { l[1] = *(*float32)(unsafe.Pointer(&typ)) }
 
+// Type returns the light type.
+func (l *LightLayout) Type() int32 { return *(*int32)(unsafe.Pointer(&l[1])) }
+
 // SetIntensity sets the intensity.
 func (l *LightLayout) SetIntensity(i float32) { l[2] = i }
+
+// Intensity returns the intensity.
+func (l *LightLayout) Intensity() float32 { return l[2] }
 
 // SetRange sets the range.
 // Used for PointLight and SpotLight.
 func (l *LightLayout) SetRange(rng float32) { l[3] = rng }
 
+// Range returns the range.
+// Used for PointLight and SpotLight.
+func (l *LightLayout) Range() float32 { return l[3] }
+
 // SetColor sets the color.
 func (l *LightLayout) SetColor(c *linear.V3) { copy(l[4:7], c[:]) }
+
+// Color returns the color.
+func (l *LightLayout) Color() linear.V3 { return linear.V3(l[4:7]) }
 
 // SetAngScale sets the angular scale.
 // Used for SpotLight.
 func (l *LightLayout) SetAngScale(s float32) { l[7] = s }
 
+// AngScale returns the angular scale.
+// Used for SpotLight.
+func (l *LightLayout) AngScale() float32 { return l[7] }
+
 // SetPosition sets the position.
 // Used for PointLight and SpotLight.
 func (l *LightLayout) SetPosition(p *linear.V3) { copy(l[8:11], p[:]) }
+
+// Position returns the position.
+// Used for PointLight and SpotLight.
+func (l *LightLayout) Position() linear.V3 { return linear.V3(l[8:11]) }
 
 // SetAngOffset sets the angular offset.
 // Used for SpotLight.
 func (l *LightLayout) SetAngOffset(off float32) { l[11] = off }
 
+// AngOffset returns the angular offset.
+// Used for SpotLight.
+func (l *LightLayout) AngOffset() float32 { return l[11] }
+
 // SetDirection sets the direction.
 // Used for DistantLight and SpotLight.
 func (l *LightLayout) SetDirection(d *linear.V3) { copy(l[12:15], d[:]) }
+
+// Direction returns the direction.
+// Used for DistantLight and SpotLight.
+func (l *LightLayout) Direction() linear.V3 { return linear.V3(l[12:15]) }
 
 // ShadowLayout is the layout of shadow data.
 // It is defined as follows:

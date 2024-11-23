@@ -145,24 +145,48 @@ func TestLightLayout(t *testing.T) {
 	default:
 		t.Fatalf("%sSetUnused: bad value\n%d", s, x)
 	}
-	if x := *(*int32)(unsafe.Pointer(&l[1])); x != typ {
+	switch x, y := *(*int32)(unsafe.Pointer(&l[1])), l.Type(); {
+	case x != typ:
 		t.Fatalf("%sSetType:\nhave %d\nwant %d", s, x, typ)
+	case y != typ:
+		t.Fatalf("%sType:\nhave %d\nwant %d", s, y, typ)
 	}
-	if l[2] != intens {
-		t.Fatalf("%sSetIntensity:\nhave %f\nwant %f", s, l[2], intens)
+	switch x, y := l[2], l.Intensity(); {
+	case x != intens:
+		t.Fatalf("%sSetIntensity:\nhave %f\nwant %f", s, x, intens)
+	case y != intens:
+		t.Fatalf("%sIntensity:\nhave %f\nwant %f", s, y, intens)
 	}
-	if l[3] != rng {
-		t.Fatalf("%sSetRange:\nhave %f\nwant %f", s, l[3], rng)
+	switch x, y := l[3], l.Range(); {
+	case x != rng:
+		t.Fatalf("%sSetRange:\nhave %f\nwant %f", s, x, rng)
+	case y != rng:
+		t.Fatalf("%sRange:\nhave %f\nwant %f", s, y, rng)
 	}
 	checkSlicesT(l[4:7], color[:], t, s+"SetColor")
-	if l[7] != scale {
-		t.Fatalf("%sSetAngScale:\nhave %f\nwant %f", s, l[7], scale)
+	if x := l.Color(); x != color {
+		t.Fatalf("%sColor:\nhave %v\nwant %v", s, x, color)
+	}
+	switch x, y := l[7], l.AngScale(); {
+	case x != scale:
+		t.Fatalf("%sSetAngScale:\nhave %f\nwant %f", s, x, scale)
+	case y != scale:
+		t.Fatalf("%sAngScale:\nhave %f\nwant %f", s, y, scale)
 	}
 	checkSlicesT(l[8:11], pos[:], t, s+"SetPosition")
-	if l[11] != off {
-		t.Fatalf("%sSetAngOffset:\nhave %f\nwant %f", s, l[11], off)
+	if x := l.Position(); x != pos {
+		t.Fatalf("%sPosition:\nhave %v\nwant %v", s, x, pos)
+	}
+	switch x, y := l[11], l.AngOffset(); {
+	case x != off:
+		t.Fatalf("%sSetAngOffset:\nhave %f\nwant %f", s, x, off)
+	case y != off:
+		t.Fatalf("%sAngOffset:\nhave %f\nwant %f", s, y, off)
 	}
 	checkSlicesT(l[12:15], dir[:], t, s+"SetDirection")
+	if x := l.Direction(); x != dir {
+		t.Fatalf("%sDirection:\nhave %v\nwant %v", s, x, dir)
+	}
 }
 
 func TestShadowLayout(t *testing.T) {
