@@ -18,7 +18,7 @@ func newRendErr(reason string) error { return errors.New(rendPrefix + reason) }
 // Renderer is a real-time renderer.
 // Onscreen and Offscreen embed a Renderer
 // (call either NewOnscreen or NewOffscreen to
-// create a valid  Renderer).
+// create a valid Renderer).
 type Renderer struct {
 	cb [NFrame]driver.CmdBuffer
 	ch chan *driver.WorkItem
