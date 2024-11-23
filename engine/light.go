@@ -85,7 +85,16 @@ func (l *Light) SetConeAngles(inner, outer float32) {
 	l.cosOuter = float32(coso)
 }
 
-// TODO: ConeAngles.
+// ConeAngles returns the inner/outer cone angles of l.
+// Only applies to spot lights.
+func (l *Light) ConeAngles() (inner, outer float32) {
+	scale := l.layout.AngScale()
+	coso := l.cosOuter
+	cosi := (1 / scale) + coso
+	inner = float32(math.Acos(float64(cosi)))
+	outer = float32(math.Acos(float64(coso)))
+	return
+}
 
 // DistantLight is a directional light.
 // The light is emitted in the given Direction.
