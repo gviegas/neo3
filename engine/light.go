@@ -22,6 +22,10 @@ const (
 type Light struct {
 	typ    int
 	layout shader.LightLayout
+	// Used to reconstruct the inner/outer
+	// cone angles.
+	// Ignored if typ is not spotLight.
+	cosOuter float32
 }
 
 // SetDirection sets the direction of l.
@@ -78,6 +82,7 @@ func (l *Light) SetConeAngles(inner, outer float32) {
 	)
 	l.layout.SetAngScale(float32(scale))
 	l.layout.SetAngOffset(float32(offset))
+	l.cosOuter = float32(coso)
 }
 
 // TODO: ConeAngles.
