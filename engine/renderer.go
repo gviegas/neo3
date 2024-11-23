@@ -125,8 +125,8 @@ func (r *Renderer) Light(index int) *Light {
 	return nil
 }
 
-// Lights return an iterator over the light slots
-// that are currently in use.
+// Lights returns an iterator over the light slots
+// that are currently in use, in the usual order.
 func (r *Renderer) Lights() iter.Seq2[int, *Light] {
 	return func(yield func(int, *Light) bool) {
 		n := r.nlight
