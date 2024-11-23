@@ -146,6 +146,16 @@ func (r *Renderer) Lights() iter.Seq2[int, *Light] {
 // that are currently in use.
 func (r *Renderer) LightsLen() int { return r.nlight }
 
+// ResetLights sets every light slot as unused.
+func (r *Renderer) ResetLights() {
+	for i := 0; r.nlight > 0; i++ {
+		if !r.lights[i].layout.Unused() {
+			r.lights[i].layout.SetUnused(true)
+			r.nlight--
+		}
+	}
+}
+
 // free invalidates r and destroys/releases the
 // driver resources it holds.
 func (r *Renderer) free() {
