@@ -314,6 +314,8 @@ func TestRendererLight(t *testing.T) {
 		B:         1,
 	}).Light()
 	rend.checkLights(0, t)
+	rend.ResetLights()
+	rend.checkLights(0, t)
 	rend.SetLight(0, &dist)
 	rend.checkLights(1, t)
 	rend.checkLight(0, &dist, t)
@@ -377,4 +379,48 @@ func TestRendererLight(t *testing.T) {
 	rend.checkLights(2, t)
 	rend.checkLight(0, &dist, t)
 	rend.checkLight(0, rend.Light(0), t)
+	rend.ResetLights()
+	rend.checkLights(0, t)
+	rend.SetLight(1, &dist)
+	rend.checkLights(1, t)
+	rend.checkLight(1, &dist, t)
+	rend.checkLight(1, rend.Light(1), t)
+	rend.ResetLights()
+	rend.checkLights(0, t)
+	for _, cs := range [2]string{"remove", "reset"} {
+		for i := range NLight {
+			var p *Light
+			if i&1 == 0 {
+				p = &dist
+			} else {
+				p = &point
+			}
+			rend.SetLight(i, p)
+			rend.checkLights(i+1, t)
+			rend.checkLight(i, p, t)
+		}
+		switch cs {
+		case "remove":
+			for i := range NLight {
+				var p *Light
+				if i&1 == 0 {
+					p = &dist
+				} else {
+					p = &point
+				}
+				rend.checkLight(i, p, t)
+				rend.SetLight(i, nil)
+				rend.checkLights(NLight-i-1, t)
+				rend.checkLight(i, nil, t)
+			}
+		case "reset":
+			rend.ResetLights()
+			rend.checkLights(0, t)
+			for i := range NLight {
+				rend.checkLight(i, nil, t)
+			}
+		default:
+			panic("unreachable")
+		}
+	}
 }
