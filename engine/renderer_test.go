@@ -74,8 +74,8 @@ func (r *Renderer) checkInit(width, height int, t *testing.T) {
 }
 
 // checkLights checks that r contains nwant lights
-// currently in use, and that r.Lights works as
-// expected.
+// currently in use, and that both r.Lights and
+// r.LightsLen work as expected.
 func (r *Renderer) checkLights(nwant int, t *testing.T) {
 	var nlight int
 	for _, l := range r.lights {
@@ -85,6 +85,9 @@ func (r *Renderer) checkLights(nwant int, t *testing.T) {
 	}
 	if nlight != r.nlight {
 		t.Fatal("Renderer: lights/nlight mismatch")
+	}
+	if nlight != r.LightsLen() {
+		t.Fatal("Renderer: LightsLen/nlight mismatch")
 	}
 	if nlight != nwant {
 		t.Fatal("Renderer: unexpected light count")
