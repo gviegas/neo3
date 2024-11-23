@@ -142,6 +142,10 @@ func (r *Renderer) Lights() iter.Seq2[int, *Light] {
 	}
 }
 
+// LightsLen returns the number of light slots
+// that are currently in use.
+func (r *Renderer) LightsLen() int { return r.nlight }
+
 // free invalidates r and destroys/releases the
 // driver resources it holds.
 func (r *Renderer) free() {
