@@ -29,19 +29,41 @@ type Light struct {
 // Only applies to distant and spot lights.
 func (l *Light) SetDirection(d *linear.V3) { l.layout.SetDirection(d) }
 
+// Direction returns the direction of l.
+// Only applies to distant and spot lights.
+func (l *Light) Direction() linear.V3 { return l.layout.Direction() }
+
 // SetPosition sets the position of l.
 // Only applies to point and spot lights.
 func (l *Light) SetPosition(p *linear.V3) { l.layout.SetPosition(p) }
 
+// Position returns the position of l.
+// Only applies to point and spot lights.
+func (l *Light) Position() linear.V3 { return l.layout.Position() }
+
 // SetIntensity sets the intensity of l.
 func (l *Light) SetIntensity(i float32) { l.layout.SetIntensity(max(0, i)) }
+
+// Intensity returns the intensity of l.
+func (l *Light) Intensity() float32 { return l.Intensity() }
 
 // SetRange sets the falloff range of l.
 // Only applies to point and spot lights.
 func (l *Light) SetRange(r float32) { l.layout.SetRange(r) }
 
+// Range returns the falloff range of l.
+// Only applies to point and spot lights.
+func (l *Light) Range() float32 { return l.layout.Range() }
+
 // SetColor sets the RGB color of l.
 func (l *Light) SetColor(r, g, b float32) { l.layout.SetColor(&linear.V3{r, g, b}) }
+
+// Color returns the RGB color of l.
+func (l *Light) Color() (r, g, b float32) {
+	rgb := l.layout.Color()
+	r, g, b = rgb[0], rgb[1], rgb[2]
+	return
+}
 
 // SetConeAngles sets the inner/outer cone angles of l.
 // Only applies to spot lights.
@@ -57,6 +79,8 @@ func (l *Light) SetConeAngles(inner, outer float32) {
 	l.layout.SetAngScale(float32(scale))
 	l.layout.SetAngOffset(float32(offset))
 }
+
+// TODO: ConeAngles.
 
 // DistantLight is a directional light.
 // The light is emitted in the given Direction.
