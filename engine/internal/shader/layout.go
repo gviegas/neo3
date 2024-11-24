@@ -275,11 +275,33 @@ type DrawableLayout [64]float32
 // SetWorld sets the world matrix.
 func (l *DrawableLayout) SetWorld(m *linear.M4) { copyM4(l[:16], m) }
 
+// World returns the world matrix.
+func (l *DrawableLayout) World() (m linear.M4) {
+	for i := range m {
+		copy(m[i][:], l[4*i:4*i+4])
+	}
+	return
+}
+
 // SetNormal sets the normal matrix.
 func (l *DrawableLayout) SetNormal(m *linear.M3) { copyM3(l[16:28], m) }
 
+// Normal returns the normal matrix.
+func (l *DrawableLayout) Normal() (m linear.M3) {
+	for i := range m {
+		copy(m[i][:], l[16+4*i:16+4*i+3])
+	}
+	return
+}
+
 // SetID sets the drawable's ID.
 func (l *DrawableLayout) SetID(id uint32) { l[28] = *(*float32)(unsafe.Pointer(&id)) }
+
+// ID returns the drawable's ID.
+func (l *DrawableLayout) ID() uint32 {
+	id := *(*uint32)(unsafe.Pointer(&l[28]))
+	return id
+}
 
 // MaterialLayout is the layout of material data.
 // It is defined as follows:

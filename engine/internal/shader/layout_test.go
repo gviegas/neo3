@@ -291,13 +291,24 @@ func TestDrawableLayout(t *testing.T) {
 	s := "DrawableLayout."
 
 	checkSlicesT(l[:16], unsafe.Slice((*float32)(unsafe.Pointer(&wld)), 16), t, s+"SetWorld")
+	if x := l.World(); x != wld {
+		t.Fatalf("%sWorld:\nhave %v\nwant %v", s, x, wld)
+	}
+
 	checkSlicesT(l[16:28], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
 	}, t, s+"SetNormal")
-	if x := *(*uint32)(unsafe.Pointer(&l[28])); x != id {
+	if x := l.Normal(); x != norm {
+		t.Fatalf("%sNormal:\nhave %v\nwant %v", s, x, norm)
+	}
+
+	switch x, y := *(*uint32)(unsafe.Pointer(&l[28])), l.ID(); {
+	case x != id:
 		t.Fatalf("%sSetID:\nhave %d\nwant %d", s, x, id)
+	case y != id:
+		t.Fatalf("%sID:\nhave %d\nwant %d", s, y, id)
 	}
 }
 
