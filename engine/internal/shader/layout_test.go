@@ -413,9 +413,22 @@ func TestJointLayout(t *testing.T) {
 		jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1],
 		jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2],
 	}, t, s+"SetJoint")
+	{
+		x0, x1, x2 := l.Joint()
+		y0 := linear.V4{jnt[0][0], jnt[1][0], jnt[2][0], jnt[3][0]}
+		y1 := linear.V4{jnt[0][1], jnt[1][1], jnt[2][1], jnt[3][1]}
+		y2 := linear.V4{jnt[0][2], jnt[1][2], jnt[2][2], jnt[3][2]}
+		if x0 != y0 || x1 != y1 || x2 != y2 {
+			t.Fatalf("%sJoint:\nhave %v,%v,%v\nwant %v,%v,%v", s, x0, x1, x2, y0, y1, y2)
+		}
+	}
+
 	checkSlicesT(l[12:24], []float32{
 		norm[0][0], norm[0][1], norm[0][2], 0,
 		norm[1][0], norm[1][1], norm[1][2], 0,
 		norm[2][0], norm[2][1], norm[2][2], 0,
 	}, t, s+"SetNormal")
+	if x := l.Normal(); x != norm {
+		t.Fatalf("%sNormal:\nhave %v\nwant %v", s, x, norm)
+	}
 }

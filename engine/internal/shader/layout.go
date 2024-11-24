@@ -14,8 +14,6 @@
 //
 // TODO: Consider using arrays of integers, rather than
 // floats, in the layout definitions.
-//
-// TODO: Missing getters.
 
 package shader
 
@@ -404,8 +402,24 @@ func (l *JointLayout) SetJoint(m *linear.M4) {
 	copy(l[:12], unsafe.Slice((*float32)(unsafe.Pointer(&n)), 12))
 }
 
+// Joint returns the 1st, 2nd and 3rd rows of the joint matrix.
+func (l *JointLayout) Joint() (row0, row1, row2 linear.V4) {
+	copy(row0[:], l[:4])
+	copy(row1[:], l[4:8])
+	copy(row2[:], l[8:12])
+	return
+}
+
 // SetNormal sets the normal matrix.
 func (l *JointLayout) SetNormal(m *linear.M3) { copyM3(l[12:24], m) }
+
+// Normal returns the normal matrix.
+func (l *JointLayout) Normal() (m linear.M3) {
+	for i := range m {
+		copy(m[i][:], l[12+4*i:12+4*i+3])
+	}
+	return
+}
 
 // Constants defining the maximum number of elements
 // for layouts that are aggregated into static arrays.
