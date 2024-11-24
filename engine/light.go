@@ -49,7 +49,7 @@ func (l *Light) Position() linear.V3 { return l.layout.Position() }
 func (l *Light) SetIntensity(i float32) { l.layout.SetIntensity(max(0, i)) }
 
 // Intensity returns the intensity of l.
-func (l *Light) Intensity() float32 { return l.Intensity() }
+func (l *Light) Intensity() float32 { return l.layout.Intensity() }
 
 // SetRange sets the falloff range of l.
 // Only applies to point and spot lights.
