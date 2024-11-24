@@ -70,6 +70,9 @@ func (l *Light) Color() (r, g, b float32) {
 }
 
 // SetConeAngles sets the inner/outer cone angles of l.
+// Cone angles that exceed math.Pi/2, or that are less
+// than zero, will be clamped. The inner angle will be
+// adjusted such that it is less than the outer angle.
 // Only applies to spot lights.
 func (l *Light) SetConeAngles(inner, outer float32) {
 	var (
@@ -86,6 +89,8 @@ func (l *Light) SetConeAngles(inner, outer float32) {
 }
 
 // ConeAngles returns the inner/outer cone angles of l.
+// Note that it returns the clamped angles (see the doc
+// for Light.SetConeAngles).
 // Only applies to spot lights.
 func (l *Light) ConeAngles() (inner, outer float32) {
 	scale := l.layout.AngScale()
@@ -165,6 +170,8 @@ type SpotLight struct {
 // t.R/G/B must be in the range [0, 1].
 // t.Range may be set to 0 or less to indicate an
 // infinite range.
+// The cone angles will be adjusted as per
+// Light.SetConeAngles.
 func (t *SpotLight) Light() (light Light) {
 	light.typ = spotLight
 	light.layout.SetType(shader.SpotLight)
