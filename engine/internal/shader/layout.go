@@ -233,8 +233,6 @@ func (l *LightLayout) Direction() linear.V3 { return linear.V3(l[12:15]) }
 type ShadowLayout [32]float32
 
 // SetUnused sets whether the shadow is unused.
-// Shaders will stop processing shadows as soon as
-// they find an unused shadow slot.
 func (l *ShadowLayout) SetUnused(unused bool) {
 	var bool32 int32
 	if unused {
@@ -243,8 +241,22 @@ func (l *ShadowLayout) SetUnused(unused bool) {
 	l[0] = *(*float32)(unsafe.Pointer(&bool32))
 }
 
+// Unused returns whether the shadow is unused.
+func (l *ShadowLayout) Unused() bool {
+	unused := *(*int32)(unsafe.Pointer(&l[0]))
+	return unused == 1
+}
+
 // SetShadow sets the shadow matrix.
 func (l *ShadowLayout) SetShadow(m *linear.M4) { copyM4(l[16:32], m) }
+
+// Shadow returns the shadow matrix.
+func (l *ShadowLayout) Shadow() (m linear.M4) {
+	for i := range m {
+		copy(m[i][:], l[16+4*i:16+4*i+4])
+	}
+	return
+}
 
 // DrawableLayout is the layout of drawable data.
 // It is defined as follows:

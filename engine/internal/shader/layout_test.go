@@ -162,17 +162,17 @@ func TestLightLayout(t *testing.T) {
 	switch x := *(*int32)(unsafe.Pointer(&l[0])); x {
 	case 0:
 		if unused {
-			t.Fatalf("%sSetUnused:\nhave false (0) \nwant true (1)", s)
+			t.Fatalf("%sSetUnused:\nhave false (0)\nwant true (1)", s)
 		}
 		if l.Unused() {
-			t.Fatalf("%sUnused:\nhave true \nwant false", s)
+			t.Fatalf("%sUnused:\nhave true\nwant false", s)
 		}
 	case 1:
 		if !unused {
-			t.Fatalf("%sSetUnused:\nhave true (1) \nwant false (0)", s)
+			t.Fatalf("%sSetUnused:\nhave true (1)\nwant false (0)", s)
 		}
 		if !l.Unused() {
-			t.Fatalf("%sUnused:\nhave false \nwant true", s)
+			t.Fatalf("%sUnused:\nhave false\nwant true", s)
 		}
 	default:
 		t.Fatalf("%sSetUnused: bad value\n%d", s, x)
@@ -247,16 +247,26 @@ func TestShadowLayout(t *testing.T) {
 	switch x := *(*int32)(unsafe.Pointer(&l[0])); x {
 	case 0:
 		if unused {
-			t.Fatalf("%sSetUnused:\nhave false (0) \nwant true (1)", s)
+			t.Fatalf("%sSetUnused:\nhave false (0)\nwant true (1)", s)
+		}
+		if l.Unused() {
+			t.Fatalf("%sUnused:\nhave true\nwant false", s)
 		}
 	case 1:
 		if !unused {
-			t.Fatalf("%sSetUnused:\nhave true (1) \nwant false (0)", s)
+			t.Fatalf("%sSetUnused:\nhave true (1)\nwant false (0)", s)
+		}
+		if !l.Unused() {
+			t.Fatalf("%sUnused:\nhave false\nwant true", s)
 		}
 	default:
 		t.Fatalf("%sSetUnused: bad value\n%d", s, x)
 	}
+
 	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&shdw)), 16), t, s+"SetShadow")
+	if x := l.Shadow(); x != shdw {
+		t.Fatalf("%sShadow:\nhave %v\nwant %v", s, x, shdw)
+	}
 }
 
 func TestDrawableLayout(t *testing.T) {
