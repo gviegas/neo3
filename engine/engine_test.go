@@ -204,6 +204,15 @@ func TestLight(t *testing.T) {
 			B:         1,
 		}
 		light := dist.Light()
+		if x := light.Direction(); x != dist.Direction {
+			t.Fatalf("Light.Direction: values differ\nhave %v\nwant %v", x, dist.Direction)
+		}
+		if x := light.Intensity(); x != dist.Intensity {
+			t.Fatalf("Light.Intensity: values differ\nhave %v\nwant %v", x, dist.Intensity)
+		}
+		if r, g, b := light.Color(); r != dist.R || g != dist.G || b != dist.B {
+			t.Fatalf("Light.Color: values differ\nhave %v,%v,%v\nwant %v,%v,%v", r, g, b, dist.R, dist.G, dist.B)
+		}
 		if other := dist.Light(); light != other {
 			t.Fatalf("DistantLight.Light: created Lights differ\n1st: %v\n2nd: %v", light, other)
 		}
@@ -230,6 +239,18 @@ func TestLight(t *testing.T) {
 			B:         1,
 		}
 		light := point.Light()
+		if x := light.Position(); x != point.Position {
+			t.Fatalf("Light.Position: values differ\nhave %v\nwant %v", x, point.Position)
+		}
+		if x := light.Range(); x != point.Range {
+			t.Fatalf("Light.Range: values differ\nhave %v\nwant %v", x, point.Range)
+		}
+		if x := light.Intensity(); x != point.Intensity {
+			t.Fatalf("Light.Intensity: values differ\nhave %v\nwant %v", x, point.Intensity)
+		}
+		if r, g, b := light.Color(); r != point.R || g != point.G || b != point.B {
+			t.Fatalf("Light.Color: values differ\nhave %v,%v,%v\nwant %v,%v,%v", r, g, b, point.R, point.G, point.B)
+		}
 		if other := point.Light(); light != other {
 			t.Fatalf("PointLight.Light: created Lights differ\n1st: %v\n2nd: %v", light, other)
 		}
@@ -259,6 +280,24 @@ func TestLight(t *testing.T) {
 			B:          1,
 		}
 		light := spot.Light()
+		if x := light.Direction(); x != spot.Direction {
+			t.Fatalf("Light.Direction: values differ\nhave %v\nwant %v", x, spot.Direction)
+		}
+		if x := light.Position(); x != spot.Position {
+			t.Fatalf("Light.Position: values differ\nhave %v\nwant %v", x, spot.Position)
+		}
+		if inner, outer := light.ConeAngles(); math.Abs(float64(inner-spot.InnerAngle)) > 1e-6 || math.Abs(float64(outer-spot.OuterAngle)) > 1e-6 {
+			t.Fatalf("Light.ConeAngles: values differ\nhave %v,%v\nwant %v,%v", inner, outer, spot.InnerAngle, spot.OuterAngle)
+		}
+		if x := light.Range(); x != spot.Range {
+			t.Fatalf("Light.Range: values differ\nhave %v\nwant %v", x, spot.Range)
+		}
+		if x := light.Intensity(); x != spot.Intensity {
+			t.Fatalf("Light.Intensity: values differ\nhave %v\nwant %v", x, spot.Intensity)
+		}
+		if r, g, b := light.Color(); r != spot.R || g != spot.G || b != spot.B {
+			t.Fatalf("Light.Color: values differ\nhave %v,%v,%v\nwant %v,%v,%v", r, g, b, spot.R, spot.G, spot.B)
+		}
 		if other := spot.Light(); light != other {
 			t.Fatalf("SpotLight.Light: created Lights differ\n1st: %v\n2nd: %v", light, other)
 		}
