@@ -29,17 +29,26 @@ func TestFrameLayout(t *testing.T) {
 	// [0:16]
 	col := linear.V4{12, 34, 56, 78}
 	vp := linear.M4{col, col, col, col}
+	for i := range vp {
+		vp[i][i] += 1.0
+	}
 
 	// [16:32]
 	col = linear.V4{-12, -13, -14, -15}
 	v := linear.M4{col, col, col, col}
+	for i := range vp {
+		v[i][i] += 1.0
+	}
 
 	// [32:48]
 	col = linear.V4{21, -43, 41, -87}
 	p := linear.M4{col, col, col, col}
+	for i := range vp {
+		p[i][i] += 1.0
+	}
 
 	// [48:49]
-	tm := time.Now().Add(time.Second).Sub(time.Now())
+	tm := time.Now().Add(time.Millisecond).Sub(time.Now())
 
 	// [49:50]
 	rnd := rand.Float32()
@@ -58,31 +67,54 @@ func TestFrameLayout(t *testing.T) {
 	s := "FrameLayout."
 
 	checkSlicesT(l[:16], unsafe.Slice((*float32)(unsafe.Pointer(&vp)), 16), t, s+"SetVP")
+	if x := l.VP(); x != vp {
+		t.Fatalf("%sVP:\nhave %f\nwant %f", s, x, vp)
+	}
+
 	checkSlicesT(l[16:32], unsafe.Slice((*float32)(unsafe.Pointer(&v)), 16), t, s+"SetV")
+	if x := l.V(); x != v {
+		t.Fatalf("%sV:\nhave %f\nwant %f", s, x, v)
+	}
+
 	checkSlicesT(l[32:48], unsafe.Slice((*float32)(unsafe.Pointer(&p)), 16), t, s+"SetP")
-	if x := float32(tm.Seconds()); l[48] != x {
-		t.Fatalf("%sSetTime:\nhave %f\nwant%f", s, l[48], x)
+	if x := l.P(); x != p {
+		t.Fatalf("%sP:\nhave %f\nwant%f", s, x, p)
 	}
-	if l[49] != rnd {
-		t.Fatalf("%sSetRand:\nhave %f\nwant%f", s, l[49], rnd)
+
+	switch x, y := float64(l[48]), l.Time().Seconds(); {
+	case math.Abs(x-tm.Seconds()) > 1e-6:
+		t.Fatalf("%sSetTime:\nhave %f\nwant %f", s, x, tm.Seconds())
+	case math.Abs(y-tm.Seconds()) > 1e-6:
+		t.Fatalf("%sTime:\nhave %f\nwant %f", s, y, tm.Seconds())
 	}
+
+	switch x, y := l[49], l.Rand(); {
+	case x != rnd:
+		t.Fatalf("%sSetRand:\nhave %f\nwant %f", s, x, rnd)
+	case y != rnd:
+		t.Fatalf("%sRand:\nhave %f\nwant %f", s, y, rnd)
+	}
+
 	if l[50] != bnd.X {
-		t.Fatalf("%sSetBounds: Viewport.X\nhave %f\nwant%f", s, l[50], bnd.X)
+		t.Fatalf("%sSetBounds: Viewport.X\nhave %f\nwant %f", s, l[50], bnd.X)
 	}
 	if l[51] != bnd.Y {
-		t.Fatalf("%sSetBounds: Viewport.Y\nhave %f\nwant%f", s, l[51], bnd.Y)
+		t.Fatalf("%sSetBounds: Viewport.Y\nhave %f\nwant %f", s, l[51], bnd.Y)
 	}
 	if l[52] != bnd.Width {
-		t.Fatalf("%sSetBounds: Viewport.Width\nhave %f\nwant%f", s, l[52], bnd.Width)
+		t.Fatalf("%sSetBounds: Viewport.Width\nhave %f\nwant %f", s, l[52], bnd.Width)
 	}
 	if l[53] != bnd.Height {
-		t.Fatalf("%sSetBounds: Viewport.Height\nhave %f\nwant%f", s, l[53], bnd.Height)
+		t.Fatalf("%sSetBounds: Viewport.Height\nhave %f\nwant %f", s, l[53], bnd.Height)
 	}
 	if l[54] != bnd.Znear {
-		t.Fatalf("%sSetBounds: Viewport.Znear\nhave %f\nwant%f", s, l[54], bnd.Znear)
+		t.Fatalf("%sSetBounds: Viewport.Znear\nhave %f\nwant %f", s, l[54], bnd.Znear)
 	}
 	if l[55] != bnd.Zfar {
-		t.Fatalf("%sSetBounds: Viewport.Zfar\nhave %f\nwant%f", s, l[55], bnd.Zfar)
+		t.Fatalf("%sSetBounds: Viewport.Zfar\nhave %f\nwant %f", s, l[55], bnd.Zfar)
+	}
+	if x := l.Bounds(); x != bnd {
+		t.Fatalf("%sBounds:\nhave %v\nwant %v", s, x, bnd)
 	}
 }
 
@@ -145,44 +177,52 @@ func TestLightLayout(t *testing.T) {
 	default:
 		t.Fatalf("%sSetUnused: bad value\n%d", s, x)
 	}
+
 	switch x, y := *(*int32)(unsafe.Pointer(&l[1])), l.Type(); {
 	case x != typ:
 		t.Fatalf("%sSetType:\nhave %d\nwant %d", s, x, typ)
 	case y != typ:
 		t.Fatalf("%sType:\nhave %d\nwant %d", s, y, typ)
 	}
+
 	switch x, y := l[2], l.Intensity(); {
 	case x != intens:
 		t.Fatalf("%sSetIntensity:\nhave %f\nwant %f", s, x, intens)
 	case y != intens:
 		t.Fatalf("%sIntensity:\nhave %f\nwant %f", s, y, intens)
 	}
+
 	switch x, y := l[3], l.Range(); {
 	case x != rng:
 		t.Fatalf("%sSetRange:\nhave %f\nwant %f", s, x, rng)
 	case y != rng:
 		t.Fatalf("%sRange:\nhave %f\nwant %f", s, y, rng)
 	}
+
 	checkSlicesT(l[4:7], color[:], t, s+"SetColor")
 	if x := l.Color(); x != color {
 		t.Fatalf("%sColor:\nhave %v\nwant %v", s, x, color)
 	}
+
 	switch x, y := l[7], l.AngScale(); {
 	case x != scale:
 		t.Fatalf("%sSetAngScale:\nhave %f\nwant %f", s, x, scale)
 	case y != scale:
 		t.Fatalf("%sAngScale:\nhave %f\nwant %f", s, y, scale)
 	}
+
 	checkSlicesT(l[8:11], pos[:], t, s+"SetPosition")
 	if x := l.Position(); x != pos {
 		t.Fatalf("%sPosition:\nhave %v\nwant %v", s, x, pos)
 	}
+
 	switch x, y := l[11], l.AngOffset(); {
 	case x != off:
 		t.Fatalf("%sSetAngOffset:\nhave %f\nwant %f", s, x, off)
 	case y != off:
 		t.Fatalf("%sAngOffset:\nhave %f\nwant %f", s, y, off)
 	}
+
 	checkSlicesT(l[12:15], dir[:], t, s+"SetDirection")
 	if x := l.Direction(); x != dir {
 		t.Fatalf("%sDirection:\nhave %v\nwant %v", s, x, dir)

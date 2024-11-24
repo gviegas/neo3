@@ -60,17 +60,50 @@ type FrameLayout [64]float32
 // SetVP sets the view-projection matrix.
 func (l *FrameLayout) SetVP(m *linear.M4) { copyM4(l[:16], m) }
 
+// VP returns the view-projection matrix.
+func (l *FrameLayout) VP() (m linear.M4) {
+	for i := range m {
+		copy(m[i][:], l[4*i:4*i+4])
+	}
+	return
+}
+
 // SetV sets the view matrix.
 func (l *FrameLayout) SetV(m *linear.M4) { copyM4(l[16:32], m) }
+
+// V returns the view matrix.
+func (l *FrameLayout) V() (m linear.M4) {
+	for i := range m {
+		copy(m[i][:], l[16+4*i:16+4*i+4])
+	}
+	return
+}
 
 // SetP sets the projection matrix.
 func (l *FrameLayout) SetP(m *linear.M4) { copyM4(l[32:48], m) }
 
+// P returns the projection matrix.
+func (l *FrameLayout) P() (m linear.M4) {
+	for i := range m {
+		copy(m[i][:], l[32+4*i:32+4*i+4])
+	}
+	return
+}
+
 // SetTime sets the elapsed time.
 func (l *FrameLayout) SetTime(d time.Duration) { l[48] = float32(d.Seconds()) }
 
+// Time returns the elapsed time.
+func (l *FrameLayout) Time() time.Duration {
+	nsec := int64(float64(l[48]) * 1e9)
+	return time.Duration(nsec)
+}
+
 // SetRand sets the normalized random value.
 func (l *FrameLayout) SetRand(rnd float32) { l[49] = rnd }
+
+// Rand returns the normalized random value.
+func (l *FrameLayout) Rand() float32 { return l[49] }
 
 // SetBounds sets the viewport bounds.
 func (l *FrameLayout) SetBounds(b *driver.Viewport) {
@@ -80,6 +113,18 @@ func (l *FrameLayout) SetBounds(b *driver.Viewport) {
 	l[53] = b.Height
 	l[54] = b.Znear
 	l[55] = b.Zfar
+}
+
+// Bounds returns the viewport bounds.
+func (l *FrameLayout) Bounds() driver.Viewport {
+	return driver.Viewport{
+		X:      l[50],
+		Y:      l[51],
+		Width:  l[52],
+		Height: l[53],
+		Znear:  l[54],
+		Zfar:   l[55],
+	}
 }
 
 // LightLayout is the layout of light data.
