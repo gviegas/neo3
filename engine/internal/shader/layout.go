@@ -336,24 +336,59 @@ const (
 // SetColorFactor sets the base color factor.
 func (l *MaterialLayout) SetColorFactor(fac *linear.V4) { copy(l[:4], fac[:]) }
 
+// ColorFactor returns the base color factor.
+func (l *MaterialLayout) ColorFactor() (fac linear.V4) {
+	copy(fac[:], l[:4])
+	return
+}
+
 // SetMetalRough sets the metalness and roughness.
 func (l *MaterialLayout) SetMetalRough(metal, rough float32) { l[4], l[5] = metal, rough }
+
+// MetalRough returns the metalness and roughness.
+func (l *MaterialLayout) MetalRough() (metal, rough float32) {
+	metal = l[4]
+	rough = l[5]
+	return
+}
 
 // SetNormScale sets the normal scale.
 func (l *MaterialLayout) SetNormScale(s float32) { l[6] = s }
 
+// NormScale returns the normal scale.
+func (l *MaterialLayout) NormScale() float32 { return l[6] }
+
 // SetOccStrength sets the occlusion strength.
 func (l *MaterialLayout) SetOccStrength(s float32) { l[7] = s }
 
+// OccStrength returns the occlusion strength.
+func (l *MaterialLayout) OccStrength() float32 { return l[7] }
+
 // SetEmisFactor sets the emissive factor.
 func (l *MaterialLayout) SetEmisFactor(fac *linear.V3) { copy(l[8:11], fac[:]) }
+
+// EmisFactor returns the emissive factor.
+func (l *MaterialLayout) EmisFactor() (fac linear.V3) {
+	copy(fac[:], l[8:11])
+	return
+}
 
 // SetAlphaCutoff sets the alpha cutoff value.
 // Used for AlphaMask.
 func (l *MaterialLayout) SetAlphaCutoff(c float32) { l[11] = c }
 
+// AlphaCutoff returns the alpha cutoff.
+// Used for AlphaMask.
+func (l *MaterialLayout) AlphaCutoff() float32 { return l[11] }
+
 // SetFlags sets the material flags.
 func (l *MaterialLayout) SetFlags(flg uint32) { l[12] = *(*float32)(unsafe.Pointer(&flg)) }
+
+// Flags returns the material flags.
+func (l *MaterialLayout) Flags() uint32 {
+	flg := *(*uint32)(unsafe.Pointer(&l[12]))
+	return flg
+}
 
 // JointLayout is the layout of joint data.
 // It is defined as follows:

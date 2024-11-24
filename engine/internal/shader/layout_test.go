@@ -346,21 +346,48 @@ func TestMaterialLayout(t *testing.T) {
 	s := "MaterialLayout."
 
 	checkSlicesT(l[:4], color[:], t, s+"SetColorFactor")
-	if l[4] != metal || l[5] != rough {
-		t.Fatalf("%sSetMetalRough:\nhave %f, %f\nwant %f, %f", s, l[4], l[5], metal, rough)
+	if x := l.ColorFactor(); x != color {
+		t.Fatalf("%sColorFactor:\nhave %v\nwant %v", s, x, color)
 	}
-	if l[6] != scale {
-		t.Fatalf("%sSetNormScale:\nhave %f\nwant %f", s, l[6], scale)
+
+	if m, r := l[4], l[5]; m != metal || r != rough {
+		t.Fatalf("%sSetMetalRough:\nhave %f,%f\nwant %f,%f", s, m, r, metal, rough)
 	}
-	if l[7] != strength {
-		t.Fatalf("%sSetOccStrength:\nhave %f\nwant %f", s, l[7], strength)
+	if m, r := l.MetalRough(); m != metal || r != rough {
+		t.Fatalf("%sMetalRough:\nhave %f,%f\nwant %f,%f", s, m, r, metal, rough)
 	}
+
+	switch x, y := l[6], l.NormScale(); {
+	case x != scale:
+		t.Fatalf("%sSetNormScale:\nhave %f\nwant %f", s, x, scale)
+	case y != scale:
+		t.Fatalf("%sNormScale:\nhave %f\nwant %f", s, y, scale)
+	}
+
+	switch x, y := l[7], l.OccStrength(); {
+	case x != strength:
+		t.Fatalf("%sSetOccStrength:\nhave %f\nwant %f", s, x, strength)
+	case y != strength:
+		t.Fatalf("%sOccStrength:\nhave %f\nwant %f", s, y, strength)
+	}
+
 	checkSlicesT(l[8:11], emissive[:], t, s+"SetEmisFactor")
-	if l[11] != cutoff {
-		t.Fatalf("%sSetAlphaCutoff:\nhave %f\nwant %f", s, l[11], cutoff)
+	if x := l.EmisFactor(); x != emissive {
+		t.Fatalf("%sEmisFactor:\nhave %v\nwant %v", s, x, emissive)
 	}
-	if x := *(*uint32)(unsafe.Pointer(&l[12])); x != flags {
+
+	switch x, y := l[11], l.AlphaCutoff(); {
+	case x != cutoff:
+		t.Fatalf("%sSetAlphaCutoff:\nhave %f\nwant %f", s, x, cutoff)
+	case y != cutoff:
+		t.Fatalf("%sAlphaCutoff:\nhave %f\nwant %f", s, y, cutoff)
+	}
+
+	switch x, y := *(*uint32)(unsafe.Pointer(&l[12])), l.Flags(); {
+	case x != flags:
 		t.Fatalf("%sSetFlags:\nhave 0x%x\nwant 0x%x", s, x, flags)
+	case y != flags:
+		t.Fatalf("%sFlags:\nhave 0x%x\nwant 0x%x", s, y, flags)
 	}
 }
 
