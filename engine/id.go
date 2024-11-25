@@ -86,7 +86,8 @@ func (m *dataMap[_, D]) entries() []dataEntry[D] { return m.data }
 // len is equivalent to len(m.entries()).
 func (m *dataMap[_, _]) len() int { return len(m.data) }
 
-// all returns an iterator over id-data pairs of m.
+// all returns an iterator over the id-data pairs in
+// an arbitrary order.
 func (m *dataMap[I, D]) all() iter.Seq2[I, *D] {
 	return func(yield func(I, *D) bool) {
 		for i := range m.data {
