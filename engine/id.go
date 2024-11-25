@@ -3,6 +3,8 @@
 package engine
 
 import (
+	"iter"
+
 	"gviegas/neo3/internal/bitvec"
 )
 
@@ -83,3 +85,14 @@ func (m *dataMap[_, D]) entries() []dataEntry[D] { return m.data }
 
 // len is equivalent to len(m.entries()).
 func (m *dataMap[_, _]) len() int { return len(m.data) }
+
+// all returns an iterator over id-data pairs of m.
+func (m *dataMap[I, D]) all() iter.Seq2[I, *D] {
+	return func(yield func(I, *D) bool) {
+		for i := range m.data {
+			if !yield(I(m.data[i].id), &m.data[i].data) {
+				return
+			}
+		}
+	}
+}
