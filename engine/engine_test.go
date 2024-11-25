@@ -42,7 +42,7 @@ func TestID(t *testing.T) {
 	}
 	checkLen := func(want int) {
 		if len := m.len(); len != want {
-			t.Fatalf("dataMap.len()\nhave %d\nwant %d", len, want)
+			t.Fatalf("dataMap.len\nhave %d\nwant %d", len, want)
 		}
 	}
 	checkInsert := func(data string) id {
@@ -56,36 +56,65 @@ func TestID(t *testing.T) {
 		len := m.len()
 		data := m.remove(id)
 		if data != want {
-			t.Fatalf("dataMap.remove()\nhave %s\nwant %s", data, want)
+			t.Fatalf("dataMap.remove\nhave %s\nwant %s", data, want)
 		}
 		checkLen(len - 1)
 		return data
+	}
+	checkAll := func(pairs map[id]string) {
+		it := m.all()
+		for i, d := range it {
+			if v, ok := pairs[i]; !ok {
+				t.Fatalf("dataMap.all: generated unexpected pair %d,%s", i, *d)
+			} else if v != *d {
+				t.Fatalf("dataMap.all: ID %d has wrong data %#v", i, *d)
+			}
+			delete(pairs, i)
+		}
+		if len(pairs) != 0 {
+			t.Fatal("dataMap.all: missing pairs")
+		}
+		for range it {
+			break
+		}
 	}
 
 	var id0, id1, id2, id3 id
 	var data0 string
 
 	checkLen(0)
+	checkAll(nil)
 	id0 = checkInsert("hi")
 	checkGet(id0, "hi")
+	checkAll(map[id]string{id0: "hi"})
 	data0 = checkRemove(id0, "hi")
+	checkAll(nil)
 	id0 = checkInsert(data0)
 	checkGet(id0, data0)
+	checkAll(map[id]string{id0: data0})
 	checkRemove(id0, data0)
+	checkAll(nil)
 
 	checkLen(0)
 	id0 = checkInsert("bye")
 	id1 = checkInsert("bye bye")
 	checkGet(id1, "bye bye")
 	checkGet(id0, "bye")
+	checkAll(map[id]string{id1: "bye bye", id0: "bye"})
 	data0 = checkRemove(id0, "bye")
+	checkAll(map[id]string{id1: "bye bye"})
 	id0 = checkInsert(data0)
 	checkGet(id1, "bye bye")
 	checkGet(id0, "bye")
+	checkAll(map[id]string{id1: "bye bye", id0: data0})
 	id2 = checkInsert(data0)
+	checkAll(map[id]string{id1: "bye bye", id0: data0, id2: data0})
 	checkRemove(id1, "bye bye")
+	checkAll(map[id]string{id0: data0, id2: data0})
 	checkRemove(id0, data0)
+	checkAll(map[id]string{id2: data0})
 	checkRemove(id2, data0)
+	checkAll(nil)
 
 	checkLen(0)
 	id0, id1, id2, id3 = checkInsert("a"), checkInsert("b"), checkInsert("c"), checkInsert("d")
@@ -137,13 +166,13 @@ func TestID(t *testing.T) {
 	// implementation details.
 	checkBits := func(wantLen, wantRem int) {
 		if len := len(m.ids); len != wantLen {
-			t.Fatalf("len(dataMap.ids)\nhave: %d\nwant %d", len, wantLen)
+			t.Fatalf("len(dataMap.ids)\nhave %d\nwant %d", len, wantLen)
 		}
 		if len := m.idMap.Len(); len != wantLen {
-			t.Fatalf("dataMap.idMap.Len()\nhave: %d\nwant %d", len, wantLen)
+			t.Fatalf("dataMap.idMap.Len\nhave %d\nwant %d", len, wantLen)
 		}
 		if rem := m.idMap.Rem(); rem != wantRem {
-			t.Fatalf("dataMap.idMap.Rem()\nhave: %d\nwant %d", rem, wantRem)
+			t.Fatalf("dataMap.idMap.Rem\nhave %d\nwant %d", rem, wantRem)
 		}
 	}
 
