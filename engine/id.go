@@ -26,7 +26,8 @@ type dataMap[I ~int, D any] struct {
 }
 
 // insert inserts data into m.
-// It returns an I value that identifies data in m.
+// It returns a non-negative I value that identifies
+// data in m.
 func (m *dataMap[I, D]) insert(data D) I {
 	if m.idMap.Rem() == 0 {
 		switch n := m.idMap.Len(); {
