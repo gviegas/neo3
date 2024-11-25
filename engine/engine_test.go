@@ -72,7 +72,24 @@ func TestID(t *testing.T) {
 			delete(pairs, i)
 		}
 		if len(pairs) != 0 {
-			t.Fatal("dataMap.all: missing pairs")
+			t.Fatal("dataMap.all: missing pair(s)")
+		}
+		for range it {
+			break
+		}
+	}
+	checkOnly := func(ok func(id, *string) bool, pairs map[id]string) {
+		it := m.only(ok)
+		for i, d := range it {
+			if v, ok := pairs[i]; !ok {
+				t.Fatalf("dataMap.only: generated unexpected pair %d,%s", i, *d)
+			} else if v != *d {
+				t.Fatalf("dataMap.only: ID %d has wrong data %#v", i, *d)
+			}
+			delete(pairs, i)
+		}
+		if len(pairs) != 0 {
+			t.Fatal("dataMap.only: missing pair(s)")
 		}
 		for range it {
 			break
@@ -117,38 +134,55 @@ func TestID(t *testing.T) {
 	checkAll(nil)
 
 	checkLen(0)
+	checkOnly(func(id, *string) bool { return true }, nil)
 	id0, id1, id2, id3 = checkInsert("a"), checkInsert("b"), checkInsert("c"), checkInsert("d")
+	checkOnly(func(id, *string) bool { return false }, nil)
+	checkOnly(func(id, *string) bool { return true }, map[id]string{id0: "a", id1: "b", id2: "c", id3: "d"})
 	checkRemove(id2, "c")
+	checkOnly(func(id, *string) bool { return false }, nil)
+	checkOnly(func(id, *string) bool { return true }, map[id]string{id0: "a", id1: "b", id3: "d"})
 	id2 = checkInsert("e")
 	checkGet(id0, "a")
 	checkGet(id1, "b")
 	checkGet(id2, "e")
 	checkGet(id3, "d")
+	checkOnly(func(id, *string) bool { return false }, nil)
+	checkOnly(func(id, *string) bool { return true }, map[id]string{id0: "a", id1: "b", id3: "d", id2: "e"})
 	checkRemove(id1, "b")
+	checkOnly(func(id, *string) bool { return true }, map[id]string{id0: "a", id3: "d", id2: "e"})
+	checkOnly(func(id, *string) bool { return false }, nil)
 	id1 = checkInsert("f")
 	checkGet(id0, "a")
 	checkGet(id1, "f")
 	checkGet(id2, "e")
 	checkGet(id3, "d")
+	checkOnly(func(i id, _ *string) bool { return i == id1 }, map[id]string{id1: "f"})
+	checkOnly(func(i id, _ *string) bool { return i == id0 }, map[id]string{id0: "a"})
 	checkRemove(id0, "a")
+	checkOnly(func(i id, _ *string) bool { return i == id1 }, map[id]string{id1: "f"})
+	checkOnly(func(i id, _ *string) bool { return i == id0 }, nil)
 	id0 = checkInsert("g")
 	checkGet(id0, "g")
 	checkGet(id1, "f")
 	checkGet(id2, "e")
 	checkGet(id3, "d")
 	checkRemove(id3, "d")
+	checkOnly(func(_ id, d *string) bool { return len(*d) == 1 }, map[id]string{id0: "g", id1: "f", id2: "e"})
 	id3 = checkInsert("h")
 	checkGet(id0, "g")
 	checkGet(id1, "f")
 	checkGet(id2, "e")
 	checkGet(id3, "h")
+	checkOnly(func(_ id, d *string) bool { return *d != "g" }, map[id]string{id3: "h", id1: "f", id2: "e"})
 	checkRemove(id2, "e")
 	checkRemove(id1, "f")
 	id2 = checkInsert("i")
 	checkGet(id0, "g")
 	checkGet(id2, "i")
 	checkGet(id3, "h")
+	checkOnly(func(_ id, d *string) bool { return *d != "i" && *d != "h" }, map[id]string{id0: "g"})
 	checkRemove(id0, "g")
+	checkOnly(func(_ id, d *string) bool { return *d == "i" || *d == "h" }, map[id]string{id3: "h", id2: "i"})
 	id1 = checkInsert("j")
 	checkGet(id1, "j")
 	checkGet(id2, "i")
@@ -158,9 +192,11 @@ func TestID(t *testing.T) {
 	checkGet(id0, "k")
 	checkGet(id1, "j")
 	checkGet(id2, "i")
+	checkOnly(func(i id, d *string) bool { return i == id0 && len(*d) == 1 }, map[id]string{id0: "k"})
 	checkRemove(id2, "i")
 	checkRemove(id1, "j")
 	checkRemove(id0, "k")
+	checkOnly(func(i id, d *string) bool { return i == id0 && len(*d) == 1 }, nil)
 
 	// XXX: This is somewhat frail since it relies on
 	// implementation details.
