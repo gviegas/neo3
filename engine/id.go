@@ -97,3 +97,20 @@ func (m *dataMap[I, D]) all() iter.Seq2[I, *D] {
 		}
 	}
 }
+
+// only returns an iterator over the id-data pairs for
+// which ok returns true, in an arbitrary order.
+func (m *dataMap[I, D]) only(ok func(I, *D) bool) iter.Seq2[I, *D] {
+	return func(yield func(I, *D) bool) {
+		for i := range m.data {
+			id := I(m.data[i].id)
+			data := &m.data[i].data
+			if !ok(id, data) {
+				continue
+			}
+			if !yield(id, data) {
+				return
+			}
+		}
+	}
+}
