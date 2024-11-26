@@ -271,6 +271,12 @@ const (
 	BLEND  = "BLEND"
 )
 
+// material.extensions.KHR_materials_unlit.
+type MaterialUnlit struct {
+	Extensions any `json:"extensions,omitempty"`
+	Extras     any `json:"extras,omitempty"`
+}
+
 // glTF.meshes' element.
 type Mesh struct {
 	Primitives []Primitive `json:"primitives"`
