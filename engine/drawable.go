@@ -34,3 +34,12 @@ type DrawParam struct {
 	Skin   *Skin
 	// TODO...
 }
+
+// setLayout sets d.layout.
+// TODO: This layout is expected to receive
+// new additions.
+func (d *drawable) setLayout(world *linear.M4, normal *linear.M3, id Drawable) {
+	d.layout.SetWorld(world)
+	d.layout.SetNormal(normal)
+	d.layout.SetID(uint32(id))
+}
