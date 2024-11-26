@@ -396,6 +396,19 @@ type TextureInfo struct {
 	Extras     any   `json:"extras,omitempty"`
 }
 
+// textureInfo.extensions.KHR_texture_transform.
+// Note that this extension may be present in
+// TextureInfo, NormalTextureInfo and
+// OcclusionTextureInfo.
+type TextureInfoTransform struct {
+	Offset     [2]float32  `json:"offset,omitempty"`   // Default is [0, 0].
+	Rotation   float32     `json:"rotation,omitempty"` // Default is 0.
+	Scale      *[2]float32 `json:"scale,omitempty"`    // Default is [1, 1].
+	TexCoord   *int64      `json:"scale,omitempty"`    // Non-nil means override.
+	Extensions any         `json:"extensions,omitempty"`
+	Extras     any         `json:"extras,omitempty"`
+}
+
 // glTF.extensions.KHR_lights_punctual.
 type KHRLightsPunctual struct {
 	Lights     []Light `json:"lights"`
