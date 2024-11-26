@@ -383,6 +383,33 @@ type TextureInfo struct {
 	Extras     any   `json:"extras,omitempty"`
 }
 
+// glTF.extensions.KHR_lights_punctual.
+type KHRLightsPunctual struct {
+	Lights     []Light `json:"lights"`
+	Extensions any     `json:"extensions,omitempty`
+	Extras     any     `json:"extras,omitempty`
+}
+
+// KHR_lights_punctual.lights' element.
+type Light struct {
+	Color      *[3]float32 `json:"color,omitempty"`     // Default is [1, 1, 1].
+	Intensity  *float32    `json:"intensity,omitempty"` // Default is 1.
+	Spot       *Spot       `json:"spot,omitempty"`
+	Range      float32     `json:"range"` // 0 for infinite range.
+	Type       string      `json:"type"`
+	Name       string      `json:"name,omitempty"`
+	Extensions any         `json:"extensions,omitempty`
+	Extras     any         `json:"extras,omitempty`
+}
+
+// KHR_lights_punctual.light.spot.
+type Spot struct {
+	InnerConeAngle float32  `json:"innerConeAngle,omitempty"` // Default is 0.
+	OuterConeAngle *float32 `json:"outerConeAngle,omitempty"` // Default is 0.7853981633974483.
+	Extensions     any      `json:"extensions,omitempty`
+	Extras         any      `json:"extras,omitempty`
+}
+
 // Encode encodes gltf into w.
 func Encode(w io.Writer, gltf *GLTF) error {
 	enc := json.NewEncoder(w)
