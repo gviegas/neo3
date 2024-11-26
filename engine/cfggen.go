@@ -112,7 +112,7 @@ var (
 	NDrawable = Const[int]{
 		Value: Value[int]{
 			Min: 32,
-			Max: 1 << 30,
+			Max: 1<<31 - 1,
 			Dfl: 2048,
 		},
 		Ident: "NDrawable",
@@ -123,7 +123,7 @@ var (
 	NMaterial = Const[int]{
 		Value: Value[int]{
 			Min: 0,
-			Max: 1 << 30,
+			Max: 1<<31 - 1,
 			Dfl: 512,
 		},
 		Ident: "NMaterial",
@@ -134,7 +134,7 @@ var (
 	NSkin = Const[int]{
 		Value: Value[int]{
 			Min: 0,
-			Max: 1 << 30,
+			Max: 1<<31 - 1,
 			Dfl: 1024,
 		},
 		Ident: "NSkin",
