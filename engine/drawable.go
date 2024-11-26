@@ -19,7 +19,10 @@ type drawable struct {
 	// TODO...
 }
 
-// Drawable identifies an object to be rendered.
+// Drawable identifies an entity to be rendered.
+// A Drawable is always associated with a Renderer,
+// thus there might be identical Drawable values
+// that belong to different renderers.
 type Drawable int
 
 // DrawParam describes how to render a Drawable.
