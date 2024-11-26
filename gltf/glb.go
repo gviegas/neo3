@@ -94,7 +94,7 @@ func SeekJSON(r io.Reader, whence int) (n int, err error) {
 // whence must be either io.SeekStart, indicating that
 // r refers to an unread GLB blob, or io.SeekCurrent,
 // in which case r is assumed to be positioned at the
-// the beginning of the BIN chunk.
+// beginning of the BIN chunk.
 func SeekBIN(r io.Reader, whence int) (n int, err error) {
 	switch whence {
 	case io.SeekStart:
