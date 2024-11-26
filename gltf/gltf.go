@@ -319,6 +319,13 @@ type Node struct {
 	Extras      any          `json:"extras,omitempty"`
 }
 
+// node.extensions.KHR_lights_punctual.
+type NodeLight struct {
+	Light      int64 `json:"light,omitempty"`
+	Extensions any   `json:"extensions,omitempty"`
+	Extras     any   `json:"extras,omitempty"`
+}
+
 // glTF.samplers' element.
 type Sampler struct {
 	// Valid filter/wrap mode values differ from 0.
