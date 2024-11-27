@@ -426,7 +426,7 @@ type Light struct {
 	Color      *[3]float32 `json:"color,omitempty"`     // Default is [1, 1, 1].
 	Intensity  *float32    `json:"intensity,omitempty"` // Default is 1.
 	Spot       *Spot       `json:"spot,omitempty"`
-	Range      float32     `json:"range"` // 0 for infinite range.
+	Range      *float32    `json:"range,omitempty"`
 	Type       string      `json:"type"`
 	Name       string      `json:"name,omitempty"`
 	Extensions any         `json:"extensions,omitempty`
