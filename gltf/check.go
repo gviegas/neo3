@@ -537,6 +537,31 @@ func (n *Node) Check(gltf *GLTF) error {
 			return newErr("invalid Node.Children list")
 		}
 	}
+	if ext := n.Extensions; ext != nil {
+		if l := ext.Light; l != nil {
+			if err := l.Check(gltf); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Check checks that l is a valid glTF.node.extensions.KHR_lights_punctual
+// element.
+func (l *NodeLight) Check(gltf *GLTF) error {
+	for i := range gltf.Nodes {
+		ext := gltf.Nodes[i].Extensions
+		if int64(i) == l.Light {
+			if ext == nil || ext.Light == nil || ext.Light.Light != l.Light {
+				return newErr("invalid NodeLight")
+			}
+		} else if ext != nil {
+			if ext.Light != nil && ext.Light.Light == l.Light {
+				return newErr("invalid NodeLight")
+			}
+		}
+	}
 	return nil
 }
 
