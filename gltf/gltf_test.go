@@ -60,28 +60,30 @@ func TestMinimalGLTF(t *testing.T) {
 }
 
 func TestGLTF(t *testing.T) {
-	file, err := os.Open("testdata/cube.gltf")
-	if err != nil {
-		t.Fatal(err)
+	for _, s := range [...]string{"cube", "light"} {
+		file, err := os.Open("testdata/" + s + ".gltf")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer file.Close()
+		gltf, err := Decode(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = gltf.Check(); err != nil {
+			t.Fatal(err)
+		}
+		var buf bytes.Buffer
+		if err = Encode(&buf, gltf); err != nil {
+			t.Fatal(err)
+		}
+		s := buf.String()
+		buf.Reset()
+		if err = json.Indent(&buf, []byte(s), "", "    "); err != nil {
+			t.Fatal(err)
+		}
+		t.Log(string(buf.Bytes()))
 	}
-	defer file.Close()
-	gltf, err := Decode(file)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = gltf.Check(); err != nil {
-		t.Fatal(err)
-	}
-	var buf bytes.Buffer
-	if err = Encode(&buf, gltf); err != nil {
-		t.Fatal(err)
-	}
-	s := buf.String()
-	buf.Reset()
-	if err = json.Indent(&buf, []byte(s), "", "    "); err != nil {
-		t.Fatal(err)
-	}
-	t.Log(string(buf.Bytes()))
 }
 
 func TestIsGLB(t *testing.T) {
