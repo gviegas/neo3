@@ -107,6 +107,9 @@ func (f *GLTF) Check() error {
 // Check checks that e is a valid glTF.extentions element.
 func (e *GLTFExtensions) Check(gltf *GLTF) error {
 	if lp := e.LightsPunctual; lp != nil {
+		if !gltf.Uses("KHR_lights_punctual") {
+			return newErr("missing KHR_lights_punctual in GLTF.ExtensionsUsed")
+		}
 		for i := range lp.Lights {
 			if err := lp.Lights[i].Check(gltf); err != nil {
 				return err
