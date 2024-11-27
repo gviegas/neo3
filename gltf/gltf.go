@@ -441,7 +441,7 @@ type NodeExtensions struct {
 
 // node.extensions.KHR_lights_punctual.
 type NodeLight struct {
-	Light      int64 `json:"light,omitempty"`
+	Light      int64 `json:"light"`
 	Extensions any   `json:"extensions,omitempty"`
 	Extras     any   `json:"extras,omitempty"`
 }
