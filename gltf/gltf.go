@@ -6,6 +6,7 @@ package gltf
 import (
 	"encoding/json"
 	"io"
+	"slices"
 )
 
 // Root glTF object.
@@ -466,3 +467,11 @@ func Decode(r io.Reader) (*GLTF, error) {
 	}
 	return &gltf, nil
 }
+
+// Uses returns whether the gltf file uses a given
+// extension.
+func (f *GLTF) Uses(name string) bool { return slices.Contains(f.ExtensionsUsed, name) }
+
+// Requires returns whether the gltf file requires
+// a given extension.
+func (f *GLTF) Requires(name string) bool { return slices.Contains(f.ExtensionsRequired, name) }
