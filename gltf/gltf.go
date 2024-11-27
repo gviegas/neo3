@@ -311,25 +311,18 @@ const (
 // glTF.nodes' element.
 // XXX: Way too many pointers here.
 type Node struct {
-	Camera      *int64       `json:"camera,omitempty"`
-	Children    []int64      `json:"children,omitempty"`
-	Skin        *int64       `json:"skin,omitempty"`
-	Matrix      *[16]float32 `json:"matrix,omitempty"` // Default is identity.
-	Mesh        *int64       `json:"mesh,omitempty"`
-	Rotation    *[4]float32  `json:"rotation,omitempty"`    // Default is [0, 0, 0, 1].
-	Scale       *[3]float32  `json:"scale,omitempty"`       // Default is [1, 1, 1].
-	Translation *[3]float32  `json:"translation,omitempty"` // Default is [0, 0, 0].
-	Weights     []float32    `json:"weights,omitempty"`
-	Name        string       `json:"name,omitempty"`
-	Extensions  any          `json:"extensions,omitempty"`
-	Extras      any          `json:"extras,omitempty"`
-}
-
-// node.extensions.KHR_lights_punctual.
-type NodeLight struct {
-	Light      int64 `json:"light,omitempty"`
-	Extensions any   `json:"extensions,omitempty"`
-	Extras     any   `json:"extras,omitempty"`
+	Camera      *int64          `json:"camera,omitempty"`
+	Children    []int64         `json:"children,omitempty"`
+	Skin        *int64          `json:"skin,omitempty"`
+	Matrix      *[16]float32    `json:"matrix,omitempty"` // Default is identity.
+	Mesh        *int64          `json:"mesh,omitempty"`
+	Rotation    *[4]float32     `json:"rotation,omitempty"`    // Default is [0, 0, 0, 1].
+	Scale       *[3]float32     `json:"scale,omitempty"`       // Default is [1, 1, 1].
+	Translation *[3]float32     `json:"translation,omitempty"` // Default is [0, 0, 0].
+	Weights     []float32       `json:"weights,omitempty"`
+	Name        string          `json:"name,omitempty"`
+	Extensions  *NodeExtensions `json:"extensions,omitempty"`
+	Extras      any             `json:"extras,omitempty"`
 }
 
 // glTF.samplers' element.
@@ -439,6 +432,18 @@ type Spot struct {
 	OuterConeAngle *float32 `json:"outerConeAngle,omitempty"` // Default is 0.7853981633974483.
 	Extensions     any      `json:"extensions,omitempty`
 	Extras         any      `json:"extras,omitempty`
+}
+
+// node.extensions.
+type NodeExtensions struct {
+	Light *NodeLight `json:"KHR_lights_punctual"`
+}
+
+// node.extensions.KHR_lights_punctual.
+type NodeLight struct {
+	Light      int64 `json:"light,omitempty"`
+	Extensions any   `json:"extensions,omitempty"`
+	Extras     any   `json:"extras,omitempty"`
 }
 
 // Encode encodes gltf into w.
