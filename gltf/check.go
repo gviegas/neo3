@@ -13,7 +13,6 @@ func newErr(reason string) error {
 }
 
 // Check checks that f is a valid glTF object.
-// TODO
 func (f *GLTF) Check() error {
 	vers, err := strconv.ParseFloat(f.Asset.Version, 64)
 	if err != nil {
@@ -95,6 +94,23 @@ func (f *GLTF) Check() error {
 	for i := range f.Textures {
 		if err := f.Textures[i].Check(f); err != nil {
 			return err
+		}
+	}
+	if ext := f.Extensions; ext != nil {
+		if err := ext.Check(f); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Check checks that e is a valid glTF.extentions element.
+func (e *GLTFExtensions) Check(gltf *GLTF) error {
+	if lp := e.LightsPunctual; lp != nil {
+		for i := range lp.Lights {
+			if err := lp.Lights[i].Check(gltf); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -284,6 +300,39 @@ func (i *Image) Check(gltf *GLTF) error {
 		if i.BufferView != nil {
 			return newErr("invalid Image.URI/BufferView definitions")
 		}
+	}
+	return nil
+}
+
+// Check checks that l is a valid glTF.extensions.KHR_lights_punctual.lights
+// element.
+func (l *Light) Check(gltf *GLTF) error {
+	if col := l.Color; col != nil {
+		for _, x := range col {
+			if x < 0 || x > 1 {
+				return newErr("invalid Light.Color value")
+			}
+		}
+	}
+	if intens := l.Intensity; intens != nil {
+		if *intens < 0 {
+			return newErr("invalid Light.Intensity value")
+		}
+	}
+	if spot := l.Spot; spot != nil {
+		if err := spot.Check(gltf); err != nil {
+			return err
+		}
+	}
+	if rng := l.Range; rng != nil {
+		if *rng < 0 {
+			return newErr("invalid Light.Range value")
+		}
+	}
+	switch l.Type {
+	case "directional", "point", "spot":
+	default:
+		return newErr("invalid Light.Type value")
 	}
 	return nil
 }
@@ -572,6 +621,22 @@ func (s *Skin) Check(gltf *GLTF) error {
 		if jlen != len(jmap) {
 			return newErr("invalid Skin.Joints list")
 		}
+	}
+	return nil
+}
+
+// Check checks that s is a valid glTF.extensions.KHR_lights_punctual.light.spot
+// element.
+func (s *Spot) Check(gltf *GLTF) error {
+	if s.InnerConeAngle < 0 || s.InnerConeAngle > 1.5707963267948966 {
+		return newErr("invalid Spot.InnerConeAngle value")
+	}
+	outer := float32(0.7853981633974483)
+	if x := s.OuterConeAngle; x != nil {
+		outer = *x
+	}
+	if outer < 0 || outer > 1.5707963267948966 {
+		return newErr("invalid Spot.OuterConeAngle value")
 	}
 	return nil
 }
