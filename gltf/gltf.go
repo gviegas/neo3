@@ -22,20 +22,20 @@ type GLTF struct {
 		Extensions any    `json:"extensions,omitempty"`
 		Extras     any    `json:"extras,omitempty"`
 	} `json:"asset"`
-	Buffers     []Buffer     `json:"buffers,omitempty"`
-	BufferViews []BufferView `json:"bufferViews,omitempty"`
-	Cameras     []Camera     `json:"cameras,omitempty"`
-	Images      []Image      `json:"images,omitempty"`
-	Materials   []Material   `json:"materials,omitempty"`
-	Meshes      []Mesh       `json:"meshes,omitempty"`
-	Nodes       []Node       `json:"nodes,omitempty"`
-	Samplers    []Sampler    `json:"samplers,omitempty"`
-	Scene       *int64       `json:"scene,omitempty"`
-	Scenes      []Scene      `json:"scenes,omitempty"`
-	Skins       []Skin       `json:"skins,omitempty"`
-	Textures    []Texture    `json:"textures,omitempty"`
-	Extensions  any          `json:"extensions,omitempty"`
-	Extras      any          `json:"extras,omitempty"`
+	Buffers     []Buffer        `json:"buffers,omitempty"`
+	BufferViews []BufferView    `json:"bufferViews,omitempty"`
+	Cameras     []Camera        `json:"cameras,omitempty"`
+	Images      []Image         `json:"images,omitempty"`
+	Materials   []Material      `json:"materials,omitempty"`
+	Meshes      []Mesh          `json:"meshes,omitempty"`
+	Nodes       []Node          `json:"nodes,omitempty"`
+	Samplers    []Sampler       `json:"samplers,omitempty"`
+	Scene       *int64          `json:"scene,omitempty"`
+	Scenes      []Scene         `json:"scenes,omitempty"`
+	Skins       []Skin          `json:"skins,omitempty"`
+	Textures    []Texture       `json:"textures,omitempty"`
+	Extensions  *GLTFExtensions `json:"extensions,omitempty"`
+	Extras      any             `json:"extras,omitempty"`
 }
 
 // glTF.accessors' element.
@@ -407,6 +407,11 @@ type TextureInfoTransform struct {
 	TexCoord   *int64      `json:"scale,omitempty"`    // Non-nil means override.
 	Extensions any         `json:"extensions,omitempty"`
 	Extras     any         `json:"extras,omitempty"`
+}
+
+// glTF.extensions.
+type GLTFExtensions struct {
+	LightsPunctual *KHRLightsPunctual `json:"KHR_lights_punctual,omitempty"`
 }
 
 // glTF.extensions.KHR_lights_punctual.
