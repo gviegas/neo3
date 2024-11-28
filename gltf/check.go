@@ -450,6 +450,14 @@ func (m *Material) Check(gltf *GLTF) error {
 			return newErr("invalid Material.AlphaCutoff value")
 		}
 	}
+
+	if ext := m.Extensions; ext != nil {
+		if ext.Unlit != nil {
+			if !gltf.Uses("KHR_materials_unlit") {
+				return newErr("missing KHR_materials_unlit in GLTF.ExtensionsUsed")
+			}
+		}
+	}
 	return nil
 }
 
