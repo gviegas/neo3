@@ -238,20 +238,20 @@ type Material struct {
 
 // material.normalTextureInfo.
 type NormalTextureInfo struct {
-	Index      int64    `json:"index"`
-	TexCoord   int64    `json:"texCoord,omitempty"` // Default is TEXCOORD_0.
-	Scale      *float32 `json:"scale,omitempty"`    // Default is 1.
-	Extensions any      `json:"extensions,omitempty"`
-	Extras     any      `json:"extras,omitempty"`
+	Index      int64                  `json:"index"`
+	TexCoord   int64                  `json:"texCoord,omitempty"` // Default is TEXCOORD_0.
+	Scale      *float32               `json:"scale,omitempty"`    // Default is 1.
+	Extensions *TextureInfoExtensions `json:"extensions,omitempty"`
+	Extras     any                    `json:"extras,omitempty"`
 }
 
 // material.occlusionTextureInfo.
 type OcclusionTextureInfo struct {
-	Index      int64    `json:"index"`
-	TexCoord   int64    `json:"texCoord,omitempty"` // Default is TEXCOORD_0.
-	Strength   *float32 `json:"strength,omitempty"` // Default is 1.
-	Extensions any      `json:"extensions,omitempty"`
-	Extras     any      `json:"extras,omitempty"`
+	Index      int64                  `json:"index"`
+	TexCoord   int64                  `json:"texCoord,omitempty"` // Default is TEXCOORD_0.
+	Strength   *float32               `json:"strength,omitempty"` // Default is 1.
+	Extensions *TextureInfoExtensions `json:"extensions,omitempty"`
+	Extras     any                    `json:"extras,omitempty"`
 }
 
 // material.pbrMetallicRoughness.
@@ -378,10 +378,10 @@ type Texture struct {
 
 // textureInfo.
 type TextureInfo struct {
-	Index      int64 `json:"index"`
-	TexCoord   int64 `json:"texCoord,omitempty"` // Default is TEXCOORD_0.
-	Extensions any   `json:"extensions,omitempty"`
-	Extras     any   `json:"extras,omitempty"`
+	Index      int64                  `json:"index"`
+	TexCoord   int64                  `json:"texCoord,omitempty"` // Default is TEXCOORD_0.
+	Extensions *TextureInfoExtensions `json:"extensions,omitempty"`
+	Extras     any                    `json:"extras,omitempty"`
 }
 
 // glTF.extensions.
@@ -439,10 +439,14 @@ type KHRMaterialsUnlit struct {
 	Extras     any `json:"extras,omitempty"`
 }
 
-// textureInfo.extensions.KHR_texture_transform.
-// Note that this extension may be present in
-// TextureInfo, NormalTextureInfo and
+// textureInfo.extensions.
+// Also used by NormalTextureInfo and by
 // OcclusionTextureInfo.
+type TextureInfoExtensions struct {
+	Transform *KHRTextureTransform `json:"KHR_texture_transform,omitempty"`
+}
+
+// textureInfo.extensions.KHR_texture_transform.
 type KHRTextureTransform struct {
 	Offset     [2]float32  `json:"offset,omitempty"`   // Default is [0, 0].
 	Rotation   float32     `json:"rotation,omitempty"` // Default is 0.
