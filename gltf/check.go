@@ -552,7 +552,7 @@ func (n *Node) Check(gltf *GLTF) error {
 
 // Check checks that l is a valid glTF.node.extensions.KHR_lights_punctual
 // element.
-func (l *NodeLight) Check(gltf *GLTF) error {
+func (l *LightNode) Check(gltf *GLTF) error {
 	for i := range gltf.Nodes {
 		ext := gltf.Nodes[i].Extensions
 		if int64(i) == l.Light {

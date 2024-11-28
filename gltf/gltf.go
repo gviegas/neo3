@@ -272,12 +272,6 @@ const (
 	BLEND  = "BLEND"
 )
 
-// material.extensions.KHR_materials_unlit.
-type MaterialUnlit struct {
-	Extensions any `json:"extensions,omitempty"`
-	Extras     any `json:"extras,omitempty"`
-}
-
 // glTF.meshes' element.
 type Mesh struct {
 	Primitives []Primitive `json:"primitives"`
@@ -390,19 +384,6 @@ type TextureInfo struct {
 	Extras     any   `json:"extras,omitempty"`
 }
 
-// textureInfo.extensions.KHR_texture_transform.
-// Note that this extension may be present in
-// TextureInfo, NormalTextureInfo and
-// OcclusionTextureInfo.
-type TextureInfoTransform struct {
-	Offset     [2]float32  `json:"offset,omitempty"`   // Default is [0, 0].
-	Rotation   float32     `json:"rotation,omitempty"` // Default is 0.
-	Scale      *[2]float32 `json:"scale,omitempty"`    // Default is [1, 1].
-	TexCoord   *int64      `json:"scale,omitempty"`    // Non-nil means override.
-	Extensions any         `json:"extensions,omitempty"`
-	Extras     any         `json:"extras,omitempty"`
-}
-
 // glTF.extensions.
 type GLTFExtensions struct {
 	LightsPunctual *KHRLightsPunctual `json:"KHR_lights_punctual,omitempty"`
@@ -437,14 +418,33 @@ type Spot struct {
 
 // node.extensions.
 type NodeExtensions struct {
-	Light *NodeLight `json:"KHR_lights_punctual,omitempty"`
+	Light *LightNode `json:"KHR_lights_punctual,omitempty"`
 }
 
 // node.extensions.KHR_lights_punctual.
-type NodeLight struct {
+type LightNode struct {
 	Light      int64 `json:"light"`
 	Extensions any   `json:"extensions,omitempty"`
 	Extras     any   `json:"extras,omitempty"`
+}
+
+// material.extensions.KHR_materials_unlit.
+type KHRMaterialsUnlit struct {
+	Extensions any `json:"extensions,omitempty"`
+	Extras     any `json:"extras,omitempty"`
+}
+
+// textureInfo.extensions.KHR_texture_transform.
+// Note that this extension may be present in
+// TextureInfo, NormalTextureInfo and
+// OcclusionTextureInfo.
+type KHRTextureTransform struct {
+	Offset     [2]float32  `json:"offset,omitempty"`   // Default is [0, 0].
+	Rotation   float32     `json:"rotation,omitempty"` // Default is 0.
+	Scale      *[2]float32 `json:"scale,omitempty"`    // Default is [1, 1].
+	TexCoord   *int64      `json:"scale,omitempty"`    // Non-nil means override.
+	Extensions any         `json:"extensions,omitempty"`
+	Extras     any         `json:"extras,omitempty"`
 }
 
 // Encode encodes gltf into w.
