@@ -437,7 +437,7 @@ type Spot struct {
 
 // node.extensions.
 type NodeExtensions struct {
-	Light *NodeLight `json:"KHR_lights_punctual"`
+	Light *NodeLight `json:"KHR_lights_punctual,omitempty"`
 }
 
 // node.extensions.KHR_lights_punctual.
