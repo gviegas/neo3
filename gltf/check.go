@@ -361,6 +361,11 @@ func (m *Material) Check(gltf *GLTF) error {
 			if tex.TexCoord > 1 {
 				return newErr("unsupported Material.PBRMetallicRoughness.BaseColorTexture.TexCoord set")
 			}
+			if ext := tex.Extensions; ext != nil {
+				if err := ext.Check(gltf); err != nil {
+					return err
+				}
+			}
 		}
 		if fac := pbr.MetallicFactor; fac != nil {
 			if *fac < 0 || *fac > 1 {
@@ -383,6 +388,11 @@ func (m *Material) Check(gltf *GLTF) error {
 			if tex.TexCoord > 1 {
 				return newErr("unsupported Material.PBRMetallicRoughness.MetallicRoughnessTexture.TexCoord set")
 			}
+			if ext := tex.Extensions; ext != nil {
+				if err := ext.Check(gltf); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
@@ -396,6 +406,11 @@ func (m *Material) Check(gltf *GLTF) error {
 		// XXX: Only two sets are supported currently.
 		if norm.TexCoord > 1 {
 			return newErr("unsupported Material.NormalTexture.TexCoord set")
+		}
+		if ext := norm.Extensions; ext != nil {
+			if err := ext.Check(gltf); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -415,6 +430,11 @@ func (m *Material) Check(gltf *GLTF) error {
 				return newErr("invalid Material.OcclusionTexture.Strength value")
 			}
 		}
+		if ext := occ.Extensions; ext != nil {
+			if err := ext.Check(gltf); err != nil {
+				return err
+			}
+		}
 	}
 
 	if emis := m.EmissiveTexture; emis != nil {
@@ -427,6 +447,11 @@ func (m *Material) Check(gltf *GLTF) error {
 		// XXX: Only two sets are supported currently.
 		if emis.TexCoord > 1 {
 			return newErr("unsupported Material.EmissiveTexture.TexCoord set")
+		}
+		if ext := emis.Extensions; ext != nil {
+			if err := ext.Check(gltf); err != nil {
+				return err
+			}
 		}
 	}
 	if fac := m.EmissiveFactor; fac != nil {
@@ -457,6 +482,18 @@ func (m *Material) Check(gltf *GLTF) error {
 				return newErr("missing KHR_materials_unlit in GLTF.ExtensionsUsed")
 			}
 		}
+	}
+	return nil
+}
+
+// Check checks that e is a valid glTF.textureInfo.extensions
+// element.
+func (e *TextureInfoExtensions) Check(gltf *GLTF) error {
+	if t := e.Transform; t != nil {
+		if !gltf.Uses("KHR_texture_transform") {
+			return newErr("missing KHR_texture_transform in GLTF.ExtensionsUsed")
+		}
+		// TODO: Check t values.
 	}
 	return nil
 }
