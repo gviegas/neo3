@@ -232,7 +232,7 @@ type Material struct {
 	AlphaCutoff          *float32              `json:"alphaCutoff,omitempty"`    // Default is 0.5.
 	DoubleSided          bool                  `json:"doubleSided,omitempty"`    // Default is false.
 	Name                 string                `json:"name,omitempty"`
-	Extensions           any                   `json:"extensions,omitempty"`
+	Extensions           *MaterialExtensions   `json:"extensions,omitempty"`
 	Extras               any                   `json:"extras,omitempty"`
 }
 
@@ -426,6 +426,11 @@ type LightNode struct {
 	Light      int64 `json:"light"`
 	Extensions any   `json:"extensions,omitempty"`
 	Extras     any   `json:"extras,omitempty"`
+}
+
+// material.extensions.
+type MaterialExtensions struct {
+	Unlit *KHRMaterialsUnlit `json:"KHR_materials_unlit,omitempty"`
 }
 
 // material.extensions.KHR_materials_unlit.
