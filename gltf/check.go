@@ -357,7 +357,7 @@ func (m *Material) Check(gltf *GLTF) error {
 			if tex.TexCoord < 0 {
 				return newErr("invalid Material.Texture.PBRMetallicRoughness.BaseColorTexture.TexCoord set")
 			}
-			// XXX: Only two sets are supported currently.
+			// We only support TEXCOORD_0 and TEXCOORD_1.
 			if tex.TexCoord > 1 {
 				return newErr("unsupported Material.PBRMetallicRoughness.BaseColorTexture.TexCoord set")
 			}
@@ -384,7 +384,7 @@ func (m *Material) Check(gltf *GLTF) error {
 			if tex.TexCoord < 0 {
 				return newErr("invalid Material.Texture.PBRMetallicRoughness.MetallicRoughnessTexture.TexCoord set")
 			}
-			// XXX: Only two sets are supported currently.
+			// We only support TEXCOORD_0 and TEXCOORD_1.
 			if tex.TexCoord > 1 {
 				return newErr("unsupported Material.PBRMetallicRoughness.MetallicRoughnessTexture.TexCoord set")
 			}
@@ -403,7 +403,7 @@ func (m *Material) Check(gltf *GLTF) error {
 		if norm.TexCoord < 0 {
 			return newErr("invalid Material.NormalTexture.TexCoord set")
 		}
-		// XXX: Only two sets are supported currently.
+		// We only support TEXCOORD_0 and TEXCOORD_1.
 		if norm.TexCoord > 1 {
 			return newErr("unsupported Material.NormalTexture.TexCoord set")
 		}
@@ -421,7 +421,7 @@ func (m *Material) Check(gltf *GLTF) error {
 		if occ.TexCoord < 0 {
 			return newErr("invalid Material.OcclusionTexture.TexCoord set")
 		}
-		// XXX: Only two sets are supported currently.
+		// We only support TEXCOORD_0 and TEXCOORD_1.
 		if occ.TexCoord > 1 {
 			return newErr("unsupported Material.OcclusionTexture.TexCoord set")
 		}
@@ -444,7 +444,7 @@ func (m *Material) Check(gltf *GLTF) error {
 		if emis.TexCoord < 0 {
 			return newErr("invalid Material.EmissiveTexture.TexCoord set")
 		}
-		// XXX: Only two sets are supported currently.
+		// We only support TEXCOORD_0 and TEXCOORD_1.
 		if emis.TexCoord > 1 {
 			return newErr("unsupported Material.EmissiveTexture.TexCoord set")
 		}
@@ -494,11 +494,12 @@ func (e *TextureInfoExtensions) Check(gltf *GLTF) error {
 			return newErr("missing KHR_texture_transform in GLTF.ExtensionsUsed")
 		}
 		if tc := t.TexCoord; tc != nil {
-			switch *tc {
+			switch {
+			case *tc < 0:
+				return newErr("invalid KHRTextureTranform.TexCoord set")
 			// We only support TEXCOORD_0 and TEXCOORD_1.
-			case 0, 1:
-			default:
-				return newErr("invalid KHRTextureTranform.TexCoord value")
+			case *tc > 1:
+				return newErr("unsupported KHRTextureTranform.TexCoord set")
 			}
 		}
 	}
