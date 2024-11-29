@@ -493,7 +493,14 @@ func (e *TextureInfoExtensions) Check(gltf *GLTF) error {
 		if !gltf.Uses("KHR_texture_transform") {
 			return newErr("missing KHR_texture_transform in GLTF.ExtensionsUsed")
 		}
-		// TODO: Check t values.
+		if tc := t.TexCoord; tc != nil {
+			switch *tc {
+			// We only support TEXCOORD_0 and TEXCOORD_1.
+			case 0, 1:
+			default:
+				return newErr("invalid KHRTextureTranform.TexCoord value")
+			}
+		}
 	}
 	return nil
 }
