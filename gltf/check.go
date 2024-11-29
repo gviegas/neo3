@@ -5,6 +5,7 @@ package gltf
 import (
 	"errors"
 	"math"
+	"slices"
 	"strconv"
 )
 
@@ -14,6 +15,17 @@ func newErr(reason string) error {
 
 // Check checks that f is a valid glTF object.
 func (f *GLTF) Check() error {
+	if len(f.ExtensionsUsed) < len(f.ExtensionsRequired) {
+		return newErr("invalid ExtensionsUsed/ExtensionsRequired")
+	}
+	if len(f.ExtensionsRequired) > 0 {
+		used := slices.Sorted(slices.Values(f.ExtensionsUsed))
+		req := slices.Sorted(slices.Values(f.ExtensionsRequired))
+		if !slices.Equal(used[:len(req)], req) {
+			return newErr("invalid ExtensionsRequired")
+		}
+	}
+
 	vers, err := strconv.ParseFloat(f.Asset.Version, 64)
 	if err != nil {
 		return newErr("invalid GLTF.Asset.Version string")
