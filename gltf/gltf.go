@@ -431,12 +431,20 @@ type LightNode struct {
 // material.extensions.
 type MaterialExtensions struct {
 	Unlit *KHRMaterialsUnlit `json:"KHR_materials_unlit,omitempty"`
+	IOR   *KHRMaterialsIOR   `json:"KHR_materials_ior,omitempty"`
 }
 
 // material.extensions.KHR_materials_unlit.
 type KHRMaterialsUnlit struct {
 	Extensions any `json:"extensions,omitempty"`
 	Extras     any `json:"extras,omitempty"`
+}
+
+// material.extensions.KHR_materials_ior.
+type KHRMaterialsIOR struct {
+	IOR        *float32 `json:"ior,omitempty"` // Default is 1.5.
+	Extensions any      `json:"extensions,omitempty"`
+	Extras     any      `json:"extras,omitempty"`
 }
 
 // textureInfo.extensions.
