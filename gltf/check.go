@@ -494,6 +494,18 @@ func (m *Material) Check(gltf *GLTF) error {
 				return newErr("missing KHR_materials_unlit in GLTF.ExtensionsUsed")
 			}
 		}
+		if ior := ext.IOR; ior != nil {
+			if !gltf.Uses("KHR_materials_ior") {
+				return newErr("missing KHR_materials_ior in GLTF.ExtensionsUsed")
+			}
+			iorVal := float32(1.5)
+			if ior.IOR != nil {
+				iorVal = *ior.IOR
+			}
+			if iorVal < 0 || iorVal > 0 && iorVal < 1 {
+				return newErr("invalid KHRMaterialsIOR.IOR value")
+			}
+		}
 	}
 	return nil
 }
