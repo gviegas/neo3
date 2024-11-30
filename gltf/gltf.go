@@ -430,8 +430,9 @@ type LightNode struct {
 
 // material.extensions.
 type MaterialExtensions struct {
-	Unlit *KHRMaterialsUnlit `json:"KHR_materials_unlit,omitempty"`
-	IOR   *KHRMaterialsIOR   `json:"KHR_materials_ior,omitempty"`
+	Unlit    *KHRMaterialsUnlit    `json:"KHR_materials_unlit,omitempty"`
+	IOR      *KHRMaterialsIOR      `json:"KHR_materials_ior,omitempty"`
+	Specular *KHRMaterialsSpecular `json:"KHR_materials_specular,omitempty"`
 }
 
 // material.extensions.KHR_materials_unlit.
@@ -445,6 +446,16 @@ type KHRMaterialsIOR struct {
 	IOR        *float32 `json:"ior,omitempty"` // Default is 1.5.
 	Extensions any      `json:"extensions,omitempty"`
 	Extras     any      `json:"extras,omitempty"`
+}
+
+// material.extensions.KHR_materials_specular.
+type KHRMaterialsSpecular struct {
+	SpecularFactor       *float32     `json:"specularFactor,omitempty"` // Default is 1.
+	SpecularTexture      *TextureInfo `json:"specularTexture"`
+	SpecularColorFactor  *[3]float32  `json:"specularColorFactor,omitempty"` // Default is [1, 1, 1].
+	SpecularColorTexture *TextureInfo `json:specularColorTexture,omitempty"`
+	Extensions           any          `json:"extensions,omitempty"`
+	Extras               any          `json:"extras,omitempty"`
 }
 
 // textureInfo.extensions.
