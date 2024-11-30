@@ -494,6 +494,7 @@ func (m *Material) Check(gltf *GLTF) error {
 				return newErr("missing KHR_materials_unlit in GLTF.ExtensionsUsed")
 			}
 		}
+
 		if ior := ext.IOR; ior != nil {
 			if !gltf.Uses("KHR_materials_ior") {
 				return newErr("missing KHR_materials_ior in GLTF.ExtensionsUsed")
@@ -504,6 +505,28 @@ func (m *Material) Check(gltf *GLTF) error {
 			}
 			if iorVal < 0 || iorVal > 0 && iorVal < 1 {
 				return newErr("invalid KHRMaterialsIOR.IOR value")
+			}
+		}
+
+		if spec := ext.Specular; spec != nil {
+			if !gltf.Uses("KHR_materials_specular") {
+				return newErr("missing KHR_materials_specular in GLTF.ExtensionsUsed")
+			}
+			specFac := float32(1)
+			if x := spec.SpecularFactor; x != nil {
+				specFac = *x
+			}
+			if specFac < 0 || specFac > 1 {
+				return newErr("invalid KHRMaterialsSpecular.SpecularFactor value")
+			}
+			colFac := [3]float32{1, 1, 1}
+			if x := spec.SpecularColorFactor; x != nil {
+				colFac = *x
+			}
+			for _, x := range colFac {
+				if x < 0 {
+					return newErr("invalid KHRMaterialsSpecular.SpecularColorFactor value")
+				}
 			}
 		}
 	}
