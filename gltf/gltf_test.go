@@ -60,7 +60,7 @@ func TestMinimalGLTF(t *testing.T) {
 }
 
 func TestGLTF(t *testing.T) {
-	for _, s := range [...]string{"cube", "light", "unlit", "transform"} {
+	for _, s := range [...]string{"cube", "light", "unlit", "transform", "gloss"} {
 		file, err := os.Open("testdata/" + s + ".gltf")
 		if err != nil {
 			t.Fatal(err)
