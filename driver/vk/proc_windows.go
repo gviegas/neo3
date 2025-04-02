@@ -2,7 +2,7 @@
 
 package vk
 
-// #include <windows.h>
+// #include <Windows.h>
 // #include <stdlib.h>
 // #include <proc.h>
 import "C"
