@@ -8,7 +8,7 @@ package wsi
 // #define UNICODE
 // #endif
 //
-// #include <windows.h>
+// #include <Windows.h>
 //
 // LRESULT CALLBACK wndProcWrapper(HWND, UINT, WPARAM, LPARAM);
 import "C"
