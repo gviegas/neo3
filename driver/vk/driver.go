@@ -157,8 +157,10 @@ func (d *Driver) initDevice() error {
 			continue
 		}
 		wgt := 1
-		if devProps[i].deviceType&(C.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU|C.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) != 0 {
-			wgt++
+		if devProps[i].deviceType == C.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU {
+			wgt += 4
+		} else if devProps[i].deviceType == C.VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU {
+			wgt += 3
 		}
 		if exts, err := deviceExts(dev); err == nil {
 			for _, e := range exts {
