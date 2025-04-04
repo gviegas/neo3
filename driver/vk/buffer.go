@@ -42,6 +42,10 @@ func (d *Driver) NewBuffer(size int64, visible bool, usg driver.Usage) (driver.B
 	if usg&driver.UIndexData != 0 {
 		u |= C.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
 	}
+	// TODO: This check should be driver-independent.
+	if u == 0 {
+		panic("cannot create buffer without a valid usage")
+	}
 
 	info := C.VkBufferCreateInfo{
 		sType:       C.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
