@@ -82,12 +82,8 @@ func (d *Driver) NewImage(pf driver.PixelFmt, size driver.Dim3D, layers, levels,
 			usage |= C.VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
 		}
 	}
-	// At least one valid usage must have been set.
+	// TODO: This check should be driver-independent.
 	if usage == 0 {
-		// We panic here because this is certainly a
-		// client error (i.e., this image is useless)
-		// and also because the spec forbids creating
-		// a view in this case.
 		panic("cannot create image without a valid usage")
 	}
 
