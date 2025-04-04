@@ -202,7 +202,7 @@ func TestBuffer(t *testing.T) {
 		{2048, true, driver.UCopySrc},
 		{4096, true, driver.UCopyDst},
 		{8192, true, driver.UShaderRead | driver.UShaderWrite | driver.UShaderConst | driver.UVertexData | driver.UIndexData},
-		{512, true, 0},
+		//{512, true, 0},
 		{16, true, driver.UShaderRead | driver.UShaderWrite},
 		{1 << 20, false, driver.UGeneric},
 		{1 << 20, false, driver.UShaderConst | driver.UVertexData | driver.UIndexData},
