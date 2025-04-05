@@ -735,9 +735,13 @@ func (s *swapchain) Destroy() {
 		return
 	}
 	if s.d != nil {
+		s.d.qmus[s.d.qfam].Lock()
 		C.vkQueueWaitIdle(s.d.ques[s.d.qfam])
+		s.d.qmus[s.d.qfam].Unlock()
 		if s.qfam != s.d.qfam {
+			s.d.qmus[s.qfam].Lock()
 			C.vkQueueWaitIdle(s.d.ques[s.qfam])
+			s.d.qmus[s.qfam].Unlock()
 		}
 		if s.presInfo != nil {
 			C.free(unsafe.Pointer(s.presInfo.pWaitSemaphores))
