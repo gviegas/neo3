@@ -481,7 +481,7 @@ func (cb *cmdBuffer) SetViewport(vp driver.Viewport) {
 	C.vkCmdSetViewport(cb.cb, 0, 1, &vport)
 }
 
-// SetScissor sets the scissor rectange.
+// SetScissor sets the scissor rectangle.
 func (cb *cmdBuffer) SetScissor(sciss driver.Scissor) {
 	rect := C.VkRect2D{
 		offset: C.VkOffset2D{
