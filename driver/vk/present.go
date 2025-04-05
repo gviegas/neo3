@@ -631,7 +631,7 @@ func (s *swapchain) getViewSync(index int) int {
 	defer s.mu.Unlock()
 	sync := s.viewSync[index]
 	if !s.syncUsed[sync] {
-		panic("invalida call to swapchain.getViewSync")
+		panic("invalid call to swapchain.getViewSync")
 	}
 	return sync
 }
