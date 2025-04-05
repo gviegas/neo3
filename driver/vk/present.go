@@ -707,7 +707,9 @@ func (s *swapchain) setPendOp(index int, new bool) {
 
 // Recreate recreates the swapchain.
 func (s *swapchain) Recreate() error {
+	s.d.qmus[s.qfam].Lock()
 	C.vkQueueWaitIdle(s.d.ques[s.qfam])
+	s.d.qmus[s.qfam].Unlock()
 	if err := s.initSwapchain(len(s.views)); err != nil {
 		return err
 	}
