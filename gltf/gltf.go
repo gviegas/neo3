@@ -392,8 +392,8 @@ type GLTFExtensions struct {
 // glTF.extensions.KHR_lights_punctual.
 type KHRLightsPunctual struct {
 	Lights     []Light `json:"lights"`
-	Extensions any     `json:"extensions,omitempty`
-	Extras     any     `json:"extras,omitempty`
+	Extensions any     `json:"extensions,omitempty"`
+	Extras     any     `json:"extras,omitempty"`
 }
 
 // KHR_lights_punctual.lights' element.
@@ -404,16 +404,16 @@ type Light struct {
 	Range      *float32    `json:"range,omitempty"`
 	Type       string      `json:"type"`
 	Name       string      `json:"name,omitempty"`
-	Extensions any         `json:"extensions,omitempty`
-	Extras     any         `json:"extras,omitempty`
+	Extensions any         `json:"extensions,omitempty"`
+	Extras     any         `json:"extras,omitempty"`
 }
 
 // KHR_lights_punctual.light.spot.
 type Spot struct {
 	InnerConeAngle float32  `json:"innerConeAngle,omitempty"` // Default is 0.
 	OuterConeAngle *float32 `json:"outerConeAngle,omitempty"` // Default is 0.7853981633974483.
-	Extensions     any      `json:"extensions,omitempty`
-	Extras         any      `json:"extras,omitempty`
+	Extensions     any      `json:"extensions,omitempty"`
+	Extras         any      `json:"extras,omitempty"`
 }
 
 // node.extensions.
@@ -453,7 +453,7 @@ type KHRMaterialsSpecular struct {
 	SpecularFactor       *float32     `json:"specularFactor,omitempty"` // Default is 1.
 	SpecularTexture      *TextureInfo `json:"specularTexture"`
 	SpecularColorFactor  *[3]float32  `json:"specularColorFactor,omitempty"` // Default is [1, 1, 1].
-	SpecularColorTexture *TextureInfo `json:specularColorTexture,omitempty"`
+	SpecularColorTexture *TextureInfo `json:"specularColorTexture,omitempty"`
 	Extensions           any          `json:"extensions,omitempty"`
 	Extras               any          `json:"extras,omitempty"`
 }
