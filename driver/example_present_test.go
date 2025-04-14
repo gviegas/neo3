@@ -276,7 +276,7 @@ func (t *T) bufferSetup() {
 		log.Fatal(err)
 	}
 	wk := driver.WorkItem{Work: []driver.CmdBuffer{t.cb[0]}}
-	ch := make(chan *driver.WorkItem)
+	ch := make(chan *driver.WorkItem, 1)
 	if err := gpu.Commit(&wk, ch); err != nil {
 		log.Fatal(err)
 	}
@@ -369,7 +369,7 @@ func (t *T) samplingSetup() {
 		log.Fatal(err)
 	}
 	wk := driver.WorkItem{Work: []driver.CmdBuffer{t.cb[0]}}
-	ch := make(chan *driver.WorkItem)
+	ch := make(chan *driver.WorkItem, 1)
 	if err := gpu.Commit(&wk, ch); err != nil {
 		log.Fatal(err)
 	}
