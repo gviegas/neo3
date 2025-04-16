@@ -24,7 +24,7 @@ func TestCmdBuffer(t *testing.T) {
 	defer cb.Destroy()
 	for range 2 {
 		if cb.IsRecording() {
-			t.Error("CmdBuffer.isRecording:\nhave true\nwant false")
+			t.Error("CmdBuffer.IsRecording:\nhave true\nwant false")
 		}
 		err := cb.Begin()
 		if err != nil {
@@ -32,7 +32,7 @@ func TestCmdBuffer(t *testing.T) {
 			return
 		}
 		if !cb.IsRecording() {
-			t.Error("CmdBuffer.isRecording:\nhave false\nwant true")
+			t.Error("CmdBuffer.IsRecording:\nhave false\nwant true")
 		}
 		err = cb.End()
 		if err != nil {
