@@ -30,27 +30,23 @@ func TestDrivers(t *testing.T) {
 	}
 }
 
-func TestDriverName(t *testing.T) {
+func TestDriverOpenClose(t *testing.T) {
 	name := drv.Name()
 	if name == "" {
 		t.Error("Driver.Name: name is empty")
 	}
 	drv.Close()
-	if drv.Name() != name {
-		t.Error("Driver.Name: unexpected name after call to Close")
+	if nm := drv.Name(); nm != name {
+		t.Errorf("Driver.Name: unexpected name after call to Close\nhave %v\nwant %v", nm, name)
 	}
 	var err error
 	gpu, err = drv.Open()
 	if err != nil {
-		t.Fatal("Failed to re-Open drv - cannot continue")
+		t.Fatalf("Failed to re-Open drv: %v", err)
 	}
-	if drv.Name() != name {
-		t.Error("Driver.Name: unexpected name after call to Open")
+	if nm := drv.Name(); nm != name {
+		t.Errorf("Driver.Name: unexpected name after call to Open\nhave %v\nwant %v", nm, name)
 	}
-}
-
-func TestDriverOpen(t *testing.T) {
-	// Note that drv is already open.
 	g, err := drv.Open()
 	if err != nil {
 		t.Errorf("Driver.Open: unexpected non-nil error: %v", err)
