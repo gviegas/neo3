@@ -51,7 +51,7 @@ func TestPixelFmt(t *testing.T) {
 		driver.D32FloatS8Uint,
 	}
 	for _, f := range pfs {
-		if x := convPixelFmt(f); x < 0 || f.IsInternal() {
+		if x := int32(convPixelFmt(f)); x < 0 || f.IsInternal() {
 			t.Fatalf("convPixelFmt(%v):\nhave %v\nwant >= 0", f, x)
 		}
 	}
