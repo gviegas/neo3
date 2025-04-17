@@ -1161,7 +1161,7 @@ func (d *Driver) Commit(wk *driver.WorkItem, ch chan<- *driver.WorkItem) error {
 			subInfo int
 			presQF  = presAcq[0].cb.qfam
 		)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			ci.subInfo = append(ci.subInfo, C.VkSubmitInfo2KHR{
 				sType:                    C.VK_STRUCTURE_TYPE_SUBMIT_INFO_2_KHR,
 				waitSemaphoreInfoCount:   1,
