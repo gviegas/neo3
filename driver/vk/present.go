@@ -702,7 +702,6 @@ func (s *swapchain) setPendOp(index int, new bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.pendOp[index] = new
-	return
 }
 
 // Recreate recreates the swapchain.
