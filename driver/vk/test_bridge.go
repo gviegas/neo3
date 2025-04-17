@@ -20,7 +20,7 @@ func checkCStrings(strs []string, cstrs unsafe.Pointer) error {
 		if len(strs) == 0 {
 			return nil
 		}
-		return errors.New(fmt.Sprintf("checkCStrings(%v, %v): unexpected nil C array", strs, cstrs))
+		return fmt.Errorf("checkCStrings(%v, %v): unexpected nil C array", strs, cstrs)
 	}
 	css := unsafe.Slice((**C.char)(cstrs), len(strs))
 	for i := range strs {
@@ -29,7 +29,7 @@ func checkCStrings(strs []string, cstrs unsafe.Pointer) error {
 			chr := *(*C.char)(unsafe.Add(unsafe.Pointer(css[i]), j))
 			if byte(chr) != b {
 				const errf = "checkCStrings(%v, %v): string mismatch: \"%s\"[%d] = %c (%#v), got %c (%#v)"
-				return errors.New(fmt.Sprintf(errf, strs, cstrs, s, j, b, b, byte(chr), byte(chr)))
+				return fmt.Errorf(errf, strs, cstrs, s, j, b, b, byte(chr), byte(chr))
 			}
 		}
 	}
