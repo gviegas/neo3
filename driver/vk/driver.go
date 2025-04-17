@@ -395,7 +395,17 @@ func (d *Driver) Close() {
 			// from d.dev were destroyed.
 			C.vkDestroyDevice(d.dev, nil)
 		}
-		C.vkDestroyInstance(d.inst, nil)
+		// BUG: It seems that one cannot create more
+		// than one instance per process in Windows,
+		// as attempting to destroy more than one
+		// will either crash the app or fail to exit.
+		switch runtime.GOOS {
+		case "windows":
+			// TODO: Rather than leaking the instance,
+			// create (or destroy) it only once.
+		default:
+			C.vkDestroyInstance(d.inst, nil)
+		}
 	}
 	C.clearProcs()
 	d.close()
