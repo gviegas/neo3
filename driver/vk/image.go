@@ -15,7 +15,7 @@ type image struct {
 	s      *swapchain // Created by Driver.NewSwapchain (m field is nil).
 	img    C.VkImage
 	fmt    C.VkFormat
-	nonfp  bool // Need to be aware of ui/i color formats in some cases.
+	nonfp  bool // Need to be aware of Uint/Int color formats in some cases.
 	subres C.VkImageSubresourceRange
 	usg    C.VkImageUsageFlags
 }
@@ -237,11 +237,11 @@ func (im *image) NewView(typ driver.ViewType, layer, layers, level, levels int) 
 	} else {
 		dev = im.s.d.dev
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		info.subresourceRange = subres[i]
 		err := checkResult(C.vkCreateImageView(dev, &info, nil, &view[i]))
 		if err != nil {
-			for j := 0; j < i; j++ {
+			for j := range i {
 				C.vkDestroyImageView(dev, view[j], nil)
 			}
 			return nil, err
