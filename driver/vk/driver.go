@@ -10,6 +10,7 @@ import "C"
 import (
 	"errors"
 	"runtime"
+	"slices"
 	"sync"
 	"unsafe"
 
@@ -163,11 +164,8 @@ func (d *Driver) initDevice() error {
 			wgt += 3
 		}
 		if exts, err := deviceExts(dev); err == nil {
-			for _, e := range exts {
-				if e == extSwapchain.name() {
-					wgt += 2
-					break
-				}
+			if slices.Contains(exts, extSwapchain.name()) {
+				wgt += 2
 			}
 		}
 		if wgt > weight {
@@ -196,7 +194,7 @@ func (d *Driver) initDevice() error {
 	// TODO: Consider changing the strategy here.
 	quePrio := (*C.float)(C.malloc(C.sizeof_float))
 	defer C.free(unsafe.Pointer(quePrio))
-	*quePrio = 1.0
+	*quePrio = 1
 	queInfos := (*C.VkDeviceQueueCreateInfo)(C.malloc(C.sizeof_VkDeviceQueueCreateInfo * C.size_t(len(d.ques))))
 	defer C.free(unsafe.Pointer(queInfos))
 	qis := unsafe.Slice(queInfos, len(d.ques))
