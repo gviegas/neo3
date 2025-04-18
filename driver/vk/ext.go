@@ -137,7 +137,7 @@ func deviceExts(d C.VkPhysicalDevice) (exts []string, err error) {
 // Indices in missing are sorted in increasing order.
 func checkExts(exts []string, set []string) (missing []int) {
 extLoop:
-	for i := 0; i < len(exts); i++ {
+	for i := range exts {
 		for _, e := range set {
 			if exts[i] == e {
 				continue extLoop
