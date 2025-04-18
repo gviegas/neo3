@@ -185,7 +185,7 @@ func TestDescTable(t *testing.T) {
 		if n, m := len(dh), dt.Len(); n != m {
 			t.Errorf("DescTable.Len:\nhave %d\nwant %d", m, n)
 		}
-		for i := range len(dh) {
+		for i := range dh {
 			if h, g := dh[i], dt.Heap(i); h != g {
 				t.Errorf("DescTable.Heap(%d):\nhave %v\nwant %v", i, g, h)
 			}
