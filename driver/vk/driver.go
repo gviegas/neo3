@@ -348,7 +348,7 @@ func (d *Driver) Open() (gpu driver.GPU, err error) {
 	}
 	d.qmus = make([]sync.Mutex, len(d.ques))
 	d.cinfo = make(chan *commitInfo, runtime.NumCPU())
-	for i := 0; i < cap(d.cinfo); i++ {
+	for range cap(d.cinfo) {
 		var ci *commitInfo
 		if ci, err = d.newCommitInfo(); err != nil {
 			goto fail
@@ -357,7 +357,7 @@ func (d *Driver) Open() (gpu driver.GPU, err error) {
 	}
 	// This channel's capacity is arbitrary.
 	d.csync = make(chan *commitSync, cap(d.cinfo)*2)
-	for i := 0; i < cap(d.csync); i++ {
+	for range cap(d.csync) {
 		var cs *commitSync
 		if cs, err = d.newCommitSync(); err != nil {
 			goto fail
