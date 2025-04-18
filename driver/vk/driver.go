@@ -425,7 +425,7 @@ type memory struct {
 // selectMemory selects a suitable memory type from the device.
 // It returns the index of the selected memory, or -1 if none suffices.
 func (d *Driver) selectMemory(typeBits uint, prop C.VkMemoryPropertyFlags) int {
-	for i := 0; i < int(d.mprop.memoryTypeCount); i++ {
+	for i := range int(d.mprop.memoryTypeCount) {
 		if 1<<i&typeBits != 0 {
 			flags := d.mprop.memoryTypes[i].propertyFlags
 			if flags&prop == prop {
