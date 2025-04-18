@@ -244,7 +244,7 @@ func setGraphRaster(gs *driver.GraphState, info *C.VkGraphicsPipelineCreateInfo)
 		depthBiasConstantFactor: C.float(gs.Raster.BiasValue),
 		depthBiasClamp:          C.float(gs.Raster.BiasClamp),
 		depthBiasSlopeFactor:    C.float(gs.Raster.BiasSlope),
-		lineWidth:               1.0,
+		lineWidth:               1,
 	}
 	info.pRasterizationState = prz
 	return func() {
