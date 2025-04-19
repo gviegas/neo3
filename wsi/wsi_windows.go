@@ -89,6 +89,15 @@ type windowWin32 struct {
 
 // newWindowWin32 creates a new window.
 func newWindowWin32(width, height int, title string) (Window, error) {
+	wrect := C.RECT{
+		left:   0,
+		top:    0,
+		right:  C.LONG(width),
+		bottom: C.LONG(height),
+	}
+	if C.AdjustWindowRect(&wrect, C.WS_OVERLAPPEDWINDOW, C.FALSE) == C.FALSE {
+		return nil, errors.New("wsi: failed to adjust Win32 window rect")
+	}
 	var (
 		estyle = C.DWORD(0)
 		wname  = stringToLPCWSTR(title)
