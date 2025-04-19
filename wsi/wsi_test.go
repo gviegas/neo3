@@ -49,7 +49,7 @@ func TestWSI(t *testing.T) {
 		}
 		win.Unmap()
 		win.Map()
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			Dispatch()
 			time.Sleep(time.Millisecond * 42)
 		}
