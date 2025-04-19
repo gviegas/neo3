@@ -31,7 +31,8 @@ func initWin32() error {
 		return errors.New("wsi: failed to obtain Win32 instance handle")
 	}
 	className = stringToLPCWSTR("neo3/wsi")
-	wc := C.WNDCLASS{
+	wc := C.WNDCLASSEX{
+		cbSize:        C.sizeof_WNDCLASSEX,
 		style:         C.CS_HREDRAW | C.CS_VREDRAW,
 		lpfnWndProc:   C.WNDPROC(C.wndProcWrapper),
 		cbClsExtra:    0,
@@ -42,8 +43,9 @@ func initWin32() error {
 		hbrBackground: C.HBRUSH(C.GetStockObject(C.WHITE_BRUSH)),
 		lpszMenuName:  nil,
 		lpszClassName: className,
+		hIconSm:       nil, // TODO
 	}
-	if C.RegisterClass(&wc) == 0 {
+	if C.RegisterClassEx(&wc) == 0 {
 		C.free(unsafe.Pointer(className))
 		className = nil
 		hinst = nil
