@@ -4,13 +4,24 @@ package wsi
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 )
 
-func TestWSI(t *testing.T) {
+func TestMain(m *testing.M) {
+	status := testWSI()
+	if status == 0 {
+		// testing: warning: no tests to run
+		//status = m.Run()
+	}
+	os.Exit(status)
+}
+
+// NOTE: Must run on the main thread.
+func testWSI() int {
 	plat := PlatformInUse()
-	t.Logf("Platform being tested is %s", plat)
+	fmt.Printf("Platform being tested is %s\n", plat)
 	SetWindowCloseHandler(E{})
 	SetWindowResizeHandler(E{})
 	SetKeyboardEnterHandler(E{})
@@ -25,10 +36,12 @@ func TestWSI(t *testing.T) {
 	case None:
 		win, err := NewWindow(480, 360, "Will fail")
 		if win != nil || err != errMissing {
-			t.Fatalf("NewWindow: win, err\nhave %v, %v\nwant nil, %v", win, err, errMissing)
+			fmt.Printf("NewWindow: win, err\nhave %v, %v\nwant nil, %v", win, err, errMissing)
+			return 1
 		}
 		if n := len(Windows()); n != 0 {
-			t.Fatalf("len(Windows())\nhave %v\nwant 0", n)
+			fmt.Printf("len(Windows())\nhave %v\nwant 0", n)
+			return 1
 		}
 		// Dummy Dispatch does nothing.
 		Dispatch()
@@ -37,39 +50,44 @@ func TestWSI(t *testing.T) {
 	default:
 		win, err := NewWindow(480, 360, "My window")
 		if err != nil {
-			t.Logf("NewWindow (error): %v", err)
-			return
+			fmt.Printf("NewWindow (error): %v", err)
+			return 1
 		}
 		if win == nil {
-			t.Fatalf("NewWindow: win, err\nhave %v, nil\n want non-nil, nil", win)
-			return
+			fmt.Printf("NewWindow: win, err\nhave %v, nil\n want non-nil, nil", win)
+			return 1
 		}
 		if n := len(Windows()); n != 1 {
-			t.Fatalf("len(Windows())\nhave %v\nwant 1", n)
+			fmt.Printf("len(Windows())\nhave %v\nwant 1", n)
+			return 1
 		}
 		win.Unmap()
 		win.Map()
 		for range 100 {
 			Dispatch()
-			time.Sleep(time.Millisecond * 42)
+			time.Sleep(time.Millisecond * time.Duration(24))
 		}
 		win.Resize(600, 300)
 		win.SetTitle(time.Now().Format(time.RFC1123))
 		if s := AppName(); s != "" {
-			t.Fatalf("AppName\nhave %s\nwant \"\"", s)
+			fmt.Printf("AppName\nhave %s\nwant \"\"", s)
+			return 1
 		}
 		SetAppName("My app")
 		if s := AppName(); s != "My app" {
-			t.Fatalf("AppName\nhave %s\nwant My app", s)
+			fmt.Printf("AppName\nhave %s\nwant My app", s)
+			return 1
 		}
 		time.Sleep(time.Second * 2)
 		win.Unmap()
 		time.Sleep(time.Second + time.Second/2)
 		win.Close()
 		if n := len(Windows()); n != 0 {
-			t.Fatalf("len(Windows())\nhave %v\nwant 0", n)
+			fmt.Printf("len(Windows())\nhave %v\nwant 0", n)
+			return 1
 		}
 	}
+	return 0
 }
 
 type E struct{}
