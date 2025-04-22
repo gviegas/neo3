@@ -439,7 +439,7 @@ func (t *T) descriptorSetup() {
 	if err := dheap.New(NFrame); err != nil {
 		log.Fatal(err)
 	}
-	for i := 0; i < NFrame; i++ {
+	for i := range NFrame {
 		dheap.SetBuffer(i, 0, 0, []driver.Buffer{t.constBuf}, []int64{int64(256 * i)}, []int64{64})
 		dheap.SetImage(i, 1, 0, []driver.ImageView{t.splView}, nil)
 		dheap.SetSampler(i, 2, 0, []driver.Sampler{t.splr})
@@ -503,7 +503,7 @@ func (t *T) pipelineSetup() {
 // renderLoop renders the cube in a loop.
 func (t *T) renderLoop() {
 	var err error
-	for i := 0; i < cap(t.ch); i++ {
+	for i := range cap(t.ch) {
 		wk := &driver.WorkItem{Work: []driver.CmdBuffer{t.cb[i]}, Custom: i}
 		t.ch <- wk
 	}
