@@ -24,8 +24,6 @@ const (
 	DepthFmt = driver.D16Unorm
 )
 
-var brokenSC bool
-
 type T struct {
 	cb       [NFrame]driver.CmdBuffer
 	ch       chan *driver.WorkItem
@@ -58,6 +56,7 @@ type T struct {
 	turnX    float32
 	turnY    float32
 	auto     bool
+	broken   bool
 	quit     bool
 }
 
@@ -522,9 +521,9 @@ func (t *T) renderLoop() {
 		frame := wk.Custom.(int)
 
 		wsi.Dispatch()
-		if brokenSC {
+		if t.broken {
 			t.recreateSwapchain()
-			brokenSC = false
+			t.broken = false
 		}
 
 		dt := t1.Sub(t0)
@@ -911,7 +910,7 @@ func (t *T) WindowClose(win wsi.Window) {
 	}
 }
 
-func (*T) WindowResize(wsi.Window, int, int) { brokenSC = true }
+func (t *T) WindowResize(wsi.Window, int, int) { t.broken = true }
 
 func (t *T) KeyboardKey(key wsi.Key, pressed bool) {
 	switch key {
