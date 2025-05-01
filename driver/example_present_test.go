@@ -804,8 +804,8 @@ func (t *T) updateTransform(dt time.Duration) {
 	}
 	proj.Frustum(-w, w, -h, h, 1, 100)
 
+	var center linear.V3
 	eye := linear.V3{2, -3, -4}
-	center := linear.V3{0}
 	up := linear.V3{0, -1, 0}
 	view.LookAt(&center, &eye, &up)
 
