@@ -24,11 +24,6 @@ const (
 	DepthFmt = driver.D16Unorm
 )
 
-var dim = driver.Dim3D{
-	Width:  300,
-	Height: 400,
-}
-
 var brokenSC bool
 
 type T struct {
@@ -36,6 +31,7 @@ type T struct {
 	ch       chan *driver.WorkItem
 	win      wsi.Window
 	sc       driver.Swapchain
+	dim      driver.Dim3D
 	rt       []driver.ColorTarget
 	rtImg    driver.Image
 	rtView   driver.ImageView
@@ -87,16 +83,16 @@ func Example_present() {
 	t.vport = driver.Viewport{
 		X:      0,
 		Y:      0,
-		Width:  float32(dim.Width),
-		Height: float32(dim.Height),
+		Width:  float32(t.dim.Width),
+		Height: float32(t.dim.Height),
 		Znear:  0,
 		Zfar:   1,
 	}
 	t.sciss = driver.Scissor{
 		X:      0,
 		Y:      0,
-		Width:  dim.Width,
-		Height: dim.Height,
+		Width:  t.dim.Width,
+		Height: t.dim.Height,
 	}
 	wsi.SetWindowHandler(&t)
 	wsi.SetKeyboardKeyHandler(&t)
@@ -112,7 +108,7 @@ func (t *T) swapchainSetup() {
 	if wsi.PlatformInUse() == wsi.None {
 		log.Fatal("WSI not available")
 	}
-	win, err := wsi.NewWindow(dim.Width, dim.Height, "Present Example")
+	win, err := wsi.NewWindow(300, 400, "Present Example")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,12 +125,14 @@ func (t *T) swapchainSetup() {
 
 	t.win = win
 	t.sc = sc
+	t.dim.Width = win.Width()
+	t.dim.Height = win.Height()
 }
 
 // passSetup creates the color and depth images/views and sets
 // the render targets to be used during render passes.
 func (t *T) passSetup() {
-	rtImg, err := gpu.NewImage(t.sc.Format(), dim, 1, 1, Samples, driver.URenderTarget)
+	rtImg, err := gpu.NewImage(t.sc.Format(), t.dim, 1, 1, Samples, driver.URenderTarget)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -154,7 +152,7 @@ func (t *T) passSetup() {
 		}
 	}
 
-	dsImg, err := gpu.NewImage(DepthFmt, dim, 1, 1, Samples, driver.URenderTarget)
+	dsImg, err := gpu.NewImage(DepthFmt, t.dim, 1, 1, Samples, driver.URenderTarget)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -626,7 +624,7 @@ func (t *T) renderLoop() {
 		})
 
 		// Now we can draw the cube.
-		cb.BeginPass(dim.Width, dim.Height, 1, []driver.ColorTarget{t.rt[next]}, &t.ds)
+		cb.BeginPass(t.dim.Width, t.dim.Height, 1, []driver.ColorTarget{t.rt[next]}, &t.ds)
 		cb.SetPipeline(t.pipeln)
 		cb.SetViewport(t.vport)
 		cb.SetScissor(t.sciss)
@@ -866,13 +864,13 @@ func (t *T) recreateSwapchain() {
 
 	width := t.win.Width()
 	height := t.win.Height()
-	if dim.Width != width || dim.Height != height {
-		dim.Width = width
-		dim.Height = height
+	if t.dim.Width != width || t.dim.Height != height {
+		t.dim.Width = width
+		t.dim.Height = height
 
 		t.rtView.Destroy()
 		t.rtImg.Destroy()
-		t.rtImg, err = gpu.NewImage(pf, dim, 1, 1, Samples, driver.URenderTarget)
+		t.rtImg, err = gpu.NewImage(pf, t.dim, 1, 1, Samples, driver.URenderTarget)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -886,7 +884,7 @@ func (t *T) recreateSwapchain() {
 
 		t.dsView.Destroy()
 		t.dsImg.Destroy()
-		t.dsImg, err = gpu.NewImage(DepthFmt, dim, 1, 1, Samples, driver.URenderTarget)
+		t.dsImg, err = gpu.NewImage(DepthFmt, t.dim, 1, 1, Samples, driver.URenderTarget)
 		if err != nil {
 			log.Fatal(err)
 		}
