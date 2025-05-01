@@ -107,7 +107,7 @@ func (t *T) swapchainSetup() {
 	if wsi.PlatformInUse() == wsi.None {
 		log.Fatal("WSI not available")
 	}
-	win, err := wsi.NewWindow(300, 400, "Present Example")
+	win, err := wsi.NewWindow(400, 300, "Present Example")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func (t *T) passSetup() {
 			Resolve: scViews[i],
 			Load:    driver.LClear,
 			Store:   driver.SDontCare,
-			Clear:   driver.ClearFloat32(0.2, 0.2, 0.2, 1),
+			Clear:   driver.ClearFloat32(0.075, 0.075, 0.075, 1),
 		}
 	}
 
@@ -804,7 +804,7 @@ func (t *T) updateTransform(dt time.Duration) {
 	}
 	proj.Frustum(-w, w, -h, h, 1, 100)
 
-	eye := linear.V3{2, -2, -3}
+	eye := linear.V3{2, -3, -4}
 	center := linear.V3{0}
 	up := linear.V3{0, -1, 0}
 	view.LookAt(&center, &eye, &up)
