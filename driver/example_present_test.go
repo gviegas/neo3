@@ -25,8 +25,8 @@ const (
 )
 
 var dim = driver.Dim3D{
-	Width:  768,
-	Height: 432,
+	Width:  300,
+	Height: 400,
 }
 
 var brokenSC bool
@@ -110,7 +110,7 @@ func Example_present() {
 // swapchainSetup creates the window and swapchain.
 func (t *T) swapchainSetup() {
 	if wsi.PlatformInUse() == wsi.None {
-		log.Fatal("WSI unavailable")
+		log.Fatal("WSI not available")
 	}
 	win, err := wsi.NewWindow(dim.Width, dim.Height, "Present Example")
 	if err != nil {
@@ -150,7 +150,7 @@ func (t *T) passSetup() {
 			Resolve: scViews[i],
 			Load:    driver.LClear,
 			Store:   driver.SDontCare,
-			Clear:   driver.ClearFloat32(0.025, 0.025, 0.025, 1),
+			Clear:   driver.ClearFloat32(0.2, 0.2, 0.2, 1),
 		}
 	}
 
@@ -445,8 +445,8 @@ func (t *T) descriptorSetup() {
 		dheap.SetSampler(i, 2, 0, []driver.Sampler{t.splr})
 	}
 
-	t.dtab = dtab
 	t.dheap = dheap
+	t.dtab = dtab
 }
 
 // pipelineSetup creates the graphics pipeline.
@@ -517,7 +517,7 @@ func (t *T) renderLoop() {
 			case driver.ErrFatal:
 				log.Fatal(err)
 			default:
-				log.Printf("GPU.Commit <send>: %v\n", err)
+				log.Printf("GPU.Commit (WorkItem.Err): %v\n", err)
 			}
 		}
 		cb := wk.Work[0]
@@ -807,7 +807,7 @@ func (t *T) updateTransform(dt time.Duration) {
 	}
 	proj.Frustum(-w, w, -h, h, 1, 100)
 
-	eye := linear.V3{2, -3, -4}
+	eye := linear.V3{2, -2, -3}
 	center := linear.V3{0}
 	up := linear.V3{0, -1, 0}
 	view.LookAt(&center, &eye, &up)
