@@ -341,31 +341,3 @@ func Example_draw() {
 
 	// Output:
 }
-
-var (
-	// Vertex positions (CCW).
-	triPos = [9]float32{
-		0, -1, 0,
-		-1, 1, 0,
-		1, 1, 0,
-	}
-	// Vertex colors.
-	triCol = [12]float32{
-		0, 1, 1, 1,
-		1, 0, 1, 1,
-		1, 1, 0, 1,
-	}
-	// Transform.
-	triM = [16]float32{
-		0.7, 0, 0, 0,
-		0, 0.7, 0, 0,
-		0, 0, 0.7, 0,
-		0, 0, 0, 1,
-	}
-)
-
-const (
-	triPosSize = int64(unsafe.Sizeof(triPos))
-	triColSize = int64(unsafe.Sizeof(triCol))
-	triMSize   = int64(unsafe.Sizeof(triM))
-)
