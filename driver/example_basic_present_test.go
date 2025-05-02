@@ -331,6 +331,7 @@ func (u *U) renderLoop() {
 	t0 := time.Now()
 	t1 := t0
 	u.auto = true
+mainLoop:
 	for !u.quit {
 		wk := <-u.ch
 		if err := wk.Err; err != nil {
@@ -346,8 +347,9 @@ func (u *U) renderLoop() {
 
 		wsi.Dispatch()
 		if u.broken {
-			// TODO
-			log.Fatal("u.broken")
+			log.Println("broken swapchain")
+			u.ch <- wk
+			break
 		}
 
 		dt := t1.Sub(t0)
@@ -368,9 +370,9 @@ func (u *U) renderLoop() {
 				time.Sleep((time.Millisecond * 10))
 				continue
 			case driver.ErrSwapchain:
-				// TODO
-				log.Fatal("U.recreateSwapchain")
-				continue
+				log.Println(err)
+				u.ch <- wk
+				break mainLoop
 			default:
 				log.Fatal(err)
 			}
