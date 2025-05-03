@@ -187,7 +187,7 @@ func Example_dispatch() {
 	}()
 
 	// Commit the command buffers.
-	for i := 0; i < cap(ch); i++ {
+	for range cap(ch) {
 		if err := <-ch; err != nil {
 			log.Fatal(err)
 		}
