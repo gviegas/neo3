@@ -1,5 +1,9 @@
 // Copyright 2023 Gustavo C. Viegas. All rights reserved.
 
+// TODO: Consider adding a TestMain function here to
+// ensure that examples using package wsi run on the
+// main thread (doesn't seem necessary currently).
+
 package driver_test
 
 import (
