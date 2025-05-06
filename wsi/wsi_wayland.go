@@ -172,7 +172,7 @@ type windowWayland struct {
 	height   int
 	title    string
 	ctitle   []C.char
-	mapped   bool
+	hidden   bool
 }
 
 // newWindowWayland creates a new window.
@@ -225,14 +225,14 @@ func newWindowWayland(width, height int, title string) (Window, error) {
 		height:   height,
 		title:    title,
 		ctitle:   unsafe.Slice(C.CString(title), len(title)+1),
-		mapped:   false,
+		hidden:   true,
 	}, nil
 }
 
-// Map makes the window visible.
-func (w *windowWayland) Map() error {
-	if !w.mapped {
-		w.mapped = true
+// Show makes the window visible.
+func (w *windowWayland) Show() error {
+	if w.hidden {
+		w.hidden = false
 		C.toplevelSetTitleXDG(w.toplevel, unsafe.SliceData(w.ctitle))
 		appID := C.CString(appName)
 		C.toplevelSetAppIDXDG(w.toplevel, appID)
@@ -243,10 +243,10 @@ func (w *windowWayland) Map() error {
 	return nil
 }
 
-// Unmap hides the window.
-func (w *windowWayland) Unmap() error {
-	if w.mapped {
-		w.mapped = false
+// Hide hides the window.
+func (w *windowWayland) Hide() error {
+	if !w.hidden {
+		w.hidden = true
 		C.surfaceAttachWayland(w.wsf, nil, 0, 0)
 		C.surfaceCommitWayland(w.wsf)
 		C.displayFlushWayland(dpyWayland)

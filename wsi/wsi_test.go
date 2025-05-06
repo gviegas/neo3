@@ -61,8 +61,8 @@ func testWSI() int {
 			fmt.Printf("len(Windows())\nhave %v\nwant 1", n)
 			return 1
 		}
-		win.Unmap()
-		win.Map()
+		win.Hide()
+		win.Show()
 		for range 100 {
 			Dispatch()
 			time.Sleep(time.Millisecond * time.Duration(24))
@@ -79,7 +79,7 @@ func testWSI() int {
 			return 1
 		}
 		time.Sleep(time.Second * 2)
-		win.Unmap()
+		win.Hide()
 		time.Sleep(time.Second + time.Second/2)
 		win.Close()
 		if n := len(Windows()); n != 0 {

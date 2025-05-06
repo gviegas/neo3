@@ -18,11 +18,11 @@ import (
 // The purpose of a window is to provide a surface into
 // which a GPU can draw.
 type Window interface {
-	// Map makes the window visible.
-	Map() error
+	// Show makes the window visible.
+	Show() error
 
-	// Unmap hides the window.
-	Unmap() error
+	// Hide hides the window.
+	Hide() error
 
 	// Resize resizes the window.
 	Resize(width, height int) error

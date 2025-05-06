@@ -173,7 +173,7 @@ type windowXCB struct {
 	width  int
 	height int
 	title  string
-	mapped bool
+	hidden bool
 }
 
 // newWindowXCB creates a new window.
@@ -218,13 +218,13 @@ func newWindowXCB(width, height int, title string) (Window, error) {
 		width:  width,
 		height: height,
 		title:  title,
-		mapped: false,
+		hidden: true,
 	}, nil
 }
 
-// Map makes the window visible.
-func (w *windowXCB) Map() error {
-	if w.mapped {
+// Show makes the window visible.
+func (w *windowXCB) Show() error {
+	if !w.hidden {
 		return nil
 	}
 	cookie := C.mapWindowCheckedXCB(connXCB, w.id)
@@ -233,13 +233,13 @@ func (w *windowXCB) Map() error {
 		C.free(unsafe.Pointer(genErr))
 		return errors.New("wsi: mapWindowCheckedXCB failed")
 	}
-	w.mapped = true
+	w.hidden = false
 	return nil
 }
 
-// Unmap hides the window.
-func (w *windowXCB) Unmap() error {
-	if !w.mapped {
+// Hide hides the window.
+func (w *windowXCB) Hide() error {
+	if w.hidden {
 		return nil
 	}
 	cookie := C.unmapWindowCheckedXCB(connXCB, w.id)
@@ -248,7 +248,7 @@ func (w *windowXCB) Unmap() error {
 		C.free(unsafe.Pointer(genErr))
 		return errors.New("wsi: unmapWindowCheckedXCB failed")
 	}
-	w.mapped = false
+	w.hidden = true
 	return nil
 }
 

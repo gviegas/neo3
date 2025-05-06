@@ -84,7 +84,7 @@ type windowWin32 struct {
 	width  int
 	height int
 	title  string
-	mapped bool
+	hidden bool
 }
 
 // newWindowWin32 creates a new window.
@@ -117,27 +117,27 @@ func newWindowWin32(width, height int, title string) (Window, error) {
 		width:  width,
 		height: height,
 		title:  title,
-		mapped: false,
+		hidden: true,
 	}, nil
 }
 
-// Map makes the window visible.
-func (w *windowWin32) Map() error {
-	if w.mapped {
+// Show makes the window visible.
+func (w *windowWin32) Show() error {
+	if !w.hidden {
 		return nil
 	}
 	C.ShowWindow(w.hwnd, C.SW_NORMAL)
-	w.mapped = true
+	w.hidden = false
 	return nil
 }
 
-// Unmap hides the window.
-func (w *windowWin32) Unmap() error {
-	if !w.mapped {
+// Hide hides the window.
+func (w *windowWin32) Hide() error {
+	if w.hidden {
 		return nil
 	}
 	C.ShowWindow(w.hwnd, C.SW_HIDE)
-	w.mapped = false
+	w.hidden = true
 	return nil
 }
 
