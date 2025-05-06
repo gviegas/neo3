@@ -96,7 +96,7 @@ func (u *U) swapchainSetup() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	win.Map()
+	win.Show()
 
 	gpu, ok := gpu.(driver.Presenter)
 	if !ok {
