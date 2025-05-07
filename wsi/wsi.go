@@ -43,16 +43,6 @@ type Window interface {
 	Title() string
 }
 
-// WindowCreation is a mask defining the properties of
-// newly created windows.
-type WindowCreation int
-
-// WindowCreation flags.
-const (
-	// Create the window hidden rather than visible.
-	WHidden WindowCreation = 1 << iota
-)
-
 // NewWindow creates a new window.
 func NewWindow(width, height int, title string) (Window, error) {
 	if windowCount >= MaxWindows {
