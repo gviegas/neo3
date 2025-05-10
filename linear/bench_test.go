@@ -11,12 +11,12 @@ func BenchmarkDot(b *testing.B) {
 	w := V3{6, -3, 7}
 	var d, e float32
 	b.Run("V3.Dot", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			d = v.Dot(&w)
 		}
 	})
 	b.Run("V3.bDotValue", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			e = v.bDotValue(w)
 		}
 	})
@@ -36,17 +36,17 @@ func BenchmarkCross(b *testing.B) {
 	r := V3{0, 1, 0}
 	var v, u, w V3
 	b.Run("V3.Cross", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			v.Cross(&l, &r)
 		}
 	})
 	b.Run("bCrossValue", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			u = bCrossValue(l, r)
 		}
 	})
 	b.Run("V3.bCrossNoAlias", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			w.bCrossNoAlias(&l, &r)
 		}
 	})
@@ -77,12 +77,12 @@ func BenchmarkMulV3(b *testing.B) {
 	w := V3{3, 2, -1}
 	var v, u V3
 	b.Run("V3.Mul", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			v.Mul(&m, &w)
 		}
 	})
 	b.Run("V3.bMulNoAlias", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			u.bMulNoAlias(&m, &w)
 		}
 	})
@@ -109,12 +109,12 @@ func BenchmarkMulV4(b *testing.B) {
 	w := V4{-4, 3, 2, -1}
 	var v, u V4
 	b.Run("V4.Mul", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			v.Mul(&m, &w)
 		}
 	})
 	b.Run("V4.bMulNoAlias", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			u.bMulNoAlias(&m, &w)
 		}
 	})
@@ -144,12 +144,12 @@ func BenchmarkMulM3(b *testing.B) {
 	}
 	var m, n M3
 	b.Run("M3.Mul", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			m.Mul(&l, &r)
 		}
 	})
 	b.Run("M3.bMulNoAlias", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			n.bMulNoAlias(&l, &r)
 		}
 	})
@@ -183,12 +183,12 @@ func BenchmarkMulM4(b *testing.B) {
 	}
 	var m, n M4
 	b.Run("M4.Mul", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			m.Mul(&l, &r)
 		}
 	})
 	b.Run("M4.bMulNoAlias", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			n.bMulNoAlias(&l, &r)
 		}
 	})
@@ -218,12 +218,12 @@ func BenchmarkMulQ(b *testing.B) {
 	}
 	var q, p Q
 	b.Run("Q.Mul", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			q.Mul(&l, &r)
 		}
 	})
 	b.Run("Q.bMulQValue", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			p = bMulQValue(l, r)
 		}
 	})
@@ -251,12 +251,12 @@ func BenchmarkInvert3(b *testing.B) {
 	}
 	var m, n M3
 	b.Run("M3.Invert", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			m.Invert(&h)
 		}
 	})
 	b.Run("M3.bInvertNoAlias", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			n.bInvertNoAlias(&h)
 		}
 	})
@@ -289,12 +289,12 @@ func BenchmarkInvert4(b *testing.B) {
 	}
 	var m, n M4
 	b.Run("M4.Invert", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			m.Invert(&h)
 		}
 	})
 	b.Run("M4.bInvertNoAlias", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			n.bInvertNoAlias(&h)
 		}
 	})
@@ -341,27 +341,27 @@ func BenchmarkRotate(b *testing.B) {
 	angle := float32(3.14159 / 6)
 	axis := V3{0, 10, 0} // will be normalized
 	b.Run("M3.Rotate", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			m.Rotate(angle, &axis)
 		}
 	})
 	b.Run("M4.Rotate", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			n.Rotate(angle, &axis)
 		}
 	})
 	b.Run("Q.Rotate", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			q.Rotate(angle, &axis)
 		}
 	})
 	b.Run("M3.RotateQ", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			o.RotateQ(&q)
 		}
 	})
 	b.Run("M4.RotateQ", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			p.RotateQ(&q)
 		}
 	})
