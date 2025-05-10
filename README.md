@@ -87,13 +87,13 @@ func crand() int32
 var rand = caux.Rand
 
 func BenchmarkAsm(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		crand()
 	}
 }
 
 func BenchmarkCgo(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		caux.CgoRand()
 	}
 }
