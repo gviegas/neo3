@@ -63,7 +63,7 @@ func (g *Graph) checkRemoval(ns []Interface, wantLen int, wantNames []string, t 
 	if x := len(ns); x < max {
 		max = x
 	}
-	for i := 0; i < max; i++ {
+	for i := range max {
 		if s := ns[i].(*inode).name; s != wantNames[i] {
 			t.Fatalf("Graph.Remove()[%d].name:\nhave %s\nwant %s", i, s, wantNames[i])
 		}
@@ -299,7 +299,7 @@ func TestBreadth(t *testing.T) {
 	var g Graph
 	const cnt = 10987
 	nodes := make([]Node, cnt)
-	for i := 0; i < cnt; i++ {
+	for i := range cnt {
 		nodes[i] = g.Insert(&inode{strconv.Itoa(i + 1), linear.M4{}, true}, Nil)
 	}
 	gran := 5
@@ -422,7 +422,7 @@ func TestWorld(t *testing.T) {
 	// Node's world.
 	var n Node
 	ns := make([]Node, 0, 4)
-	for i := 0; i < cap(ns); i++ {
+	for i := range cap(ns) {
 		ns = append(ns, g.Insert(new(inode), n))
 		n = ns[i]
 	}
@@ -601,7 +601,7 @@ func TestUpdate(t *testing.T) {
 		tmp.Mul(&tmp, g.Get(ns[i]).Local())
 		checkWorld(ns[i], tmp)
 	}
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		checkWorld(ns[i], id)
 		g.Get(ns[i]).(*inode).changed = true
 	}
@@ -764,7 +764,7 @@ func TestCaching(t *testing.T) {
 	g = Graph{}
 	n := Nil
 	const cnt = 500
-	for i := 0; i < cnt; i++ {
+	for range cnt {
 		n = g.Insert(new(inode), n)
 	}
 	// In this case, Graph.Remove can do
@@ -787,7 +787,7 @@ func TestCaching(t *testing.T) {
 		t.Fatal("Graph.cache.changed: unexpected non-nil slice")
 	}
 	n = g.Insert(new(inode), Nil)
-	for i := 0; i < cnt/2; i++ {
+	for range cnt / 2 {
 		g.Insert(new(inode), n)
 		n = g.Insert(new(inode), n)
 	}
@@ -833,7 +833,7 @@ func TestCaching(t *testing.T) {
 		t.Fatalf("cap(Graph.cache.changed):\nhave %d\nwant %d", x, ccap)
 	}
 	n = g.Insert(new(inode), Nil)
-	for i := 0; i < cnt; i++ {
+	for range cnt {
 		g.Insert(new(inode), n)
 		n = g.Insert(new(inode), n)
 	}
@@ -868,7 +868,7 @@ func TestLen(t *testing.T) {
 	check(2)
 	g.checkRemoval(g.Remove(n1), 2, nil, t)
 	check(0)
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		g.Insert(new(inode), g.Insert(new(inode), Nil))
 	}
 	check(20)
