@@ -136,7 +136,7 @@ func TestShrink(t *testing.T) {
 	v8.Shrink(9)
 	checkLenRem(16, 13)
 	v8.Grow(8)
-	for i := 0; i < v8.Len(); i++ {
+	for i := range v8.Len() {
 		v8.Set(i)
 	}
 	v8.Shrink(0)
@@ -181,7 +181,7 @@ func (v *V[T]) checkRem(t *testing.T) {
 	want := v.Len()
 	n := v.nbit()
 	for _, x := range v.s {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			if x&(1<<i) != 0 {
 				want--
 			}
@@ -222,7 +222,7 @@ func TestSetUnset(t *testing.T) {
 	v8.Set(14)
 	v8.Set(16)
 	v8.checkState([]check[uint8]{{0, 0x50}, {1, 0x44}, {2, 0x21}}, t)
-	for i := 0; i < v8.Len(); i++ {
+	for i := range v8.Len() {
 		if i&3 == 0 {
 			v8.Set(i)
 		} else {
@@ -261,11 +261,11 @@ func TestIsSet(t *testing.T) {
 	checkSet(1, 2)
 	v64.Set(v64.Len() - 1)
 	checkSet(v64.Len()-1, v64.Len())
-	for i := 0; i < v64.Len(); i++ {
+	for i := range v64.Len() {
 		v64.Unset(i)
 	}
 	checkUnset(0, v64.Len())
-	for i := 0; i < v64.Len(); i++ {
+	for i := range v64.Len() {
 		v64.Set(i)
 	}
 	checkSet(0, v64.Len())
@@ -304,7 +304,7 @@ func TestSearch(t *testing.T) {
 	v32.checkSearch(1, t)
 	v32.Unset(0)
 	v32.checkSearch(0, t)
-	for i := 0; i < v32.nbit()*2; i++ {
+	for i := range v32.nbit() * 2 {
 		v32.Set(i)
 	}
 	v32.checkSearch(64, t)
@@ -405,14 +405,14 @@ func TestClear(t *testing.T) {
 	checkClear()
 	vu.Grow(1)
 	checkClear()
-	for i := 0; i < vu.Len(); i++ {
+	for i := range vu.Len() {
 		vu.Set(i)
 	}
 	vu.Clear()
 	checkClear()
 	vu.Grow(9)
 	checkClear()
-	for i := 0; i < vu.Len(); i++ {
+	for i := range vu.Len() {
 		vu.Set(i)
 	}
 	vu.Clear()
@@ -564,7 +564,7 @@ func printVec[T Uint](v *V[T]) {
 	n := v.nbit()
 	s := "\n"
 	for i, x := range v.s {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			if x&(1<<i) != 0 {
 				s += "1 "
 			} else {
