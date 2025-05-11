@@ -864,7 +864,7 @@ func TestLen(t *testing.T) {
 	check(2)
 	g.checkRemoval(g.Remove(n11), 1, nil, t)
 	check(1)
-	n11 = g.Insert(new(inode), n1)
+	g.Insert(new(inode), n1)
 	check(2)
 	g.checkRemoval(g.Remove(n1), 2, nil, t)
 	check(0)
@@ -1292,7 +1292,7 @@ func TestIter(t *testing.T) {
 
 	g.Remove(bye)
 
-	bye = g.Insert(&inode{name: doneName}, n112)
+	g.Insert(&inode{name: doneName}, n112)
 	checkAll(doneLen)
 	checkDescend(Nil, 0)
 	checkDescend(n1, doneLen)
