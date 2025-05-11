@@ -169,7 +169,7 @@ func (v *V[T]) SearchRange(n int) (index int, ok bool) {
 		if v.s[i] == 0 {
 			cnt += nb
 			i++
-			for j := 0; j < (n-cnt)/nb; j++ {
+			for j := range (n - cnt) / nb {
 				if v.s[i+j] != 0 {
 					cnt += j * nb
 					i += j
@@ -193,7 +193,7 @@ func (v *V[T]) SearchRange(n int) (index int, ok bool) {
 		//    unset bits that may yet form a full range
 		//    with subsequent Uint(s).
 		//
-		for j := 0; j < nb; j++ {
+		for j := range nb {
 			if v.s[i]&(1<<j) == 0 {
 				cnt++
 				if cnt >= n {
