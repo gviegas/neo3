@@ -48,7 +48,7 @@ func TestFrameLayout(t *testing.T) {
 	}
 
 	// [48:49]
-	tm := time.Now().Add(time.Millisecond).Sub(time.Now())
+	tm := time.Until(time.Now().Add(time.Millisecond))
 
 	// [49:50]
 	rnd := rand.Float32()
