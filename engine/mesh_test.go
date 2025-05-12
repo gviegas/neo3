@@ -218,7 +218,7 @@ func TestSemanticConv(t *testing.T) {
 	f32 := make([]float32, n)
 	u16 := make([]uint16, n)
 	u8 := make([]uint8, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		switch i % 5 {
 		case 0:
 			f32[i] = 1
@@ -249,7 +249,7 @@ func TestSemanticConv(t *testing.T) {
 	r8 := bytes.NewReader(u8)
 
 	// No conversion needed.
-	for i := 0; i < MaxSemantic; i++ {
+	for i := range MaxSemantic {
 		sem := Semantic(1 << i)
 		r, err := sem.conv(sem.format(), r8, n/sem.format().Size())
 		if r != r8 || err != nil {
@@ -327,7 +327,7 @@ func TestSemanticConv(t *testing.T) {
 			if r == r16 || err != nil {
 				t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 			}
-			for i := 0; i < cnt; i++ {
+			for i := range cnt {
 				if n, _ := r.Read(dst[:8]); n != 8 {
 					t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 8", sem, n)
 				}
@@ -345,7 +345,7 @@ func TestSemanticConv(t *testing.T) {
 			if r == r8 || err != nil {
 				t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 			}
-			for i := 0; i < cnt; i++ {
+			for i := range cnt {
 				if n, _ := r.Read(dst[:8]); n != 8 {
 					t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 8", sem, n)
 				}
@@ -368,7 +368,7 @@ func TestSemanticConv(t *testing.T) {
 		if r == r32 || err != nil {
 			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 		}
-		for i := 0; i < cnt; i++ {
+		for i := range cnt {
 			if n, _ := r.Read(dst[:]); n != 16 {
 				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
 			}
@@ -390,7 +390,7 @@ func TestSemanticConv(t *testing.T) {
 		if r == r16 || err != nil {
 			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 		}
-		for i := 0; i < cnt; i++ {
+		for i := range cnt {
 			if n, _ := r.Read(dst[:16]); n != 16 {
 				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
 			}
@@ -412,7 +412,7 @@ func TestSemanticConv(t *testing.T) {
 		if r == r16 || err != nil {
 			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 		}
-		for i := 0; i < cnt; i++ {
+		for i := range cnt {
 			if n, _ := r.Read(dst[:16]); n != 16 {
 				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
 			}
@@ -434,7 +434,7 @@ func TestSemanticConv(t *testing.T) {
 		if r == r8 || err != nil {
 			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 		}
-		for i := 0; i < cnt; i++ {
+		for i := range cnt {
 			if n, _ := r.Read(dst[:16]); n != 16 {
 				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
 			}
@@ -456,7 +456,7 @@ func TestSemanticConv(t *testing.T) {
 		if r == r8 || err != nil {
 			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 		}
-		for i := 0; i < cnt; i++ {
+		for i := range cnt {
 			if n, _ := r.Read(dst[:16]); n != 16 {
 				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
 			}
@@ -482,7 +482,7 @@ func TestSemanticConv(t *testing.T) {
 		if r == r8 || err != nil {
 			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 		}
-		for i := 0; i < cnt; i++ {
+		for i := range cnt {
 			if n, _ := r.Read(dst[:8]); n != 8 {
 				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 8", sem, n)
 			}
@@ -508,7 +508,7 @@ func TestSemanticConv(t *testing.T) {
 		if r == r16 || err != nil {
 			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 		}
-		for i := 0; i < cnt; i++ {
+		for i := range cnt {
 			if n, _ := r.Read(dst[:16]); n != 16 {
 				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
 			}
@@ -530,7 +530,7 @@ func TestSemanticConv(t *testing.T) {
 		if r == r8 || err != nil {
 			t.Fatalf("%s.conv: unexpected result: (%v, %v)", sem, r, err)
 		}
-		for i := 0; i < cnt; i++ {
+		for i := range cnt {
 			if n, _ := r.Read(dst[:16]); n != 16 {
 				t.Fatalf("%s.conv: unexpected read count:\nhave %d\nwant 16", sem, n)
 			}
@@ -771,7 +771,7 @@ func checkDummyData3(m *Mesh, ntris int, t *testing.T) {
 	}
 	b := meshes.buf.Bytes()
 
-	for i := 0; i < MaxSemantic; i++ {
+	for i := range MaxSemantic {
 		s := Semantic(1 << i)
 		n := p.vertex[s.I()].format.Size() * ntris * 3
 		spn := p.vertex[s.I()].span
@@ -994,11 +994,11 @@ func TestMeshInputs(t *testing.T) {
 		if len(want) != len(have) {
 			panic("bad check args")
 		}
-		for i := 0; i < len(want); i++ {
+		for i := range want {
 			if x, y := len(want[i]), len(have[i]); x != y {
 				t.Fatalf("Mesh.inputs: length mismatch\nhave %d\nwant %d", y, x)
 			}
-			for j := 0; j < len(want[i]); j++ {
+			for j := range want[i] {
 				if x, y := want[i][j], have[i][j]; x != y {
 					t.Fatalf("Mesh.inputs: value mismatch\nhave %v\nwant %v", y, x)
 				}
@@ -1100,7 +1100,7 @@ func TestMeshFree(t *testing.T) {
 		p := m.primIdx
 		for {
 			prim := &meshes.prims[p]
-			for i := 0; i < MaxSemantic; i++ {
+			for i := range MaxSemantic {
 				if prim.mask&(1<<i) != 0 {
 					s.spans = append(s.spans, prim.vertex[i].span)
 					s.nspan += prim.vertex[i].end - prim.vertex[i].start
@@ -1282,7 +1282,7 @@ func TestMeshFree(t *testing.T) {
 
 	const n = 100
 	ms := make([]*Mesh, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		switch i % 10 {
 		case 1:
 			d = dummyData1(99)
