@@ -287,6 +287,7 @@ func validateAlphaMode(mode int, cutoff float32) error {
 	case AlphaMask:
 		// Don't restrict cutoff values,
 		// even if they don't make sense.
+		_ = cutoff
 	default:
 		return newMatErr("undefined alpha mode constant")
 	}
