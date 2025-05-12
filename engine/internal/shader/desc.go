@@ -303,7 +303,7 @@ func (t *DrawTable) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, in
 		//	2 | [MaxShadow]ShadowLayout
 		dh = t.dt.Heap(GlobalHeap)
 		n = dh.Len()
-		for i := 0; i < n; i++ {
+		for i := range n {
 			sz[0] = int64(frameSpan * blockSize)
 			dh.SetBuffer(i, frameNr, 0, buf, off, sz)
 			off[0] += sz[0]
@@ -321,7 +321,7 @@ func (t *DrawTable) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, in
 		n = dh.Len()
 		t.coff[DrawableHeap] = off[0]
 		sz[0] = int64(drawableSpan * blockSize)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			dh.SetBuffer(i, drawableNr, 0, buf, off, sz)
 			off[0] += sz[0]
 		}
@@ -343,7 +343,7 @@ func (t *DrawTable) SetConstBuf(buf driver.Buffer, off int64) (driver.Buffer, in
 		n = dh.Len()
 		t.coff[JointHeap] = off[0]
 		sz[0] = int64(jointSpan * blockSize)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			dh.SetBuffer(i, jointNr, 0, buf, off, sz)
 			off[0] += sz[0]
 		}
