@@ -1352,8 +1352,8 @@ func BenchmarkMeshGrow(b *testing.B) {
 	b.Run("x", func(b *testing.B) {
 		// Will grow the buffer on every iteration.
 		// Expected to be very slow.
-		b.RunParallel(func(bp *testing.PB) {
-			for bp.Next() {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
 				if meshes.buf != nil && meshes.buf.Cap() > nbufBench {
 					continue
 				}
@@ -1383,8 +1383,8 @@ func BenchmarkMeshPre(b *testing.B) {
 	b.Run("x", func(b *testing.B) {
 		// Will use pre-allocated memory.
 		// Expected to be fast.
-		b.RunParallel(func(bp *testing.PB) {
-			for bp.Next() {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
 				if meshes.buf != nil && meshes.buf.Cap() > nbufBench {
 					continue
 				}
@@ -1411,8 +1411,8 @@ func BenchmarkMeshFree(b *testing.B) {
 		// Will create and then free the mesh,
 		// so its spans can be reused.
 		// Expected to be reasonably fast.
-		b.RunParallel(func(bp *testing.PB) {
-			for bp.Next() {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
 				if meshes.buf != nil && meshes.buf.Cap() > nbufBench {
 					continue
 				}
