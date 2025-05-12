@@ -289,38 +289,38 @@ func TestConstWrite(t *testing.T) {
 		for _, y := range rng {
 			tb.SetConstBuf(buf, y)
 
-			for i := 0; i < x.ng; i++ {
+			for i := range x.ng {
 				*tb.Frame(i) = f[i]
 				*tb.Light(i) = l[i]
 				*tb.Shadow(i) = s[i]
 			}
-			for i := 0; i < x.nd; i++ {
+			for i := range x.nd {
 				*tb.Drawable(i) = d[i]
 			}
-			for i := 0; i < x.nm; i++ {
+			for i := range x.nm {
 				*tb.Material(i) = m[i]
 			}
-			for i := 0; i < x.nj; i++ {
+			for i := range x.nj {
 				*tb.Joint(i) = j[i]
 			}
 
-			for i := 0; i < x.ng; i++ {
+			for i := range x.ng {
 				checkSlicesT(tb.Frame(i)[:], f[i][:], t, fmt.Sprintf("DrawTable.Frame(%d)", i))
-				for j := 0; j < int(MaxLight); j++ {
+				for j := range int(MaxLight) {
 					checkSlicesT(tb.Light(i)[j][:], l[i][j][:], t, fmt.Sprintf("DrawTable.Light(%d)[%d]", i, j))
 				}
-				for j := 0; j < int(MaxShadow); j++ {
+				for j := range int(MaxShadow) {
 					checkSlicesT(tb.Shadow(i)[j][:], s[i][j][:], t, fmt.Sprintf("DrawTable.Shadow(%d)[%d]", i, j))
 				}
 			}
-			for i := 0; i < x.nd; i++ {
+			for i := range x.nd {
 				checkSlicesT(tb.Drawable(i)[:], d[i][:], t, fmt.Sprintf("DrawTable.Drawable(%d)", i))
 			}
-			for i := 0; i < x.nm; i++ {
+			for i := range x.nm {
 				checkSlicesT(tb.Material(i)[:], m[i][:], t, fmt.Sprintf("DrawTable.Material(%d)", i))
 			}
-			for i := 0; i < x.nj; i++ {
-				for j_ := 0; j_ < int(MaxJoint); j_++ {
+			for i := range x.nj {
+				for j_ := range int(MaxJoint) {
 					checkSlicesT(tb.Joint(i)[j_][:], j[i][j_][:], t, fmt.Sprintf("DrawTable.Joint(%d)[%d]", i, j_))
 				}
 			}
