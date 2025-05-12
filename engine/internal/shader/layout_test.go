@@ -18,7 +18,7 @@ func checkSlicesT(x, y []float32, t *testing.T, prefix string) {
 	if n := len(y); n < min {
 		min = n
 	}
-	for i := 0; i < min; i++ {
+	for i := range min {
 		if x[i] != y[i] {
 			t.Fatalf("%s: slices differ at index %d\n%v != %v", prefix, i, x[i], y[i])
 		}
