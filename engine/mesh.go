@@ -44,13 +44,13 @@ func (m *Mesh) inputs(prim int) []driver.VertexIn {
 	meshes.RLock()
 	defer meshes.RUnlock()
 	idx := m.primIdx
-	for i := 0; i < prim; i++ {
+	for range prim {
 		idx, _ = meshes.next(idx)
 	}
 	p := &meshes.prims[idx]
 	var vin [MaxSemantic]driver.VertexIn
 	var n int
-	for i := 0; i < MaxSemantic; i++ {
+	for i := range MaxSemantic {
 		if p.mask&(1<<i) == 0 {
 			continue
 		}
@@ -82,7 +82,7 @@ func (m *Mesh) draw(prim int, cb driver.CmdBuffer, instCnt int) {
 	meshes.RLock()
 	defer meshes.RUnlock()
 	idx := prim
-	for i := 0; i < prim; i++ {
+	for range prim {
 		idx, _ = meshes.next(idx)
 	}
 	p := &meshes.prims[idx]
@@ -92,7 +92,7 @@ func (m *Mesh) draw(prim int, cb driver.CmdBuffer, instCnt int) {
 	var buf [MaxSemantic]driver.Buffer
 	var off [MaxSemantic]int64
 	var n int
-	for i := 0; i < MaxSemantic; i++ {
+	for i := range MaxSemantic {
 		if p.mask&(1<<i) == 0 {
 			continue
 		}
@@ -650,7 +650,7 @@ func (b *meshBuffer) store(src io.Reader, byteLen int) (span, error) {
 			return span{}, err
 		}
 	}
-	for i := 0; i < ns; i++ {
+	for i := range ns {
 		b.spanMap.Set(is + i)
 	}
 	return span{is, is + ns}, nil
