@@ -110,10 +110,10 @@ func makeViews(param *TexParam, usage driver.Usage, texType int) (v []driver.Ima
 	}
 
 	// Create non-arrayed views.
-	for i := 0; i < param.Layers/nl; i++ {
+	for i := range param.Layers / nl {
 		v[i], err = img.NewView(typ, i*nl, nl, 0, param.Levels)
 		if err != nil {
-			for j := 0; j < i; j++ {
+			for j := range i {
 				v[j].Destroy()
 			}
 			if param.Layers > nl {
@@ -443,7 +443,7 @@ func (t *Texture) transition(view int, cb driver.CmdBuffer, layout driver.Layout
 	if differ {
 		// TODO: Consider caching this on t.
 		xs := make([]driver.Transition, nl)
-		for i := 0; i < nl; i++ {
+		for i := range nl {
 			xs = append(xs, driver.Transition{
 				Barrier:      barrier,
 				LayoutBefore: before[i],
@@ -654,7 +654,7 @@ var (
 func init() {
 	n := runtime.GOMAXPROCS(-1)
 	texStg = make(chan *texStgBuffer, n)
-	for i := 0; i < n; i++ {
+	for range n {
 		s, err := newTexStg(texStgBlock * texStgNBit)
 		if err != nil {
 			s = &texStgBuffer{}
@@ -689,7 +689,7 @@ func commitTexStg() (err error) {
 	}()
 
 	n := cap(texStg)
-	for i := 0; i < n; i++ {
+	for range n {
 		texStgCache = append(texStgCache, <-texStg)
 	}
 
@@ -859,7 +859,7 @@ func (s *texStgBuffer) copyToView(t *Texture, view int, off int64) (err error) {
 		Layers:  nl,
 		// TODO: Handle depth/stencil formats.
 	})
-	for i := 0; i < nl; i++ {
+	for i := range nl {
 		// The current layout is not relevant
 		// because the whole layer is going to
 		// be overwritten by this command.
@@ -935,7 +935,7 @@ func (s *texStgBuffer) copyFromView(t *Texture, view int, off int64) (err error)
 		// (or t; see Texture.Transition).
 		xs := make([]driver.Transition, nl)
 		img := t.views[view].Image()
-		for i := 0; i < nl; i++ {
+		for i := range nl {
 			xs = append(xs, driver.Transition{
 				Barrier: driver.Barrier{
 					SyncBefore:   driver.SNone,
@@ -985,7 +985,7 @@ func (s *texStgBuffer) copyFromView(t *Texture, view int, off int64) (err error)
 		Layers:  nl,
 		// TODO: Handle depth/stencil formats.
 	})
-	for i := 0; i < nl; i++ {
+	for i := range nl {
 		s.pend = append(s.pend, pendingCopy{t, il + i, driver.LCopySrc})
 	}
 	if t.param.Levels > 1 {
@@ -1030,7 +1030,7 @@ func (s *texStgBuffer) unstage(off int64, dst []byte) (n int) {
 	n = copy(dst, s.buf.Bytes()[off:])
 	ib := int(off) / texStgBlock
 	nb := (n + texStgBlock - 1) / texStgBlock
-	for i := 0; i < nb; i++ {
+	for i := range nb {
 		s.bv.Unset(ib + i)
 	}
 	return
@@ -1069,7 +1069,7 @@ func (s *texStgBuffer) reserve(n int) (off int64, err error) {
 			return
 		}
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		s.bv.Set(idx + i)
 	}
 	off = int64(idx) * texStgBlock
