@@ -675,6 +675,7 @@ func (b *meshBuffer) newEntry(data *PrimitiveData, srcs []io.ReadSeeker) (p int,
 			isz = 4
 		default:
 			err = newMeshErr("undefined driver.IndexFmt constant")
+			return
 		}
 		src := srcs[data.Index.Src]
 		off := data.Index.Offset
