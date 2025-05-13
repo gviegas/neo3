@@ -539,13 +539,7 @@ func (t *Texture) Free() {
 // It assumes that size is valid (i.e., neither negative
 // nor the zero value).
 func ComputeLevels(size driver.Dim3D) int {
-	x := size.Width
-	if x < size.Height {
-		x = size.Height
-	}
-	if x < size.Depth {
-		x = size.Depth
-	}
+	x := max(max(size.Width, size.Height), size.Depth)
 	var l int
 	for ; x > 0; l++ {
 		x /= 2
