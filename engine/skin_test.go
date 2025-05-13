@@ -25,7 +25,7 @@ func (sk *Skin) checkHier(t *testing.T) {
 
 func dummyJoints(len, depth int) []Joint {
 	js := make([]Joint, 0, len)
-	for i := 0; i < len; i++ {
+	for i := range len {
 		js = append(js, Joint{
 			Name:   "Joint " + strconv.Itoa(i),
 			JM:     linear.M4{{1}, {1: 1}, {2: 1}, {3: 1}},
@@ -222,7 +222,7 @@ func TestSkinScrambled(t *testing.T) {
 // This is expected to be the worst case.
 func dummyJointsRev(depth int) []Joint {
 	js := make([]Joint, 0, depth+1)
-	for i := 0; i < depth; i++ {
+	for i := range depth {
 		js = append(js, Joint{
 			Name:   "Joint " + strconv.Itoa(i),
 			JM:     linear.M4{{1}, {1: 1}, {2: 1}, {3: 1}},
