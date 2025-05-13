@@ -1056,7 +1056,8 @@ func (s *texStgBuffer) reserve(n int) (off int64, err error) {
 			n += int(s.buf.Cap())
 			s.buf.Destroy()
 		}
-		if s.buf, err = ctxt.GPU().NewBuffer(int64(n), true, 0); err != nil {
+		s.buf, err = ctxt.GPU().NewBuffer(int64(n), true, driver.UCopySrc|driver.UCopyDst)
+		if err != nil {
 			// TODO: Try again ignoring previous
 			// s.buf.Cap() value (if not 0).
 			s.bv = bitvec.V[uint32]{}
