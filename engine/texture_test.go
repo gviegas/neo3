@@ -1024,7 +1024,7 @@ func TestTexStgBuffer(t *testing.T) {
 
 func TestTexStgInit(t *testing.T) {
 	var s []*texStgBuffer
-	for i := 0; i < cap(texStg); i++ {
+	for range cap(texStg) {
 		select {
 		case x := <-texStg:
 			if x.wk == nil || x.buf == nil {
@@ -1069,7 +1069,7 @@ func checkData[T comparable](a, b []T, t *testing.T) {
 	if x := len(b); x < n {
 		n = x
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if a[i] != b[i] {
 			t.Fatalf("checkData: %v != %v (at index %d)", a[i], b[i], i)
 		}
@@ -1138,8 +1138,8 @@ func TestViewCopy(t *testing.T) {
 		n := param.Size() * param.Width * param.Height
 
 		data := make([]byte, n)
-		for i := 0; i < param.Height; i++ {
-			for j := 0; j < param.Width; j++ {
+		for i := range param.Height {
+			for j := range param.Width {
 				px := [4]byte{byte(i * j % 256), byte(i % 256), byte(j % 256), 255}
 				copy(data[4*i*param.Width+4*j:], px[:])
 			}
@@ -1187,9 +1187,9 @@ func TestViewCopy(t *testing.T) {
 		n := param.Size() * param.Width * param.Height
 
 		data := make([]byte, n*param.Layers)
-		for k := 0; k < param.Layers; k++ {
-			for i := 0; i < param.Height; i++ {
-				for j := 0; j < param.Width; j++ {
+		for k := range param.Layers {
+			for i := range param.Height {
+				for j := range param.Width {
 					px := [4]byte{byte((k + 127) % 256), byte(i % 256), byte(j % 256), 255}
 					copy(data[k*n+4*i*param.Width+4*j:], px[:])
 				}
@@ -1197,7 +1197,7 @@ func TestViewCopy(t *testing.T) {
 		}
 		dst := make([]byte, n*param.Layers)
 
-		for k := 0; k < param.Layers; k++ {
+		for k := range param.Layers {
 			if err = tex.CopyToView(k, data[k*n:k*n+n], true); err != nil {
 				t.Fatalf("Texture.CopyToView:\nhave %v\nwant nil", err)
 			}
@@ -1234,9 +1234,9 @@ func TestViewCopy(t *testing.T) {
 		n := param.Size() * param.Width * param.Height
 
 		data := make([]byte, n*param.Layers)
-		for k := 0; k < param.Layers; k++ {
-			for i := 0; i < param.Height; i++ {
-				for j := 0; j < param.Width; j++ {
+		for k := range param.Layers {
+			for i := range param.Height {
+				for j := range param.Width {
 					px := [4]byte{byte((k + 127) % 256), byte(i % 256), byte(j % 256), 255}
 					copy(data[k*n+4*i*param.Width+4*j:], px[:])
 				}
@@ -1299,7 +1299,7 @@ func TestViewCopyPending(t *testing.T) {
 		//	(<-texStg).free()
 		//}
 		texStg = make(chan *texStgBuffer, cap(texStg))
-		for i := 0; i < cap(texStg); i++ {
+		for range cap(texStg) {
 			s, err := newTexStg(texStgBlock * texStgNBit)
 			if err != nil {
 				s = &texStgBuffer{}
@@ -1367,7 +1367,7 @@ func TestCommitTexStg(t *testing.T) {
 	concCommit := func() {
 		const n = 8
 		errs := make(chan error, n)
-		for i := 0; i < n; i++ {
+		for range n {
 			go func() {
 				time.Sleep(time.Nanosecond * 20)
 				errs <- commitTexStg()
@@ -1678,7 +1678,7 @@ func TestSetLayoutPanic(t *testing.T) {
 					t.Fatalf("Texture.setLayout: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LShaderRead)
 				}
 			}
-			for i := 0; i < 6; i++ {
+			for i := range 6 {
 				if x := tex.layouts[i].Load(); x != int64(driver.LUndefined) {
 					t.Fatalf("Texture.setLayout: Texture.layouts[%d]:\nhave %d\nwant %d", i, x, driver.LUndefined)
 				}
